@@ -28,6 +28,7 @@
   --radius:10px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+.icon{width:1em;height:1em;display:inline-block;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 html,body{height:100%;}
 body{
   background:var(--bg);color:var(--text);
@@ -94,9 +95,67 @@ body{
 
 .meta-note{font-size:11px;color:var(--text-faint);line-height:1.6;}
 .meta-note b{color:var(--text-dim);}
+
+/* ---- Tabs ---- */
+.tabbar{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:2px;}
+.tabbar::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;padding:9px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.tab-btn.active{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;border-color:transparent;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.form-group{margin-bottom:12px;}
+.form-label{font-size:11.5px;color:var(--text-dim);font-weight:700;margin-bottom:6px;display:block;}
+.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.text-input.full{width:100%;}
+select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
+.check-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);font-weight:600;margin-bottom:12px;}
+.check-row input{width:16px;height:16px;accent-color:var(--blue);}
+
+/* image upload box (small square, reused for icon/banner/package image) */
+.img-upload{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.img-upload-box{width:52px;height:52px;border-radius:12px;background:var(--surface-2);border:1px dashed var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative;}
+.img-upload-box.wide{width:96px;height:52px;border-radius:10px;}
+.img-upload-box img{width:100%;height:100%;object-fit:cover;display:block;}
+.img-upload-box .up-ico{color:var(--text-faint);}
+.img-upload-actions{flex:1;display:flex;flex-direction:column;gap:6px;}
+.img-upload-actions .up-lbl{font-size:11px;color:var(--text-faint);}
+.img-upload-actions .up-row{display:flex;gap:8px;}
+.mini-btn{padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+.mini-btn:active{background:var(--surface-3);}
+.mini-btn.danger{color:var(--red);border-color:rgba(255,67,101,.35);}
+
+.list-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;}
+.list-item .li-thumb{width:38px;height:38px;border-radius:9px;background:var(--surface-3);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:11px;font-weight:800;color:var(--text-dim);}
+.list-item .li-thumb img{width:100%;height:100%;object-fit:cover;}
+.list-item .li-info{flex:1;min-width:0;}
+.list-item .li-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-item .li-sub{font-size:10.5px;color:var(--text-faint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-item .li-actions{display:flex;gap:6px;flex-shrink:0;}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:5px;background:var(--surface-3);color:var(--text-dim);margin-left:6px;}
+.badge.gold{background:rgba(255,201,74,.18);color:var(--gold);}
+.empty-note{font-size:11.5px;color:var(--text-faint);text-align:center;padding:16px 0;}
+
+.user-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;cursor:pointer;}
+.user-card-top{display:flex;align-items:center;gap:10px;}
+.user-ava{width:38px;height:38px;border-radius:50%;background:var(--surface-3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text-dim);overflow:hidden;}
+.user-ava img{width:100%;height:100%;object-fit:cover;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-email{font-size:10.5px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-balance{font-size:12.5px;font-weight:800;color:var(--gold);flex-shrink:0;text-align:right;}
+.user-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-dim);line-height:1.9;}
+.user-detail.show{display:block;}
+.user-detail .d-row{display:flex;justify-content:space-between;gap:10px;}
+.user-detail .d-row span:first-child{color:var(--text-faint);}
+.user-detail .d-row span:last-child{text-align:right;word-break:break-all;}
 </style>
 </head>
 <body>
+
+<svg style="display:none" aria-hidden="true">
+<symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+</svg>
 
 <div class="login-gate" id="loginGate">
   <div class="login-card">
@@ -133,6 +192,14 @@ body{
       <button class="signout-btn" id="signOutBtn">ထွက်မည်</button>
     </div>
 
+    <div class="tabbar">
+      <button class="tab-btn active" data-tab="general">ယေဘုယျ</button>
+      <button class="tab-btn" data-tab="games">Games</button>
+      <button class="tab-btn" data-tab="packages">Packages</button>
+      <button class="tab-btn" data-tab="users">Users</button>
+    </div>
+
+    <div class="tab-panel active" id="tabGeneral">
     <div class="card">
       <div class="card-title">App Logo</div>
       <div class="card-sub">
@@ -194,12 +261,150 @@ body{
         ဆိုတဲ့ Firestore document ထဲမှာ သိမ်းထားပါတယ်.
       </div>
     </div>
+    </div>
+
+    <!-- ===================== GAMES TAB ===================== -->
+    <div class="tab-panel" id="tabGames">
+      <div class="card">
+        <div class="card-title" id="gameFormTitle">Game အသစ် ထည့်ရန်</div>
+        <div class="card-sub">Store ထဲက Game list ကို ဒီနေရာက ထိန်းချုပ်ပါတယ် — ထည့်/ပြင်/ဖျက် လုပ်လို့ရပါတယ်။</div>
+
+        <div class="form-group">
+          <label class="form-label">Game နာမည်</label>
+          <input class="text-input full" id="gameNameInput" placeholder="ဥပမာ — Free Fire">
+        </div>
+        <div class="form-row2">
+          <div class="form-group">
+            <label class="form-label">အတို (2 လုံး, image မထည့်ရသေးရင် ပြမည်)</label>
+            <input class="text-input full" id="gameShortInput" maxlength="3" placeholder="FF">
+          </div>
+          <div class="form-group">
+            <label class="form-label">အရောင်</label>
+            <input class="text-input full" id="gameColorInput" type="color" value="#7C5CFF" style="padding:4px;height:38px;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Icon ပုံ (list/detail page သေးသေး icon)</label>
+          <div class="img-upload">
+            <div class="img-upload-box" id="gameIconBox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
+            <div class="img-upload-actions">
+              <div class="up-lbl">JPG/PNG file တင်ပါ — Firebase Storage ထဲသို့ upload ဖြစ်ပါမည်</div>
+              <div class="up-row">
+                <button type="button" class="mini-btn" id="gameIconPickBtn">ပုံရွေးမည်</button>
+                <button type="button" class="mini-btn danger" id="gameIconClearBtn">ဖယ်မည်</button>
+              </div>
+            </div>
+            <input type="file" accept="image/*" id="gameIconFile" style="display:none">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Banner ပုံ (game detail page ထိပ်ပိုင်း)</label>
+          <div class="img-upload">
+            <div class="img-upload-box wide" id="gameBannerBox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
+            <div class="img-upload-actions">
+              <div class="up-lbl">Landscape ပုံ အသင့်တော်ဆုံးပါ</div>
+              <div class="up-row">
+                <button type="button" class="mini-btn" id="gameBannerPickBtn">ပုံရွေးမည်</button>
+                <button type="button" class="mini-btn danger" id="gameBannerClearBtn">ဖယ်မည်</button>
+              </div>
+            </div>
+            <input type="file" accept="image/*" id="gameBannerFile" style="display:none">
+          </div>
+        </div>
+
+        <label class="check-row"><input type="checkbox" id="gameNeedsServerInput"> Server ID / Zone ID ပါ ဖြည့်ပေးရမည့် Game</label>
+
+        <div class="form-group">
+          <label class="form-label">Description (game detail page)</label>
+          <input class="text-input full" id="gameDescInput" placeholder="Game အကြောင်း တိုတိုရေးပါ">
+        </div>
+
+        <button class="save-btn" id="saveGameBtn">Save Game</button>
+        <button class="mini-btn" id="cancelGameEditBtn" style="display:none;width:100%;margin-top:8px;padding:10px;">ပြင်နေတာ ရပ်မည် (Game အသစ်ထည့်ရန် ပြန်သွားမည်)</button>
+        <div class="save-msg" id="saveGameMsg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ရှိပြီးသား Games (<span id="gamesCount">0</span>)</div>
+        <input class="text-input full" id="gameSearchAdmin" placeholder="Game နာမည်ဖြင့် ရှာပါ..." style="margin-bottom:12px;">
+        <div id="gamesListAdmin"></div>
+      </div>
+    </div>
+
+    <!-- ===================== PACKAGES TAB ===================== -->
+    <div class="tab-panel" id="tabPackages">
+      <div class="card">
+        <div class="card-title" id="pkgFormTitle">Package အသစ် ထည့်ရန်</div>
+        <div class="card-sub">Game တစ်ခုစီအောက်က top-up package (ဈေးနှုန်း၊ ပမာဏ) တွေကို ဒီနေရာက ထိန်းချုပ်ပါတယ်။</div>
+
+        <div class="form-group">
+          <label class="form-label">Game ရွေးပါ</label>
+          <select class="text-input full" id="pkgGameSelect"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Package အမည် (ဥပမာ — 310 Diamonds)</label>
+          <input class="text-input full" id="pkgLabelInput" placeholder="310 Diamonds">
+        </div>
+        <div class="form-row2">
+          <div class="form-group">
+            <label class="form-label">ဈေးနှုန်း (Ks)</label>
+            <input class="text-input full" id="pkgPriceInput" type="number" min="0" placeholder="6500">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ဈေးဟောင်း (မဖြည့်လည်းရ)</label>
+            <input class="text-input full" id="pkgOldPriceInput" type="number" min="0" placeholder="7200">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Package ပုံ (မထည့်ရသေးရင် default icon ပြမည်)</label>
+          <div class="img-upload">
+            <div class="img-upload-box" id="pkgImgBox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
+            <div class="img-upload-actions">
+              <div class="up-lbl">JPG/PNG file တင်ပါ</div>
+              <div class="up-row">
+                <button type="button" class="mini-btn" id="pkgImgPickBtn">ပုံရွေးမည်</button>
+                <button type="button" class="mini-btn danger" id="pkgImgClearBtn">ဖယ်မည်</button>
+              </div>
+            </div>
+            <input type="file" accept="image/*" id="pkgImgFile" style="display:none">
+          </div>
+        </div>
+
+        <label class="check-row"><input type="checkbox" id="pkgBestInput"> "အရောင်းရဆုံး" tag ပြမည်</label>
+
+        <button class="save-btn" id="savePkgBtn">Save Package</button>
+        <button class="mini-btn" id="cancelPkgEditBtn" style="display:none;width:100%;margin-top:8px;padding:10px;">ပြင်နေတာ ရပ်မည် (Package အသစ်ထည့်ရန် ပြန်သွားမည်)</button>
+        <div class="save-msg" id="savePkgMsg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ရှိပြီးသား Packages (<span id="pkgsCount">0</span>)</div>
+        <select class="text-input full" id="pkgFilterGame" style="margin-bottom:12px;">
+          <option value="">-- Game အားလုံး --</option>
+        </select>
+        <div id="pkgsListAdmin"></div>
+      </div>
+    </div>
+
+    <!-- ===================== USERS TAB ===================== -->
+    <div class="tab-panel" id="tabUsers">
+      <div class="card">
+        <div class="card-title">အသုံးပြုသူများ (<span id="usersCount">0</span>)</div>
+        <div class="card-sub">Store ကို Google login ဝင်ဖူးသူ user အားလုံး၏ profile စာရင်း — အသေးစိတ်ကြည့်ရန် တစ်ယောက်ချင်း နှိပ်ပါ။</div>
+        <input class="text-input full" id="userSearchInput" placeholder="နာမည် / email / ဖုန်းဖြင့် ရှာပါ..." style="margin-bottom:12px;">
+        <div id="usersListAdmin"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 /* =========================================================
    FIREBASE CONFIG — must be the SAME project/config as index.html
@@ -216,6 +421,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn("Auth persistence:", err));
 
 /* =========================================================
@@ -226,7 +432,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.war
    Firestore Security Rules too — see note at bottom of file.)
    ========================================================= */
 const ADMIN_EMAILS = [
-  "youradmin@gmail.com"
+  "linpyaesone130@gmail.com"
 ];
 
 const loginGate = document.getElementById("loginGate");
@@ -347,6 +553,363 @@ document.getElementById("saveRatesBtn").addEventListener("click", async ()=>{
   }
 });
 
+/* ---------- TABS ---------- */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    const panelId = "tab" + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1);
+    document.getElementById(panelId).classList.add("active");
+  });
+});
+
+function fmtK(n){ return Math.round(Number(n)||0).toLocaleString("en-US"); }
+function slugify(str){
+  return (str||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || ("id"+Date.now());
+}
+function fmtDate(ts){
+  if(!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  if(isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+}
+
+/* ---------- IMAGE UPLOAD HELPER ----------
+   Reused for game icon, game banner, and package image. Shows an instant
+   local preview on file pick; the actual Firebase Storage upload only
+   happens when the surrounding form is saved (resolveUrl()). */
+function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, folder}){
+  const fileInput = document.getElementById(fileInputId);
+  const pickBtn = document.getElementById(pickBtnId);
+  const clearBtn = document.getElementById(clearBtnId);
+  const box = document.getElementById(boxId);
+  let currentUrl = null;
+  let pendingDataUrl = null;
+
+  function render(){
+    box.innerHTML = (pendingDataUrl || currentUrl)
+      ? `<img src="${pendingDataUrl || currentUrl}">`
+      : `<svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg>`;
+  }
+  pickBtn.addEventListener("click", ()=>fileInput.click());
+  box.addEventListener("click", ()=>fileInput.click());
+  clearBtn.addEventListener("click", ()=>{
+    pendingDataUrl = null; currentUrl = null; fileInput.value = ""; render();
+  });
+  fileInput.addEventListener("change", e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{ pendingDataUrl = ev.target.result; render(); };
+    reader.readAsDataURL(file);
+  });
+  render();
+  return {
+    setUrl(url){ currentUrl = url || null; pendingDataUrl = null; fileInput.value = ""; render(); },
+    reset(){ currentUrl = null; pendingDataUrl = null; fileInput.value = ""; render(); },
+    async resolveUrl(pathPrefix){
+      if(pendingDataUrl){
+        const path = `${folder}/${slugify(pathPrefix)}-${Date.now()}.jpg`;
+        const ref = storage.ref(path);
+        await ref.putString(pendingDataUrl, "data_url");
+        const url = await ref.getDownloadURL();
+        currentUrl = url; pendingDataUrl = null;
+        return url;
+      }
+      return currentUrl;
+    }
+  };
+}
+const gameIconUpload = setupImageUpload({fileInputId:"gameIconFile", pickBtnId:"gameIconPickBtn", clearBtnId:"gameIconClearBtn", boxId:"gameIconBox", folder:"admin-uploads/games"});
+const gameBannerUpload = setupImageUpload({fileInputId:"gameBannerFile", pickBtnId:"gameBannerPickBtn", clearBtnId:"gameBannerClearBtn", boxId:"gameBannerBox", folder:"admin-uploads/games"});
+const pkgImgUpload = setupImageUpload({fileInputId:"pkgImgFile", pickBtnId:"pkgImgPickBtn", clearBtnId:"pkgImgClearBtn", boxId:"pkgImgBox", folder:"admin-uploads/packages"});
+
+/* ---------- GAMES CRUD ---------- */
+let gamesData = [];
+let editingGameId = null;
+let unsubGamesAdmin = null;
+
+function resetGameForm(){
+  editingGameId = null;
+  document.getElementById("gameFormTitle").textContent = "Game အသစ် ထည့်ရန်";
+  document.getElementById("gameNameInput").value = "";
+  document.getElementById("gameShortInput").value = "";
+  document.getElementById("gameColorInput").value = "#7C5CFF";
+  document.getElementById("gameNeedsServerInput").checked = false;
+  document.getElementById("gameDescInput").value = "";
+  gameIconUpload.reset();
+  gameBannerUpload.reset();
+  document.getElementById("cancelGameEditBtn").style.display = "none";
+  document.getElementById("saveGameMsg").textContent = "";
+}
+function loadGameIntoForm(g){
+  editingGameId = g.id;
+  document.getElementById("gameFormTitle").textContent = `"${g.name}" ကို ပြင်ဆင်ရန်`;
+  document.getElementById("gameNameInput").value = g.name || "";
+  document.getElementById("gameShortInput").value = g.short || "";
+  document.getElementById("gameColorInput").value = g.color || "#7C5CFF";
+  document.getElementById("gameNeedsServerInput").checked = !!g.needsServerId;
+  document.getElementById("gameDescInput").value = g.desc || "";
+  gameIconUpload.setUrl(g.image || null);
+  gameBannerUpload.setUrl(g.bannerImage || null);
+  document.getElementById("cancelGameEditBtn").style.display = "";
+  document.getElementById("saveGameMsg").textContent = "";
+  document.querySelector('.tab-btn[data-tab="games"]').click();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+document.getElementById("cancelGameEditBtn").addEventListener("click", resetGameForm);
+
+function renderGamesAdmin(){
+  const term = document.getElementById("gameSearchAdmin").value.trim().toLowerCase();
+  const list = term ? gamesData.filter(g=>(g.name||"").toLowerCase().includes(term)) : gamesData;
+  document.getElementById("gamesCount").textContent = gamesData.length;
+  const wrap = document.getElementById("gamesListAdmin");
+  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Game မရှိသေးပါ</div>`; return; }
+  wrap.innerHTML = list.map(g=>`
+    <div class="list-item">
+      <div class="li-thumb">${g.image ? `<img src="${g.image}">` : (g.short||g.name||"?").slice(0,2).toUpperCase()}</div>
+      <div class="li-info">
+        <div class="li-title">${g.name}${g.needsServerId?'<span class="badge">Server ID</span>':''}</div>
+        <div class="li-sub">${packagesData.filter(p=>p.game===g.name).length} package(s)</div>
+      </div>
+      <div class="li-actions">
+        <button type="button" class="mini-btn" data-edit-game="${g.id}">ပြင်မည်</button>
+        <button type="button" class="mini-btn danger" data-del-game="${g.id}">ဖျက်မည်</button>
+      </div>
+    </div>`).join("");
+}
+document.getElementById("gameSearchAdmin").addEventListener("input", renderGamesAdmin);
+document.getElementById("gamesListAdmin").addEventListener("click", async e=>{
+  const editId = e.target.closest("[data-edit-game]")?.dataset.editGame;
+  const delId = e.target.closest("[data-del-game]")?.dataset.delGame;
+  if(editId){ const g = gamesData.find(x=>x.id===editId); if(g) loadGameIntoForm(g); }
+  if(delId){
+    const g = gamesData.find(x=>x.id===delId);
+    if(!g) return;
+    if(!confirm(`"${g.name}" ကို ဖျက်မှာ သေချာလား? အောက်က package တွေ ရှိနေရင် ဖျက်ပစ်ပါဦးမလား?`)) return;
+    try{ await db.collection("games").doc(delId).delete(); if(editingGameId===delId) resetGameForm(); }
+    catch(err){ console.error(err); alert("ဖျက်လို့ မရပါ — Firestore rules စစ်ကြည့်ပါ"); }
+  }
+});
+
+document.getElementById("saveGameBtn").addEventListener("click", async ()=>{
+  const btn = document.getElementById("saveGameBtn");
+  const msg = document.getElementById("saveGameMsg");
+  const name = document.getElementById("gameNameInput").value.trim();
+  if(!name){ msg.textContent = "Game နာမည် ဖြည့်ပါ"; msg.className = "save-msg err"; return; }
+  const short = document.getElementById("gameShortInput").value.trim().toUpperCase() || name.slice(0,2).toUpperCase();
+  const color = document.getElementById("gameColorInput").value;
+  const needsServerId = document.getElementById("gameNeedsServerInput").checked;
+  const desc = document.getElementById("gameDescInput").value.trim();
+  btn.disabled = true; msg.textContent = "Save လုပ်နေသည်…"; msg.className = "save-msg";
+  try{
+    const image = await gameIconUpload.resolveUrl(name+"-icon");
+    const bannerImage = await gameBannerUpload.resolveUrl(name+"-banner");
+    const id = editingGameId || slugify(name);
+    await db.collection("games").doc(id).set({
+      id, name, short, color,
+      image: image || null,
+      bannerImage: bannerImage || null,
+      needsServerId,
+      desc: desc || null
+    }, {merge:true});
+    msg.textContent = "Game သိမ်းပြီးပါပြီ"; msg.className = "save-msg ok";
+    resetGameForm();
+  }catch(err){
+    console.error("Save game failed", err);
+    msg.textContent = "Save မအောင်မြင်ပါ — " + (err.code || err.message);
+    msg.className = "save-msg err";
+  } finally { btn.disabled = false; }
+});
+
+function bindGamesAdmin(){
+  if(unsubGamesAdmin) unsubGamesAdmin();
+  unsubGamesAdmin = db.collection("games").onSnapshot(snap=>{
+    gamesData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    renderGamesAdmin();
+    renderPkgGameSelect();
+    renderPkgsAdmin();
+  }, err=>console.error("games admin listener error", err));
+}
+
+/* ---------- PACKAGES CRUD ---------- */
+let packagesData = [];
+let editingPkgId = null;
+let unsubPkgsAdmin = null;
+
+function renderPkgGameSelect(){
+  const sel = document.getElementById("pkgGameSelect");
+  const filterSel = document.getElementById("pkgFilterGame");
+  const prevSel = sel.value, prevFilter = filterSel.value;
+  sel.innerHTML = gamesData.length
+    ? gamesData.map(g=>`<option value="${g.name}">${g.name}</option>`).join("")
+    : `<option value="">-- Games tab မှာ Game အရင်ထည့်ပါ --</option>`;
+  filterSel.innerHTML = `<option value="">-- Game အားလုံး --</option>` + gamesData.map(g=>`<option value="${g.name}">${g.name}</option>`).join("");
+  if(gamesData.some(g=>g.name===prevSel)) sel.value = prevSel;
+  if(gamesData.some(g=>g.name===prevFilter)) filterSel.value = prevFilter;
+}
+function resetPkgForm(){
+  editingPkgId = null;
+  document.getElementById("pkgFormTitle").textContent = "Package အသစ် ထည့်ရန်";
+  document.getElementById("pkgLabelInput").value = "";
+  document.getElementById("pkgPriceInput").value = "";
+  document.getElementById("pkgOldPriceInput").value = "";
+  document.getElementById("pkgBestInput").checked = false;
+  pkgImgUpload.reset();
+  document.getElementById("cancelPkgEditBtn").style.display = "none";
+  document.getElementById("savePkgMsg").textContent = "";
+}
+function loadPkgIntoForm(p){
+  editingPkgId = p.id;
+  document.getElementById("pkgFormTitle").textContent = `"${p.label}" ကို ပြင်ဆင်ရန်`;
+  document.getElementById("pkgGameSelect").value = p.game;
+  document.getElementById("pkgLabelInput").value = p.label || "";
+  document.getElementById("pkgPriceInput").value = (p.price||"").toString().replace(/,/g,"");
+  document.getElementById("pkgOldPriceInput").value = p.old ? p.old.toString().replace(/,/g,"") : "";
+  document.getElementById("pkgBestInput").checked = !!p.best;
+  pkgImgUpload.setUrl(p.img || null);
+  document.getElementById("cancelPkgEditBtn").style.display = "";
+  document.getElementById("savePkgMsg").textContent = "";
+  document.querySelector('.tab-btn[data-tab="packages"]').click();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+document.getElementById("cancelPkgEditBtn").addEventListener("click", resetPkgForm);
+
+function renderPkgsAdmin(){
+  const filterGame = document.getElementById("pkgFilterGame").value;
+  const list = filterGame ? packagesData.filter(p=>p.game===filterGame) : packagesData;
+  document.getElementById("pkgsCount").textContent = packagesData.length;
+  const wrap = document.getElementById("pkgsListAdmin");
+  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Package မရှိသေးပါ</div>`; return; }
+  wrap.innerHTML = list.map(p=>`
+    <div class="list-item">
+      <div class="li-thumb">${p.img ? `<img src="${p.img}">` : (p.game||"").slice(0,2).toUpperCase()}</div>
+      <div class="li-info">
+        <div class="li-title">${p.label}${p.best?'<span class="badge gold">Best</span>':''}</div>
+        <div class="li-sub">${p.game} — ${p.price} Ks${p.old?` <s>${p.old}</s>`:''}</div>
+      </div>
+      <div class="li-actions">
+        <button type="button" class="mini-btn" data-edit-pkg="${p.id}">ပြင်မည်</button>
+        <button type="button" class="mini-btn danger" data-del-pkg="${p.id}">ဖျက်မည်</button>
+      </div>
+    </div>`).join("");
+}
+document.getElementById("pkgFilterGame").addEventListener("change", renderPkgsAdmin);
+document.getElementById("pkgsListAdmin").addEventListener("click", async e=>{
+  const editId = e.target.closest("[data-edit-pkg]")?.dataset.editPkg;
+  const delId = e.target.closest("[data-del-pkg]")?.dataset.delPkg;
+  if(editId){ const p = packagesData.find(x=>x.id===editId); if(p) loadPkgIntoForm(p); }
+  if(delId){
+    const p = packagesData.find(x=>x.id===delId);
+    if(!p) return;
+    if(!confirm(`"${p.label}" ကို ဖျက်မှာ သေချာလား?`)) return;
+    try{ await db.collection("packages").doc(delId).delete(); if(editingPkgId===delId) resetPkgForm(); }
+    catch(err){ console.error(err); alert("ဖျက်လို့ မရပါ — Firestore rules စစ်ကြည့်ပါ"); }
+  }
+});
+
+document.getElementById("savePkgBtn").addEventListener("click", async ()=>{
+  const btn = document.getElementById("savePkgBtn");
+  const msg = document.getElementById("savePkgMsg");
+  const game = document.getElementById("pkgGameSelect").value;
+  const label = document.getElementById("pkgLabelInput").value.trim();
+  const price = Number(document.getElementById("pkgPriceInput").value);
+  const oldPriceRaw = document.getElementById("pkgOldPriceInput").value;
+  const best = document.getElementById("pkgBestInput").checked;
+  if(!game){ msg.textContent = "Game ရွေးချယ်ပါ"; msg.className = "save-msg err"; return; }
+  if(!label){ msg.textContent = "Package အမည် ဖြည့်ပါ"; msg.className = "save-msg err"; return; }
+  if(!price || price<=0){ msg.textContent = "ဈေးနှုန်း မှန်ကန်အောင် ဖြည့်ပါ"; msg.className = "save-msg err"; return; }
+  btn.disabled = true; msg.textContent = "Save လုပ်နေသည်…"; msg.className = "save-msg";
+  try{
+    const img = await pkgImgUpload.resolveUrl(label);
+    const id = editingPkgId || (slugify(game)+"-"+slugify(label)+"-"+Date.now().toString(36));
+    await db.collection("packages").doc(id).set({
+      id, game, label,
+      price: fmtK(price),
+      old: oldPriceRaw ? fmtK(Number(oldPriceRaw)) : null,
+      icon: img ? null : "gift",
+      img: img || null,
+      best
+    }, {merge:true});
+    msg.textContent = "Package သိမ်းပြီးပါပြီ"; msg.className = "save-msg ok";
+    resetPkgForm();
+  }catch(err){
+    console.error("Save package failed", err);
+    msg.textContent = "Save မအောင်မြင်ပါ — " + (err.code || err.message);
+    msg.className = "save-msg err";
+  } finally { btn.disabled = false; }
+});
+
+function bindPkgsAdmin(){
+  if(unsubPkgsAdmin) unsubPkgsAdmin();
+  unsubPkgsAdmin = db.collection("packages").onSnapshot(snap=>{
+    packagesData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    renderPkgsAdmin();
+    renderGamesAdmin();
+  }, err=>console.error("packages admin listener error", err));
+}
+
+/* ---------- USERS LIST (read-only view) ---------- */
+let usersData = [];
+let unsubUsersAdmin = null;
+
+function renderUsersAdmin(){
+  const term = document.getElementById("userSearchInput").value.trim().toLowerCase();
+  const list = term ? usersData.filter(u=>
+    (u.name||"").toLowerCase().includes(term) ||
+    (u.email||"").toLowerCase().includes(term) ||
+    (u.phone||"").toLowerCase().includes(term)
+  ) : usersData;
+  document.getElementById("usersCount").textContent = usersData.length;
+  const wrap = document.getElementById("usersListAdmin");
+  if(!list.length){ wrap.innerHTML = `<div class="empty-note">User မတွေ့ပါ</div>`; return; }
+  wrap.innerHTML = list.map(u=>`
+    <div class="user-card" data-uid="${u.id}">
+      <div class="user-card-top">
+        <div class="user-ava">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.initials || (u.name||"?").slice(0,1).toUpperCase())}</div>
+        <div class="user-info">
+          <div class="user-name">${u.name || "(နာမည်မရှိသေးပါ)"}</div>
+          <div class="user-email">${u.email || "—"}</div>
+        </div>
+        <div class="user-balance">${fmtK(u.balance||0)} Ks</div>
+      </div>
+      <div class="user-detail" id="userDetail-${u.id}">
+        <div class="d-row"><span>UID</span><span>${u.id}</span></div>
+        <div class="d-row"><span>ဖုန်း</span><span>${u.phone || "—"}</span></div>
+        <div class="d-row"><span>ကျား/မ</span><span>${u.gender || "—"}</span></div>
+        <div class="d-row"><span>မွေးနေ့</span><span>${u.birthday || "—"}</span></div>
+        <div class="d-row"><span>နေရပ်</span><span>${u.address || "—"}</span></div>
+        <div class="d-row"><span>Referral Code</span><span>${u.referralCode || "—"}</span></div>
+        <div class="d-row"><span>ဖိတ်ခေါ်ခံရသူ (by)</span><span>${u.referredBy || "—"}</span></div>
+        <div class="d-row"><span>Google Login</span><span>${u.googleLinked ? "✓" : "—"}</span></div>
+        <div class="d-row"><span>Telegram Chat ID</span><span>${u.telegramChatId || "—"}</span></div>
+        <div class="d-row"><span>စတင်သုံးစွဲသည့်ရက်</span><span>${fmtDate(u.createdAt)}</span></div>
+      </div>
+    </div>`).join("");
+}
+document.getElementById("userSearchInput").addEventListener("input", renderUsersAdmin);
+document.getElementById("usersListAdmin").addEventListener("click", e=>{
+  const card = e.target.closest(".user-card");
+  if(!card) return;
+  document.getElementById("userDetail-"+card.dataset.uid).classList.toggle("show");
+});
+
+function bindUsersAdmin(){
+  if(unsubUsersAdmin) unsubUsersAdmin();
+  unsubUsersAdmin = db.collection("users").orderBy("createdAt","desc").limit(300).onSnapshot(snap=>{
+    usersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    renderUsersAdmin();
+  }, err=>{
+    console.error("users admin listener error", err);
+    // Falls back to unordered fetch if createdAt is missing on old docs / index not ready.
+    db.collection("users").limit(300).get().then(snap=>{
+      usersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+      renderUsersAdmin();
+    }).catch(err2=>console.error("users fallback fetch failed", err2));
+  });
+}
+
 auth.getRedirectResult().catch(err=>console.error("Redirect result error", err));
 auth.onAuthStateChanged(user=>{
   if(!user){
@@ -370,6 +933,9 @@ auth.onAuthStateChanged(user=>{
   document.getElementById("adminEmailLabel").textContent = user.email;
   if(!ratesLoaded) loadRates();
   loadLogo();
+  bindGamesAdmin();
+  bindPkgsAdmin();
+  bindUsersAdmin();
 });
 
 /* =========================================================
@@ -380,7 +946,7 @@ auth.onAuthStateChanged(user=>{
      allow read: if true; // index.html needs to read this for everyone
      allow write: if request.auth != null
        && request.auth.token.email in [
-            "youradmin@gmail.com"
+            "linpyaesone130@gmail.com"
           ];
    }
 
@@ -388,13 +954,48 @@ auth.onAuthStateChanged(user=>{
      allow read: if true; // index.html needs to read this for everyone
      allow write: if request.auth != null
        && request.auth.token.email in [
-            "youradmin@gmail.com"
+            "linpyaesone130@gmail.com"
           ];
+   }
+
+   match /games/{gameId} {
+     allow read: if true; // index.html needs to read this for everyone
+     allow write: if request.auth != null
+       && request.auth.token.email in [
+            "linpyaesone130@gmail.com"
+          ];
+   }
+
+   match /packages/{pkgId} {
+     allow read: if true;
+     allow write: if request.auth != null
+       && request.auth.token.email in [
+            "linpyaesone130@gmail.com"
+          ];
+   }
+
+   match /users/{uid} {
+     // Each user can read/write only their own doc from index.html;
+     // this admin panel additionally needs to READ every user doc to
+     // show the Users tab, so admin emails get a read exception too.
+     allow read: if request.auth != null
+       && (request.auth.uid == uid
+           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
+     allow write: if request.auth != null && request.auth.uid == uid;
    }
 
    Keep this list in sync with ADMIN_EMAILS above — this file's
    allowlist alone does NOT stop someone from writing directly via
    the Firestore API, only the Security Rules do that.
+
+   Also add matching rules for Firebase STORAGE (used by the Games/
+   Packages image-upload feature and the Logo uploader):
+
+   match /admin-uploads/{allPaths=**} {
+     allow read: if true;
+     allow write: if request.auth != null
+       && request.auth.token.email in ["linpyaesone130@gmail.com"];
+   }
    ========================================================= */
 </script>
 </body>
