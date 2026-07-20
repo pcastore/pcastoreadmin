@@ -149,12 +149,49 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
 .user-detail .d-row{display:flex;justify-content:space-between;gap:10px;}
 .user-detail .d-row span:first-child{color:var(--text-faint);}
 .user-detail .d-row span:last-child{text-align:right;word-break:break-all;}
+
+/* ---- Games accordion (each game expands to show/edit/add its own packages) ---- */
+.game-acc{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);margin-bottom:10px;overflow:hidden;}
+.game-acc-header{display:flex;align-items:center;gap:10px;padding:11px;cursor:pointer;}
+.game-acc-header .chevron{width:16px;height:16px;color:var(--text-faint);transition:transform .2s ease;flex-shrink:0;}
+.game-acc.open .game-acc-header .chevron{transform:rotate(180deg);}
+.game-acc-body{display:none;padding:0 11px 12px;}
+.game-acc.open .game-acc-body{display:block;border-top:1px solid var(--border);padding-top:12px;}
+.game-acc-actions{display:flex;gap:8px;margin-bottom:12px;}
+.game-acc-actions .mini-btn{flex:1;text-align:center;}
+.pkg-sub-list .list-item{background:var(--surface-3);margin-bottom:6px;}
+.pkg-sub-list .list-item:last-child{margin-bottom:0;}
+.pkg-sub-hd{font-size:10.5px;font-weight:800;color:var(--text-faint);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;}
+.add-pkg-btn{width:100%;margin-top:10px;border-style:dashed;}
+.pkg-inline-form{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+
+/* ---- Top-up requests (orders) ---- */
+.order-summary{display:flex;gap:10px;margin-bottom:14px;}
+.order-summary .os-item{flex:1;text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 6px;}
+.order-summary .os-num{font-size:19px;font-weight:800;}
+.order-summary .os-lbl{font-size:10px;color:var(--text-faint);margin-top:2px;}
+.order-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;}
+.order-top{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.order-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-dim);line-height:1.9;}
+.order-detail.show{display:block;}
+.order-detail .d-row{display:flex;justify-content:space-between;gap:10px;}
+.order-detail .d-row span:first-child{color:var(--text-faint);flex-shrink:0;}
+.order-detail .d-row span:last-child{text-align:right;word-break:break-word;}
+.order-proof{margin-top:8px;}
+.order-proof img{width:100%;max-height:170px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:var(--surface-3);display:block;}
+.order-actions{display:flex;gap:8px;margin-top:10px;}
+.order-actions .mini-btn{flex:1;text-align:center;}
+.confirm-btn{color:var(--green);border-color:rgba(47,232,139,.35);}
+.badge.status-pending{background:rgba(255,201,74,.18);color:var(--gold);}
+.badge.status-confirmed{background:rgba(47,232,139,.18);color:var(--green);}
+.badge.status-rejected{background:rgba(255,67,101,.18);color:var(--red);}
 </style>
 </head>
 <body>
 
 <svg style="display:none" aria-hidden="true">
 <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol>
 </svg>
 
 <div class="login-gate" id="loginGate">
@@ -195,7 +232,7 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
     <div class="tabbar">
       <button class="tab-btn active" data-tab="general">ယေဘုယျ</button>
       <button class="tab-btn" data-tab="games">Games</button>
-      <button class="tab-btn" data-tab="packages">Packages</button>
+      <button class="tab-btn" data-tab="topups">Top-up<span class="badge gold" id="tabTopupBadge" style="display:none;margin-left:5px;"></span></button>
       <button class="tab-btn" data-tab="users">Users</button>
     </div>
 
@@ -267,7 +304,7 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
     <div class="tab-panel" id="tabGames">
       <div class="card">
         <div class="card-title" id="gameFormTitle">Game အသစ် ထည့်ရန်</div>
-        <div class="card-sub">Store ထဲက Game list ကို ဒီနေရာက ထိန်းချုပ်ပါတယ် — ထည့်/ပြင်/ဖျက် လုပ်လို့ရပါတယ်။</div>
+        <div class="card-sub">Store ထဲက Game list ကို ဒီနေရာက ထိန်းချုပ်ပါတယ် — ထည့်/ပြင်/ဖျက် လုပ်လို့ရပါတယ်။ Game တစ်ခုကို နှိပ်လိုက်ရင် အောက်ပိုင်းမှာ ပွင့်လာပြီး အဲ့ Game ရဲ့ Package (ဈေးနှုန်း) တွေကို တိုက်ရိုက် ထည့်/ပြင်/ဖျက် လုပ်နိုင်ပါတယ်။</div>
 
         <div class="form-group">
           <label class="form-label">Game နာမည်</label>
@@ -327,65 +364,36 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
       </div>
 
       <div class="card">
-        <div class="card-title">ရှိပြီးသား Games (<span id="gamesCount">0</span>)</div>
+        <div class="card-title">ရှိပြီးသား Games (<span id="gamesCount">0</span>) <span style="font-weight:600;color:var(--text-faint);font-size:11px;">— နှိပ်ပြီး Package များ စီမံပါ</span></div>
         <input class="text-input full" id="gameSearchAdmin" placeholder="Game နာမည်ဖြင့် ရှာပါ..." style="margin-bottom:12px;">
         <div id="gamesListAdmin"></div>
       </div>
     </div>
 
-    <!-- ===================== PACKAGES TAB ===================== -->
-    <div class="tab-panel" id="tabPackages">
+    <!-- ===================== TOP-UP REQUESTS TAB ===================== -->
+    <div class="tab-panel" id="tabTopups">
       <div class="card">
-        <div class="card-title" id="pkgFormTitle">Package အသစ် ထည့်ရန်</div>
-        <div class="card-sub">Game တစ်ခုစီအောက်က top-up package (ဈေးနှုန်း၊ ပမာဏ) တွေကို ဒီနေရာက ထိန်းချုပ်ပါတယ်။</div>
-
-        <div class="form-group">
-          <label class="form-label">Game ရွေးပါ</label>
-          <select class="text-input full" id="pkgGameSelect"></select>
+        <div class="card-title">Top-up Requests (<span id="ordersCount">0</span>)</div>
+        <div class="card-sub">
+          User များ တင်သွင်းလိုက်တဲ့ Top-up order များကို ဒီနေရာမှာ Confirm / Reject လုပ်နိုင်ပါတယ်။
+          <b>Confirm</b> = Game ထဲကို Diamond/Item ကို Manual ပို့ပေးပြီးမှသာ နှိပ်ပါ။
+          <b>Reject</b> = User ရဲ့ Wallet Balance ကို ဒီစနစ်က အလိုအလျောက် ပြန်အမ်းပေးပါမည်။
         </div>
-        <div class="form-group">
-          <label class="form-label">Package အမည် (ဥပမာ — 310 Diamonds)</label>
-          <input class="text-input full" id="pkgLabelInput" placeholder="310 Diamonds">
+        <div class="order-summary">
+          <div class="os-item"><div class="os-num" id="ordersPendingCount">0</div><div class="os-lbl">Pending</div></div>
+          <div class="os-item"><div class="os-num" id="ordersConfirmedCount">0</div><div class="os-lbl">Confirmed</div></div>
+          <div class="os-item"><div class="os-num" id="ordersRejectedCount">0</div><div class="os-lbl">Rejected</div></div>
         </div>
-        <div class="form-row2">
-          <div class="form-group">
-            <label class="form-label">ဈေးနှုန်း (Ks)</label>
-            <input class="text-input full" id="pkgPriceInput" type="number" min="0" placeholder="6500">
-          </div>
-          <div class="form-group">
-            <label class="form-label">ဈေးဟောင်း (မဖြည့်လည်းရ)</label>
-            <input class="text-input full" id="pkgOldPriceInput" type="number" min="0" placeholder="7200">
-          </div>
+        <div class="form-row2" style="margin-bottom:12px;">
+          <select class="text-input full" id="orderStatusFilter">
+            <option value="pending" selected>Pending (လုပ်ရမည်)</option>
+            <option value="">အခြေအနေ အားလုံး</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <input class="text-input full" id="orderSearchInput" placeholder="User/Game ဖြင့် ရှာပါ...">
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Package ပုံ (မထည့်ရသေးရင် default icon ပြမည်)</label>
-          <div class="img-upload">
-            <div class="img-upload-box" id="pkgImgBox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
-            <div class="img-upload-actions">
-              <div class="up-lbl">JPG/PNG file တင်ပါ</div>
-              <div class="up-row">
-                <button type="button" class="mini-btn" id="pkgImgPickBtn">ပုံရွေးမည်</button>
-                <button type="button" class="mini-btn danger" id="pkgImgClearBtn">ဖယ်မည်</button>
-              </div>
-            </div>
-            <input type="file" accept="image/*" id="pkgImgFile" style="display:none">
-          </div>
-        </div>
-
-        <label class="check-row"><input type="checkbox" id="pkgBestInput"> "အရောင်းရဆုံး" tag ပြမည်</label>
-
-        <button class="save-btn" id="savePkgBtn">Save Package</button>
-        <button class="mini-btn" id="cancelPkgEditBtn" style="display:none;width:100%;margin-top:8px;padding:10px;">ပြင်နေတာ ရပ်မည် (Package အသစ်ထည့်ရန် ပြန်သွားမည်)</button>
-        <div class="save-msg" id="savePkgMsg"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">ရှိပြီးသား Packages (<span id="pkgsCount">0</span>)</div>
-        <select class="text-input full" id="pkgFilterGame" style="margin-bottom:12px;">
-          <option value="">-- Game အားလုံး --</option>
-        </select>
-        <div id="pkgsListAdmin"></div>
+        <div id="ordersListAdmin"></div>
       </div>
     </div>
 
@@ -597,11 +605,7 @@ function compressImage(dataUrl, maxDim, quality){
     img.src = dataUrl;
   });
 }
-function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, maxDim, quality}){
-  const fileInput = document.getElementById(fileInputId);
-  const pickBtn = document.getElementById(pickBtnId);
-  const clearBtn = document.getElementById(clearBtnId);
-  const box = document.getElementById(boxId);
+function setupImageUploadEl({fileInput, pickBtn, clearBtn, box, maxDim, quality}){
   let currentUrl = null;
   let pendingDataUrl = null;
 
@@ -637,9 +641,18 @@ function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, maxDim, qu
     }
   };
 }
+/* Backward-compatible id-based wrapper, used by the game icon/banner uploaders below. */
+function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, maxDim, quality}){
+  return setupImageUploadEl({
+    fileInput: document.getElementById(fileInputId),
+    pickBtn: document.getElementById(pickBtnId),
+    clearBtn: document.getElementById(clearBtnId),
+    box: document.getElementById(boxId),
+    maxDim, quality
+  });
+}
 const gameIconUpload = setupImageUpload({fileInputId:"gameIconFile", pickBtnId:"gameIconPickBtn", clearBtnId:"gameIconClearBtn", boxId:"gameIconBox", maxDim:200, quality:0.8});
 const gameBannerUpload = setupImageUpload({fileInputId:"gameBannerFile", pickBtnId:"gameBannerPickBtn", clearBtnId:"gameBannerClearBtn", boxId:"gameBannerBox", maxDim:640, quality:0.7});
-const pkgImgUpload = setupImageUpload({fileInputId:"pkgImgFile", pickBtnId:"pkgImgPickBtn", clearBtnId:"pkgImgClearBtn", boxId:"pkgImgBox", maxDim:200, quality:0.8});
 
 /* ---------- GAMES CRUD ---------- */
 let gamesData = [];
@@ -676,36 +689,224 @@ function loadGameIntoForm(g){
 }
 document.getElementById("cancelGameEditBtn").addEventListener("click", resetGameForm);
 
+/* ---------- Accordion state + inline package form state (Games tab) ---------- */
+let expandedGameIds = new Set();     // which games are currently expanded
+let openPkgFormGameId = null;        // which game's slot currently shows an add/edit package form
+let pkgFormImgUpload = null;         // the image-upload instance for the currently open inline form
+
 function renderGamesAdmin(){
   const term = document.getElementById("gameSearchAdmin").value.trim().toLowerCase();
   const list = term ? gamesData.filter(g=>(g.name||"").toLowerCase().includes(term)) : gamesData;
   document.getElementById("gamesCount").textContent = gamesData.length;
   const wrap = document.getElementById("gamesListAdmin");
   if(!list.length){ wrap.innerHTML = `<div class="empty-note">Game မရှိသေးပါ</div>`; return; }
-  wrap.innerHTML = list.map(g=>`
-    <div class="list-item">
-      <div class="li-thumb">${g.image ? `<img src="${g.image}">` : (g.short||g.name||"?").slice(0,2).toUpperCase()}</div>
-      <div class="li-info">
-        <div class="li-title">${g.name}${g.needsServerId?'<span class="badge">Server ID</span>':''}</div>
-        <div class="li-sub">${packagesData.filter(p=>p.game===g.name).length} package(s)</div>
+  wrap.innerHTML = list.map(g=>{
+    const pkgs = packagesData.filter(p=>p.game===g.name);
+    const isOpen = expandedGameIds.has(g.id);
+    return `
+    <div class="game-acc ${isOpen ? 'open' : ''}" data-gid="${g.id}">
+      <div class="game-acc-header" data-toggle-game="${g.id}">
+        <div class="li-thumb">${g.image ? `<img src="${g.image}">` : (g.short||g.name||"?").slice(0,2).toUpperCase()}</div>
+        <div class="li-info">
+          <div class="li-title">${g.name}${g.needsServerId?'<span class="badge">Server ID</span>':''}</div>
+          <div class="li-sub">${pkgs.length} package(s)</div>
+        </div>
+        <svg class="icon chevron"><use href="#i-chev"></use></svg>
       </div>
-      <div class="li-actions">
-        <button type="button" class="mini-btn" data-edit-game="${g.id}">ပြင်မည်</button>
-        <button type="button" class="mini-btn danger" data-del-game="${g.id}">ဖျက်မည်</button>
+      <div class="game-acc-body">
+        <div class="game-acc-actions">
+          <button type="button" class="mini-btn" data-edit-game="${g.id}">Game ပြင်မည်</button>
+          <button type="button" class="mini-btn danger" data-del-game="${g.id}">Game ဖျက်မည်</button>
+        </div>
+        <div class="pkg-sub-hd">Packages</div>
+        <div class="pkg-sub-list">
+          ${pkgs.length ? pkgs.map(p=>`
+            <div class="list-item">
+              <div class="li-thumb">${p.img ? `<img src="${p.img}">` : "🎁"}</div>
+              <div class="li-info">
+                <div class="li-title">${p.label}${p.best?'<span class="badge gold">Best</span>':''}</div>
+                <div class="li-sub">${fmtK(p.price)} Ks${p.old?` <s>${fmtK(p.old)}</s>`:''}</div>
+              </div>
+              <div class="li-actions">
+                <button type="button" class="mini-btn" data-edit-pkg-inline="${p.id}" data-gid="${g.id}">ပြင်မည်</button>
+                <button type="button" class="mini-btn danger" data-del-pkg-inline="${p.id}">ဖျက်မည်</button>
+              </div>
+            </div>`).join("") : `<div class="empty-note">Package မထည့်ရသေးပါ</div>`}
+        </div>
+        <button type="button" class="mini-btn add-pkg-btn" data-add-pkg="${g.id}">${openPkgFormGameId===g.id ? '− Package ပုံစံ ပိတ်မည်' : '+ Package အသစ်ထည့်ရန်'}</button>
+        <div class="pkg-form-slot" id="pkgFormSlot-${g.id}"></div>
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
+  // Keep any currently-open inline add/edit form visible after a re-render
+  // (re-renders happen whenever games/packages data changes via onSnapshot).
+  if(openPkgFormGameId && list.some(g=>g.id===openPkgFormGameId)){
+    const g = gamesData.find(x=>x.id===openPkgFormGameId);
+    if(g) openPkgInlineForm(g.id, g.name, pendingEditPkgId ? packagesData.find(p=>p.id===pendingEditPkgId) : null, true);
+  }
 }
 document.getElementById("gameSearchAdmin").addEventListener("input", renderGamesAdmin);
+
+let pendingEditPkgId = null; // remembers which package is being edited across re-renders
+
+function closePkgInlineForm(){
+  if(openPkgFormGameId){
+    const slot = document.getElementById("pkgFormSlot-"+openPkgFormGameId);
+    if(slot) slot.innerHTML = "";
+  }
+  openPkgFormGameId = null;
+  pendingEditPkgId = null;
+  pkgFormImgUpload = null;
+}
+
+function openPkgInlineForm(gameId, gameName, existingPkg, silentReopen){
+  if(!silentReopen) closePkgInlineForm();
+  const slot = document.getElementById("pkgFormSlot-"+gameId);
+  if(!slot) return;
+  openPkgFormGameId = gameId;
+  pendingEditPkgId = existingPkg ? existingPkg.id : null;
+  slot.innerHTML = `
+    <div class="pkg-inline-form">
+      <div class="form-group">
+        <label class="form-label">Package အမည် (ဥပမာ — 310 Diamonds)</label>
+        <input class="text-input full pf-label" placeholder="310 Diamonds">
+      </div>
+      <div class="form-row2">
+        <div class="form-group"><label class="form-label">ဈေးနှုန်း (Ks)</label><input class="text-input full pf-price" type="number" min="0" placeholder="6500"></div>
+        <div class="form-group"><label class="form-label">ဈေးဟောင်း (မဖြည့်လည်းရ)</label><input class="text-input full pf-old" type="number" min="0" placeholder="7200"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Package ပုံ (မထည့်ရသေးရင် default icon ပြမည်)</label>
+        <div class="img-upload">
+          <div class="img-upload-box pf-imgbox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
+          <div class="img-upload-actions">
+            <div class="up-lbl">JPG/PNG file တင်ပါ</div>
+            <div class="up-row">
+              <button type="button" class="mini-btn pf-pick">ပုံရွေးမည်</button>
+              <button type="button" class="mini-btn danger pf-clear">ဖယ်မည်</button>
+            </div>
+          </div>
+          <input type="file" accept="image/*" class="pf-file" style="display:none">
+        </div>
+      </div>
+      <label class="check-row"><input type="checkbox" class="pf-best"> "အရောင်းရဆုံး" tag ပြမည်</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="save-btn pf-save" style="margin-top:0;flex:1;">Save Package</button>
+        <button type="button" class="mini-btn pf-cancel" style="padding:0 16px;">Cancel</button>
+      </div>
+      <div class="save-msg pf-msg"></div>
+    </div>`;
+
+  const root = slot.querySelector(".pkg-inline-form");
+  const labelInp = root.querySelector(".pf-label");
+  const priceInp = root.querySelector(".pf-price");
+  const oldInp = root.querySelector(".pf-old");
+  const bestInp = root.querySelector(".pf-best");
+  const msgEl = root.querySelector(".pf-msg");
+  const saveBtn = root.querySelector(".pf-save");
+
+  pkgFormImgUpload = setupImageUploadEl({
+    fileInput: root.querySelector(".pf-file"),
+    pickBtn: root.querySelector(".pf-pick"),
+    clearBtn: root.querySelector(".pf-clear"),
+    box: root.querySelector(".pf-imgbox"),
+    maxDim: 200, quality: 0.8
+  });
+
+  if(existingPkg){
+    labelInp.value = existingPkg.label || "";
+    priceInp.value = (existingPkg.price||"").toString().replace(/,/g,"");
+    oldInp.value = existingPkg.old ? existingPkg.old.toString().replace(/,/g,"") : "";
+    bestInp.checked = !!existingPkg.best;
+    pkgFormImgUpload.setUrl(existingPkg.img || null);
+  }
+
+  root.querySelector(".pf-cancel").addEventListener("click", ()=>{ closePkgInlineForm(); renderGamesAdmin(); });
+  saveBtn.addEventListener("click", async ()=>{
+    const label = labelInp.value.trim();
+    const price = Number(priceInp.value);
+    const oldRaw = oldInp.value;
+    const best = bestInp.checked;
+    if(!label){ msgEl.textContent = "Package အမည် ဖြည့်ပါ"; msgEl.className = "save-msg err"; return; }
+    if(!price || price<=0){ msgEl.textContent = "ဈေးနှုန်း မှန်ကန်အောင် ဖြည့်ပါ"; msgEl.className = "save-msg err"; return; }
+    saveBtn.disabled = true; msgEl.textContent = "Save လုပ်နေသည်…"; msgEl.className = "save-msg";
+    try{
+      const img = await pkgFormImgUpload.resolveUrl();
+      const id = existingPkg ? existingPkg.id : (slugify(gameName)+"-"+slugify(label)+"-"+Date.now().toString(36));
+      await db.collection("packages").doc(id).set({
+        id, game: gameName, label,
+        price: fmtK(price),
+        old: oldRaw ? fmtK(Number(oldRaw)) : null,
+        icon: img ? null : "gift",
+        img: img || null,
+        best
+      }, {merge:true});
+      closePkgInlineForm();
+      renderGamesAdmin();
+    }catch(err){
+      console.error("Save package failed", err);
+      msgEl.textContent = "Save မအောင်မြင်ပါ — " + (err.code || err.message);
+      msgEl.className = "save-msg err";
+      saveBtn.disabled = false;
+    }
+  });
+}
+
 document.getElementById("gamesListAdmin").addEventListener("click", async e=>{
+  const toggleId = e.target.closest("[data-toggle-game]")?.dataset.toggleGame;
   const editId = e.target.closest("[data-edit-game]")?.dataset.editGame;
   const delId = e.target.closest("[data-del-game]")?.dataset.delGame;
-  if(editId){ const g = gamesData.find(x=>x.id===editId); if(g) loadGameIntoForm(g); }
+  const addPkgGid = e.target.closest("[data-add-pkg]")?.dataset.addPkg;
+  const editPkgBtn = e.target.closest("[data-edit-pkg-inline]");
+  const delPkgId = e.target.closest("[data-del-pkg-inline]")?.dataset.delPkgInline;
+
+  if(toggleId){
+    if(expandedGameIds.has(toggleId)) expandedGameIds.delete(toggleId);
+    else expandedGameIds.add(toggleId);
+    if(openPkgFormGameId && openPkgFormGameId!==toggleId) closePkgInlineForm();
+    renderGamesAdmin();
+    return;
+  }
+  if(editId){ const g = gamesData.find(x=>x.id===editId); if(g) loadGameIntoForm(g); return; }
   if(delId){
     const g = gamesData.find(x=>x.id===delId);
     if(!g) return;
     if(!confirm(`"${g.name}" ကို ဖျက်မှာ သေချာလား? အောက်က package တွေ ရှိနေရင် ဖျက်ပစ်ပါဦးမလား?`)) return;
-    try{ await db.collection("games").doc(delId).delete(); if(editingGameId===delId) resetGameForm(); }
+    try{
+      if(openPkgFormGameId===delId) closePkgInlineForm();
+      await db.collection("games").doc(delId).delete();
+      if(editingGameId===delId) resetGameForm();
+    }
     catch(err){ console.error(err); alert("ဖျက်လို့ မရပါ — Firestore rules စစ်ကြည့်ပါ"); }
+    return;
+  }
+  if(addPkgGid){
+    const g = gamesData.find(x=>x.id===addPkgGid);
+    if(!g) return;
+    if(openPkgFormGameId===addPkgGid){ closePkgInlineForm(); renderGamesAdmin(); return; }
+    if(!expandedGameIds.has(addPkgGid)) expandedGameIds.add(addPkgGid);
+    openPkgInlineForm(addPkgGid, g.name, null);
+    renderGamesAdmin();
+    return;
+  }
+  if(editPkgBtn){
+    const pid = editPkgBtn.dataset.editPkgInline;
+    const gid = editPkgBtn.dataset.gid;
+    const p = packagesData.find(x=>x.id===pid);
+    const g = gamesData.find(x=>x.id===gid);
+    if(p && g){ openPkgInlineForm(gid, g.name, p); renderGamesAdmin(); }
+    return;
+  }
+  if(delPkgId){
+    const p = packagesData.find(x=>x.id===delPkgId);
+    if(!p) return;
+    if(!confirm(`"${p.label}" ကို ဖျက်မှာ သေချာလား?`)) return;
+    try{
+      if(pendingEditPkgId===delPkgId) closePkgInlineForm();
+      await db.collection("packages").doc(delPkgId).delete();
+    }
+    catch(err){ console.error(err); alert("ဖျက်လို့ မရပါ — Firestore rules စစ်ကြည့်ပါ"); }
+    return;
   }
 });
 
@@ -744,126 +945,213 @@ function bindGamesAdmin(){
   unsubGamesAdmin = db.collection("games").onSnapshot(snap=>{
     gamesData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
     renderGamesAdmin();
-    renderPkgGameSelect();
-    renderPkgsAdmin();
   }, err=>console.error("games admin listener error", err));
 }
 
-/* ---------- PACKAGES CRUD ---------- */
+/* ---------- PACKAGES DATA ----------
+   Packages no longer have their own tab/form — they're now added, edited,
+   and deleted directly inside each game's expandable row on the Games tab
+   (see the accordion code above). This just keeps packagesData in sync. */
 let packagesData = [];
-let editingPkgId = null;
 let unsubPkgsAdmin = null;
-
-function renderPkgGameSelect(){
-  const sel = document.getElementById("pkgGameSelect");
-  const filterSel = document.getElementById("pkgFilterGame");
-  const prevSel = sel.value, prevFilter = filterSel.value;
-  sel.innerHTML = gamesData.length
-    ? gamesData.map(g=>`<option value="${g.name}">${g.name}</option>`).join("")
-    : `<option value="">-- Games tab မှာ Game အရင်ထည့်ပါ --</option>`;
-  filterSel.innerHTML = `<option value="">-- Game အားလုံး --</option>` + gamesData.map(g=>`<option value="${g.name}">${g.name}</option>`).join("");
-  if(gamesData.some(g=>g.name===prevSel)) sel.value = prevSel;
-  if(gamesData.some(g=>g.name===prevFilter)) filterSel.value = prevFilter;
-}
-function resetPkgForm(){
-  editingPkgId = null;
-  document.getElementById("pkgFormTitle").textContent = "Package အသစ် ထည့်ရန်";
-  document.getElementById("pkgLabelInput").value = "";
-  document.getElementById("pkgPriceInput").value = "";
-  document.getElementById("pkgOldPriceInput").value = "";
-  document.getElementById("pkgBestInput").checked = false;
-  pkgImgUpload.reset();
-  document.getElementById("cancelPkgEditBtn").style.display = "none";
-  document.getElementById("savePkgMsg").textContent = "";
-}
-function loadPkgIntoForm(p){
-  editingPkgId = p.id;
-  document.getElementById("pkgFormTitle").textContent = `"${p.label}" ကို ပြင်ဆင်ရန်`;
-  document.getElementById("pkgGameSelect").value = p.game;
-  document.getElementById("pkgLabelInput").value = p.label || "";
-  document.getElementById("pkgPriceInput").value = (p.price||"").toString().replace(/,/g,"");
-  document.getElementById("pkgOldPriceInput").value = p.old ? p.old.toString().replace(/,/g,"") : "";
-  document.getElementById("pkgBestInput").checked = !!p.best;
-  pkgImgUpload.setUrl(p.img || null);
-  document.getElementById("cancelPkgEditBtn").style.display = "";
-  document.getElementById("savePkgMsg").textContent = "";
-  document.querySelector('.tab-btn[data-tab="packages"]').click();
-  window.scrollTo({top:0, behavior:"smooth"});
-}
-document.getElementById("cancelPkgEditBtn").addEventListener("click", resetPkgForm);
-
-function renderPkgsAdmin(){
-  const filterGame = document.getElementById("pkgFilterGame").value;
-  const list = filterGame ? packagesData.filter(p=>p.game===filterGame) : packagesData;
-  document.getElementById("pkgsCount").textContent = packagesData.length;
-  const wrap = document.getElementById("pkgsListAdmin");
-  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Package မရှိသေးပါ</div>`; return; }
-  wrap.innerHTML = list.map(p=>`
-    <div class="list-item">
-      <div class="li-thumb">${p.img ? `<img src="${p.img}">` : (p.game||"").slice(0,2).toUpperCase()}</div>
-      <div class="li-info">
-        <div class="li-title">${p.label}${p.best?'<span class="badge gold">Best</span>':''}</div>
-        <div class="li-sub">${p.game} — ${p.price} Ks${p.old?` <s>${p.old}</s>`:''}</div>
-      </div>
-      <div class="li-actions">
-        <button type="button" class="mini-btn" data-edit-pkg="${p.id}">ပြင်မည်</button>
-        <button type="button" class="mini-btn danger" data-del-pkg="${p.id}">ဖျက်မည်</button>
-      </div>
-    </div>`).join("");
-}
-document.getElementById("pkgFilterGame").addEventListener("change", renderPkgsAdmin);
-document.getElementById("pkgsListAdmin").addEventListener("click", async e=>{
-  const editId = e.target.closest("[data-edit-pkg]")?.dataset.editPkg;
-  const delId = e.target.closest("[data-del-pkg]")?.dataset.delPkg;
-  if(editId){ const p = packagesData.find(x=>x.id===editId); if(p) loadPkgIntoForm(p); }
-  if(delId){
-    const p = packagesData.find(x=>x.id===delId);
-    if(!p) return;
-    if(!confirm(`"${p.label}" ကို ဖျက်မှာ သေချာလား?`)) return;
-    try{ await db.collection("packages").doc(delId).delete(); if(editingPkgId===delId) resetPkgForm(); }
-    catch(err){ console.error(err); alert("ဖျက်လို့ မရပါ — Firestore rules စစ်ကြည့်ပါ"); }
-  }
-});
-
-document.getElementById("savePkgBtn").addEventListener("click", async ()=>{
-  const btn = document.getElementById("savePkgBtn");
-  const msg = document.getElementById("savePkgMsg");
-  const game = document.getElementById("pkgGameSelect").value;
-  const label = document.getElementById("pkgLabelInput").value.trim();
-  const price = Number(document.getElementById("pkgPriceInput").value);
-  const oldPriceRaw = document.getElementById("pkgOldPriceInput").value;
-  const best = document.getElementById("pkgBestInput").checked;
-  if(!game){ msg.textContent = "Game ရွေးချယ်ပါ"; msg.className = "save-msg err"; return; }
-  if(!label){ msg.textContent = "Package အမည် ဖြည့်ပါ"; msg.className = "save-msg err"; return; }
-  if(!price || price<=0){ msg.textContent = "ဈေးနှုန်း မှန်ကန်အောင် ဖြည့်ပါ"; msg.className = "save-msg err"; return; }
-  btn.disabled = true; msg.textContent = "Save လုပ်နေသည်…"; msg.className = "save-msg";
-  try{
-    const img = await pkgImgUpload.resolveUrl(label);
-    const id = editingPkgId || (slugify(game)+"-"+slugify(label)+"-"+Date.now().toString(36));
-    await db.collection("packages").doc(id).set({
-      id, game, label,
-      price: fmtK(price),
-      old: oldPriceRaw ? fmtK(Number(oldPriceRaw)) : null,
-      icon: img ? null : "gift",
-      img: img || null,
-      best
-    }, {merge:true});
-    msg.textContent = "Package သိမ်းပြီးပါပြီ"; msg.className = "save-msg ok";
-    resetPkgForm();
-  }catch(err){
-    console.error("Save package failed", err);
-    msg.textContent = "Save မအောင်မြင်ပါ — " + (err.code || err.message);
-    msg.className = "save-msg err";
-  } finally { btn.disabled = false; }
-});
-
 function bindPkgsAdmin(){
   if(unsubPkgsAdmin) unsubPkgsAdmin();
   unsubPkgsAdmin = db.collection("packages").onSnapshot(snap=>{
     packagesData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-    renderPkgsAdmin();
     renderGamesAdmin();
   }, err=>console.error("packages admin listener error", err));
+}
+
+/* ---------- TOP-UP REQUESTS (ORDERS) ----------
+   ⚠️ IMPORTANT — collection/field names below are a best guess since this
+   admin panel is a separate file from your user-facing store app. If your
+   store writes top-up requests under a different collection name or with
+   different field names, just change ORDERS_COLLECTION and the pick(...)
+   key lists inside renderOrdersAdmin()/updateOrderStatus() to match.
+   Assumed shape of one order document:
+     { uid, userName, userEmail, game, package (label), price,
+       playerId, serverId, proofImage, status: "pending"|"confirmed"|"rejected",
+       createdAt }
+   ------------------------------------------------------------------- */
+const ORDERS_COLLECTION = "orders";
+let ordersData = [];
+let unsubOrdersAdmin = null;
+
+function pick(obj, keys, fallback){
+  for(const k of keys){
+    if(obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
+  }
+  return fallback;
+}
+
+function statusLabelMy(s){
+  if(s === "confirmed") return "Confirmed";
+  if(s === "rejected") return "Rejected";
+  return "Pending";
+}
+
+function renderOrdersAdmin(){
+  const statusFilter = document.getElementById("orderStatusFilter").value;
+  const term = document.getElementById("orderSearchInput").value.trim().toLowerCase();
+  let list = ordersData;
+  if(statusFilter) list = list.filter(o=>(o.status||"pending").toLowerCase()===statusFilter);
+  if(term){
+    list = list.filter(o=>{
+      const game = (pick(o,["game","gameName"],"")).toLowerCase();
+      const uname = (pick(o,["userName","name","displayName"],"")).toLowerCase();
+      const uemail = (pick(o,["userEmail","email"],"")).toLowerCase();
+      return game.includes(term) || uname.includes(term) || uemail.includes(term);
+    });
+  }
+  const pendingCount = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="pending").length;
+  const confirmedCount = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="confirmed").length;
+  const rejectedCount = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="rejected").length;
+  document.getElementById("ordersCount").textContent = ordersData.length;
+  document.getElementById("ordersPendingCount").textContent = pendingCount;
+  document.getElementById("ordersConfirmedCount").textContent = confirmedCount;
+  document.getElementById("ordersRejectedCount").textContent = rejectedCount;
+
+  const tabBadge = document.getElementById("tabTopupBadge");
+  if(pendingCount > 0){ tabBadge.textContent = pendingCount; tabBadge.style.display = ""; }
+  else{ tabBadge.style.display = "none"; }
+
+  const wrap = document.getElementById("ordersListAdmin");
+  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Top-up request မတွေ့ပါ</div>`; return; }
+  wrap.innerHTML = list.map(o=>{
+    const game = pick(o,["game","gameName"],"—");
+    const pkgLabel = pick(o,["package","packageLabel","label","pkg"],"—");
+    const price = Number(pick(o,["price","amount","total"],0)) || 0;
+    const userName = pick(o,["userName","name","displayName"],"");
+    const userEmail = pick(o,["userEmail","email"],"");
+    const playerId = pick(o,["playerId","gameId","accountId","userGameId"],null);
+    const serverId = pick(o,["serverId","zoneId","server"],null);
+    const proof = pick(o,["proofImage","screenshot","paymentProof","proof"],null);
+    const adminNote = pick(o,["adminNote","note","rejectReason"],null);
+    const status = (o.status||"pending").toLowerCase();
+    return `
+    <div class="order-card" data-oid="${o.id}">
+      <div class="order-top">
+        <div class="li-thumb">${(game||"?").slice(0,2).toUpperCase()}</div>
+        <div class="li-info">
+          <div class="li-title">${game} — ${pkgLabel}</div>
+          <div class="li-sub">${userName || userEmail || "(user)"} • ${fmtK(price)} Ks</div>
+        </div>
+        <span class="badge status-${status}">${statusLabelMy(status)}</span>
+      </div>
+      <div class="order-detail" id="orderDetail-${o.id}">
+        <div class="d-row"><span>User</span><span>${userName || "—"}${userEmail?` (${userEmail})`:""}</span></div>
+        <div class="d-row"><span>Player / Server ID</span><span>${playerId || "—"}${serverId?` / ${serverId}`:""}</span></div>
+        <div class="d-row"><span>ဈေးနှုန်း</span><span>${fmtK(price)} Ks</span></div>
+        <div class="d-row"><span>Order ID</span><span>${o.id}</span></div>
+        <div class="d-row"><span>တင်သွင်းချိန်</span><span>${fmtDate(o.createdAt)}</span></div>
+        ${adminNote ? `<div class="d-row"><span>မှတ်ချက်</span><span>${adminNote}</span></div>` : ""}
+        ${proof ? `<div class="order-proof"><img src="${proof}"></div>` : ""}
+      </div>
+      ${status === "pending" ? `
+        <div class="order-actions">
+          <button type="button" class="mini-btn confirm-btn" data-confirm-order="${o.id}">Confirm</button>
+          <button type="button" class="mini-btn danger" data-reject-order="${o.id}">Reject</button>
+        </div>` : `
+        <div class="order-actions">
+          <button type="button" class="mini-btn" data-reset-order="${o.id}">Pending ပြန်ထားမည်</button>
+        </div>`}
+    </div>`;
+  }).join("");
+}
+document.getElementById("orderStatusFilter").addEventListener("change", renderOrdersAdmin);
+document.getElementById("orderSearchInput").addEventListener("input", renderOrdersAdmin);
+
+async function updateOrderStatus(orderId, newStatus, opts={}){
+  const ref = db.collection(ORDERS_COLLECTION).doc(orderId);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref);
+      if(!snap.exists) throw new Error("Order not found");
+      const data = snap.data();
+      const prevStatus = (data.status||"pending").toLowerCase();
+
+      // If rejecting a still-pending order, refund the price back to the
+      // user's wallet balance (users/{uid}.balance) inside the same transaction.
+      let userRef = null, userSnap = null;
+      if(newStatus === "rejected" && prevStatus === "pending"){
+        const uid = pick(data, ["uid","userId"], null);
+        const price = Number(pick(data, ["price","amount","total"], 0)) || 0;
+        if(uid && price > 0){
+          userRef = db.collection("users").doc(uid);
+          userSnap = await tx.get(userRef);
+        }
+      }
+
+      const update = {
+        status: newStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: auth.currentUser ? auth.currentUser.email : null
+      };
+      if(newStatus === "confirmed"){
+        update.confirmedAt = firebase.firestore.FieldValue.serverTimestamp();
+      }
+      if(newStatus === "rejected"){
+        update.rejectedAt = firebase.firestore.FieldValue.serverTimestamp();
+        if(opts.reason) update.adminNote = opts.reason;
+      }
+      if(newStatus === "pending"){
+        update.confirmedAt = firebase.firestore.FieldValue.delete();
+        update.rejectedAt = firebase.firestore.FieldValue.delete();
+      }
+
+      if(userRef && userSnap && userSnap.exists){
+        const price = Number(pick(data, ["price","amount","total"], 0)) || 0;
+        const curBal = Number(userSnap.data().balance || 0);
+        tx.update(userRef, { balance: curBal + price });
+      }
+      tx.update(ref, update);
+    });
+  }catch(err){
+    console.error("Order status update failed", err);
+    alert("Update မအောင်မြင်ပါ — " + (err.code || err.message));
+  }
+}
+
+document.getElementById("ordersListAdmin").addEventListener("click", e=>{
+  const confirmId = e.target.closest("[data-confirm-order]")?.dataset.confirmOrder;
+  const rejectId = e.target.closest("[data-reject-order]")?.dataset.rejectOrder;
+  const resetId = e.target.closest("[data-reset-order]")?.dataset.resetOrder;
+
+  if(confirmId){
+    if(!confirm("ဒီ Order ကို Confirm လုပ်မှာ သေချာလား? (Diamond/Item ကို Game ထဲကို ပို့ပေးပြီးမှသာ Confirm နှိပ်ပါ)")) return;
+    updateOrderStatus(confirmId, "confirmed");
+    return;
+  }
+  if(rejectId){
+    const reason = prompt("Reject အကြောင်းရင်း (မဖြည့်လည်းရ) — User ရဲ့ Balance ကို အလိုအလျောက် ပြန်အမ်းပေးပါမည်:", "");
+    if(reason === null) return; // admin cancelled the prompt
+    if(!confirm("ဒီ Order ကို Reject လုပ်မှာ သေချာလား? User ရဲ့ Wallet balance ကို ပြန်အမ်းပေးပါမည်။")) return;
+    updateOrderStatus(rejectId, "rejected", {reason});
+    return;
+  }
+  if(resetId){
+    if(!confirm("ပြန် Pending အခြေအနေ ပြောင်းမှာ သေချာလား?")) return;
+    updateOrderStatus(resetId, "pending");
+    return;
+  }
+  // Otherwise, toggle the order's detail panel open/closed.
+  const card = e.target.closest(".order-card");
+  if(card) document.getElementById("orderDetail-"+card.dataset.oid)?.classList.toggle("show");
+});
+
+function bindOrdersAdmin(){
+  if(unsubOrdersAdmin) unsubOrdersAdmin();
+  unsubOrdersAdmin = db.collection(ORDERS_COLLECTION).orderBy("createdAt","desc").limit(300).onSnapshot(snap=>{
+    ordersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    renderOrdersAdmin();
+  }, err=>{
+    console.error("orders admin listener error", err);
+    // Falls back to unordered fetch if createdAt is missing on old docs / index not ready.
+    db.collection(ORDERS_COLLECTION).limit(300).get().then(snap=>{
+      ordersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+      renderOrdersAdmin();
+    }).catch(err2=>console.error("orders fallback fetch failed", err2));
+  });
 }
 
 /* ---------- USERS LIST (read-only view) ---------- */
@@ -951,6 +1239,7 @@ auth.onAuthStateChanged(user=>{
   loadLogo();
   bindGamesAdmin();
   bindPkgsAdmin();
+  bindOrdersAdmin();
   bindUsersAdmin();
 });
 
@@ -993,11 +1282,30 @@ auth.onAuthStateChanged(user=>{
    match /users/{uid} {
      // Each user can read/write only their own doc from index.html;
      // this admin panel additionally needs to READ every user doc to
-     // show the Users tab, so admin emails get a read exception too.
+     // show the Users tab, and needs to WRITE (update balance) when an
+     // admin rejects a top-up order and the wallet is refunded — so
+     // admin emails get a read+write exception too.
      allow read: if request.auth != null
        && (request.auth.uid == uid
            || request.auth.token.email in ["linpyaesone130@gmail.com"]);
-     allow write: if request.auth != null && request.auth.uid == uid;
+     allow write: if request.auth != null
+       && (request.auth.uid == uid
+           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
+   }
+
+   match /orders/{orderId} {
+     // ⚠️ Adjust the collection name here (and ORDERS_COLLECTION in this
+     // file's <script>) if your store app uses a different name, e.g.
+     // "topups" or "topupRequests".
+     // Users can create/read their own orders; only admins can update
+     // status (confirm/reject) or delete.
+     allow read: if request.auth != null
+       && (resource.data.uid == request.auth.uid
+           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
+     allow create: if request.auth != null
+       && request.resource.data.uid == request.auth.uid;
+     allow update, delete: if request.auth != null
+       && request.auth.token.email in ["linpyaesone130@gmail.com"];
    }
 
    Keep this list in sync with ADMIN_EMAILS above — this file's
