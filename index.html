@@ -404,7 +404,6 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 /* =========================================================
    FIREBASE CONFIG — must be the SAME project/config as index.html
@@ -421,7 +420,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn("Auth persistence:", err));
 
 /* =========================================================
@@ -577,9 +575,29 @@ function fmtDate(ts){
 
 /* ---------- IMAGE UPLOAD HELPER ----------
    Reused for game icon, game banner, and package image. Shows an instant
-   local preview on file pick; the actual Firebase Storage upload only
-   happens when the surrounding form is saved (resolveUrl()). */
-function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, folder}){
+   local preview on file pick. On save, the picked image is resized/
+   compressed in the browser (canvas) and stored as a base64 data-URL
+   directly inside the Firestore document — no Firebase Storage / Blaze
+   plan needed, works fully on the free Spark plan. Firestore documents
+   have a 1MB limit, so images are kept small (see maxDim/quality below). */
+function compressImage(dataUrl, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      if(w >= h){ if(w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; } }
+      else{ if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; } }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = ()=>reject(new Error("ပုံဖတ်လို့ မရပါ — file တခြားတစ်ခု ထပ်စမ်းပါ"));
+    img.src = dataUrl;
+  });
+}
+function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, maxDim, quality}){
   const fileInput = document.getElementById(fileInputId);
   const pickBtn = document.getElementById(pickBtnId);
   const clearBtn = document.getElementById(clearBtnId);
@@ -608,22 +626,20 @@ function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, folder}){
   return {
     setUrl(url){ currentUrl = url || null; pendingDataUrl = null; fileInput.value = ""; render(); },
     reset(){ currentUrl = null; pendingDataUrl = null; fileInput.value = ""; render(); },
-    async resolveUrl(pathPrefix){
+    async resolveUrl(){
       if(pendingDataUrl){
-        const path = `${folder}/${slugify(pathPrefix)}-${Date.now()}.jpg`;
-        const ref = storage.ref(path);
-        await ref.putString(pendingDataUrl, "data_url");
-        const url = await ref.getDownloadURL();
-        currentUrl = url; pendingDataUrl = null;
-        return url;
+        const compressed = await compressImage(pendingDataUrl, maxDim, quality);
+        currentUrl = compressed;
+        pendingDataUrl = null;
+        return compressed;
       }
       return currentUrl;
     }
   };
 }
-const gameIconUpload = setupImageUpload({fileInputId:"gameIconFile", pickBtnId:"gameIconPickBtn", clearBtnId:"gameIconClearBtn", boxId:"gameIconBox", folder:"admin-uploads/games"});
-const gameBannerUpload = setupImageUpload({fileInputId:"gameBannerFile", pickBtnId:"gameBannerPickBtn", clearBtnId:"gameBannerClearBtn", boxId:"gameBannerBox", folder:"admin-uploads/games"});
-const pkgImgUpload = setupImageUpload({fileInputId:"pkgImgFile", pickBtnId:"pkgImgPickBtn", clearBtnId:"pkgImgClearBtn", boxId:"pkgImgBox", folder:"admin-uploads/packages"});
+const gameIconUpload = setupImageUpload({fileInputId:"gameIconFile", pickBtnId:"gameIconPickBtn", clearBtnId:"gameIconClearBtn", boxId:"gameIconBox", maxDim:200, quality:0.8});
+const gameBannerUpload = setupImageUpload({fileInputId:"gameBannerFile", pickBtnId:"gameBannerPickBtn", clearBtnId:"gameBannerClearBtn", boxId:"gameBannerBox", maxDim:640, quality:0.7});
+const pkgImgUpload = setupImageUpload({fileInputId:"pkgImgFile", pickBtnId:"pkgImgPickBtn", clearBtnId:"pkgImgClearBtn", boxId:"pkgImgBox", maxDim:200, quality:0.8});
 
 /* ---------- GAMES CRUD ---------- */
 let gamesData = [];
@@ -988,14 +1004,11 @@ auth.onAuthStateChanged(user=>{
    allowlist alone does NOT stop someone from writing directly via
    the Firestore API, only the Security Rules do that.
 
-   Also add matching rules for Firebase STORAGE (used by the Games/
-   Packages image-upload feature and the Logo uploader):
-
-   match /admin-uploads/{allPaths=**} {
-     allow read: if true;
-     allow write: if request.auth != null
-       && request.auth.token.email in ["linpyaesone130@gmail.com"];
-   }
+   NOTE: Games/Packages/Logo images are stored as compressed base64
+   data-URLs directly inside the Firestore documents (see the
+   compressImage()/setupImageUpload() helpers above) — this app does
+   NOT use Firebase Storage, so no Storage rules or Blaze billing
+   plan are required.
    ========================================================= */
 </script>
 </body>
