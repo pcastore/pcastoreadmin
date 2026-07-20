@@ -3,1018 +3,399 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>PCA Game Store — Admin Panel</title>
+<title>PCA Admin — Currency Rates</title>
+<meta name="theme-color" content="#150B2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#18191A;
-  --surface:#242526;
-  --surface-2:#3A3B3C;
-  --surface-3:#4A4B4D;
-  --blue:#2374E1;
-  --blue-soft:rgba(35,116,225,.15);
-  --gold:#F7B733;
-  --gold-soft:rgba(247,183,51,.15);
-  --green:#42B72A;
-  --green-soft:rgba(66,183,42,.15);
-  --red:#F02849;
-  --red-soft:rgba(240,40,73,.15);
-  --text:#E4E6EB;
-  --text-dim:#B0B3B8;
-  --text-faint:#767980;
-  --border:#3E4042;
-  --radius:14px;
-  font-size:16px;
+  --bg:#150B2E;
+  --surface:#20123F;
+  --surface-2:#2E1958;
+  --surface-3:#402076;
+  --blue:#FF2E9F;
+  --blue-soft:rgba(255,46,159,.16);
+  --cyan:#22E1FF;
+  --cyan-soft:rgba(34,225,255,.16);
+  --gold:#FFC94A;
+  --green:#2FE88B;
+  --red:#FF4365;
+  --text:#F1EEFB;
+  --text-dim:#BFB3E0;
+  --text-faint:#8677B3;
+  --border:#3D2274;
+  --radius:10px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
 body{
   background:var(--bg);color:var(--text);
-  font-family:"Segoe UI",Helvetica,Arial,"Padauk","Myanmar Text",sans-serif;
+  font-family:"Baloo 2","Segoe UI",Helvetica,Arial,"Padauk","Myanmar Text",sans-serif;
+  min-height:100%;
 }
-.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
-button{font-family:inherit;}
+.shell{max-width:520px;margin:0 auto;padding:20px 16px 60px;}
 
-/* ---------- APP SHELL ---------- */
-.app{min-height:100vh;}
-.topbar{
-  position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;padding:12px 18px;
-}
-.brand{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;}
-.brand .icon{width:20px;height:20px;color:var(--gold);}
-.brand span{font-weight:600;color:var(--text-faint);font-size:12.5px;margin-left:4px;}
-.topbar-right{display:flex;align-items:center;gap:12px;}
-#adminEmail{font-size:12px;color:var(--text-faint);}
-.btn-ghost{
-  background:var(--surface-2);color:var(--text);border:none;border-radius:9px;
-  padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;
-}
-.btn-ghost:hover{background:var(--surface-3);}
+/* ---- Login gate (reuses the same Google-only flow as index.html) ---- */
+.login-gate{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:28px;}
+.login-gate.hide{display:none;}
+.login-card{width:100%;max-width:340px;text-align:center;}
+.login-logo{width:64px;height:64px;border-radius:18px;margin:0 auto 18px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+.login-logo img{width:100%;height:100%;object-fit:cover;display:block;}
+.brand-mark{width:36px;height:36px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden;}
+.brand-mark img{width:100%;height:100%;object-fit:cover;display:block;}
+.logo-skeleton{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:4px;width:100%;height:100%;padding:10px;}
+.brand-mark .logo-skeleton{padding:5px;gap:2px;}
+.logo-skeleton span{background:var(--surface-3);border-radius:4px;animation:logo-skeleton-pulse 1.4s ease-in-out infinite;}
+.logo-skeleton span:nth-child(2){animation-delay:.15s;}
+.logo-skeleton span:nth-child(3){animation-delay:.3s;}
+.logo-skeleton span:nth-child(4){animation-delay:.45s;}
+@keyframes logo-skeleton-pulse{0%,100%{opacity:.35;}50%{opacity:.85;}}
+.login-title{font-size:19px;font-weight:800;margin-bottom:6px;}
+.login-sub{font-size:12.5px;color:var(--text-faint);margin-bottom:30px;line-height:1.5;}
+.google-signin-btn{width:100%;padding:13px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;color:#1f1f1f;font-size:14.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;}
+.google-signin-btn:active{opacity:.85;}
+.google-signin-btn svg{width:19px;height:19px;flex-shrink:0;}
+.login-error{font-size:11.5px;color:var(--red);margin-top:14px;min-height:14px;}
+.denied-box{background:var(--surface);border:1px solid var(--red);border-radius:var(--radius);padding:16px;margin-top:18px;font-size:12.5px;color:var(--text-dim);text-align:left;line-height:1.5;}
 
-.tabs{
-  display:flex;gap:4px;padding:10px 14px 0;background:var(--surface);border-bottom:1px solid var(--border);
-  overflow-x:auto;
-}
-.tab{
-  background:none;border:none;color:var(--text-faint);padding:10px 14px;font-size:13px;font-weight:700;
-  cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:6px;
-}
-.tab.active{color:var(--text);border-bottom-color:var(--blue);}
-.tab-badge{
-  background:var(--red);color:#fff;font-size:10.5px;font-weight:800;border-radius:10px;
-  padding:1px 6px;min-width:16px;text-align:center;
-}
-.content{max-width:920px;margin:0 auto;padding:20px 16px 60px;}
-.tab-panel{display:none;}
-.tab-panel.active{display:block;}
+/* ---- Admin app ---- */
+.app{display:none;}
+.app.show{display:block;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-name{font-weight:800;font-size:15px;}
+.brand-sub{font-size:10.5px;color:var(--text-faint);}
+.signout-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);font-size:11.5px;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;}
+.signout-btn:active{background:var(--surface-3);}
 
-/* ---------- OVERVIEW ---------- */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
-.stat-card .v{font-size:22px;font-weight:800;}
-.stat-card .l{font-size:11.5px;color:var(--text-faint);margin-top:3px;}
-.stat-card .icon{color:var(--blue);margin-bottom:8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;}
+.card-title{font-size:14.5px;font-weight:800;margin-bottom:4px;}
+.card-sub{font-size:11.5px;color:var(--text-faint);margin-bottom:16px;line-height:1.5;}
+.rate-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.rate-flag{font-size:20px;width:28px;text-align:center;}
+.rate-label{flex:1;}
+.rate-code{font-size:13px;font-weight:800;}
+.rate-name{font-size:10.5px;color:var(--text-faint);}
+.rate-input-wrap{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;}
+.rate-input-wrap input{width:90px;background:transparent;border:0;color:var(--text);font-size:14px;font-weight:700;text-align:right;font-family:inherit;}
+.rate-input-wrap input:focus{outline:none;}
+.rate-unit{font-size:11px;color:var(--text-faint);}
+.mmk-row{opacity:.55;}
+.text-input{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;}
+.text-input:focus{outline:none;border-color:var(--blue);}
 
-/* ---------- FILTER CHIPS ---------- */
-.chip-filters{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;}
-.chip{
-  background:var(--surface-2);border:1px solid transparent;color:var(--text-dim);
-  border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;
-}
-.chip.active{background:var(--blue-soft);color:var(--blue);border-color:var(--blue);}
+.save-btn{width:100%;padding:13px;border-radius:10px;border:0;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px;}
+.save-btn:active{opacity:.85;}
+.save-btn:disabled{opacity:.5;pointer-events:none;}
+.save-msg{font-size:11.5px;text-align:center;margin-top:10px;min-height:14px;}
+.save-msg.ok{color:var(--green);}
+.save-msg.err{color:var(--red);}
 
-/* ---------- DATA LIST / CARDS ---------- */
-.data-list{display:flex;flex-direction:column;gap:10px;}
-.data-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;
-}
-.data-card .main{flex:1;min-width:180px;}
-.data-card .title{font-size:14px;font-weight:700;}
-.data-card .sub{font-size:12px;color:var(--text-faint);margin-top:3px;line-height:1.5;}
-.data-card .amt{font-size:15px;font-weight:800;white-space:nowrap;}
-.data-card .amt.pos{color:var(--green);}
-.data-card .amt.neg{color:var(--text);}
-.pill{
-  font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:12px;white-space:nowrap;
-  display:inline-flex;align-items:center;gap:4px;
-}
-.pill.pending{background:var(--gold-soft);color:var(--gold);}
-.pill.done, .pill.fulfilled{background:var(--green-soft);color:var(--green);}
-.pill.cancelled, .pill.rejected{background:var(--red-soft);color:var(--red);}
-.data-card .actions{display:flex;gap:8px;width:100%;margin-top:4px;}
-.btn-sm{
-  border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;flex:1;
-}
-.btn-approve{background:var(--green);color:#fff;}
-.btn-reject{background:var(--surface-2);color:var(--red);}
-.btn-view{background:var(--surface-2);color:var(--text);}
-.empty-state{text-align:center;padding:50px 20px;color:var(--text-faint);font-size:13px;}
-.receipt-thumb{
-  width:44px;height:44px;border-radius:8px;object-fit:cover;cursor:pointer;border:1px solid var(--border);
-}
-
-/* ---------- CATALOG ---------- */
-.catalog-subtabs{display:flex;gap:8px;margin-bottom:14px;}
-.subtab{
-  background:var(--surface-2);border:none;color:var(--text-dim);border-radius:9px;
-  padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;
-}
-.subtab.active{background:var(--blue);color:#fff;}
-.catalog-toolbar{display:flex;justify-content:flex-end;margin-bottom:14px;}
-.btn-primary{
-  background:var(--blue);color:#fff;border:none;border-radius:9px;padding:9px 16px;
-  font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;
-}
-.catalog-item-icon{
-  width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.catalog-item-icon .icon{width:18px;height:18px;color:#fff;}
-.icon-edit, .icon-del{
-  background:var(--surface-2);border:none;color:var(--text-dim);border-radius:8px;
-  width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
-}
-.icon-del:hover{color:var(--red);}
-
-/* ---------- LEADERBOARD ---------- */
-.rank-row{
-  display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:12px 16px;
-}
-.rank-num{width:22px;text-align:center;font-weight:800;color:var(--text-faint);}
-.rank-ava{
-  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;color:#fff;flex-shrink:0;
-}
-.rank-info{flex:1;}
-.rank-info .n{font-size:13.5px;font-weight:700;}
-.rank-val{font-size:13.5px;font-weight:800;color:var(--gold);white-space:nowrap;}
-
-/* ---------- OVERLAY / MODAL ---------- */
-.overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s;
-}
-.overlay.show{opacity:1;pointer-events:auto;}
-.modal{
-  position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);width:92%;max-width:420px;
-  background:var(--surface);border-radius:var(--radius);z-index:50;opacity:0;pointer-events:none;
-  transition:all .2s;max-height:86vh;display:flex;flex-direction:column;
-}
-.modal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%);}
-.modal-header{
-  display:flex;align-items:center;justify-content:space-between;padding:16px 18px;
-  border-bottom:1px solid var(--border);font-size:15px;font-weight:800;
-}
-.modal-header button{background:none;border:none;color:var(--text-faint);cursor:pointer;}
-.modal-body{padding:18px;overflow-y:auto;}
-.form-group{margin-bottom:14px;}
-.form-label{font-size:12px;color:var(--text-faint);margin-bottom:6px;display:block;font-weight:600;}
-.form-input, .form-select, textarea.form-input{
-  width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);
-  border-radius:9px;padding:11px 13px;font-size:13.5px;outline:none;font-family:inherit;
-}
-.form-input:focus, .form-select:focus{border-color:var(--blue);}
-.form-row{display:flex;gap:10px;}
-.form-row .form-group{flex:1;}
-.form-check{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;}
-.icon-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
-.icon-picker button{
-  background:var(--surface-2);border:2px solid transparent;border-radius:9px;height:38px;
-  display:flex;align-items:center;justify-content:center;color:var(--text-dim);cursor:pointer;
-}
-.icon-picker button.selected{border-color:var(--blue);color:var(--blue);}
-.modal-confirm{
-  width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px;
-  font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;
-}
-.modal-danger{
-  width:100%;background:none;color:var(--red);border:1px solid var(--red);border-radius:10px;padding:12px;
-  font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;
-}
-
-/* ---------- LIGHTBOX ---------- */
-.lightbox{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:60;display:none;
-  align-items:center;justify-content:center;padding:24px;
-}
-.lightbox.show{display:flex;}
-.lightbox img{max-width:100%;max-height:100%;border-radius:10px;}
-
-/* ---------- TOAST ---------- */
-.toast{
-  position:fixed;left:50%;bottom:-60px;transform:translateX(-50%);background:var(--surface-3);
-  color:var(--text);padding:12px 18px;border-radius:12px;font-size:13px;display:flex;align-items:center;gap:8px;
-  z-index:70;transition:bottom .25s;box-shadow:0 6px 20px rgba(0,0,0,.3);
-}
-.toast.show{bottom:24px;}
-
-@media (max-width:600px){
-  .stat-grid{grid-template-columns:repeat(2,1fr);}
-  .data-card .actions{flex-direction:row;}
-}
+.meta-note{font-size:11px;color:var(--text-faint);line-height:1.6;}
+.meta-note b{color:var(--text-dim);}
 </style>
 </head>
 <body>
 
-<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
-<defs>
-<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></symbol>
-<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9"/></symbol>
-<symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5V3z"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol>
-<symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><circle cx="17" cy="13" r="1.4"/></symbol>
-<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0V4z"/><path d="M6 5H4v2a3 3 0 0 0 3 3M18 5h2v2a3 3 0 0 1-3 3"/><path d="M10 14v3H8l-1 3h10l-1-3h-2v-3"/></symbol>
-<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5.5-5.5L9 17"/></symbol>
-<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
-<symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M15 16l4-4-4-4M19 12H9"/></symbol>
-<symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></symbol>
-<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21 19H3z"/><path d="M12 10v4M12 17h.01"/></symbol>
-<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
-<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></symbol>
-<symbol id="i-diamond" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3 7 9l5 12 5-12-2-6"/></symbol>
-<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
-<symbol id="i-swords" viewBox="0 0 24 24"><path d="M5 19 19 5M19 19 5 5"/><path d="M5 19l2-2M19 19l-2-2M5 5l2 2M19 5l-2 2"/></symbol>
-<symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.3"/><path d="M12 2c2 0 3.2 1.6 3.2 3.7S13.7 9 12 9s-3.2-1.6-3.2-3.3S10 2 12 2z"/><path d="M12 22c2 0 3.2-1.6 3.2-3.7S13.7 15 12 15s-3.2 1.6-3.2 3.3S10 22 12 22z"/><path d="M2 12c0-2 1.6-3.2 3.7-3.2S9 10.3 9 12s-1.6 3.2-3.3 3.2S2 14 2 12z"/><path d="M22 12c0-2-1.6-3.2-3.7-3.2S15 10.3 15 12s1.6 3.2 3.3 3.2S22 14 22 12z"/></symbol>
-<symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/></symbol>
-<symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></symbol>
-<symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"/><path d="M5 10v9M9 10v9M15 10v9M19 10v9M3 21h18M3 10h18"/></symbol>
-<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
-<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></symbol>
-<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 19h14"/></symbol>
-<symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4V5z"/></symbol>
-</defs>
-</svg>
-<!-- ================= APP ================= -->
+<div class="login-gate" id="loginGate">
+  <div class="login-card">
+    <div class="login-logo" id="loginLogoBox"><span class="logo-skeleton"><span></span><span></span><span></span><span></span></span></div>
+    <div class="login-title">PCA Admin</div>
+    <div class="login-sub">Admin Google Account ဖြင့် Login ဝင်ပါ</div>
+    <button class="google-signin-btn" id="googleSignInBtn">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.5 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4c-7.5 0-14 4.2-17.7 10.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.6C29.6 35 26.9 36 24 36c-5.4 0-9.9-3.5-11.3-8.3l-6.6 5.1C9.9 39.6 16.4 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1 3-3.1 5.4-5.8 7l6.6 5.6C39.4 38 44 32 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+      </svg>
+      <span id="googleSignInBtnLabel">Continue with Google</span>
+    </button>
+    <div class="login-error" id="loginError"></div>
+    <div class="denied-box" id="deniedBox" style="display:none">
+      ဒီ Google account (<span id="deniedEmail"></span>) မှာ admin ခွင့်ပြုချက် မရှိပါ။<br><br>
+      Admin ဖြစ်ချင်ရင် <code>ADMIN_EMAILS</code> list ထဲကို ဒီ email ကို ထည့်ပေးရပါမယ် (ဒီ file ရဲ့ script အထဲက အပေါ်ဆုံးမှာ ရှိပါတယ်)။
+    </div>
+  </div>
+</div>
+
 <div class="app" id="app">
-  <header class="topbar">
-    <div class="brand"><svg class="icon"><use href="#i-coin"></use></svg> PCA Game Store <span>Admin</span></div>
-  </header>
-
-  <nav class="tabs">
-    <button class="tab active" data-tab="overview"><svg class="icon" style="width:15px;height:15px"><use href="#i-home"></use></svg> Overview</button>
-    <button class="tab" data-tab="orders"><svg class="icon" style="width:15px;height:15px"><use href="#i-receipt"></use></svg> Orders <span class="tab-badge" id="ordersBadge" style="display:none"></span></button>
-    <button class="tab" data-tab="topups"><svg class="icon" style="width:15px;height:15px"><use href="#i-wallet"></use></svg> Top-ups <span class="tab-badge" id="topupsBadge" style="display:none"></span></button>
-    <button class="tab" data-tab="catalog"><svg class="icon" style="width:15px;height:15px"><use href="#i-image"></use></svg> Catalog</button>
-    <button class="tab" data-tab="leaderboard"><svg class="icon" style="width:15px;height:15px"><use href="#i-trophy"></use></svg> Leaderboard</button>
-    <button class="tab" data-tab="users"><svg class="icon" style="width:15px;height:15px"><use href="#i-user"></use></svg> Users</button>
-  </nav>
-
-  <main class="content">
-
-    <!-- OVERVIEW -->
-    <section class="tab-panel active" id="tab-overview">
-      <div class="stat-grid">
-        <div class="stat-card"><svg class="icon"><use href="#i-receipt"></use></svg><div class="v" id="statPendingOrders">—</div><div class="l">Pending orders</div></div>
-        <div class="stat-card"><svg class="icon"><use href="#i-wallet"></use></svg><div class="v" id="statPendingTopups">—</div><div class="l">Pending top-ups</div></div>
-        <div class="stat-card"><svg class="icon"><use href="#i-coin"></use></svg><div class="v" id="statTodayRevenue">—</div><div class="l">Approved today (Ks)</div></div>
-        <div class="stat-card"><svg class="icon"><use href="#i-user"></use></svg><div class="v" id="statTotalUsers">—</div><div class="l">Customers</div></div>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark" id="topbarLogoBox"><span class="logo-skeleton"><span></span><span></span><span></span><span></span></span></div>
+        <div>
+          <div class="brand-name">PCA Admin</div>
+          <div class="brand-sub" id="adminEmailLabel"></div>
+        </div>
       </div>
-      <div class="section-title" style="margin:20px 0 10px;font-size:13px;color:var(--text-faint);font-weight:700;">Revenue — last 7 days (Ks)</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:flex-end;gap:8px;height:180px;" id="revenueChart"></div>
-    </section>
+      <button class="signout-btn" id="signOutBtn">ထွက်မည်</button>
+    </div>
 
-    <!-- ORDERS -->
-    <section class="tab-panel" id="tab-orders">
-      <div class="chip-filters" id="orderFilters">
-        <button class="chip active" data-filter="pending">Pending</button>
-        <button class="chip" data-filter="fulfilled">Fulfilled</button>
-        <button class="chip" data-filter="cancelled">Cancelled</button>
-        <button class="chip" data-filter="all">All</button>
+    <div class="card">
+      <div class="card-title">App Logo</div>
+      <div class="card-sub">
+        Login screen နှင့် header ပေါ်က logo ပုံကို ပြင်ပါ။ Image URL တစ်ခု ထည့်ပါ
+        (Firebase Storage, Imgur စတာမှာ upload လုပ်ပြီး link ကူးထည့်နိုင်ပါတယ်)။
+        မထည့်ရသေးရင် skeleton placeholder ကိုပဲ user တွေ မြင်ရမှာပါ။
       </div>
-      <div class="catalog-toolbar"><button class="btn-ghost" id="exportOrdersBtn"><svg class="icon" style="width:14px;height:14px"><use href="#i-receipt"></use></svg> Export CSV</button></div>
-      <div class="data-list" id="ordersList"></div>
-    </section>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div class="login-logo" id="logoPreviewBox" style="width:52px;height:52px;border-radius:14px;margin:0;flex-shrink:0;">
+          <span class="logo-skeleton"><span></span><span></span><span></span><span></span></span>
+        </div>
+        <input class="text-input" id="logoUrlInput" placeholder="https://…/logo.png" style="flex:1;">
+      </div>
+      <button class="save-btn" id="saveLogoBtn">Save Logo</button>
+      <div class="save-msg" id="saveLogoMsg"></div>
+    </div>
 
-    <!-- TOP-UPS -->
-    <section class="tab-panel" id="tab-topups">
-      <div class="chip-filters" id="topupFilters">
-        <button class="chip active" data-filter="pending">Pending</button>
-        <button class="chip" data-filter="done">Done</button>
-        <button class="chip" data-filter="rejected">Rejected</button>
-        <button class="chip" data-filter="all">All</button>
+    <div class="card">
+      <div class="card-title">ငွေကြေး ဖလှယ်နှုန်း (Exchange Rates)</div>
+      <div class="card-sub">
+        Wallet balance နှင့် ငွေပေးချေမှုအားလုံးက <b>MMK (Ks)</b> ဖြင့်သာ တွက်ချက်ပါသည်။
+        ဒီနေရာက rate တွေက app ထဲမှာ user တွေကို "ခန့်မှန်း" ပြသဖို့ display conversion ပဲ ဖြစ်ပါတယ်
+        — 1 unit က MMK ဘယ်လောက်ညီမျှလဲဆိုတာ ရေးထည့်ပါ။
       </div>
-      <div class="catalog-toolbar"><button class="btn-ghost" id="exportTopupsBtn"><svg class="icon" style="width:14px;height:14px"><use href="#i-wallet"></use></svg> Export CSV</button></div>
-      <div class="data-list" id="topupsList"></div>
-    </section>
 
-    <!-- CATALOG -->
-    <section class="tab-panel" id="tab-catalog">
-      <div class="catalog-subtabs" id="catalogSubtabs">
-        <button class="subtab active" data-cat="games">Games</button>
-        <button class="subtab" data-cat="packages">Packages</button>
-        <button class="subtab" data-cat="payments">Payment Methods</button>
-        <button class="subtab" data-cat="bullets">Bullet Chat</button>
+      <div class="rate-row mmk-row">
+        <div class="rate-flag">🇲🇲</div>
+        <div class="rate-label"><div class="rate-code">MMK</div><div class="rate-name">Myanmar Kyat (base unit)</div></div>
+        <div class="rate-input-wrap"><span class="rate-unit">1 MMK =</span><input value="1" disabled></div>
       </div>
-      <div class="catalog-toolbar" style="justify-content:space-between;">
-        <button class="btn-ghost" id="importDefaultsBtn"><svg class="icon" style="width:14px;height:14px"><use href="#i-download"></use></svg> Import Store Defaults</button>
-        <button class="btn-primary" id="addCatalogBtn"><svg class="icon" style="width:14px;height:14px"><use href="#i-plus"></use></svg> Add</button>
-      </div>
-      <div class="data-list" id="catalogList"></div>
-    </section>
 
-    <!-- LEADERBOARD -->
-    <section class="tab-panel" id="tab-leaderboard">
-      <div class="catalog-toolbar" style="justify-content:flex-end;">
-        <button class="btn-ghost" id="clearLeaderboardBtn" style="color:var(--red);"><svg class="icon" style="width:14px;height:14px"><use href="#i-x"></use></svg> Clear All</button>
+      <div class="rate-row">
+        <div class="rate-flag">🇺🇸</div>
+        <div class="rate-label"><div class="rate-code">USD</div><div class="rate-name">US Dollar</div></div>
+        <div class="rate-input-wrap"><span class="rate-unit">1 USD =</span><input type="number" inputmode="decimal" id="rateUSD" step="1" min="1"><span class="rate-unit">Ks</span></div>
       </div>
-      <div class="data-list" id="leaderboardList"></div>
-    </section>
 
-    <!-- USERS -->
-    <section class="tab-panel" id="tab-users">
-      <div class="form-group"><input class="form-input" id="userSearchInput" placeholder="Search name / phone / email"></div>
-      <div class="chip-filters" id="userFilters">
-        <button class="chip active" data-filter="all">All</button>
-        <button class="chip" data-filter="linked">Google Linked</button>
-        <button class="chip" data-filter="guest">Guest</button>
+      <div class="rate-row">
+        <div class="rate-flag">🇹🇭</div>
+        <div class="rate-label"><div class="rate-code">THB</div><div class="rate-name">Thai Baht</div></div>
+        <div class="rate-input-wrap"><span class="rate-unit">1 THB =</span><input type="number" inputmode="decimal" id="rateTHB" step="1" min="1"><span class="rate-unit">Ks</span></div>
       </div>
-      <div class="data-list" id="usersList"></div>
-    </section>
 
-  </main>
+      <div class="rate-row">
+        <div class="rate-flag">🇸🇬</div>
+        <div class="rate-label"><div class="rate-code">SGD</div><div class="rate-name">Singapore Dollar</div></div>
+        <div class="rate-input-wrap"><span class="rate-unit">1 SGD =</span><input type="number" inputmode="decimal" id="rateSGD" step="1" min="1"><span class="rate-unit">Ks</span></div>
+      </div>
+
+      <button class="save-btn" id="saveRatesBtn">Save Rates</button>
+      <div class="save-msg" id="saveMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="font-size:12.5px">Note</div>
+      <div class="meta-note">
+        ဒီနေရာမှာ Save လုပ်လိုက်တာနဲ့ <b>index.html</b> ဖွင့်ထားသူအားလုံးရဲ့ currency display ကို
+        live update ဖြစ်သွားပါမယ် (redeploy/refresh မလိုပါ)။ Rate တွေကို <code>config/currency</code>
+        ဆိုတဲ့ Firestore document ထဲမှာ သိမ်းထားပါတယ်.
+      </div>
+    </div>
+  </div>
 </div>
-
-<!-- OVERLAY + CATALOG MODAL -->
-<div class="overlay" id="overlay"></div>
-<div class="modal" id="catalogModal">
-  <div class="modal-header"><span id="catalogModalTitle">Add Game</span><button id="catalogModalClose"><svg class="icon"><use href="#i-x"></use></svg></button></div>
-  <div class="modal-body" id="catalogModalBody"></div>
-</div>
-
-<!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox"><img id="lightboxImg" src="" alt="receipt"></div>
-
-<div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* =========================================================
-   FIREBASE CONFIG
-   ---------------------------------------------------------
-   ဒီနေရာမှာ game-store.html အတွက် သုံးထားတဲ့ Firebase project
-   config အတူတူကို ကူးထည့်ပါ — data တွေ အားလုံး project တစ်ခုတည်း
-   ထဲမှာသာ ရှိတာမို့ project မတူရင် ဒီ admin panel က ဘာမှမမြင်ရပါ။
+   FIREBASE CONFIG — must be the SAME project/config as index.html
    ========================================================= */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyB4kcQXS-C3zXxKg2Lj1TPllEAbJ30noY4",
+  authDomain: "pca-store-47a7f.firebaseapp.com",
+  projectId: "pca-store-47a7f",
+  storageBucket: "pca-store-47a7f.firebasestorage.app",
+  messagingSenderId: "720925768139",
+  appId: "1:720925768139:web:cc4f1ae89dfd8bd1f2de4e",
+  measurementId: "G-QHC6V0C7HD"
 };
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.firestore();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn("Auth persistence:", err));
 
 /* =========================================================
-   TELEGRAM (send approval/rejection messages to the customer)
+   ADMIN ALLOWLIST
    ---------------------------------------------------------
-   Use the SAME bot token as game-store.html. The customer's chat id
-   comes from the "Telegram Chat ID" field they fill in their profile
-   (Profile > Edit > Telegram Chat ID in the store app).
+   Only these Google emails can access this page. Add/remove
+   emails here. (For stronger security, move this check into
+   Firestore Security Rules too — see note at bottom of file.)
    ========================================================= */
-const TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN";
-function notifyTelegramCustomer(chatId, text){
-  if(!chatId || !TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === "YOUR_BOT_TOKEN") return;
-  fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode:"HTML" })
-  }).catch(err=>console.error("Telegram notify failed", err));
-}
+const ADMIN_EMAILS = [
+  "youradmin@gmail.com"
+];
 
-/* =========================================================
-   ACTIVITY LOG
-   ---------------------------------------------------------
-   There's no login screen, so this is just a friendly label (stored on
-   this device only) to note who did what in the log — NOT a security
-   mechanism. Anyone using this panel can type any name here.
-   ========================================================= */
-function getAdminName(){
-  let name = localStorage.getItem("cb_admin_name");
-  if(!name){
-    name = prompt("Your name (shown in the activity log):") || "Admin";
-    localStorage.setItem("cb_admin_name", name);
-  }
-  return name;
-}
-function logActivity(action, detail){
-  db.collection("adminActivity").add({
-    admin: getAdminName(),
-    action, detail,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(err=>console.error("Activity log failed", err));
-}
+const loginGate = document.getElementById("loginGate");
+const app = document.getElementById("app");
+const googleSignInBtn = document.getElementById("googleSignInBtn");
+const loginErrorEl = document.getElementById("loginError");
+const deniedBox = document.getElementById("deniedBox");
+const deniedEmail = document.getElementById("deniedEmail");
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-function icon(name, px){
-  const size = px ? ` style="width:${px}px;height:${px}px"` : "";
-  return `<svg class="icon"${size}><use href="#i-${name}"></use></svg>`;
-}
-function fmt(n){ return (n||0).toLocaleString("en-US"); }
-function fmtDate(ts){
-  if(!ts || typeof ts.toDate !== "function") return "—";
-  return ts.toDate().toLocaleString("en-US", {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
-}
-let toastTimer=null;
-function showToast(msg, iconName){
-  const el = document.getElementById("toast");
-  el.innerHTML = `${icon(iconName||"check-circle",16)}<span>${msg}</span>`;
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove("show"), 2600);
-}
-
-/* No login gate — this file is meant to be kept private (not hosted
-   publicly / not linked from the customer app) rather than protected by
-   a sign-in screen. All data binds immediately on page load. */
-let unsubOrders=null, unsubTopups=null, unsubCatalog=[], unsubLeaderboard=null, unsubUsers=null;
-bindOrders();
-bindTopups();
-bindCatalog();
-bindUsers();
-migrateLeaderboardTotals().then(bindLeaderboard);
-
-/* ---------- TABS ---------- */
-document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-    document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById("tab-"+tab.dataset.tab).classList.add("active");
-  });
-});
-
-/* ================= ORDERS ================= */
-let allOrders = [];
-let orderFilter = "pending";
-let orderShowCount = 30;
-document.getElementById("orderFilters").addEventListener("click", e=>{
-  const chip = e.target.closest(".chip");
-  if(!chip) return;
-  document.querySelectorAll("#orderFilters .chip").forEach(c=>c.classList.remove("active"));
-  chip.classList.add("active");
-  orderFilter = chip.dataset.filter;
-  orderShowCount = 30;
-  renderOrders();
-});
-function bindOrders(){
-  if(unsubOrders) unsubOrders();
-  unsubOrders = db.collection("orders").orderBy("createdAt","desc").limit(300)
-    .onSnapshot(snap=>{
-      allOrders = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-      renderOrders();
-      const pendingCount = allOrders.filter(o=>o.status==="pending").length;
-      document.getElementById("statPendingOrders").textContent = pendingCount;
-      const badge = document.getElementById("ordersBadge");
-      badge.textContent = pendingCount;
-      badge.style.display = pendingCount ? "" : "none";
-    }, err=>{ console.error(err); showToast("Orders index needed — check console for a link", "alert"); });
-}
-function renderOrders(){
-  const fullList = orderFilter==="all" ? allOrders : allOrders.filter(o=>o.status===orderFilter);
-  const list = fullList.slice(0, orderShowCount);
-  const el = document.getElementById("ordersList");
-  if(!fullList.length){ el.innerHTML = `<div class="empty-state">No ${orderFilter} orders.</div>`; return; }
-  el.innerHTML = list.map(o=>`
-    <div class="data-card">
-      <div class="main">
-        <div class="title">${o.game || ""} — ${o.pkgLabel || ""}</div>
-        <div class="sub">ID: ${o.playerId || "—"}${o.serverId ? " ("+o.serverId+")" : ""} · ${fmtDate(o.createdAt)}</div>
-      </div>
-      <div class="amt">${fmt(o.price)} Ks</div>
-      <span class="pill ${o.status}">${icon(o.status==="pending"?"clock":(o.status==="fulfilled"?"check":"x"),11)} ${o.status}</span>
-      ${o.status==="pending" ? `
-      <div class="actions">
-        <button class="btn-sm btn-approve" data-act="fulfill" data-id="${o.id}">Fulfill</button>
-        <button class="btn-sm btn-reject" data-act="cancel" data-id="${o.id}">Cancel &amp; Refund</button>
-      </div>` : ""}
-    </div>`).join("") + (fullList.length > orderShowCount ? `<button class="btn-ghost" id="ordersLoadMore" style="width:100%;justify-content:center;padding:12px;">Load more (${fullList.length - orderShowCount} left)</button>` : "");
-  const moreBtn = document.getElementById("ordersLoadMore");
-  if(moreBtn) moreBtn.addEventListener("click", ()=>{ orderShowCount += 30; renderOrders(); });
-}
-document.getElementById("ordersList").addEventListener("click", async e=>{
-  const btn = e.target.closest("button[data-act]");
-  if(!btn) return;
-  const order = allOrders.find(o=>o.id===btn.dataset.id);
-  if(!order) return;
-  btn.disabled = true;
+async function startGoogleSignIn(){
+  loginErrorEl.textContent = "";
+  deniedBox.style.display = "none";
   try{
-    const userSnap = await db.collection("users").doc(order.uid).get();
-    const chatId = userSnap.exists ? userSnap.data().telegramChatId : null;
-    if(btn.dataset.act === "fulfill"){
-      await db.collection("orders").doc(order.id).update({status:"fulfilled"});
-      if(order.txId){
-        await db.collection("users").doc(order.uid).collection("transactions").doc(order.txId).update({status:"done"});
-      }
-      logActivity("fulfill_order", `${order.game} — ${order.pkgLabel} (${fmt(order.price)} Ks)`);
-      notifyTelegramCustomer(chatId, `✅ Your order <b>${order.game} — ${order.pkgLabel}</b> has been delivered. Thanks for shopping with PCA Game Store!`);
-      showToast("Order marked fulfilled", "check-circle");
-    }else if(btn.dataset.act === "cancel"){
-      const userRef = db.collection("users").doc(order.uid);
-      const orderRef = db.collection("orders").doc(order.id);
-      await db.runTransaction(async tx=>{
-        tx.update(orderRef, {status:"cancelled"});
-        tx.update(userRef, {balance: firebase.firestore.FieldValue.increment(order.price||0)});
-        if(order.txId){
-          tx.update(userRef.collection("transactions").doc(order.txId), {status:"cancelled"});
-        }
-      });
-      logActivity("cancel_order", `${order.game} — ${order.pkgLabel}, refunded ${fmt(order.price)} Ks`);
-      notifyTelegramCustomer(chatId, `⚠️ Your order <b>${order.game} — ${order.pkgLabel}</b> was cancelled and ${fmt(order.price)} Ks was refunded to your wallet.`);
-      showToast(`Order cancelled, ${fmt(order.price)} Ks refunded`, "check-circle");
+    await auth.signInWithPopup(googleProvider);
+  }catch(err){
+    console.error("Sign-in failed", err);
+    if(err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment"){
+      try{ await auth.signInWithRedirect(googleProvider); }
+      catch(err2){ loginErrorEl.textContent = `Sign-in မအောင်မြင်ပါ — ${err2.code || err2.message || "unknown error"}`; }
+    } else if(err.code !== "auth/popup-closed-by-user"){
+      loginErrorEl.textContent = `Sign-in မအောင်မြင်ပါ — ${err.code || err.message || "unknown error"}`;
     }
-  }catch(err){ console.error(err); showToast("Action failed: "+err.message, "alert"); }
-  finally{ btn.disabled = false; }
-});
-
-/* ================= TOP-UPS ================= */
-let allTopups = [];
-let topupFilter = "pending";
-let topupShowCount = 30;
-document.getElementById("topupFilters").addEventListener("click", e=>{
-  const chip = e.target.closest(".chip");
-  if(!chip) return;
-  document.querySelectorAll("#topupFilters .chip").forEach(c=>c.classList.remove("active"));
-  chip.classList.add("active");
-  topupFilter = chip.dataset.filter;
-  topupShowCount = 30;
-  renderTopups();
-});
-function bindTopups(){
-  if(unsubTopups) unsubTopups();
-  unsubTopups = db.collectionGroup("transactions").where("category","==","topup")
-    .orderBy("createdAt","desc").limit(300)
-    .onSnapshot(snap=>{
-      allTopups = snap.docs.map(d=>Object.assign({id:d.id, _ref:d.ref}, d.data()));
-      renderTopups();
-      const pendingCount = allTopups.filter(x=>x.status==="pending").length;
-      document.getElementById("statPendingTopups").textContent = pendingCount;
-      const badge = document.getElementById("topupsBadge");
-      badge.textContent = pendingCount;
-      badge.style.display = pendingCount ? "" : "none";
-
-      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-      const todayRevenue = allTopups
-        .filter(x=>x.status==="done" && x.createdAt && x.createdAt.toDate() >= todayStart)
-        .reduce((sum,x)=>sum+(x.amount||0), 0);
-      document.getElementById("statTodayRevenue").textContent = fmt(todayRevenue);
-      renderRevenueChart();
-    }, err=>{ console.error(err); showToast("Top-ups index needed — check console for a link", "alert"); });
-}
-function renderTopups(){
-  const fullList = topupFilter==="all" ? allTopups : allTopups.filter(x=>x.status===topupFilter);
-  const list = fullList.slice(0, topupShowCount);
-  const el = document.getElementById("topupsList");
-  if(!fullList.length){ el.innerHTML = `<div class="empty-state">No ${topupFilter} top-ups.</div>`; return; }
-  el.innerHTML = list.map(x=>`
-    <div class="data-card">
-      ${x.receiptUrl ? `<img class="receipt-thumb" src="${x.receiptUrl}" data-full="${x.receiptUrl}">` : ""}
-      <div class="main">
-        <div class="title">${x.method || ""} top-up</div>
-        <div class="sub">${fmtDate(x.createdAt)}</div>
-      </div>
-      <div class="amt pos">+${fmt(x.amount)} Ks</div>
-      <span class="pill ${x.status}">${icon(x.status==="pending"?"clock":(x.status==="done"?"check":"x"),11)} ${x.status}</span>
-      ${x.status==="pending" ? `
-      <div class="actions">
-        <button class="btn-sm btn-approve" data-act="approve" data-uid="${x.uid||""}" data-id="${x.id}">Approve</button>
-        <button class="btn-sm btn-reject" data-act="reject" data-uid="${x.uid||""}" data-id="${x.id}">Reject</button>
-      </div>` : ""}
-    </div>`).join("") + (fullList.length > topupShowCount ? `<button class="btn-ghost" id="topupsLoadMore" style="width:100%;justify-content:center;padding:12px;">Load more (${fullList.length - topupShowCount} left)</button>` : "");
-  const moreBtn = document.getElementById("topupsLoadMore");
-  if(moreBtn) moreBtn.addEventListener("click", ()=>{ topupShowCount += 30; renderTopups(); });
-}
-
-/* ---------- REVENUE CHART (last 7 days, from approved top-ups) ---------- */
-function renderRevenueChart(){
-  const el = document.getElementById("revenueChart");
-  if(!el) return;
-  const days = [];
-  for(let i=6;i>=0;i--){
-    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i);
-    days.push(d);
   }
-  const totals = days.map(day=>{
-    const next = new Date(day); next.setDate(next.getDate()+1);
-    return allTopups
-      .filter(x=>x.status==="done" && x.createdAt && x.createdAt.toDate()>=day && x.createdAt.toDate()<next)
-      .reduce((sum,x)=>sum+(x.amount||0), 0);
-  });
-  const max = Math.max(...totals, 1);
-  el.innerHTML = days.map((day,i)=>`
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-      <div style="font-size:10px;color:var(--text-faint);">${fmt(totals[i])}</div>
-      <div style="width:100%;background:var(--blue);border-radius:4px 4px 0 0;height:${Math.max(4,(totals[i]/max)*120)}px;"></div>
-      <div style="font-size:10px;color:var(--text-faint);">${day.toLocaleDateString("en-US",{weekday:"short"})}</div>
-    </div>`).join("");
 }
-document.getElementById("topupsList").addEventListener("click", async e=>{
-  const thumb = e.target.closest(".receipt-thumb");
-  if(thumb){
-    document.getElementById("lightboxImg").src = thumb.dataset.full;
-    document.getElementById("lightbox").classList.add("show");
+googleSignInBtn.addEventListener("click", startGoogleSignIn);
+
+document.getElementById("signOutBtn").addEventListener("click", ()=>auth.signOut());
+
+function setLogoBoxes(url){
+  const boxes = [
+    document.getElementById("logoPreviewBox"),
+    document.getElementById("loginLogoBox"),
+    document.getElementById("topbarLogoBox")
+  ];
+  boxes.forEach(box=>{
+    if(!box) return;
+    box.innerHTML = url
+      ? `<img src="${url}" alt="Logo">`
+      : `<span class="logo-skeleton"><span></span><span></span><span></span><span></span></span>`;
+  });
+}
+
+let unsubLogo = null;
+function loadLogo(){
+  if(unsubLogo) unsubLogo();
+  unsubLogo = db.collection("config").doc("appearance").onSnapshot(snap=>{
+    const url = snap.exists ? snap.data().logoUrl : null;
+    document.getElementById("logoUrlInput").value = url || "";
+    setLogoBoxes(url);
+  }, err=>console.error("Failed to load logo", err));
+}
+
+document.getElementById("logoUrlInput").addEventListener("input", e=>{
+  setLogoBoxes(e.target.value.trim());
+});
+
+document.getElementById("saveLogoBtn").addEventListener("click", async ()=>{
+  const btn = document.getElementById("saveLogoBtn");
+  const msg = document.getElementById("saveLogoMsg");
+  const url = document.getElementById("logoUrlInput").value.trim();
+  btn.disabled = true; msg.textContent = ""; msg.className = "save-msg";
+  try{
+    await db.collection("config").doc("appearance").set({
+      logoUrl: url || null,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: auth.currentUser ? auth.currentUser.email : null
+    }, {merge:true});
+    msg.textContent = url ? "Logo သိမ်းပြီးပါပြီ" : "Logo ကို ဖယ်ရှားလိုက်ပါပြီ (skeleton ပြန်ပြမယ်)";
+    msg.className = "save-msg ok";
+  }catch(err){
+    console.error("Save failed", err);
+    msg.textContent = "Save မအောင်မြင်ပါ — Firestore rules ကို စစ်ကြည့်ပါ";
+    msg.className = "save-msg err";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+let ratesLoaded = false;
+function fillRateInputs(d){
+  document.getElementById("rateUSD").value = (d && d.USD) || 4500;
+  document.getElementById("rateTHB").value = (d && d.THB) || 130;
+  document.getElementById("rateSGD").value = (d && d.SGD) || 3400;
+  ratesLoaded = true;
+}
+
+function loadRates(){
+  db.collection("config").doc("currency").get()
+    .then(snap=>fillRateInputs(snap.exists ? snap.data() : null))
+    .catch(err=>{ console.error("Failed to load rates", err); fillRateInputs(null); });
+}
+
+document.getElementById("saveRatesBtn").addEventListener("click", async ()=>{
+  const btn = document.getElementById("saveRatesBtn");
+  const msg = document.getElementById("saveMsg");
+  const usd = Number(document.getElementById("rateUSD").value);
+  const thb = Number(document.getElementById("rateTHB").value);
+  const sgd = Number(document.getElementById("rateSGD").value);
+  if(!usd || !thb || !sgd || usd<=0 || thb<=0 || sgd<=0){
+    msg.textContent = "Rate အားလုံး 0 ထက်ကြီးရပါမယ်"; msg.className = "save-msg err"; return;
+  }
+  btn.disabled = true; msg.textContent = ""; msg.className = "save-msg";
+  try{
+    await db.collection("config").doc("currency").set({
+      USD: usd, THB: thb, SGD: sgd,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: auth.currentUser ? auth.currentUser.email : null
+    }, {merge:true});
+    msg.textContent = "သိမ်းပြီးပါပြီ — index.html ထဲမှာ live update ဖြစ်သွားပါမယ်";
+    msg.className = "save-msg ok";
+  }catch(err){
+    console.error("Save failed", err);
+    msg.textContent = "Save မအောင်မြင်ပါ — Firestore rules ကို စစ်ကြည့်ပါ";
+    msg.className = "save-msg err";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+auth.getRedirectResult().catch(err=>console.error("Redirect result error", err));
+auth.onAuthStateChanged(user=>{
+  if(!user){
+    loginGate.classList.remove("hide");
+    app.classList.remove("show");
     return;
   }
-  const btn = e.target.closest("button[data-act]");
-  if(!btn) return;
-  const item = allTopups.find(x=>x.id===btn.dataset.id);
-  if(!item || !item.uid){ showToast("Missing user reference on this transaction", "alert"); return; }
-  btn.disabled = true;
-  try{
-    const userRef = db.collection("users").doc(item.uid);
-    const txRef = userRef.collection("transactions").doc(item.id);
-    const userSnap = await userRef.get();
-    const chatId = userSnap.exists ? userSnap.data().telegramChatId : null;
-    if(btn.dataset.act === "approve"){
-      await db.runTransaction(async tx=>{
-        tx.update(userRef, {balance: firebase.firestore.FieldValue.increment(item.amount||0)});
-        tx.update(txRef, {status:"done"});
-        const lbRef = db.collection("leaderboard").doc(item.uid);
-        tx.set(lbRef, {
-          name: (userSnap.exists && userSnap.data().name) || "Player",
-          ava: (userSnap.exists && userSnap.data().initials) || "P",
-          toppedUp: firebase.firestore.FieldValue.increment(item.amount||0),
-          total: firebase.firestore.FieldValue.increment(item.amount||0)
-        }, {merge:true});
-      });
-      logActivity("approve_topup", `${item.method} — ${fmt(item.amount)} Ks`);
-      notifyTelegramCustomer(chatId, `✅ Your top-up of <b>${fmt(item.amount)} Ks</b> via ${item.method} has been approved and added to your wallet.`);
-      showToast(`Approved — ${fmt(item.amount)} Ks credited`, "check-circle");
-    }else{
-      await txRef.update({status:"rejected"});
-      logActivity("reject_topup", `${item.method} — ${fmt(item.amount)} Ks`);
-      notifyTelegramCustomer(chatId, `⚠️ Your top-up of ${fmt(item.amount)} Ks via ${item.method} could not be verified and was rejected. Please contact support if this seems wrong.`);
-      showToast("Top-up rejected", "check-circle");
-    }
-  }catch(err){ console.error(err); showToast("Action failed: "+err.message, "alert"); }
-  finally{ btn.disabled = false; }
-});
-document.getElementById("lightbox").addEventListener("click", ()=>{
-  document.getElementById("lightbox").classList.remove("show");
-});
-
-/* ================= CATALOG ================= */
-const CATALOG_ICONS = ["diamond","target","swords","flower","card","droplet","bank","coin","gift","star"];
-
-/* Mirrors the fallback games/packages/payments already shown in Game Store
-   (game-store.html) before any Firestore data exists. "Import Store
-   Defaults" below writes any of these that are missing from Firestore so
-   they become editable here — existing docs are never overwritten. */
-const DEFAULT_GAMES = [
-  {id:"ff", name:"Free Fire", short:"FF", color:"#FF7A00", image:null, needsServerId:false, desc:"Free Fire — Battle Royale ဂိမ်းအတွက် Diamonds ဖြည့်ပြီး Character၊ Skin များ ဝယ်ယူနိုင်ပါသည်"},
-  {id:"pubg", name:"PUBG Mobile", short:"PM", color:"#F2A900", image:null, needsServerId:false, desc:"PUBG Mobile UC များကို Player ID ဖြင့် တိုက်ရိုက် ချက်ချင်း ဖြည့်ပေးပါသည်"},
-  {id:"ml", name:"Mobile Legends", short:"ML", color:"#1877F2", image:null, needsServerId:true, desc:"Mobile Legends Diamonds ကို User ID နှင့် Zone ID ဖြင့် အမြန်ဆုံး ပို့ပေးပါသည်"},
-  {id:"gi", name:"Genshin Impact", short:"GI", color:"#7C5CFF", image:null, needsServerId:true, desc:"Genshin Impact Genesis Crystal များကို UID နှင့် Server ရွေးချယ်ပြီး ဝယ်ယူနိုင်ပါသည်"},
-  {id:"vl", name:"Valorant", short:"VL", color:"#F02849", image:null, needsServerId:false, desc:"Valorant Points များကို Riot ID ဖြင့် တိုက်ရိုက်ဖြည့်ပေးပါသည်"},
-  {id:"cod", name:"Call of Duty", short:"CD", color:"#4A4B4D", image:null, needsServerId:false, desc:"Call of Duty Mobile CP များကို Player ID ဖြင့် ချက်ချင်း ဖြည့်ပေးပါသည်"},
-  {id:"rb", name:"Roblox", short:"RB", color:"#1DB954", image:null, needsServerId:false, desc:"Roblox Robux ကို Username သို့မဟုတ် ID ဖြင့် ဝယ်ယူနိုင်ပါသည်"},
-  {id:"steam", name:"Steam Wallet", short:"ST", color:"#1B2838", image:null, needsServerId:false, desc:"Steam Wallet Code များကို သင့် Email သို့ ချက်ချင်း ပို့ပေးပါသည်"},
-];
-const DEFAULT_PACKAGES = [
-  {id:"ff310", game:"Free Fire", label:"310 Diamonds", sub:"Weekly Membership အပါအဝင်", price:"6,500", old:"7,200", icon:"diamond", best:true},
-  {id:"pubg325", game:"PUBG Mobile", label:"325 UC", sub:"တိုက်ရိုက် ID ဖြည့်ပေးမည်", price:"7,000", old:null, icon:"target", best:false},
-  {id:"ml278", game:"Mobile Legends", label:"278 Diamonds", sub:"5 မိနစ်အတွင်း ပို့ပေးမည်", price:"5,800", old:"6,300", icon:"swords", best:false},
-  {id:"gi980", game:"Genshin Impact", label:"980 Genesis Crystal", sub:"UID ဖြင့် တိုက်ရိုက်ဖြည့်ပေးမည်", price:"18,900", old:null, icon:"flower", best:false},
-];
-const DEFAULT_PAYMENTS = [
-  {id:"kbz", label:"KBZPay", sub:"ချက်ချင်း အတည်ပြုမည်", icon:"card", adminName:"Ko Zaw Myint (PCA Game Store)", adminPhone:"09-750 123 456"},
-  {id:"wave", label:"WavePay", sub:"ချက်ချင်း အတည်ပြုမည်", icon:"droplet", adminName:"Ma Su Su Hlaing (PCA Game Store)", adminPhone:"09-960 234 567"},
-  {id:"aya", label:"AYA Pay", sub:"1-3 မိနစ်အတွင်း", icon:"bank", adminName:"Ko Aung Aung (PCA Game Store)", adminPhone:"09-441 345 678"},
-];
-async function importCatalogDefaults(){
-  const btn = document.getElementById("importDefaultsBtn");
-  btn.disabled = true;
-  try{
-    const sources = { games: DEFAULT_GAMES, packages: DEFAULT_PACKAGES, payments: DEFAULT_PAYMENTS };
-    let added = 0;
-    for(const col of Object.keys(sources)){
-      const snap = await db.collection(col).get();
-      const existingIds = new Set(snap.docs.map(d=>d.id));
-      const batch = db.batch();
-      let batchCount = 0;
-      sources[col].forEach(item=>{
-        if(!existingIds.has(item.id)){ batch.set(db.collection(col).doc(item.id), item); batchCount++; }
-      });
-      if(batchCount){ await batch.commit(); added += batchCount; }
-    }
-    showToast(added ? `Imported ${added} item(s) — now editable below` : "Everything is already imported", "check-circle");
-    if(added) logActivity("import_defaults", `${added} item(s)`);
-  }catch(err){ console.error(err); showToast("Import failed: "+err.message, "alert"); }
-  finally{ btn.disabled = false; }
-}
-document.getElementById("importDefaultsBtn").addEventListener("click", importCatalogDefaults);
-let catalogTab = "games";
-let catalogData = { games:[], packages:[], payments:[], bullets:[] };
-document.getElementById("catalogSubtabs").addEventListener("click", e=>{
-  const st = e.target.closest(".subtab");
-  if(!st) return;
-  document.querySelectorAll(".subtab").forEach(s=>s.classList.remove("active"));
-  st.classList.add("active");
-  catalogTab = st.dataset.cat;
-  renderCatalog();
-});
-function bindCatalog(){
-  unsubCatalog.forEach(f=>f && f());
-  unsubCatalog = [
-    db.collection("games").onSnapshot(snap=>{ catalogData.games = snap.docs.map(d=>d.data()); renderCatalog(); }),
-    db.collection("packages").onSnapshot(snap=>{ catalogData.packages = snap.docs.map(d=>d.data()); renderCatalog(); }),
-    db.collection("payments").onSnapshot(snap=>{ catalogData.payments = snap.docs.map(d=>d.data()); renderCatalog(); }),
-    db.collection("bullets").onSnapshot(snap=>{ catalogData.bullets = snap.docs.map(d=>d.data()); renderCatalog(); })
-  ];
-}
-function renderCatalog(){
-  const items = catalogData[catalogTab] || [];
-  const el = document.getElementById("catalogList");
-  if(!items.length){ el.innerHTML = `<div class="empty-state">No ${catalogTab} yet — tap Add to create one.</div>`; return; }
-  el.innerHTML = items.map(it=>{
-    let title, sub, iconName, color;
-    if(catalogTab==="games"){ title=it.name; sub=(it.needsServerId?"Needs Server ID · ":"")+(it.desc||""); iconName="image"; color=it.color||"#3A3B3C"; }
-    else if(catalogTab==="packages"){ title=`${it.game} — ${it.label}`; sub=`${it.price} Ks${it.old?" (was "+it.old+")":""} · ${it.sub||""}`; iconName=it.icon||"diamond"; color="#2374E1"; }
-    else if(catalogTab==="bullets"){ title=it.name; sub=it.action||""; iconName="message"; color=it.color||"#2374E1"; }
-    else { title=it.label; sub=`${it.adminName||""} · ${it.adminPhone||""}`; iconName=it.icon||"card"; color="#42B72A"; }
-    return `
-    <div class="data-card">
-      <div class="catalog-item-icon" style="background:${color}">${icon(iconName,18)}</div>
-      <div class="main"><div class="title">${title}</div><div class="sub">${sub}</div></div>
-      <button class="icon-edit" data-act="edit" data-id="${it.id}">${icon("check",15)}</button>
-      <button class="icon-del" data-act="delete" data-id="${it.id}">${icon("x",15)}</button>
-    </div>`;
-  }).join("");
-}
-document.getElementById("catalogList").addEventListener("click", async e=>{
-  const btn = e.target.closest("button[data-act]");
-  if(!btn) return;
-  const item = (catalogData[catalogTab]||[]).find(x=>x.id===btn.dataset.id);
-  if(!item) return;
-  if(btn.dataset.act === "edit"){ openCatalogModal(catalogTab, item); }
-  else{
-    if(!confirm(`Delete "${item.name||item.label}"? This won't affect past orders.`)) return;
-    try{ await db.collection(catalogTab).doc(item.id).delete(); logActivity("delete_"+catalogTab.slice(0,-1), item.name||item.label); showToast("Deleted", "check-circle"); }
-    catch(err){ showToast("Delete failed: "+err.message, "alert"); }
+  const email = (user.email||"").toLowerCase();
+  const isAdmin = ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(email);
+  if(!isAdmin){
+    deniedEmail.textContent = user.email || "(no email)";
+    deniedBox.style.display = "block";
+    app.classList.remove("show");
+    loginGate.classList.remove("hide");
+    // Sign them back out so a non-admin Google account isn't left "logged in" here.
+    auth.signOut();
+    return;
   }
-});
-document.getElementById("addCatalogBtn").addEventListener("click", ()=>openCatalogModal(catalogTab, null));
-
-const catalogModal = document.getElementById("catalogModal");
-const overlay = document.getElementById("overlay");
-function closeCatalogModal(){ catalogModal.classList.remove("show"); overlay.classList.remove("show"); }
-document.getElementById("catalogModalClose").addEventListener("click", closeCatalogModal);
-overlay.addEventListener("click", ()=>{ closeCatalogModal(); document.getElementById("lightbox").classList.remove("show"); });
-
-function slugify(s){ return (s||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || ("item-"+Date.now()); }
-function iconPickerHtml(selected){
-  return `<div class="icon-picker">${CATALOG_ICONS.map(i=>`<button type="button" data-icon="${i}" class="${i===selected?'selected':''}">${icon(i,16)}</button>`).join("")}</div>`;
-}
-function openCatalogModal(type, item){
-  const isEdit = !!item;
-  document.getElementById("catalogModalTitle").textContent = (isEdit?"Edit ":"Add ") + type.slice(0,-1);
-  const body = document.getElementById("catalogModalBody");
-
-  if(type === "games"){
-    body.innerHTML = `
-      <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="fName" value="${item?.name||""}"></div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Short badge (2-3 letters)</label><input class="form-input" id="fShort" maxlength="3" value="${item?.short||""}"></div>
-        <div class="form-group"><label class="form-label">Color</label><input class="form-input" id="fColor" type="color" value="${item?.color||"#2374E1"}" style="height:42px;padding:4px;"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Icon image URL (optional — shows a real logo instead of the placeholder icon)</label><input class="form-input" id="fImage" value="${item?.image||""}" placeholder="https://..."></div>
-      <div class="form-group"><label class="form-label">Description (shown on the game page)</label><textarea class="form-input" id="fDesc" rows="2">${item?.desc||""}</textarea></div>
-      <div class="form-check"><input type="checkbox" id="fNeedsServer" ${item?.needsServerId?"checked":""}> <span>Needs a Server / Zone ID at checkout</span></div>
-      <button class="modal-confirm" id="catalogSaveBtn">Save</button>`;
-  }else if(type === "packages"){
-    const gameOptions = catalogData.games.map(g=>`<option value="${g.name}" ${item?.game===g.name?"selected":""}>${g.name}</option>`).join("");
-    body.innerHTML = `
-      <div class="form-group"><label class="form-label">Game</label><select class="form-select" id="fGame">${gameOptions || '<option value="">Add a game first</option>'}</select></div>
-      <div class="form-group"><label class="form-label">Package label (e.g. "310 Diamonds")</label><input class="form-input" id="fLabel" value="${item?.label||""}"></div>
-      <div class="form-group"><label class="form-label">Subtitle</label><input class="form-input" id="fSub" value="${item?.sub||""}"></div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Price (Ks)</label><input class="form-input" id="fPrice" value="${item?.price||""}"></div>
-        <div class="form-group"><label class="form-label">Was (optional)</label><input class="form-input" id="fOld" value="${item?.old||""}"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Icon</label>${iconPickerHtml(item?.icon||"diamond")}</div>
-      <div class="form-check"><input type="checkbox" id="fBest" ${item?.best?"checked":""}> <span>Mark as best-seller</span></div>
-      <button class="modal-confirm" id="catalogSaveBtn">Save</button>`;
-  }else if(type === "bullets"){
-    body.innerHTML = `
-      <div class="form-group"><label class="form-label">Display name (shown in the ticker)</label><input class="form-input" id="fName" value="${item?.name||""}" placeholder="e.g. Aung K."></div>
-      <div class="form-group"><label class="form-label">Activity text</label><input class="form-input" id="fAction" value="${item?.action||""}" placeholder="e.g. Free Fire အတွက် Diamonds ဝယ်ယူခဲ့သည်"></div>
-      <div class="form-group"><label class="form-label">Avatar color</label><input class="form-input" id="fColor" type="color" value="${item?.color||"#2374E1"}" style="height:42px;padding:4px;"></div>
-      <button class="modal-confirm" id="catalogSaveBtn">Save</button>`;
-  }else{
-    body.innerHTML = `
-      <div class="form-group"><label class="form-label">Method name (e.g. "KBZPay")</label><input class="form-input" id="fLabel" value="${item?.label||""}"></div>
-      <div class="form-group"><label class="form-label">Subtitle</label><input class="form-input" id="fSub" value="${item?.sub||""}"></div>
-      <div class="form-group"><label class="form-label">Icon</label>${iconPickerHtml(item?.icon||"card")}</div>
-      <div class="form-group"><label class="form-label">Admin name shown to customers</label><input class="form-input" id="fAdminName" value="${item?.adminName||""}"></div>
-      <div class="form-group"><label class="form-label">Admin phone number</label><input class="form-input" id="fAdminPhone" value="${item?.adminPhone||""}"></div>
-      <button class="modal-confirm" id="catalogSaveBtn">Save</button>`;
-  }
-
-  body.querySelectorAll(".icon-picker button").forEach(b=>{
-    b.addEventListener("click", ()=>{
-      body.querySelectorAll(".icon-picker button").forEach(x=>x.classList.remove("selected"));
-      b.classList.add("selected");
-    });
-  });
-
-  document.getElementById("catalogSaveBtn").addEventListener("click", async ()=>{
-    const saveBtn = document.getElementById("catalogSaveBtn");
-    saveBtn.disabled = true;
-    try{
-      let data, id;
-      if(type === "games"){
-        const name = document.getElementById("fName").value.trim();
-        if(!name){ showToast("Name is required","alert"); return; }
-        id = item?.id || slugify(name);
-        data = {
-          id, name,
-          short: document.getElementById("fShort").value.trim().toUpperCase() || name.slice(0,2).toUpperCase(),
-          color: document.getElementById("fColor").value,
-          image: document.getElementById("fImage").value.trim() || null,
-          needsServerId: document.getElementById("fNeedsServer").checked,
-          desc: document.getElementById("fDesc").value.trim()
-        };
-      }else if(type === "packages"){
-        const label = document.getElementById("fLabel").value.trim();
-        const game = document.getElementById("fGame").value;
-        if(!label || !game){ showToast("Game and label are required","alert"); return; }
-        id = item?.id || slugify(game+"-"+label);
-        data = {
-          id, game, label,
-          sub: document.getElementById("fSub").value.trim(),
-          price: document.getElementById("fPrice").value.trim(),
-          old: document.getElementById("fOld").value.trim() || null,
-          icon: body.querySelector(".icon-picker .selected")?.dataset.icon || "diamond",
-          best: document.getElementById("fBest").checked
-        };
-      }else if(type === "bullets"){
-        const name = document.getElementById("fName").value.trim();
-        const action = document.getElementById("fAction").value.trim();
-        if(!name || !action){ showToast("Name and activity text are required","alert"); return; }
-        id = item?.id || slugify(name+"-"+Date.now());
-        data = {
-          id, name, action,
-          color: document.getElementById("fColor").value
-        };
-      }else{
-        const label = document.getElementById("fLabel").value.trim();
-        if(!label){ showToast("Method name is required","alert"); return; }
-        id = item?.id || slugify(label);
-        data = {
-          id, label,
-          sub: document.getElementById("fSub").value.trim(),
-          icon: body.querySelector(".icon-picker .selected")?.dataset.icon || "card",
-          adminName: document.getElementById("fAdminName").value.trim(),
-          adminPhone: document.getElementById("fAdminPhone").value.trim()
-        };
-      }
-      await db.collection(type).doc(id).set(data, {merge:true});
-      logActivity((item?"edit_":"add_")+type.slice(0,-1), data.name||data.label);
-      closeCatalogModal();
-      showToast("Saved", "check-circle");
-    }catch(err){ console.error(err); showToast("Save failed: "+err.message, "alert"); }
-    finally{ saveBtn.disabled = false; }
-  });
-
-  catalogModal.classList.add("show");
-  overlay.classList.add("show");
-}
-
-/* ================= LEADERBOARD ================= */
-let allLeaders = [];
-async function migrateLeaderboardTotals(){
-  try{
-    const snap = await db.collection("leaderboard").get();
-    const batch = db.batch();
-    let count = 0;
-    snap.docs.forEach(d=>{
-      const data = d.data();
-      if(data.total === undefined){
-        batch.set(d.ref, { total: (data.spent||0) + (data.toppedUp||0) }, {merge:true});
-        count++;
-      }
-    });
-    if(count) await batch.commit();
-  }catch(err){ console.error("Leaderboard total migration failed", err); }
-}
-function bindLeaderboard(){
-  if(unsubLeaderboard) unsubLeaderboard();
-  unsubLeaderboard = db.collection("leaderboard").orderBy("total","desc").limit(50)
-    .onSnapshot(snap=>{
-      allLeaders = snap.docs.map(d=>Object.assign({uid:d.id}, d.data()));
-      const el = document.getElementById("leaderboardList");
-      if(!allLeaders.length){ el.innerHTML = `<div class="empty-state">No spending recorded yet.</div>`; return; }
-      el.innerHTML = allLeaders.map((l,i)=>`
-        <div class="rank-row">
-          <div class="rank-num">${i+1}</div>
-          <div class="rank-ava" style="background:linear-gradient(135deg,#2374E1,#00000066)">${l.ava||"?"}</div>
-          <div class="rank-info">
-            <div class="n">${l.name||"Player"}</div>
-            <div style="font-size:11px;color:var(--text-faint);margin-top:2px;">Bought ${fmt(l.spent||0)} · Topped up ${fmt(l.toppedUp||0)}</div>
-          </div>
-          <div class="rank-val">${fmt(l.total||0)} Ks</div>
-          <button class="icon-del" data-uid="${l.uid}" title="Remove from leaderboard">${icon("x",15)}</button>
-        </div>`).join("");
-    }, err=>console.error(err));
-}
-document.getElementById("leaderboardList").addEventListener("click", async e=>{
-  const btn = e.target.closest("button[data-uid]");
-  if(!btn) return;
-  const l = allLeaders.find(x=>x.uid===btn.dataset.uid);
-  if(!confirm(`Remove "${l?.name||"this entry"}" from the leaderboard?`)) return;
-  try{ await db.collection("leaderboard").doc(btn.dataset.uid).delete(); showToast("Removed", "check-circle"); }
-  catch(err){ showToast("Remove failed: "+err.message, "alert"); }
-});
-document.getElementById("clearLeaderboardBtn").addEventListener("click", async ()=>{
-  if(!allLeaders.length){ showToast("Leaderboard is already empty", "check-circle"); return; }
-  if(!confirm(`Clear all ${allLeaders.length} leaderboard entries? This can't be undone.`)) return;
-  const btn = document.getElementById("clearLeaderboardBtn");
-  btn.disabled = true;
-  try{
-    const batch = db.batch();
-    allLeaders.forEach(l=>batch.delete(db.collection("leaderboard").doc(l.uid)));
-    await batch.commit();
-    logActivity("clear_leaderboard", `${allLeaders.length} entries`);
-    showToast("Leaderboard cleared", "check-circle");
-  }catch(err){ showToast("Clear failed: "+err.message, "alert"); }
-  finally{ btn.disabled = false; }
+  loginGate.classList.add("hide");
+  app.classList.add("show");
+  document.getElementById("adminEmailLabel").textContent = user.email;
+  if(!ratesLoaded) loadRates();
+  loadLogo();
 });
 
-/* ================= USERS ================= */
-let allUsers = [];
-let userFilter = "all";
-let userSearch = "";
-function bindUsers(){
-  if(unsubUsers) unsubUsers();
-  unsubUsers = db.collection("users").orderBy("createdAt","desc").limit(300)
-    .onSnapshot(snap=>{
-      allUsers = snap.docs.map(d=>Object.assign({uid:d.id}, d.data()));
-      document.getElementById("statTotalUsers").textContent = snap.size;
-      renderUsers();
-    }, err=>console.error("users listener error", err));
-}
-function renderUsers(){
-  const el = document.getElementById("usersList");
-  let list = allUsers;
-  if(userFilter === "linked") list = list.filter(u=>u.googleLinked);
-  else if(userFilter === "guest") list = list.filter(u=>!u.googleLinked);
-  if(userSearch){
-    const q = userSearch.toLowerCase();
-    list = list.filter(u=>
-      (u.name||"").toLowerCase().includes(q) ||
-      (u.phone||"").toLowerCase().includes(q) ||
-      (u.email||"").toLowerCase().includes(q)
-    );
-  }
-  if(!list.length){ el.innerHTML = `<div class="empty-state">No users found.</div>`; return; }
-  el.innerHTML = list.map(u=>`
-    <div class="data-card">
-      <div class="rank-ava" style="background:linear-gradient(135deg,#2374E1,#00000066)">${(u.initials||"U")}</div>
-      <div class="main">
-        <div class="title">${u.name || "User"}</div>
-        <div class="sub">${[u.phone, u.email].filter(Boolean).join(" · ") || "—"} · Joined ${fmtDate(u.createdAt)}</div>
-      </div>
-      <div class="amt">${fmt(u.balance)} Ks</div>
-      <span class="pill ${u.googleLinked ? "done" : "pending"}">${u.googleLinked ? "Google" : "Guest"}</span>
-    </div>`).join("");
-}
-document.getElementById("userFilters").addEventListener("click", e=>{
-  const chip = e.target.closest(".chip");
-  if(!chip) return;
-  document.querySelectorAll("#userFilters .chip").forEach(c=>c.classList.remove("active"));
-  chip.classList.add("active");
-  userFilter = chip.dataset.filter;
-  renderUsers();
-});
-document.getElementById("userSearchInput").addEventListener("input", e=>{
-  userSearch = e.target.value.trim();
-  renderUsers();
-});
+/* =========================================================
+   FIRESTORE SECURITY RULES (add to your project's rules,
+   not enforced by this file alone):
 
-/* ================= CSV EXPORT ================= */
-function downloadCsv(filename, rows){
-  const esc = v => `"${String(v??"").replace(/"/g,'""')}"`;
-  const csv = rows.map(r=>r.map(esc).join(",")).join("\r\n");
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-}
-document.getElementById("exportOrdersBtn").addEventListener("click", ()=>{
-  const list = orderFilter==="all" ? allOrders : allOrders.filter(o=>o.status===orderFilter);
-  const rows = [["Game","Package","Player ID","Server ID","Price (Ks)","Status","Date"]];
-  list.forEach(o=>rows.push([o.game,o.pkgLabel,o.playerId,o.serverId||"",o.price,o.status,fmtDate(o.createdAt)]));
-  downloadCsv(`orders-${orderFilter}-${Date.now()}.csv`, rows);
-});
-document.getElementById("exportTopupsBtn").addEventListener("click", ()=>{
-  const list = topupFilter==="all" ? allTopups : allTopups.filter(x=>x.status===topupFilter);
-  const rows = [["Method","Amount (Ks)","Status","Date"]];
-  list.forEach(x=>rows.push([x.method,x.amount,x.status,fmtDate(x.createdAt)]));
-  downloadCsv(`topups-${topupFilter}-${Date.now()}.csv`, rows);
-});
+   match /config/currency {
+     allow read: if true; // index.html needs to read this for everyone
+     allow write: if request.auth != null
+       && request.auth.token.email in [
+            "youradmin@gmail.com"
+          ];
+   }
+
+   match /config/appearance {
+     allow read: if true; // index.html needs to read this for everyone
+     allow write: if request.auth != null
+       && request.auth.token.email in [
+            "youradmin@gmail.com"
+          ];
+   }
+
+   Keep this list in sync with ADMIN_EMAILS above — this file's
+   allowlist alone does NOT stop someone from writing directly via
+   the Firestore API, only the Security Rules do that.
+   ========================================================= */
 </script>
 </body>
 </html>
