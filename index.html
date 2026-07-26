@@ -569,6 +569,45 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn("Auth persistence:", err));
 
+/* Environment banner: same diagnostic as store.html — file:// origins and
+   Facebook/Instagram/Messenger/Line in-app browsers can't reliably keep
+   the admin signed in between visits. */
+(function(){
+  const ua = navigator.userAgent || "";
+  const isFileProtocol = location.protocol === "file:";
+  const isInAppBrowser = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|; ?wv\)/i.test(ua);
+  if(!isFileProtocol && !isInAppBrowser) return;
+
+  function mount(){
+    const card = document.querySelector(".login-card");
+    if(!card) return;
+    const banner = document.createElement("div");
+    banner.id = "envWarningBanner";
+    banner.style.cssText = "background:#3a2a00;color:#ffd76a;font-size:12.5px;line-height:1.55;padding:10px 12px;border-radius:10px;margin:0 0 12px;text-align:left;";
+    if(isFileProtocol){
+      banner.innerHTML = "⚠️ ဒီ file ကို local ကနေ (file://) တိုက်ရိုက်ဖွင့်နေလို့ browser က Login session ကို မသိမ်းပေးနိုင်ပါ — ပြန်ဝင်တိုင်း Login ပြန်ဝင်ရပါလိမ့်မယ်။ Web server ပေါ် တင်ပြီး https:// နဲ့ ဖွင့်မှသာ Login persist ဖြစ်ပါမယ်။";
+    }else{
+      banner.innerHTML = '⚠️ In-app browser ကနေ ဖွင့်နေလို့ App ကို ပိတ်လိုက်တိုင်း Login session ပျောက်တတ်ပါတယ်။ Chrome/Safari ပြင်ပ Browser နဲ့ ဖွင့်ပါ။<br><button id="openExternalBtn" type="button" style="margin-top:8px;padding:8px 14px;border-radius:8px;border:none;background:#ffd76a;color:#1a1200;font-weight:700;font-size:12.5px;cursor:pointer;">Chrome/Safari ထဲဖွင့်မယ်</button>';
+    }
+    card.insertBefore(banner, card.firstChild);
+
+    const btn = document.getElementById("openExternalBtn");
+    if(btn){
+      btn.addEventListener("click", ()=>{
+        const url = location.href;
+        if(/Android/i.test(ua)){
+          location.href = "intent://" + url.replace(/^https?:\/\//,"") + "#Intent;scheme=https;package=com.android.chrome;end";
+        }else{
+          navigator.clipboard?.writeText(url).catch(()=>{});
+          alert("Link ကို Copy ကူးပြီးပါပြီ။ အပေါ်ညာဘက် '•••' ကိုနှိပ်ပြီး 'Open in Safari' ကိုရွေးပေးပါ။");
+        }
+      });
+    }
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
+  else mount();
+})();
+
 /* =========================================================
    ADMIN ALLOWLIST
    ---------------------------------------------------------
@@ -1762,24 +1801,61 @@ auth.onAuthStateChanged(user=>{
        && (request.auth.uid == uid
            || request.auth.token.email in ["linpyaesone130@gmail.com"]);
      allow create: if request.auth != null && request.auth.uid == uid;
+
+     // Admin: full update rights (Confirm/Reject, wallet top-up approval, etc).
      allow update: if request.auth != null
-       && (request.auth.uid == uid
-           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
+       && request.auth.token.email in ["linpyaesone130@gmail.com"];
+
+     // Owner: NOT a general write — this narrowly mirrors the client-side
+     // 2-minute auto-confirm in store.html's attemptOrderAutoConfirm().
+     // Without this constraint, a user could open devtools and set their
+     // own pending purchase to "done" instantly, or silently rewrite
+     // amount/category/uid on any of their transactions. This rule only
+     // allows: a still-pending PURCHASE tx, flipping to "done", touching
+     // only the status/autoConfirmed fields, and only once the real
+     // 2 minutes have actually elapsed server-side (request.time — not
+     // anything the client can fake).
+     allow update: if request.auth != null
+       && request.auth.uid == uid
+       && resource.data.category == "purchase"
+       && resource.data.status == "pending"
+       && request.resource.data.status == "done"
+       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status","autoConfirmed"])
+       && request.time > resource.data.createdAt + duration.value(2,"m");
    }
 
    match /orders/{orderId} {
      // ⚠️ Adjust the collection name here (and ORDERS_COLLECTION in this
      // file's <script>) if your store app uses a different name, e.g.
      // "topups" or "topupRequests".
-     // Users can create/read their own orders; only admins can update
-     // status (confirm/reject) or delete.
+     // Users can create/read their own orders; only admins can Confirm/
+     // Reject/delete — with one narrow exception below for auto-confirm.
      allow read: if request.auth != null
        && (resource.data.uid == request.auth.uid
            || request.auth.token.email in ["linpyaesone130@gmail.com"]);
      allow create: if request.auth != null
        && request.resource.data.uid == request.auth.uid;
-     allow update, delete: if request.auth != null
+     allow delete: if request.auth != null
        && request.auth.token.email in ["linpyaesone130@gmail.com"];
+
+     // Admin: full update rights (Confirm/Reject).
+     allow update: if request.auth != null
+       && request.auth.token.email in ["linpyaesone130@gmail.com"];
+
+     // Owner: mirrors the transactions rule above — this is the second half
+     // of attemptOrderAutoConfirm() in store.html, which updates the linked
+     // order doc in the SAME runTransaction as the transactions-doc update.
+     // Firestore requires every write in a transaction to pass its rule, so
+     // without this the transactions-side update also fails and the whole
+     // 2-minute auto-confirm silently never works. Same constraints as
+     // above: still pending, flips only to confirmed, only status/
+     // autoConfirmed fields, only after 2 real server minutes.
+     allow update: if request.auth != null
+       && request.auth.uid == resource.data.uid
+       && resource.data.status == "pending"
+       && request.resource.data.status == "confirmed"
+       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status","autoConfirmed"])
+       && request.time > resource.data.createdAt + duration.value(2,"m");
    }
 
    Keep this list in sync with ADMIN_EMAILS above — this file's
