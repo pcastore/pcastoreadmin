@@ -183,8 +183,8 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
 .order-actions .mini-btn{flex:1;text-align:center;}
 .confirm-btn{color:var(--green);border-color:rgba(47,232,139,.35);}
 .badge.status-pending{background:rgba(255,201,74,.18);color:var(--gold);}
-.badge.status-confirmed{background:rgba(47,232,139,.18);color:var(--green);}
-.badge.status-rejected{background:rgba(255,67,101,.18);color:var(--red);}
+.badge.status-confirmed,.badge.status-done{background:rgba(47,232,139,.18);color:var(--green);}
+.badge.status-rejected,.badge.status-cancelled{background:rgba(255,67,101,.18);color:var(--red);}
 </style>
 </head>
 <body>
@@ -232,7 +232,8 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
     <div class="tabbar">
       <button class="tab-btn active" data-tab="general">ယေဘုယျ</button>
       <button class="tab-btn" data-tab="games">Games</button>
-      <button class="tab-btn" data-tab="topups">Top-up<span class="badge gold" id="tabTopupBadge" style="display:none;margin-left:5px;"></span></button>
+      <button class="tab-btn" data-tab="topups">Orders<span class="badge gold" id="tabTopupBadge" style="display:none;margin-left:5px;"></span></button>
+      <button class="tab-btn" data-tab="wallettopup">ပိုက်ဆံဖြည့်<span class="badge gold" id="tabWalletBadge" style="display:none;margin-left:5px;"></span></button>
       <button class="tab-btn" data-tab="users">Users</button>
     </div>
 
@@ -373,9 +374,9 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
     <!-- ===================== TOP-UP REQUESTS TAB ===================== -->
     <div class="tab-panel" id="tabTopups">
       <div class="card">
-        <div class="card-title">Top-up Requests (<span id="ordersCount">0</span>)</div>
+        <div class="card-title">Game Order Requests (<span id="ordersCount">0</span>)</div>
         <div class="card-sub">
-          User များ တင်သွင်းလိုက်တဲ့ Top-up order များကို ဒီနေရာမှာ Confirm / Reject လုပ်နိုင်ပါတယ်။
+          User များ ဝယ်ယူလိုက်တဲ့ Game Diamond/Item order များကို ဒီနေရာမှာ Confirm / Reject လုပ်နိုင်ပါတယ် (ငွေကြေးက Wallet ကနေ ချက်ချင်း နုတ်ယူပြီးသားပါ — "ပိုက်ဆံဖြည့်" tab က Wallet ငွေဖြည့်မှုတွေကို သီးခြား ကိုင်တွယ်ပါတယ်)။
           <b>Confirm</b> = Game ထဲကို Diamond/Item ကို Manual ပို့ပေးပြီးမှသာ နှိပ်ပါ။
           <b>Reject</b> = User ရဲ့ Wallet Balance ကို ဒီစနစ်က အလိုအလျောက် ပြန်အမ်းပေးပါမည်။
         </div>
@@ -394,6 +395,33 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
           <input class="text-input full" id="orderSearchInput" placeholder="User/Game ဖြင့် ရှာပါ...">
         </div>
         <div id="ordersListAdmin"></div>
+      </div>
+    </div>
+
+    <!-- ===================== WALLET TOP-UP TAB ===================== -->
+    <div class="tab-panel" id="tabWallettopup">
+      <div class="card">
+        <div class="card-title">Wallet ငွေဖြည့်တောင်းဆိုမှုများ (<span id="walletCount">0</span>)</div>
+        <div class="card-sub">
+          User များ KBZPay/WavePay/AYA Pay ဖြင့် ငွေလွှဲပြီး Receipt ပုံတင်လိုက်တဲ့ Top-up တောင်းဆိုမှုများ။
+          <b>Approve</b> = Receipt စစ်ဆေးပြီး မှန်ကန်ရင် User ရဲ့ Wallet Balance ထဲကို ငွေဖြည့်ပေးပါမည်။
+          <b>Reject</b> = Receipt မှားနေရင် ငြင်းပယ်ပါမည် (ဒီအဆင့်မှာ ငွေမဖြည့်ရသေးလို့ ပြန်အမ်းစရာမလိုပါ)။
+        </div>
+        <div class="order-summary">
+          <div class="os-item"><div class="os-num" id="walletPendingCount">0</div><div class="os-lbl">Pending</div></div>
+          <div class="os-item"><div class="os-num" id="walletDoneCount">0</div><div class="os-lbl">Done</div></div>
+          <div class="os-item"><div class="os-num" id="walletRejectedCount">0</div><div class="os-lbl">Rejected</div></div>
+        </div>
+        <div class="form-row2" style="margin-bottom:12px;">
+          <select class="text-input full" id="walletStatusFilter">
+            <option value="pending" selected>Pending (လုပ်ရမည်)</option>
+            <option value="">အခြေအနေ အားလုံး</option>
+            <option value="done">Done</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <input class="text-input full" id="walletSearchInput" placeholder="User/Method ဖြင့် ရှာပါ...">
+        </div>
+        <div id="walletTopupListAdmin"></div>
       </div>
     </div>
 
@@ -1069,18 +1097,23 @@ async function updateOrderStatus(orderId, newStatus, opts={}){
       if(!snap.exists) throw new Error("Order not found");
       const data = snap.data();
       const prevStatus = (data.status||"pending").toLowerCase();
+      const uid = pick(data, ["uid","userId"], null);
+      const price = Number(pick(data, ["price","amount","total"], 0)) || 0;
 
       // If rejecting a still-pending order, refund the price back to the
       // user's wallet balance (users/{uid}.balance) inside the same transaction.
-      let userRef = null, userSnap = null;
-      if(newStatus === "rejected" && prevStatus === "pending"){
-        const uid = pick(data, ["uid","userId"], null);
-        const price = Number(pick(data, ["price","amount","total"], 0)) || 0;
-        if(uid && price > 0){
-          userRef = db.collection("users").doc(uid);
-          userSnap = await tx.get(userRef);
-        }
-      }
+      const needsRefund = newStatus === "rejected" && prevStatus === "pending" && uid && price > 0;
+      const userRef = needsRefund ? db.collection("users").doc(uid) : null;
+      const userSnap = userRef ? await tx.get(userRef) : null;
+
+      // Keep the linked users/{uid}/transactions/{txId} doc (written by
+      // store.html at purchase time, id saved as orders/{id}.txId) in sync —
+      // this is the doc the customer's app actually listens to in realtime,
+      // so writing it here means the customer sees Confirm/Reject instantly
+      // instead of waiting on the 2-minute client-side auto-confirm fallback.
+      const txId = pick(data, ["txId"], null);
+      const linkedTxRef = (uid && txId) ? db.collection("users").doc(uid).collection("transactions").doc(txId) : null;
+      const linkedTxSnap = linkedTxRef ? await tx.get(linkedTxRef) : null;
 
       const update = {
         status: newStatus,
@@ -1100,9 +1133,14 @@ async function updateOrderStatus(orderId, newStatus, opts={}){
       }
 
       if(userRef && userSnap && userSnap.exists){
-        const price = Number(pick(data, ["price","amount","total"], 0)) || 0;
         const curBal = Number(userSnap.data().balance || 0);
         tx.update(userRef, { balance: curBal + price });
+      }
+      if(linkedTxRef && linkedTxSnap && linkedTxSnap.exists){
+        // purchase-category tx vocabulary (see store.html): pending -> done | cancelled
+        if(newStatus === "confirmed") tx.update(linkedTxRef, { status:"done" });
+        else if(newStatus === "rejected") tx.update(linkedTxRef, { status:"cancelled" });
+        else if(newStatus === "pending") tx.update(linkedTxRef, { status:"pending" });
       }
       tx.update(ref, update);
     });
@@ -1152,6 +1190,166 @@ function bindOrdersAdmin(){
       renderOrdersAdmin();
     }).catch(err2=>console.error("orders fallback fetch failed", err2));
   });
+}
+
+/* ---------- WALLET TOP-UP REQUESTS (real cash deposits) ----------
+   These are users/{uid}/transactions/{id} docs with category:"topup",
+   written by store.html when a user submits a KBZPay/WavePay/AYA Pay
+   receipt to add money to their wallet. This is a DIFFERENT collection
+   from ORDERS_COLLECTION above (which is for spending balance on game
+   items) — approving here is what actually credits users/{uid}.balance.
+   Assumed shape of one transaction document:
+     { uid, amount, method, receiptUrl, status: "pending"|"done"|"rejected",
+       adminNote, createdAt }
+   ------------------------------------------------------------------- */
+let walletTopupsData = [];
+let unsubWalletTopups = null;
+
+function statusLabelWallet(s){
+  if(s === "done") return "Done";
+  if(s === "rejected") return "Rejected";
+  return "Pending";
+}
+
+function renderWalletTopupsAdmin(){
+  const statusFilter = document.getElementById("walletStatusFilter").value;
+  const term = document.getElementById("walletSearchInput").value.trim().toLowerCase();
+  let list = walletTopupsData;
+  if(statusFilter) list = list.filter(x=>(x.status||"pending").toLowerCase()===statusFilter);
+  if(term){
+    list = list.filter(x=>{
+      const method = (x.method||"").toLowerCase();
+      const uid = (x.uid||"").toLowerCase();
+      return method.includes(term) || uid.includes(term);
+    });
+  }
+  const pendingCount = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="pending").length;
+  const doneCount = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="done").length;
+  const rejectedCount = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="rejected").length;
+  document.getElementById("walletCount").textContent = walletTopupsData.length;
+  document.getElementById("walletPendingCount").textContent = pendingCount;
+  document.getElementById("walletDoneCount").textContent = doneCount;
+  document.getElementById("walletRejectedCount").textContent = rejectedCount;
+
+  const walletBadge = document.getElementById("tabWalletBadge");
+  if(pendingCount > 0){ walletBadge.textContent = pendingCount; walletBadge.style.display = ""; }
+  else{ walletBadge.style.display = "none"; }
+
+  const wrap = document.getElementById("walletTopupListAdmin");
+  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Top-up တောင်းဆိုမှု မတွေ့ပါ</div>`; return; }
+  wrap.innerHTML = list.map(x=>{
+    const amount = Number(x.amount||0) || 0;
+    const method = x.method || "—";
+    const uid = x.uid || "—";
+    const proof = x.receiptUrl || null;
+    const adminNote = x.adminNote || null;
+    const status = (x.status||"pending").toLowerCase();
+    return `
+    <div class="order-card" data-wid="${x.id}" data-wuid="${x.uid||""}">
+      <div class="order-top">
+        <div class="li-thumb">${method.slice(0,2).toUpperCase()}</div>
+        <div class="li-info">
+          <div class="li-title">${method} — ${fmtK(amount)} Ks</div>
+          <div class="li-sub">UID: ${uid}</div>
+        </div>
+        <span class="badge status-${status}">${statusLabelWallet(status)}</span>
+      </div>
+      <div class="order-detail" id="walletDetail-${x.id}">
+        <div class="d-row"><span>UID</span><span>${uid}</span></div>
+        <div class="d-row"><span>နည်းလမ်း</span><span>${method}</span></div>
+        <div class="d-row"><span>ပမာဏ</span><span>${fmtK(amount)} Ks</span></div>
+        <div class="d-row"><span>တင်သွင်းချိန်</span><span>${fmtDate(x.createdAt)}</span></div>
+        ${adminNote ? `<div class="d-row"><span>မှတ်ချက်</span><span>${adminNote}</span></div>` : ""}
+        ${proof ? `<div class="order-proof"><img src="${proof}"></div>` : ""}
+      </div>
+      ${status === "pending" ? `
+        <div class="order-actions">
+          <button type="button" class="mini-btn confirm-btn" data-approve-wallet="${x.id}">Approve</button>
+          <button type="button" class="mini-btn danger" data-reject-wallet="${x.id}">Reject</button>
+        </div>` : ``}
+    </div>`;
+  }).join("");
+}
+document.getElementById("walletStatusFilter").addEventListener("change", renderWalletTopupsAdmin);
+document.getElementById("walletSearchInput").addEventListener("input", renderWalletTopupsAdmin);
+
+async function updateWalletTopupStatus(uid, txId, newStatus, opts={}){
+  const ref = db.collection("users").doc(uid).collection("transactions").doc(txId);
+  const userRef = db.collection("users").doc(uid);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref);
+      if(!snap.exists) throw new Error("Transaction not found");
+      const data = snap.data();
+      const prevStatus = (data.status||"pending").toLowerCase();
+      if(prevStatus !== "pending") throw new Error("ALREADY_HANDLED");
+
+      const userSnap = newStatus === "done" ? await tx.get(userRef) : null;
+
+      const update = {
+        status: newStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: auth.currentUser ? auth.currentUser.email : null
+      };
+      if(newStatus === "rejected" && opts.reason) update.adminNote = opts.reason;
+
+      if(newStatus === "done" && userSnap && userSnap.exists){
+        const amount = Number(data.amount||0) || 0;
+        const curBal = Number(userSnap.data().balance || 0);
+        tx.update(userRef, { balance: curBal + amount });
+      }
+      tx.update(ref, update);
+    });
+  }catch(err){
+    if(err.message === "ALREADY_HANDLED"){
+      alert("ဒီ Top-up ကို ကိုင်တွယ်ပြီးသားပါ — refresh လုပ်ကြည့်ပါ");
+    }else{
+      console.error("Wallet topup update failed", err);
+      alert("Update မအောင်မြင်ပါ — " + (err.code || err.message));
+    }
+  }
+}
+
+document.getElementById("walletTopupListAdmin").addEventListener("click", e=>{
+  const card = e.target.closest(".order-card");
+  const approveId = e.target.closest("[data-approve-wallet]")?.dataset.approveWallet;
+  const rejectId = e.target.closest("[data-reject-wallet]")?.dataset.rejectWallet;
+  const uid = card?.dataset.wuid;
+
+  if(approveId && uid){
+    if(!confirm("ဒီ Top-up ကို Approve လုပ်မှာ သေချာလား? User ရဲ့ Wallet Balance ထဲကို ငွေဖြည့်ပေးပါမည်။")) return;
+    updateWalletTopupStatus(uid, approveId, "done");
+    return;
+  }
+  if(rejectId && uid){
+    const reason = prompt("Reject အကြောင်းရင်း (မဖြည့်လည်းရ):", "");
+    if(reason === null) return;
+    if(!confirm("ဒီ Top-up ကို Reject လုပ်မှာ သေချာလား?")) return;
+    updateWalletTopupStatus(uid, rejectId, "rejected", {reason});
+    return;
+  }
+  if(card) document.getElementById("walletDetail-"+card.dataset.wid)?.classList.toggle("show");
+});
+
+function bindWalletTopups(){
+  if(unsubWalletTopups) unsubWalletTopups();
+  unsubWalletTopups = db.collectionGroup("transactions")
+    .where("category","==","topup")
+    .orderBy("createdAt","desc").limit(300)
+    .onSnapshot(snap=>{
+      walletTopupsData = snap.docs.map(d=>Object.assign({id:d.id, uid: d.data().uid || d.ref.parent.parent.id}, d.data()));
+      renderWalletTopupsAdmin();
+    }, err=>{
+      console.error("wallet topups listener error", err);
+      // A composite index is required for this collectionGroup query
+      // (category == + orderBy createdAt) — Firestore's error in the
+      // browser console includes a one-tap link to auto-create it the
+      // first time this runs. Falls back to an unordered fetch meanwhile.
+      db.collectionGroup("transactions").where("category","==","topup").limit(300).get().then(snap=>{
+        walletTopupsData = snap.docs.map(d=>Object.assign({id:d.id, uid: d.data().uid || d.ref.parent.parent.id}, d.data()));
+        renderWalletTopupsAdmin();
+      }).catch(err2=>console.error("wallet topups fallback fetch failed", err2));
+    });
 }
 
 /* ---------- USERS LIST (read-only view) ---------- */
@@ -1240,6 +1438,7 @@ auth.onAuthStateChanged(user=>{
   bindGamesAdmin();
   bindPkgsAdmin();
   bindOrdersAdmin();
+  bindWalletTopups();
   bindUsersAdmin();
 });
 
@@ -1289,6 +1488,22 @@ auth.onAuthStateChanged(user=>{
        && (request.auth.uid == uid
            || request.auth.token.email in ["linpyaesone130@gmail.com"]);
      allow write: if request.auth != null
+       && (request.auth.uid == uid
+           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
+   }
+
+   match /users/{uid}/transactions/{txId} {
+     // store.html writes these (topup receipts + purchase records) and
+     // listens to them live. This admin panel needs to READ across every
+     // user's transactions (via collectionGroup query, for the Wallet
+     // Top-up tab) and WRITE status/balance updates on Approve/Reject —
+     // and also WRITE here when syncing a game-order Confirm/Reject
+     // (see updateOrderStatus() in this file's <script>).
+     allow read: if request.auth != null
+       && (request.auth.uid == uid
+           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
+     allow create: if request.auth != null && request.auth.uid == uid;
+     allow update: if request.auth != null
        && (request.auth.uid == uid
            || request.auth.token.email in ["linpyaesone130@gmail.com"]);
    }
