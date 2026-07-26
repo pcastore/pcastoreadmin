@@ -31,11 +31,21 @@
 .icon{width:1em;height:1em;display:inline-block;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 html,body{height:100%;}
 body{
-  background:var(--bg);color:var(--text);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255,46,159,.10), transparent 45%),
+    radial-gradient(circle at 100% 18%, rgba(34,225,255,.08), transparent 42%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);
   font-family:"Baloo 2","Segoe UI",Helvetica,Arial,"Padauk","Myanmar Text",sans-serif;
   min-height:100%;
+  -webkit-font-smoothing:antialiased;
 }
+::selection{background:var(--blue-soft);color:var(--text);}
 .shell{max-width:520px;margin:0 auto;padding:20px 16px 60px;}
+button,input,select{font-family:inherit;}
+button{transition:transform .15s ease, opacity .15s ease, background .15s ease, border-color .15s ease;}
+button:active{transform:scale(.97);}
 
 /* ---- Login gate (reuses the same Google-only flow as index.html) ---- */
 .login-gate{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:28px;}
@@ -62,15 +72,16 @@ body{
 
 /* ---- Admin app ---- */
 .app{display:none;}
-.app.show{display:block;}
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.app.show{display:block;animation:app-fade-in .4s ease;}
+@keyframes app-fade-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
 .brand{display:flex;align-items:center;gap:10px;}
-.brand-name{font-weight:800;font-size:15px;}
+.brand-name{font-weight:800;font-size:15px;background:linear-gradient(135deg,var(--text) 30%,var(--cyan) 130%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .brand-sub{font-size:10.5px;color:var(--text-faint);}
 .signout-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);font-size:11.5px;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;}
 .signout-btn:active{background:var(--surface-3);}
 
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;}
+.card{background:linear-gradient(180deg,var(--surface),var(--surface) 60%,var(--surface-2));border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 8px 24px -12px rgba(0,0,0,.45);}
 .card-title{font-size:14.5px;font-weight:800;margin-bottom:4px;}
 .card-sub{font-size:11.5px;color:var(--text-faint);margin-bottom:16px;line-height:1.5;}
 .rate-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
@@ -83,12 +94,13 @@ body{
 .rate-input-wrap input:focus{outline:none;}
 .rate-unit{font-size:11px;color:var(--text-faint);}
 .mmk-row{opacity:.55;}
-.text-input{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;}
-.text-input:focus{outline:none;border-color:var(--blue);}
+.text-input{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;transition:border-color .15s ease, box-shadow .15s ease;}
+.text-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
+.rate-input-wrap:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
 
-.save-btn{width:100%;padding:13px;border-radius:10px;border:0;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px;}
+.save-btn{width:100%;padding:13px;border-radius:10px;border:0;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px;box-shadow:0 6px 16px -6px rgba(255,46,159,.55);}
 .save-btn:active{opacity:.85;}
-.save-btn:disabled{opacity:.5;pointer-events:none;}
+.save-btn:disabled{opacity:.5;pointer-events:none;box-shadow:none;}
 .save-msg{font-size:11.5px;text-align:center;margin-top:10px;min-height:14px;}
 .save-msg.ok{color:var(--green);}
 .save-msg.err{color:var(--red);}
@@ -97,12 +109,13 @@ body{
 .meta-note b{color:var(--text-dim);}
 
 /* ---- Tabs ---- */
-.tabbar{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:2px;}
+.tabbar{display:flex;gap:4px;overflow-x:auto;margin-bottom:16px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:24px;}
 .tabbar::-webkit-scrollbar{display:none;}
-.tab-btn{flex-shrink:0;padding:9px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
-.tab-btn.active{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;border-color:transparent;}
+.tab-btn{flex-shrink:0;padding:9px 14px;border-radius:20px;border:1px solid transparent;background:transparent;color:var(--text-faint);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.tab-btn.active{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;border-color:transparent;box-shadow:0 4px 14px -4px rgba(255,46,159,.5);}
 .tab-panel{display:none;}
-.tab-panel.active{display:block;}
+.tab-panel.active{display:block;animation:panel-in .3s ease;}
+@keyframes panel-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 
 .form-group{margin-bottom:12px;}
 .form-label{font-size:11.5px;color:var(--text-dim);font-weight:700;margin-bottom:6px;display:block;}
@@ -125,7 +138,7 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
 .mini-btn:active{background:var(--surface-3);}
 .mini-btn.danger{color:var(--red);border-color:rgba(255,67,101,.35);}
 
-.list-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;}
+.list-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;transition:background .15s ease;}
 .list-item .li-thumb{width:38px;height:38px;border-radius:9px;background:var(--surface-3);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:11px;font-weight:800;color:var(--text-dim);}
 .list-item .li-thumb img{width:100%;height:100%;object-fit:cover;}
 .list-item .li-info{flex:1;min-width:0;}
@@ -136,7 +149,8 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
 .badge.gold{background:rgba(255,201,74,.18);color:var(--gold);}
 .empty-note{font-size:11.5px;color:var(--text-faint);text-align:center;padding:16px 0;}
 
-.user-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;cursor:pointer;}
+.user-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;cursor:pointer;transition:background .15s ease, border-color .15s ease;}
+.user-card:active{background:var(--surface-3);}
 .user-card-top{display:flex;align-items:center;gap:10px;}
 .user-ava{width:38px;height:38px;border-radius:50%;background:var(--surface-3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text-dim);overflow:hidden;}
 .user-ava img{width:100%;height:100%;object-fit:cover;}
@@ -170,7 +184,7 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
 .order-summary .os-item{flex:1;text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 6px;}
 .order-summary .os-num{font-size:19px;font-weight:800;}
 .order-summary .os-lbl{font-size:10px;color:var(--text-faint);margin-top:2px;}
-.order-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;}
+.order-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;transition:border-color .15s ease;}
 .order-top{display:flex;align-items:center;gap:10px;cursor:pointer;}
 .order-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-dim);line-height:1.9;}
 .order-detail.show{display:block;}
@@ -185,6 +199,49 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
 .badge.status-pending{background:rgba(255,201,74,.18);color:var(--gold);}
 .badge.status-confirmed,.badge.status-done{background:rgba(47,232,139,.18);color:var(--green);}
 .badge.status-rejected,.badge.status-cancelled{background:rgba(255,67,101,.18);color:var(--red);}
+
+/* ---- Dashboard ---- */
+.dash-hello{font-size:17px;font-weight:800;margin-bottom:2px;}
+.dash-hello-sub{font-size:11.5px;color:var(--text-faint);margin-bottom:16px;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.dash-stat-card{--accent:var(--blue);background:linear-gradient(165deg,var(--surface) 0%,var(--surface-2) 100%);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden;box-shadow:0 8px 24px -14px rgba(0,0,0,.5);cursor:pointer;transition:transform .15s ease, border-color .15s ease;}
+.dash-stat-card:active{transform:scale(.97);}
+.dash-stat-card::after{content:"";position:absolute;top:-24px;right:-24px;width:76px;height:76px;border-radius:50%;background:var(--accent);opacity:.16;filter:blur(1px);}
+.dash-stat-icon{width:30px;height:30px;border-radius:9px;background:var(--accent);opacity:.9;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px;position:relative;}
+.dash-stat-label{font-size:10px;color:var(--text-faint);margin-bottom:4px;line-height:1.35;position:relative;}
+.dash-stat-value{font-size:16.5px;font-weight:800;position:relative;letter-spacing:-.01em;}
+.dash-stat-sub{font-size:9.5px;color:var(--text-faint);margin-top:3px;position:relative;}
+.dash-stat-sub.up{color:var(--green);}
+.dash-stat-sub.warn{color:var(--gold);}
+
+.dash-section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.dash-section-title .card-title{margin-bottom:0;}
+.dash-range-lbl{font-size:10px;color:var(--text-faint);font-weight:700;}
+
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:130px;padding:14px 2px 0;}
+.chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0;}
+.chart-bar-val{font-size:8px;color:var(--text-faint);font-weight:700;white-space:nowrap;}
+.chart-bar{width:100%;max-width:28px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--cyan),var(--blue));min-height:4px;transition:height .6s cubic-bezier(.34,1.56,.64,1);}
+.chart-bar.today{background:linear-gradient(180deg,var(--gold),var(--blue));}
+.chart-bar-label{font-size:9.5px;color:var(--text-faint);font-weight:700;}
+
+.dash-game-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.dash-game-row:last-child{border-bottom:none;padding-bottom:0;}
+.dash-game-rank{width:20px;height:20px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text-dim);flex-shrink:0;}
+.dash-game-name{font-size:12px;font-weight:700;flex:0 0 auto;width:30%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-game-bar-wrap{flex:1;height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;}
+.dash-game-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .5s ease;}
+.dash-game-count{font-size:11px;font-weight:800;color:var(--text-dim);flex-shrink:0;width:30px;text-align:right;}
+
+.activity-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.activity-row:last-child{border-bottom:none;padding-bottom:0;}
+.activity-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.activity-icon.order{background:var(--blue-soft);}
+.activity-icon.wallet{background:var(--cyan-soft);}
+.activity-info{flex:1;min-width:0;}
+.activity-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.activity-sub{font-size:10px;color:var(--text-faint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.activity-time{font-size:9px;color:var(--text-faint);flex-shrink:0;text-align:right;}
 </style>
 </head>
 <body>
@@ -230,14 +287,68 @@ select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
     </div>
 
     <div class="tabbar">
-      <button class="tab-btn active" data-tab="general">ယေဘုယျ</button>
+      <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+      <button class="tab-btn" data-tab="general">ယေဘုယျ</button>
       <button class="tab-btn" data-tab="games">Games</button>
       <button class="tab-btn" data-tab="topups">Orders<span class="badge gold" id="tabTopupBadge" style="display:none;margin-left:5px;"></span></button>
       <button class="tab-btn" data-tab="wallettopup">ပိုက်ဆံဖြည့်<span class="badge gold" id="tabWalletBadge" style="display:none;margin-left:5px;"></span></button>
       <button class="tab-btn" data-tab="users">Users</button>
     </div>
 
-    <div class="tab-panel active" id="tabGeneral">
+    <!-- ===================== DASHBOARD TAB ===================== -->
+    <div class="tab-panel active" id="tabDashboard">
+      <div class="dash-hello">မင်္ဂလာပါ 👋</div>
+      <div class="dash-hello-sub" id="dashDateLabel">PCA Store စတိုးရဲ့ လက်ရှိအခြေအနေ</div>
+
+      <div class="dash-grid">
+        <div class="dash-stat-card" style="--accent:var(--green)" data-goto-tab="topups">
+          <div class="dash-stat-icon">💰</div>
+          <div class="dash-stat-label">စုစုပေါင်း ဝင်ငွေ (Confirmed)</div>
+          <div class="dash-stat-value" id="dashTotalRevenue">0 Ks</div>
+          <div class="dash-stat-sub" id="dashTodayRevenue">ယနေ့ — 0 Ks</div>
+        </div>
+        <div class="dash-stat-card" style="--accent:var(--gold)" data-goto-tab="topups">
+          <div class="dash-stat-icon">⏳</div>
+          <div class="dash-stat-label">လုပ်ဆောင်ရန် ကျန်နေသည်</div>
+          <div class="dash-stat-value" id="dashPendingActions">0</div>
+          <div class="dash-stat-sub warn" id="dashPendingBreakdown">Order 0 • Wallet 0</div>
+        </div>
+        <div class="dash-stat-card" style="--accent:var(--cyan)" data-goto-tab="users">
+          <div class="dash-stat-icon">👥</div>
+          <div class="dash-stat-label">စုစုပေါင်း Users</div>
+          <div class="dash-stat-value" id="dashTotalUsers">0</div>
+          <div class="dash-stat-sub" id="dashNewUsers">+0 ယနေ့</div>
+        </div>
+        <div class="dash-stat-card" style="--accent:var(--blue)" data-goto-tab="users">
+          <div class="dash-stat-icon">👛</div>
+          <div class="dash-stat-label">Wallet လက်ကျန် (အားလုံး)</div>
+          <div class="dash-stat-value" id="dashWalletBalance">0 Ks</div>
+          <div class="dash-stat-sub" id="dashOrdersDone">Order ပြီးစီး 0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="dash-section-title">
+          <div class="card-title">ဝင်ငွေ — လွန်ခဲ့သော ၇ ရက်</div>
+          <div class="dash-range-lbl">Confirmed orders</div>
+        </div>
+        <div class="chart-bars" id="dashRevenueChart"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">လူကြိုက်များဆုံး Games</div>
+        <div class="card-sub" style="margin-bottom:10px;">Order အရေအတွက်အလိုက် စီထားပါသည်</div>
+        <div id="dashTopGames"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">မကြာသေးမီက Activity</div>
+        <div class="card-sub" style="margin-bottom:10px;">Order နှင့် Wallet ဖြည့်မှု နောက်ဆုံး ၈ ခု</div>
+        <div id="dashRecentActivity"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tabGeneral">
     <div class="card">
       <div class="card-title">App Logo</div>
       <div class="card-sub">
@@ -588,6 +699,10 @@ document.getElementById("saveRatesBtn").addEventListener("click", async ()=>{
 });
 
 /* ---------- TABS ---------- */
+function goToTab(tabName){
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+  if(btn) btn.click();
+}
 document.querySelectorAll(".tab-btn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
@@ -595,7 +710,11 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
     btn.classList.add("active");
     const panelId = "tab" + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1);
     document.getElementById(panelId).classList.add("active");
+    window.scrollTo({top:0, behavior:"smooth"});
   });
+});
+document.querySelectorAll(".dash-stat-card[data-goto-tab]").forEach(card=>{
+  card.addEventListener("click", ()=>goToTab(card.dataset.gotoTab));
 });
 
 function fmtK(n){ return Math.round(Number(n)||0).toLocaleString("en-US"); }
@@ -1182,12 +1301,14 @@ function bindOrdersAdmin(){
   unsubOrdersAdmin = db.collection(ORDERS_COLLECTION).orderBy("createdAt","desc").limit(300).onSnapshot(snap=>{
     ordersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
     renderOrdersAdmin();
+    renderDashboard();
   }, err=>{
     console.error("orders admin listener error", err);
     // Falls back to unordered fetch if createdAt is missing on old docs / index not ready.
     db.collection(ORDERS_COLLECTION).limit(300).get().then(snap=>{
       ordersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
       renderOrdersAdmin();
+      renderDashboard();
     }).catch(err2=>console.error("orders fallback fetch failed", err2));
   });
 }
@@ -1339,6 +1460,7 @@ function bindWalletTopups(){
     .onSnapshot(snap=>{
       walletTopupsData = snap.docs.map(d=>Object.assign({id:d.id, uid: d.data().uid || d.ref.parent.parent.id}, d.data()));
       renderWalletTopupsAdmin();
+      renderDashboard();
     }, err=>{
       console.error("wallet topups listener error", err);
       // A composite index is required for this collectionGroup query
@@ -1348,6 +1470,7 @@ function bindWalletTopups(){
       db.collectionGroup("transactions").where("category","==","topup").limit(300).get().then(snap=>{
         walletTopupsData = snap.docs.map(d=>Object.assign({id:d.id, uid: d.data().uid || d.ref.parent.parent.id}, d.data()));
         renderWalletTopupsAdmin();
+        renderDashboard();
       }).catch(err2=>console.error("wallet topups fallback fetch failed", err2));
     });
 }
@@ -1402,14 +1525,150 @@ function bindUsersAdmin(){
   unsubUsersAdmin = db.collection("users").orderBy("createdAt","desc").limit(300).onSnapshot(snap=>{
     usersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
     renderUsersAdmin();
+    renderDashboard();
   }, err=>{
     console.error("users admin listener error", err);
     // Falls back to unordered fetch if createdAt is missing on old docs / index not ready.
     db.collection("users").limit(300).get().then(snap=>{
       usersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
       renderUsersAdmin();
+      renderDashboard();
     }).catch(err2=>console.error("users fallback fetch failed", err2));
   });
+}
+
+/* ---------- DASHBOARD ----------
+   Pure derived view: reuses ordersData / walletTopupsData / usersData /
+   gamesData that the four listeners above already keep in sync, so this
+   just needs to be re-run whenever any of them changes (see the
+   renderDashboard() calls added inside each bind*() onSnapshot above). */
+function isSameDay(d1, d2){
+  return d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
+}
+function tsToDate(ts){
+  if(!ts) return null;
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+const DASH_DATE_FMT = {year:"numeric", month:"long", day:"numeric"};
+function renderDashboard(){
+  const dateLbl = document.getElementById("dashDateLabel");
+  if(dateLbl) dateLbl.textContent = new Date().toLocaleDateString("en-GB", DASH_DATE_FMT) + " — PCA Store စတိုးရဲ့ လက်ရှိအခြေအနေ";
+
+  const now = new Date();
+  const confirmedOrders = ordersData.filter(o=>(o.status||"").toLowerCase()==="confirmed");
+  const orderAmt = o => Number(pick(o,["price","amount","total"],0)) || 0;
+  const orderDate = o => tsToDate(o.confirmedAt) || tsToDate(o.createdAt);
+
+  const totalRevenue = confirmedOrders.reduce((s,o)=>s+orderAmt(o), 0);
+  const todayRevenue = confirmedOrders.reduce((s,o)=>{
+    const d = orderDate(o);
+    return d && isSameDay(d, now) ? s+orderAmt(o) : s;
+  }, 0);
+
+  const pendingOrders = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="pending").length;
+  const pendingWallet = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="pending").length;
+  const totalUsers = usersData.length;
+  const newUsersToday = usersData.filter(u=>{ const d = tsToDate(u.createdAt); return d && isSameDay(d, now); }).length;
+  const totalWalletBalance = usersData.reduce((s,u)=>s+(Number(u.balance||0)||0), 0);
+
+  document.getElementById("dashTotalRevenue").textContent = fmtK(totalRevenue) + " Ks";
+  document.getElementById("dashTodayRevenue").textContent = "ယနေ့ — " + fmtK(todayRevenue) + " Ks";
+  document.getElementById("dashPendingActions").textContent = pendingOrders + pendingWallet;
+  document.getElementById("dashPendingBreakdown").textContent = `Order ${pendingOrders} • Wallet ${pendingWallet}`;
+  document.getElementById("dashTotalUsers").textContent = totalUsers;
+  document.getElementById("dashNewUsers").textContent = `+${newUsersToday} ယနေ့`;
+  document.getElementById("dashWalletBalance").textContent = fmtK(totalWalletBalance) + " Ks";
+  document.getElementById("dashOrdersDone").textContent = `Order ပြီးစီး ${confirmedOrders.length}`;
+
+  renderDashRevenueChart(confirmedOrders, orderAmt, orderDate, now);
+  renderDashTopGames();
+  renderDashActivity();
+}
+
+function renderDashRevenueChart(confirmedOrders, orderAmt, orderDate, now){
+  const days = [];
+  for(let i=6;i>=0;i--){ const d = new Date(now); d.setDate(d.getDate()-i); days.push(d); }
+  const totals = days.map(d=>confirmedOrders.reduce((s,o)=>{
+    const od = orderDate(o);
+    return od && isSameDay(od, d) ? s+orderAmt(o) : s;
+  }, 0));
+  const max = Math.max(...totals, 1);
+  const wrap = document.getElementById("dashRevenueChart");
+  if(!wrap) return;
+  wrap.innerHTML = totals.map((v,i)=>{
+    const h = v>0 ? Math.max(6, Math.round((v/max)*94)) : 3;
+    const today = isSameDay(days[i], now);
+    const lbl = days[i].toLocaleDateString("en-GB",{weekday:"short"});
+    return `<div class="chart-bar-col">
+      <div class="chart-bar-val">${v>0 ? fmtK(v) : ''}</div>
+      <div class="chart-bar${today?' today':''}" style="height:${h}px"></div>
+      <div class="chart-bar-label">${today?'ယနေ့':lbl}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderDashTopGames(){
+  const counts = {};
+  ordersData.forEach(o=>{
+    const g = pick(o,["game","gameName"],null);
+    if(!g) return;
+    counts[g] = (counts[g]||0) + 1;
+  });
+  const arr = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const wrap = document.getElementById("dashTopGames");
+  if(!wrap) return;
+  if(!arr.length){ wrap.innerHTML = `<div class="empty-note">Order data မရှိသေးပါ</div>`; return; }
+  const max = arr[0][1];
+  wrap.innerHTML = arr.map(([name,count], idx)=>`
+    <div class="dash-game-row">
+      <div class="dash-game-rank">${idx+1}</div>
+      <div class="dash-game-name">${name}</div>
+      <div class="dash-game-bar-wrap"><div class="dash-game-bar-fill" style="width:${Math.max(6,Math.round((count/max)*100))}%"></div></div>
+      <div class="dash-game-count">${count}</div>
+    </div>`).join("");
+}
+
+function renderDashActivity(){
+  const items = [];
+  ordersData.forEach(o=>items.push({
+    type:"order",
+    icon:"🎮",
+    title:`${pick(o,["game","gameName"],"Order")} — ${pick(o,["package","packageLabel","label","pkg"],"")}`,
+    sub:(pick(o,["userName","name","displayName"],"") || pick(o,["userEmail","email"],"") || "user") + " • " + fmtK(Number(pick(o,["price","amount","total"],0))||0) + " Ks",
+    status:(o.status||"pending").toLowerCase(),
+    ts: o.createdAt
+  }));
+  walletTopupsData.forEach(x=>items.push({
+    type:"wallet",
+    icon:"💳",
+    title:`${x.method || "Wallet"} ငွေဖြည့်`,
+    sub:(x.uid || "user") + " • " + fmtK(Number(x.amount||0)||0) + " Ks",
+    status:(x.status||"pending").toLowerCase(),
+    ts: x.createdAt
+  }));
+  items.sort((a,b)=>{
+    const ta = tsToDate(a.ts)?.getTime() || 0;
+    const tb = tsToDate(b.ts)?.getTime() || 0;
+    return tb - ta;
+  });
+  const top = items.slice(0,8);
+  const wrap = document.getElementById("dashRecentActivity");
+  if(!wrap) return;
+  if(!top.length){ wrap.innerHTML = `<div class="empty-note">Activity မရှိသေးပါ</div>`; return; }
+  wrap.innerHTML = top.map(it=>`
+    <div class="activity-row">
+      <div class="activity-icon ${it.type}">${it.icon}</div>
+      <div class="activity-info">
+        <div class="activity-title">${it.title}</div>
+        <div class="activity-sub">${it.sub}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+        <span class="badge status-${it.status}">${it.status}</span>
+        <span class="activity-time">${fmtDate(it.ts)}</span>
+      </div>
+    </div>`).join("");
 }
 
 auth.getRedirectResult().catch(err=>console.error("Redirect result error", err));
