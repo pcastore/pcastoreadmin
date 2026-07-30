@@ -217,6 +217,11 @@
                 <input type="text" id="edit-payment-number" placeholder="e.g. 09123456789">
                 <label>Account Name</label>
                 <input type="text" id="edit-payment-accountname" placeholder="e.g. Mg Mg Aung">
+
+                <label>Logo / QR Image (optional)</label>
+                <img id="edit-payment-preview" src="" alt="Preview" style="width:80px;height:80px;object-fit:cover;border-radius:8px;display:none;background:#F0F2F5;">
+                <input type="file" id="edit-payment-file" accept="image/*" onchange="previewPaymentImage(event)" style="font-size:13px;">
+                <p id="payment-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
@@ -431,6 +436,7 @@
         // ---------- Manage Games ----------
         let GAMES = {};   // { docId: { name, image, packages: [{amount, price}] } }
         let editingImageFile = null;
+        let editingPaymentImageFile = null;
 
         function renderAdminGamesList() {
             const container = document.getElementById('admin-games-container');
@@ -534,11 +540,11 @@
 
         // Uploads a phone photo to a free image host (ImgBB) and resolves with its direct URL.
         // No Firebase Storage / Blaze plan involved.
-        async function uploadImageToImgBB(file) {
+        async function uploadImageToImgBB(file, statusElId = 'upload-status') {
             if (!IMGBB_API_KEY || IMGBB_API_KEY === "YOUR_IMGBB_API_KEY") {
                 throw new Error("Add your free ImgBB API key first (see IMGBB_API_KEY at the top of the Firebase script). Get one at https://api.imgbb.com/");
             }
-            const statusEl = document.getElementById('upload-status');
+            const statusEl = document.getElementById(statusElId);
             statusEl.style.display = 'block';
             statusEl.innerText = 'Uploading photo...';
 
@@ -554,6 +560,19 @@
 
             statusEl.innerText = 'Photo uploaded ✓';
             return data.data.url;
+        }
+
+        function previewPaymentImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingPaymentImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-payment-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
 
         async function saveGame() {
@@ -727,9 +746,12 @@
                 return `
                     <div class="admin-card">
                         <div class="ac-header"><span class="ac-id">${p.name}</span></div>
-                        <div class="ac-body">
-                            <p><b>Number:</b> ${p.number}</p>
-                            <p><b>Account Name:</b> ${p.accountName}</p>
+                        <div class="ac-body" style="display:flex;gap:10px;align-items:center;">
+                            ${p.image ? `<div style="width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;"><img src="${p.image}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>` : ''}
+                            <div>
+                                <p><b>Number:</b> ${p.number}</p>
+                                <p><b>Account Name:</b> ${p.accountName}</p>
+                            </div>
                         </div>
                         <div class="ac-footer">
                             <button class="btn btn-outline" onclick="openPaymentEditor('${id}')">Edit</button>
@@ -755,7 +777,11 @@
         }
 
         function openPaymentEditor(paymentId = null) {
+            editingPaymentImageFile = null;
             document.getElementById('edit-payment-id').value = paymentId || '';
+            document.getElementById('edit-payment-file').value = '';
+            document.getElementById('payment-upload-status').style.display = 'none';
+            const preview = document.getElementById('edit-payment-preview');
             const deleteBtn = document.getElementById('delete-payment-btn');
             if (paymentId && PAYMENT_METHODS[paymentId]) {
                 const p = PAYMENT_METHODS[paymentId];
@@ -763,12 +789,16 @@
                 document.getElementById('edit-payment-name').value = p.name;
                 document.getElementById('edit-payment-number').value = p.number;
                 document.getElementById('edit-payment-accountname').value = p.accountName;
+                if (p.image) { preview.src = p.image; preview.style.display = 'block'; }
+                else { preview.src = ''; preview.style.display = 'none'; }
                 deleteBtn.style.display = 'block';
             } else {
                 document.getElementById('payment-editor-title').innerText = 'Add Payment Method';
                 document.getElementById('edit-payment-name').value = '';
                 document.getElementById('edit-payment-number').value = '';
                 document.getElementById('edit-payment-accountname').value = '';
+                preview.src = '';
+                preview.style.display = 'none';
                 deleteBtn.style.display = 'none';
             }
             document.getElementById('payment-editor-modal-overlay').classList.add('show');
@@ -792,7 +822,12 @@
             saveBtn.innerText = 'Saving...';
 
             try {
-                const data = { name, number, accountName };
+                let imageUrl = (paymentId && PAYMENT_METHODS[paymentId]) ? (PAYMENT_METHODS[paymentId].image || '') : '';
+                if (editingPaymentImageFile) {
+                    imageUrl = await uploadImageToImgBB(editingPaymentImageFile, 'payment-upload-status');
+                }
+
+                const data = { name, number, accountName, image: imageUrl };
                 if (paymentId) {
                     await updateDoc(doc(db, "paymentMethods", paymentId), data);
                 } else {
@@ -802,7 +837,7 @@
                 closePaymentEditor();
             } catch (error) {
                 console.error("Save payment method error:", error);
-                window.showToast('Failed to save payment method.');
+                window.showToast(error.message || 'Failed to save payment method.');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = originalText;
@@ -836,6 +871,7 @@
 
         window.openPaymentEditor = openPaymentEditor;
         window.closePaymentEditor = closePaymentEditor;
+        window.previewPaymentImage = previewPaymentImage;
         window.savePaymentMethod = savePaymentMethod;
         window.deletePaymentMethod = deletePaymentMethod;
         window.deleteCurrentPaymentMethod = deleteCurrentPaymentMethod;
