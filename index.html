@@ -86,6 +86,20 @@
         .img-update-box img { width: 100%; max-height: 220px; object-fit: contain; background: #F0F2F5; display: block; }
         .img-update-change { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
         .img-update-change svg { width: 13px; height: 13px; }
+
+        /* Custom Delete / Warning / Information dialog (replaces browser confirm()/alert()) */
+        .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; padding: 24px; }
+        .dialog-overlay.show { opacity: 1; pointer-events: auto; }
+        .dialog-box { background: #ffffff; width: 100%; max-width: 340px; border-radius: 16px; padding: 24px 20px 18px; text-align: center; transform: scale(0.92); transition: transform 0.2s ease; }
+        .dialog-overlay.show .dialog-box { transform: scale(1); }
+        .dialog-icon { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .dialog-icon.type-delete { background: #FDE8E8; color: #C0392B; }
+        .dialog-icon.type-warning { background: #FFF3CD; color: #B8860B; }
+        .dialog-icon.type-info { background: #E7F3FF; color: #1877F2; }
+        .dialog-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #050505; }
+        .dialog-message { font-size: 14px; color: #65676B; line-height: 1.45; margin-bottom: 20px; white-space: pre-line; }
+        .dialog-actions { display: flex; gap: 8px; }
+        .dialog-actions .btn { flex: 1; }
     </style>
 </head>
 <body>
@@ -102,9 +116,24 @@
         <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path></symbol>
         <symbol id="icon-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></symbol>
         <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></symbol>
+        <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></symbol>
+        <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></symbol>
     </svg>
 
     <div id="toast"><svg class="ui-icon" style="color: #4ADE80; width:18px;"><use href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
+
+    <!-- Reusable Delete / Warning / Information dialog (replaces browser confirm()/alert()) -->
+    <div class="dialog-overlay" id="action-dialog-overlay" onclick="if(event.target===this) window.closeActionDialog()">
+        <div class="dialog-box">
+            <div class="dialog-icon" id="action-dialog-icon"></div>
+            <div class="dialog-title" id="action-dialog-title">Title</div>
+            <div class="dialog-message" id="action-dialog-message">Message</div>
+            <div class="dialog-actions">
+                <button class="btn btn-outline" id="action-dialog-cancel" onclick="window.closeActionDialog()">Cancel</button>
+                <button class="btn btn-primary" id="action-dialog-confirm" onclick="window.confirmActionDialog()">Confirm</button>
+            </div>
+        </div>
+    </div>
 
     <header class="header">
         <div class="logo"><div class="logo-icon"><svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg></div> Admin Zone</div>
@@ -213,6 +242,20 @@
                 <input type="file" id="edit-game-file" class="img-update-input" accept="image/*" onchange="previewGameImage(event)">
                 <p id="upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
 
+                <label>Banner Image</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Wide photo shown at the top of the game's page. Leave empty to reuse the Game Image above.</p>
+                <label class="img-update-box" id="game-banner-update-box" for="edit-game-banner-file">
+                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                    <span class="img-update-label">Banner Update</span>
+                    <span class="img-update-hint">Tap to choose a banner photo (16:9)</span>
+                    <img id="edit-game-banner-preview" src="" alt="Banner preview" style="display:none;">
+                    <span class="img-update-change" id="game-banner-update-change" style="display:none;">
+                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                    </span>
+                </label>
+                <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
+                <p id="banner-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+
                 <label>Top-up Packages</label>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
                 <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
@@ -301,8 +344,54 @@
             toast.classList.add('show');
             setTimeout(() => { toast.classList.remove('show'); }, 3000);
         }
+        // Reusable Delete / Warning / Information dialog — replaces window.confirm() / alert().
+        // type: 'delete' (red, destructive) | 'warning' (amber, needs a decision) | 'info' (blue, OK-only notice)
+        let actionDialogCallback = null;
+
+        function showActionDialog({ type = 'warning', title = '', message = '', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm = null }) {
+            const iconEl = document.getElementById('action-dialog-icon');
+            const iconUse = type === 'delete' ? '#icon-trash' : (type === 'info' ? '#icon-info' : '#icon-warning');
+            iconEl.className = 'dialog-icon type-' + type;
+            iconEl.innerHTML = `<svg class="ui-icon" style="width:26px;"><use href="${iconUse}"></use></svg>`;
+
+            document.getElementById('action-dialog-title').innerText = title;
+            document.getElementById('action-dialog-message').innerText = message;
+
+            const cancelBtn = document.getElementById('action-dialog-cancel');
+            const confirmBtn = document.getElementById('action-dialog-confirm');
+            const infoOnly = (type === 'info');
+
+            cancelBtn.style.display = infoOnly ? 'none' : 'block';
+            cancelBtn.innerText = cancelText;
+            confirmBtn.innerText = confirmText;
+            confirmBtn.className = 'btn ' + (type === 'delete' ? 'btn-danger' : 'btn-primary');
+
+            actionDialogCallback = onConfirm;
+            document.getElementById('action-dialog-overlay').classList.add('show');
+        }
+
+        function closeActionDialog() {
+            document.getElementById('action-dialog-overlay').classList.remove('show');
+            actionDialogCallback = null;
+        }
+
+        function confirmActionDialog() {
+            const cb = actionDialogCallback;
+            closeActionDialog();
+            if (cb) cb();
+        }
+
+        // Convenience wrapper for a plain informational notice (single OK button).
+        function showInfoDialog(title, message) {
+            showActionDialog({ type: 'info', title, message, confirmText: 'OK' });
+        }
+
         window.showPage = showPage;
         window.showToast = showToast;
+        window.showActionDialog = showActionDialog;
+        window.closeActionDialog = closeActionDialog;
+        window.confirmActionDialog = confirmActionDialog;
+        window.showInfoDialog = showInfoDialog;
     </script>
 
     <!-- FIREBASE CODE -->
@@ -328,9 +417,9 @@
         const db = getFirestore(app);
         const ordersContainer = document.getElementById('orders-container');
 
-        // Once attached, this listens live - new orders appear automatically with no
-        // refresh needed. Orders show here while Pending or Processing, and drop off
-        // the moment they're marked Success or Fail.
+        // Once attached, this listens live - new orders and status changes made here
+        // (or from elsewhere) appear automatically with no refresh needed. All orders
+        // stay visible regardless of status, newest first.
         let ordersListenerAttached = false;
 
         function fetchOrders() {
@@ -340,27 +429,40 @@
             }
             ordersListenerAttached = true;
 
-            const q = query(collection(db, "orders"), where("status", "in", ["Pending", "Processing"]));
+            const q = query(collection(db, "orders"));
             onSnapshot(q, (querySnapshot) => {
                 if (querySnapshot.empty) {
-                    ordersContainer.innerHTML = '<p class="empty-msg">No active orders found.</p>';
+                    ordersContainer.innerHTML = '<p class="empty-msg">No orders found.</p>';
                     return;
                 }
 
-                ordersContainer.innerHTML = querySnapshot.docs.map((docSnap) => {
+                const sortedDocs = querySnapshot.docs.slice().sort((a, b) => {
+                    const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+                    const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+                    return tb - ta;
+                });
+
+                ordersContainer.innerHTML = sortedDocs.map((docSnap) => {
                     const data = docSnap.data();
                     const orderId = docSnap.id;
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
-                    const isProcessing = data.status === 'Processing';
-                    const badgeClass = isProcessing ? 'badge-processing' : 'badge-pending';
+                    const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
+                    const badgeClass = badgeClassByStatus[data.status] || 'badge-pending';
 
                     // Pending orders can be moved into Processing or Failed straight away;
-                    // Processing orders are resolved into Success or Fail.
-                    const actionButtons = isProcessing
-                        ? `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
-                           <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`
-                        : `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">Start Processing</button>
-                           <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                    // Processing orders are resolved into Success or Fail; Success/Fail
+                    // orders are done and just show their final status.
+                    let actionButtons;
+                    if (data.status === 'Processing') {
+                        actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
+                                          <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                    } else if (data.status === 'Pending') {
+                        actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">Start Processing</button>
+                                          <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                    } else {
+                        const doneLabel = data.status === 'Success' ? 'Order Completed' : 'Order Failed';
+                        actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>`;
+                    }
 
                     return `
                         <div class="admin-card" id="card-${orderId}">
@@ -421,8 +523,17 @@
             }
         }
 
-        async function markFail(orderId, btnElement) {
-            if (!confirm("Mark this order as Failed? The customer will need to reorder.")) return;
+        function markFail(orderId, btnElement) {
+            window.showActionDialog({
+                type: 'warning',
+                title: 'Mark as Failed?',
+                message: 'The customer will need to reorder. This action cannot be undone.',
+                confirmText: 'Mark as Failed',
+                onConfirm: () => doMarkFail(orderId, btnElement)
+            });
+        }
+
+        async function doMarkFail(orderId, btnElement) {
             btnElement.innerText = "Updating...";
             btnElement.disabled = true;
 
@@ -466,8 +577,9 @@
         }
 
         // ---------- Manage Games ----------
-        let GAMES = {};   // { docId: { name, image, packages: [{amount, price}] } }
+        let GAMES = {};   // { docId: { name, image, banner, packages: [{amount, price}] } }
         let editingImageFile = null;
+        let editingBannerImageFile = null;
         let editingPaymentImageFile = null;
 
         function renderAdminGamesList() {
@@ -526,6 +638,22 @@
             reader.readAsDataURL(file);
         }
 
+        // Lets the banner (16:9 detail-page image) be updated independently of the square Game Image icon.
+        function previewGameBanner(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingBannerImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-game-banner-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('game-banner-update-box').classList.add('has-image');
+                document.getElementById('game-banner-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
         function addPackageRow(amount = '', price = '') {
             const list = document.getElementById('edit-packages-list');
             const row = document.createElement('div');
@@ -541,15 +669,22 @@
 
         function openGameEditor(gameId = null) {
             editingImageFile = null;
+            editingBannerImageFile = null;
             document.getElementById('edit-game-id').value = gameId || '';
             document.getElementById('edit-packages-list').innerHTML = '';
             document.getElementById('edit-game-file').value = '';
+            document.getElementById('edit-game-banner-file').value = '';
             document.getElementById('upload-status').style.display = 'none';
+            document.getElementById('banner-upload-status').style.display = 'none';
 
             const preview = document.getElementById('edit-game-preview');
             const deleteBtn = document.getElementById('delete-game-btn');
             const updateBox = document.getElementById('game-img-update-box');
             const changeBadge = document.getElementById('game-img-update-change');
+
+            const bannerPreview = document.getElementById('edit-game-banner-preview');
+            const bannerUpdateBox = document.getElementById('game-banner-update-box');
+            const bannerChangeBadge = document.getElementById('game-banner-update-change');
 
             if (gameId && GAMES[gameId]) {
                 const g = GAMES[gameId];
@@ -559,6 +694,20 @@
                 preview.style.display = 'block';
                 updateBox.classList.add('has-image');
                 changeBadge.style.display = 'flex';
+
+                const bannerSrc = g.banner || g.image;
+                if (bannerSrc) {
+                    bannerPreview.src = bannerSrc;
+                    bannerPreview.style.display = 'block';
+                    bannerUpdateBox.classList.add('has-image');
+                    bannerChangeBadge.style.display = 'flex';
+                } else {
+                    bannerPreview.src = '';
+                    bannerPreview.style.display = 'none';
+                    bannerUpdateBox.classList.remove('has-image');
+                    bannerChangeBadge.style.display = 'none';
+                }
+
                 (g.packages || []).forEach(p => addPackageRow(p.amount, p.price));
                 deleteBtn.style.display = 'block';
             } else {
@@ -568,6 +717,12 @@
                 preview.style.display = 'none';
                 updateBox.classList.remove('has-image');
                 changeBadge.style.display = 'none';
+
+                bannerPreview.src = '';
+                bannerPreview.style.display = 'none';
+                bannerUpdateBox.classList.remove('has-image');
+                bannerChangeBadge.style.display = 'none';
+
                 addPackageRow();
                 deleteBtn.style.display = 'none';
             }
@@ -636,9 +791,10 @@
 
             try {
                 let imageUrl = (gameId && GAMES[gameId]) ? GAMES[gameId].image : '';
+                let bannerUrl = (gameId && GAMES[gameId]) ? (GAMES[gameId].banner || '') : '';
 
                 if (editingImageFile) {
-                    imageUrl = await uploadImageToImgBB(editingImageFile);
+                    imageUrl = await uploadImageToImgBB(editingImageFile, 'upload-status');
                 }
 
                 if (!imageUrl) {
@@ -648,7 +804,12 @@
                     return;
                 }
 
-                const data = { name, image: imageUrl, packages };
+                if (editingBannerImageFile) {
+                    bannerUrl = await uploadImageToImgBB(editingBannerImageFile, 'banner-upload-status');
+                }
+
+                // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
+                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -660,36 +821,51 @@
                 closeGameEditor();
             } catch (error) {
                 console.error("Save game error:", error);
-                window.showToast(error.message || 'Failed to save game.');
+                const msg = error.message || 'Failed to save game.';
+                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg); }
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = originalText;
             }
         }
 
-        async function deleteGame(gameId) {
-            if (!confirm('Delete this game? This cannot be undone.')) return;
-            try {
-                await deleteDoc(doc(db, "games", gameId));
-                window.showToast('Game deleted');
-            } catch (error) {
-                console.error("Delete game error:", error);
-                window.showToast('Failed to delete game.');
-            }
+        function deleteGame(gameId) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Game?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "games", gameId));
+                        window.showToast('Game deleted');
+                    } catch (error) {
+                        console.error("Delete game error:", error);
+                        window.showToast('Failed to delete game.');
+                    }
+                }
+            });
         }
 
-        async function deleteCurrentGame() {
+        function deleteCurrentGame() {
             const gameId = document.getElementById('edit-game-id').value;
             if (!gameId) return;
-            if (!confirm('Delete this game? This cannot be undone.')) return;
-            try {
-                await deleteDoc(doc(db, "games", gameId));
-                window.showToast('Game deleted');
-                closeGameEditor();
-            } catch (error) {
-                console.error("Delete game error:", error);
-                window.showToast('Failed to delete game.');
-            }
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Game?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "games", gameId));
+                        window.showToast('Game deleted');
+                        closeGameEditor();
+                    } catch (error) {
+                        console.error("Delete game error:", error);
+                        window.showToast('Failed to delete game.');
+                    }
+                }
+            });
         }
 
         // ---------- Notifications (broadcast to all users) ----------
@@ -761,15 +937,22 @@
             });
         }
 
-        async function deleteNotification(notifId) {
-            if (!confirm('Delete this notification?')) return;
-            try {
-                await deleteDoc(doc(db, "notifications", notifId));
-                window.showToast('Notification deleted');
-            } catch (error) {
-                console.error("Delete notification error:", error);
-                window.showToast('Failed to delete notification.');
-            }
+        function deleteNotification(notifId) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Notification?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "notifications", notifId));
+                        window.showToast('Notification deleted');
+                    } catch (error) {
+                        console.error("Delete notification error:", error);
+                        window.showToast('Failed to delete notification.');
+                    }
+                }
+            });
         }
 
         // ---------- Payment Methods ----------
@@ -888,36 +1071,51 @@
                 closePaymentEditor();
             } catch (error) {
                 console.error("Save payment method error:", error);
-                window.showToast(error.message || 'Failed to save payment method.');
+                const msg = error.message || 'Failed to save payment method.';
+                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg); }
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = originalText;
             }
         }
 
-        async function deletePaymentMethod(paymentId) {
-            if (!confirm('Delete this payment method?')) return;
-            try {
-                await deleteDoc(doc(db, "paymentMethods", paymentId));
-                window.showToast('Payment method deleted');
-            } catch (error) {
-                console.error("Delete payment method error:", error);
-                window.showToast('Failed to delete payment method.');
-            }
+        function deletePaymentMethod(paymentId) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Payment Method?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "paymentMethods", paymentId));
+                        window.showToast('Payment method deleted');
+                    } catch (error) {
+                        console.error("Delete payment method error:", error);
+                        window.showToast('Failed to delete payment method.');
+                    }
+                }
+            });
         }
 
-        async function deleteCurrentPaymentMethod() {
+        function deleteCurrentPaymentMethod() {
             const paymentId = document.getElementById('edit-payment-id').value;
             if (!paymentId) return;
-            if (!confirm('Delete this payment method?')) return;
-            try {
-                await deleteDoc(doc(db, "paymentMethods", paymentId));
-                window.showToast('Payment method deleted');
-                closePaymentEditor();
-            } catch (error) {
-                console.error("Delete payment method error:", error);
-                window.showToast('Failed to delete payment method.');
-            }
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Payment Method?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "paymentMethods", paymentId));
+                        window.showToast('Payment method deleted');
+                        closePaymentEditor();
+                    } catch (error) {
+                        console.error("Delete payment method error:", error);
+                        window.showToast('Failed to delete payment method.');
+                    }
+                }
+            });
         }
 
         window.openPaymentEditor = openPaymentEditor;
@@ -937,6 +1135,7 @@
         window.openGameEditor = openGameEditor;
         window.closeGameEditor = closeGameEditor;
         window.previewGameImage = previewGameImage;
+        window.previewGameBanner = previewGameBanner;
         window.addPackageRow = addPackageRow;
         window.saveGame = saveGame;
         window.deleteGame = deleteGame;
