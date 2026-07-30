@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GameZone - Admin</title>
+    <title>PCA Store - Admin</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -136,7 +136,7 @@
     </div>
 
     <header class="header">
-        <div class="logo"><div class="logo-icon"><svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg></div> Admin Zone</div>
+        <div class="logo"><div class="logo-icon"><svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg></div> PCA Store</div>
         <div class="header-icon"><svg class="ui-icon" style="width:20px;"><use href="#icon-users"></use></svg></div>
     </header>
 
@@ -152,6 +152,18 @@
                 <div class="stat-box"><h4>Success</h4><p style="color:#1877F2;" id="stat-completed">...</p></div>
                 <div class="stat-box"><h4>Fail</h4><p style="color:#C0392B;" id="stat-fail">...</p></div>
                 <div class="stat-box"><h4>Today's Orders</h4><p id="stat-today">...</p></div>
+            </div>
+
+            <h2 class="title-header" style="margin-top:20px;">Social Links</h2>
+            <div class="admin-card">
+                <p style="font-size:12px;color:#65676B;margin-bottom:10px;">These appear as tappable icons on the Store app's Profile page.</p>
+                <label style="font-size:13px;font-weight:600;color:#65676B;">Facebook URL</label>
+                <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight:600;color:#65676B;">Telegram URL</label>
+                <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight:600;color:#65676B;">TikTok URL</label>
+                <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
             </div>
         </div>
 
@@ -397,7 +409,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB4kcQXS-C3zXxKg2Lj1TPllEAbJ30noY4",
@@ -1001,6 +1013,46 @@
             });
         }
 
+        // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
+        let socialListenerAttached = false;
+
+        function listenSocialLinks() {
+            if (socialListenerAttached) return;
+            socialListenerAttached = true;
+            onSnapshot(doc(db, "settings", "social"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('social-facebook').value = data.facebook || '';
+                document.getElementById('social-telegram').value = data.telegram || '';
+                document.getElementById('social-tiktok').value = data.tiktok || '';
+            }, (error) => {
+                console.error("Social links listener error:", error);
+            });
+        }
+
+        async function saveSocialLinks() {
+            const facebook = document.getElementById('social-facebook').value.trim();
+            const telegram = document.getElementById('social-telegram').value.trim();
+            const tiktok = document.getElementById('social-tiktok').value.trim();
+
+            const btn = document.getElementById('save-social-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                await setDoc(doc(db, "settings", "social"), { facebook, telegram, tiktok }, { merge: true });
+                window.showToast('Social links saved!');
+            } catch (error) {
+                console.error("Save social links error:", error);
+                window.showToast('Failed to save social links.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        window.saveSocialLinks = saveSocialLinks;
+
         function openPaymentEditor(paymentId = null) {
             editingPaymentImageFile = null;
             document.getElementById('edit-payment-id').value = paymentId || '';
@@ -1148,6 +1200,7 @@
         listenGames();
         listenNotifications();
         listenPaymentMethods();
+        listenSocialLinks();
     </script>
 </body>
 </html>
