@@ -39,6 +39,9 @@
         /* Badges & Buttons */
         .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
         .badge-pending { background: #FFF3CD; color: #856404; }
+        .badge-processing { background: #E4E6EB; color: #405DE6; }
+        .badge-success { background: #E7F3FF; color: #1877F2; }
+        .badge-danger { background: #FDE8E8; color: #C0392B; }
         .btn { padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; text-align: center; flex: 1; }
         .btn-primary { background-color: #1877F2; color: white; }
         .btn-danger { background-color: #FA3E3E; color: white; }
@@ -100,7 +103,9 @@
             <div class="stats-grid">
                 <div class="stat-box"><h4>Total Sales</h4><p style="color:#1877F2;" id="stat-total-sales">...</p></div>
                 <div class="stat-box"><h4>Pending</h4><p style="color:#856404;" id="stat-pending">...</p></div>
-                <div class="stat-box"><h4>Completed</h4><p id="stat-completed">...</p></div>
+                <div class="stat-box"><h4>Processing</h4><p style="color:#405DE6;" id="stat-processing">...</p></div>
+                <div class="stat-box"><h4>Success</h4><p style="color:#1877F2;" id="stat-completed">...</p></div>
+                <div class="stat-box"><h4>Fail</h4><p style="color:#C0392B;" id="stat-fail">...</p></div>
                 <div class="stat-box"><h4>Today's Orders</h4><p id="stat-today">...</p></div>
             </div>
         </div>
@@ -115,7 +120,7 @@
 
         <!-- ORDERS PAGE (Firebase Connected) -->
         <div id="order-list" class="page-section">
-            <h2 class="title-header">Pending Orders <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button></h2>
+            <h2 class="title-header">Active Orders <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button></h2>
             <!-- Firebase Container -->
             <div id="orders-container">
                 <p class="empty-msg">Loading orders...</p>
@@ -287,8 +292,8 @@
         const ordersContainer = document.getElementById('orders-container');
 
         // Once attached, this listens live - new orders appear automatically with no
-        // refresh needed, and an order disappears from this list the moment it's
-        // approved/rejected (since it no longer matches status == "Pending").
+        // refresh needed. Orders show here while Pending or Processing, and drop off
+        // the moment they're marked Success or Fail.
         let ordersListenerAttached = false;
 
         function fetchOrders() {
@@ -298,10 +303,10 @@
             }
             ordersListenerAttached = true;
 
-            const q = query(collection(db, "orders"), where("status", "==", "Pending"));
+            const q = query(collection(db, "orders"), where("status", "in", ["Pending", "Processing"]));
             onSnapshot(q, (querySnapshot) => {
                 if (querySnapshot.empty) {
-                    ordersContainer.innerHTML = '<p class="empty-msg">No pending orders found.</p>';
+                    ordersContainer.innerHTML = '<p class="empty-msg">No active orders found.</p>';
                     return;
                 }
 
@@ -309,26 +314,34 @@
                     const data = docSnap.data();
                     const orderId = docSnap.id;
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                    const isProcessing = data.status === 'Processing';
+                    const badgeClass = isProcessing ? 'badge-processing' : 'badge-pending';
+
+                    // Pending orders can be moved into Processing or Failed straight away;
+                    // Processing orders are resolved into Success or Fail.
+                    const actionButtons = isProcessing
+                        ? `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
+                           <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`
+                        : `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">Start Processing</button>
+                           <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
 
                     return `
                         <div class="admin-card" id="card-${orderId}">
                             <div class="ac-header">
                                 <span class="ac-id">ID: ${orderId.substring(0, 8)}</span>
-                                <span class="badge badge-pending">Pending</span>
+                                <span class="badge ${badgeClass}">${data.status}</span>
                             </div>
                             <div class="ac-body">
                                 <p><b>Game:</b> ${data.game} (${data.itemAmount})</p>
                                 <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
                                 ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
-                                <p><b>Phone:</b> ${data.contactPhone || 'N/A'}</p>
                                 <p><b>Price:</b> ${Number(data.price).toLocaleString()} MMK</p>
                                 <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
                                 ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
                                 <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
                             </div>
                             <div class="ac-footer">
-                                <button class="btn btn-primary" onclick="approveOrder('${orderId}', this)">Approve</button>
-                                <button class="btn btn-danger" onclick="rejectOrder('${orderId}', this)">Reject</button>
+                                ${actionButtons}
                             </div>
                         </div>
                     `;
@@ -339,35 +352,50 @@
             });
         }
 
-        async function approveOrder(orderId, btnElement) {
-            btnElement.innerText = "Approving...";
+        async function startProcessing(orderId, btnElement) {
+            btnElement.innerText = "Updating...";
             btnElement.disabled = true;
 
             try {
-                await updateDoc(doc(db, "orders", orderId), { status: "Completed" });
-                window.showToast("Order Approved Successfully!");
-                // No manual DOM removal needed - the live listener re-renders the
-                // list automatically now that this order no longer matches "Pending".
+                await updateDoc(doc(db, "orders", orderId), { status: "Processing" });
+                window.showToast("Order moved to Processing.");
             } catch (error) {
                 console.error("Update Error: ", error);
-                window.showToast("Failed to approve order! Check Rules.");
-                btnElement.innerText = "Approve";
+                window.showToast("Failed to update order! Check Rules.");
+                btnElement.innerText = "Start Processing";
                 btnElement.disabled = false;
             }
         }
 
-        async function rejectOrder(orderId, btnElement) {
-            if (!confirm("Reject this order? The customer will need to reorder.")) return;
-            btnElement.innerText = "Rejecting...";
+        async function markSuccess(orderId, btnElement) {
+            btnElement.innerText = "Updating...";
             btnElement.disabled = true;
 
             try {
-                await updateDoc(doc(db, "orders", orderId), { status: "Rejected" });
-                window.showToast("Order Rejected.");
+                await updateDoc(doc(db, "orders", orderId), { status: "Success" });
+                window.showToast("Order marked as Success!");
+                // No manual DOM removal needed - the live listener re-renders the
+                // list automatically now that this order no longer matches the query.
             } catch (error) {
                 console.error("Update Error: ", error);
-                window.showToast("Failed to reject order! Check Rules.");
-                btnElement.innerText = "Reject";
+                window.showToast("Failed to update order! Check Rules.");
+                btnElement.innerText = "Mark Success";
+                btnElement.disabled = false;
+            }
+        }
+
+        async function markFail(orderId, btnElement) {
+            if (!confirm("Mark this order as Failed? The customer will need to reorder.")) return;
+            btnElement.innerText = "Updating...";
+            btnElement.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: "Fail" });
+                window.showToast("Order marked as Fail.");
+            } catch (error) {
+                console.error("Update Error: ", error);
+                window.showToast("Failed to update order! Check Rules.");
+                btnElement.innerText = "Mark Fail";
                 btnElement.disabled = false;
             }
         }
@@ -376,20 +404,24 @@
         async function loadDashboardStats() {
             try {
                 const snap = await getDocs(collection(db, "orders"));
-                let totalSales = 0, pending = 0, completed = 0, today = 0;
+                let totalSales = 0, pending = 0, processing = 0, completed = 0, fail = 0, today = 0;
                 const todayStr = new Date().toDateString();
 
                 snap.forEach((docSnap) => {
                     const data = docSnap.data();
                     const price = Number(data.price) || 0;
-                    if (data.status === 'Completed') { totalSales += price; completed++; }
+                    if (data.status === 'Success') { totalSales += price; completed++; }
                     else if (data.status === 'Pending') { pending++; }
+                    else if (data.status === 'Processing') { processing++; }
+                    else if (data.status === 'Fail') { fail++; }
                     if (data.timestamp && data.timestamp.toDate().toDateString() === todayStr) today++;
                 });
 
                 document.getElementById('stat-total-sales').innerText = totalSales.toLocaleString() + ' MMK';
                 document.getElementById('stat-pending').innerText = pending;
+                document.getElementById('stat-processing').innerText = processing;
                 document.getElementById('stat-completed').innerText = completed;
+                document.getElementById('stat-fail').innerText = fail;
                 document.getElementById('stat-today').innerText = today;
             } catch (error) {
                 console.error("Dashboard stats error: ", error);
@@ -416,7 +448,9 @@
                             <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
                         </div>
                         <div class="ac-body" style="display:flex;gap:10px;align-items:center;">
-                            <img src="${g.image}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;">
+                            <div style="width:72px;height:72px;flex-shrink:0;border-radius:8px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;">
+                                <img src="${g.image}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                            </div>
                         </div>
                         <div class="ac-footer">
                             <button class="btn btn-outline" onclick="openGameEditor('${id}')">Edit</button>
@@ -809,8 +843,9 @@
         window.sendNotification = sendNotification;
         window.deleteNotification = deleteNotification;
         window.fetchOrders = fetchOrders;
-        window.approveOrder = approveOrder;
-        window.rejectOrder = rejectOrder;
+        window.startProcessing = startProcessing;
+        window.markSuccess = markSuccess;
+        window.markFail = markFail;
         window.loadDashboardStats = loadDashboardStats;
         window.openGameEditor = openGameEditor;
         window.closeGameEditor = closeGameEditor;
