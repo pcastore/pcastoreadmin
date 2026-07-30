@@ -46,7 +46,7 @@
         
         /* Bottom Nav */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #ffffff; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #E4E6EB; z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: #65676B; cursor: pointer; width: 25%; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #65676B; cursor: pointer; flex: 1; }
         .nav-item.active { color: #1877F2; }
         .nav-item.active .ui-icon { stroke: #1877F2; }
         
@@ -80,6 +80,9 @@
         <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
         <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></symbol>
         <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
+        <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></symbol>
+        <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path></symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></symbol>
     </svg>
 
     <div id="toast"><svg class="ui-icon" style="color: #4ADE80; width:18px;"><use href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
@@ -119,6 +122,30 @@
             </div>
         </div>
 
+        <!-- NOTIFICATIONS PAGE (Firebase Connected) -->
+        <div id="notify-list" class="page-section">
+            <h2 class="title-header">Send Notification</h2>
+            <div class="admin-card">
+                <label style="font-size:13px;font-weight:600;color:#65676B;">Title</label>
+                <input type="text" id="notif-title" placeholder="e.g. Server Maintenance" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight:600;color:#65676B;">Message</label>
+                <textarea id="notif-message" placeholder="Write the announcement..." rows="3" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;font-family:inherit;resize:vertical;"></textarea>
+                <button class="btn btn-primary" id="send-notif-btn" onclick="sendNotification()">Send to All Users</button>
+            </div>
+            <h2 class="title-header" style="margin-top:20px;">Sent History</h2>
+            <div id="notif-history-container">
+                <p class="empty-msg">Loading notifications...</p>
+            </div>
+        </div>
+
+        <!-- PAYMENT METHODS PAGE (Firebase Connected) -->
+        <div id="payment-list" class="page-section">
+            <h2 class="title-header">Payment Methods <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openPaymentEditor()">+ Add</button></h2>
+            <div id="admin-payment-container">
+                <p class="empty-msg">Loading payment methods...</p>
+            </div>
+        </div>
+
         <!-- USERS PAGE (Dummy Data) -->
         <div id="user-list" class="page-section">
             <h2 class="title-header">Manage Users</h2>
@@ -152,7 +179,8 @@
                 <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
 
                 <label>Game Image</label>
-                <img id="edit-game-preview" src="" alt="Preview" style="width:100%;height:140px;object-fit:cover;border-radius:8px;display:none;background:#F0F2F5;">
+                <img id="edit-game-preview" src="" alt="Preview" style="width:100%;aspect-ratio:1/1;max-height:280px;object-fit:cover;border-radius:8px;display:none;background:#F0F2F5;">
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Photo auto-crops to a square — center the character/logo for the best fit.</p>
                 <input type="file" id="edit-game-file" accept="image/*" onchange="previewGameImage(event)" style="font-size:13px;">
                 <p id="upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
 
@@ -167,6 +195,31 @@
         </div>
     </div>
 
+    <!-- Payment Method Editor Modal -->
+    <div class="modal-overlay" id="payment-editor-modal-overlay" onclick="if(event.target===this) closePaymentEditor()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="payment-editor-title">Add Payment Method</h3>
+                <div class="modal-close" onclick="closePaymentEditor()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-payment-id">
+                <label>Method Name</label>
+                <input type="text" id="edit-payment-name" placeholder="e.g. KBZ Pay, Wave Pay">
+                <label>Account Number</label>
+                <input type="text" id="edit-payment-number" placeholder="e.g. 09123456789">
+                <label>Account Name</label>
+                <input type="text" id="edit-payment-accountname" placeholder="e.g. Mg Mg Aung">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
+                <button class="btn btn-primary" id="save-payment-btn" onclick="savePaymentMethod()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
@@ -177,6 +230,12 @@
         </div>
         <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
             <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
+        </div>
+        <div class="nav-item" id="btn-notify-list" onclick="showPage('notify-list')">
+            <svg class="ui-icon"><use href="#icon-bell"></use></svg> Notify
+        </div>
+        <div class="nav-item" id="btn-payment-list" onclick="showPage('payment-list')">
+            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Payment
         </div>
         <div class="nav-item" id="btn-user-list" onclick="showPage('user-list')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> Users
@@ -259,9 +318,12 @@
                             </div>
                             <div class="ac-body">
                                 <p><b>Game:</b> ${data.game} (${data.itemAmount})</p>
-                                <p><b>Player ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
+                                <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
+                                ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
                                 <p><b>Phone:</b> ${data.contactPhone || 'N/A'}</p>
                                 <p><b>Price:</b> ${Number(data.price).toLocaleString()} MMK</p>
+                                <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
+                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
                                 <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
                             </div>
                             <div class="ac-footer">
@@ -535,6 +597,217 @@
             }
         }
 
+        // ---------- Notifications (broadcast to all users) ----------
+        let notifListenerAttached = false;
+
+        async function sendNotification() {
+            const titleEl = document.getElementById('notif-title');
+            const msgEl = document.getElementById('notif-message');
+            const title = titleEl.value.trim();
+            const message = msgEl.value.trim();
+
+            if (!title || !message) { window.showToast('Please enter a title and message'); return; }
+
+            const btn = document.getElementById('send-notif-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Sending...';
+
+            try {
+                await addDoc(collection(db, "notifications"), {
+                    title,
+                    message,
+                    timestamp: serverTimestamp()
+                });
+                titleEl.value = '';
+                msgEl.value = '';
+                window.showToast('Notification sent to all users!');
+            } catch (error) {
+                console.error("Send notification error:", error);
+                window.showToast('Failed to send notification.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        function listenNotifications() {
+            if (notifListenerAttached) return;
+            notifListenerAttached = true;
+            const container = document.getElementById('notif-history-container');
+
+            const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snap) => {
+                if (snap.empty) {
+                    container.innerHTML = '<p class="empty-msg">No notifications sent yet.</p>';
+                    return;
+                }
+                container.innerHTML = snap.docs.map(docSnap => {
+                    const data = docSnap.data();
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                    return `
+                        <div class="admin-card">
+                            <div class="ac-header">
+                                <span class="ac-id">${data.title}</span>
+                            </div>
+                            <div class="ac-body">
+                                <p>${data.message}</p>
+                                <p style="color:#65676B; font-size:12px;">Sent: ${dateStr}</p>
+                            </div>
+                            <div class="ac-footer">
+                                <button class="btn btn-danger" onclick="deleteNotification('${docSnap.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }, (error) => {
+                console.error("Notifications listener error:", error);
+                container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load notifications.</p>';
+            });
+        }
+
+        async function deleteNotification(notifId) {
+            if (!confirm('Delete this notification?')) return;
+            try {
+                await deleteDoc(doc(db, "notifications", notifId));
+                window.showToast('Notification deleted');
+            } catch (error) {
+                console.error("Delete notification error:", error);
+                window.showToast('Failed to delete notification.');
+            }
+        }
+
+        // ---------- Payment Methods ----------
+        let PAYMENT_METHODS = {};
+        let paymentListenerAttached = false;
+
+        function renderAdminPaymentList() {
+            const container = document.getElementById('admin-payment-container');
+            const ids = Object.keys(PAYMENT_METHODS);
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No payment methods yet. Tap + Add to create one.</p>';
+                return;
+            }
+            container.innerHTML = ids.map(id => {
+                const p = PAYMENT_METHODS[id];
+                return `
+                    <div class="admin-card">
+                        <div class="ac-header"><span class="ac-id">${p.name}</span></div>
+                        <div class="ac-body">
+                            <p><b>Number:</b> ${p.number}</p>
+                            <p><b>Account Name:</b> ${p.accountName}</p>
+                        </div>
+                        <div class="ac-footer">
+                            <button class="btn btn-outline" onclick="openPaymentEditor('${id}')">Edit</button>
+                            <button class="btn btn-danger" onclick="deletePaymentMethod('${id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenPaymentMethods() {
+            if (paymentListenerAttached) return;
+            paymentListenerAttached = true;
+            onSnapshot(collection(db, "paymentMethods"), (snap) => {
+                const newMethods = {};
+                snap.forEach(docSnap => { newMethods[docSnap.id] = docSnap.data(); });
+                PAYMENT_METHODS = newMethods;
+                renderAdminPaymentList();
+            }, (error) => {
+                console.error("Payment methods listener error:", error);
+                document.getElementById('admin-payment-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load payment methods.</p>';
+            });
+        }
+
+        function openPaymentEditor(paymentId = null) {
+            document.getElementById('edit-payment-id').value = paymentId || '';
+            const deleteBtn = document.getElementById('delete-payment-btn');
+            if (paymentId && PAYMENT_METHODS[paymentId]) {
+                const p = PAYMENT_METHODS[paymentId];
+                document.getElementById('payment-editor-title').innerText = 'Edit Payment Method';
+                document.getElementById('edit-payment-name').value = p.name;
+                document.getElementById('edit-payment-number').value = p.number;
+                document.getElementById('edit-payment-accountname').value = p.accountName;
+                deleteBtn.style.display = 'block';
+            } else {
+                document.getElementById('payment-editor-title').innerText = 'Add Payment Method';
+                document.getElementById('edit-payment-name').value = '';
+                document.getElementById('edit-payment-number').value = '';
+                document.getElementById('edit-payment-accountname').value = '';
+                deleteBtn.style.display = 'none';
+            }
+            document.getElementById('payment-editor-modal-overlay').classList.add('show');
+        }
+
+        function closePaymentEditor() {
+            document.getElementById('payment-editor-modal-overlay').classList.remove('show');
+        }
+
+        async function savePaymentMethod() {
+            const paymentId = document.getElementById('edit-payment-id').value;
+            const name = document.getElementById('edit-payment-name').value.trim();
+            const number = document.getElementById('edit-payment-number').value.trim();
+            const accountName = document.getElementById('edit-payment-accountname').value.trim();
+
+            if (!name || !number || !accountName) { window.showToast('Please fill in all fields'); return; }
+
+            const saveBtn = document.getElementById('save-payment-btn');
+            const originalText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                const data = { name, number, accountName };
+                if (paymentId) {
+                    await updateDoc(doc(db, "paymentMethods", paymentId), data);
+                } else {
+                    await addDoc(collection(db, "paymentMethods"), data);
+                }
+                window.showToast('Payment method saved!');
+                closePaymentEditor();
+            } catch (error) {
+                console.error("Save payment method error:", error);
+                window.showToast('Failed to save payment method.');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalText;
+            }
+        }
+
+        async function deletePaymentMethod(paymentId) {
+            if (!confirm('Delete this payment method?')) return;
+            try {
+                await deleteDoc(doc(db, "paymentMethods", paymentId));
+                window.showToast('Payment method deleted');
+            } catch (error) {
+                console.error("Delete payment method error:", error);
+                window.showToast('Failed to delete payment method.');
+            }
+        }
+
+        async function deleteCurrentPaymentMethod() {
+            const paymentId = document.getElementById('edit-payment-id').value;
+            if (!paymentId) return;
+            if (!confirm('Delete this payment method?')) return;
+            try {
+                await deleteDoc(doc(db, "paymentMethods", paymentId));
+                window.showToast('Payment method deleted');
+                closePaymentEditor();
+            } catch (error) {
+                console.error("Delete payment method error:", error);
+                window.showToast('Failed to delete payment method.');
+            }
+        }
+
+        window.openPaymentEditor = openPaymentEditor;
+        window.closePaymentEditor = closePaymentEditor;
+        window.savePaymentMethod = savePaymentMethod;
+        window.deletePaymentMethod = deletePaymentMethod;
+        window.deleteCurrentPaymentMethod = deleteCurrentPaymentMethod;
+
+        window.sendNotification = sendNotification;
+        window.deleteNotification = deleteNotification;
         window.fetchOrders = fetchOrders;
         window.approveOrder = approveOrder;
         window.rejectOrder = rejectOrder;
@@ -552,6 +825,8 @@
         loadDashboardStats();
         fetchOrders();
         listenGames();
+        listenNotifications();
+        listenPaymentMethods();
     </script>
 </body>
 </html>
