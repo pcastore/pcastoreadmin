@@ -1,1873 +1,557 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>PCA Admin — Currency Rates</title>
-<meta name="theme-color" content="#150B2E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#150B2E;
-  --surface:#20123F;
-  --surface-2:#2E1958;
-  --surface-3:#402076;
-  --blue:#FF2E9F;
-  --blue-soft:rgba(255,46,159,.16);
-  --cyan:#22E1FF;
-  --cyan-soft:rgba(34,225,255,.16);
-  --gold:#FFC94A;
-  --green:#2FE88B;
-  --red:#FF4365;
-  --text:#F1EEFB;
-  --text-dim:#BFB3E0;
-  --text-faint:#8677B3;
-  --border:#3D2274;
-  --radius:10px;
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-.icon{width:1em;height:1em;display:inline-block;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-html,body{height:100%;}
-body{
-  background:
-    radial-gradient(circle at 12% 0%, rgba(255,46,159,.10), transparent 45%),
-    radial-gradient(circle at 100% 18%, rgba(34,225,255,.08), transparent 42%),
-    var(--bg);
-  background-attachment:fixed;
-  color:var(--text);
-  font-family:"Baloo 2","Segoe UI",Helvetica,Arial,"Padauk","Myanmar Text",sans-serif;
-  min-height:100%;
-  -webkit-font-smoothing:antialiased;
-}
-::selection{background:var(--blue-soft);color:var(--text);}
-.shell{max-width:520px;margin:0 auto;padding:20px 16px 60px;}
-button,input,select{font-family:inherit;}
-button{transition:transform .15s ease, opacity .15s ease, background .15s ease, border-color .15s ease;}
-button:active{transform:scale(.97);}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GameZone - Admin</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #F0F2F5; color: #1C1E21; padding-bottom: 70px; }
+        .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        
+        /* Header */
+        .header { background-color: #ffffff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-bottom: 2px solid #1877F2;}
+        .logo { color: #1C1E21; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .logo-icon { background: #1877F2; color: white; padding: 4px; border-radius: 6px; display: flex; }
+        .header-icon { background: #E4E6EB; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        
+        /* Content & Pages */
+        .content-area { padding: 15px 15px; }
+        .page-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .title-header { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E4E6EB; padding-bottom: 10px;}
+        
+        /* Stats Box */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;}
+        .stat-box { background: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #E4E6EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .stat-box h4 { color: #65676B; font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+        .stat-box p { font-size: 22px; font-weight: 700; color: #050505; }
 
-/* ---- Login gate (reuses the same Google-only flow as index.html) ---- */
-.login-gate{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:28px;}
-.login-gate.hide{display:none;}
-.login-card{width:100%;max-width:340px;text-align:center;}
-.login-logo{width:64px;height:64px;border-radius:18px;margin:0 auto 18px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
-.login-logo img{width:100%;height:100%;object-fit:cover;display:block;}
-.brand-mark{width:36px;height:36px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden;}
-.brand-mark img{width:100%;height:100%;object-fit:cover;display:block;}
-.logo-skeleton{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:4px;width:100%;height:100%;padding:10px;}
-.brand-mark .logo-skeleton{padding:5px;gap:2px;}
-.logo-skeleton span{background:var(--surface-3);border-radius:4px;animation:logo-skeleton-pulse 1.4s ease-in-out infinite;}
-.logo-skeleton span:nth-child(2){animation-delay:.15s;}
-.logo-skeleton span:nth-child(3){animation-delay:.3s;}
-.logo-skeleton span:nth-child(4){animation-delay:.45s;}
-@keyframes logo-skeleton-pulse{0%,100%{opacity:.35;}50%{opacity:.85;}}
-.login-title{font-size:19px;font-weight:800;margin-bottom:6px;}
-.login-sub{font-size:12.5px;color:var(--text-faint);margin-bottom:30px;line-height:1.5;}
-.google-signin-btn{width:100%;padding:13px 16px;border-radius:10px;border:1px solid var(--border);background:#fff;color:#1f1f1f;font-size:14.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;}
-.google-signin-btn:active{opacity:.85;}
-.google-signin-btn svg{width:19px;height:19px;flex-shrink:0;}
-.login-error{font-size:11.5px;color:var(--red);margin-top:14px;min-height:14px;}
-.denied-box{background:var(--surface);border:1px solid var(--red);border-radius:var(--radius);padding:16px;margin-top:18px;font-size:12.5px;color:var(--text-dim);text-align:left;line-height:1.5;}
+        /* Admin Cards */
+        .admin-card { background: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #E4E6EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #F0F2F5; }
+        .ac-id { font-size: 13px; font-weight: 700; color: #65676B; }
+        .ac-body p { font-size: 14px; margin-bottom: 6px; color: #1C1E21; }
+        .ac-footer { margin-top: 12px; display: flex; gap: 8px; }
+        
+        /* Badges & Buttons */
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
+        .badge-pending { background: #FFF3CD; color: #856404; }
+        .btn { padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; text-align: center; flex: 1; }
+        .btn-primary { background-color: #1877F2; color: white; }
+        .btn-danger { background-color: #FA3E3E; color: white; }
+        .btn-outline { background-color: #E4E6EB; color: #1C1E21; }
+        
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #ffffff; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #E4E6EB; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: #65676B; cursor: pointer; width: 25%; }
+        .nav-item.active { color: #1877F2; }
+        .nav-item.active .ui-icon { stroke: #1877F2; }
+        
+        /* Utility */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150%); background: #333; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; z-index: 1000;}
+        #toast.show { transform: translate(-50%, 0); }
+        .empty-msg { text-align: center; color: #65676B; font-size: 14px; padding: 20px 0; }
+        .highlight-id { font-weight: bold; color: #1877F2; font-size: 15px; }
 
-/* ---- Admin app ---- */
-.app{display:none;}
-.app.show{display:block;animation:app-fade-in .4s ease;}
-@keyframes app-fade-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
-.brand{display:flex;align-items:center;gap:10px;}
-.brand-name{font-weight:800;font-size:15px;background:linear-gradient(135deg,var(--text) 30%,var(--cyan) 130%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-.brand-sub{font-size:10.5px;color:var(--text-faint);}
-.signout-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);font-size:11.5px;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;}
-.signout-btn:active{background:var(--surface-3);}
-
-.card{background:linear-gradient(180deg,var(--surface),var(--surface) 60%,var(--surface-2));border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 8px 24px -12px rgba(0,0,0,.45);}
-.card-title{font-size:14.5px;font-weight:800;margin-bottom:4px;}
-.card-sub{font-size:11.5px;color:var(--text-faint);margin-bottom:16px;line-height:1.5;}
-.rate-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.rate-flag{font-size:20px;width:28px;text-align:center;}
-.rate-label{flex:1;}
-.rate-code{font-size:13px;font-weight:800;}
-.rate-name{font-size:10.5px;color:var(--text-faint);}
-.rate-input-wrap{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;}
-.rate-input-wrap input{width:90px;background:transparent;border:0;color:var(--text);font-size:14px;font-weight:700;text-align:right;font-family:inherit;}
-.rate-input-wrap input:focus{outline:none;}
-.rate-unit{font-size:11px;color:var(--text-faint);}
-.mmk-row{opacity:.55;}
-.text-input{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;transition:border-color .15s ease, box-shadow .15s ease;}
-.text-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
-.rate-input-wrap:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
-
-.save-btn{width:100%;padding:13px;border-radius:10px;border:0;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px;box-shadow:0 6px 16px -6px rgba(255,46,159,.55);}
-.save-btn:active{opacity:.85;}
-.save-btn:disabled{opacity:.5;pointer-events:none;box-shadow:none;}
-.save-msg{font-size:11.5px;text-align:center;margin-top:10px;min-height:14px;}
-.save-msg.ok{color:var(--green);}
-.save-msg.err{color:var(--red);}
-
-.meta-note{font-size:11px;color:var(--text-faint);line-height:1.6;}
-.meta-note b{color:var(--text-dim);}
-
-/* ---- Tabs ---- */
-.tabbar{display:flex;gap:4px;overflow-x:auto;margin-bottom:16px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:24px;}
-.tabbar::-webkit-scrollbar{display:none;}
-.tab-btn{flex-shrink:0;padding:9px 14px;border-radius:20px;border:1px solid transparent;background:transparent;color:var(--text-faint);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
-.tab-btn.active{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;border-color:transparent;box-shadow:0 4px 14px -4px rgba(255,46,159,.5);}
-.tab-panel{display:none;}
-.tab-panel.active{display:block;animation:panel-in .3s ease;}
-@keyframes panel-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-
-.form-group{margin-bottom:12px;}
-.form-label{font-size:11.5px;color:var(--text-dim);font-weight:700;margin-bottom:6px;display:block;}
-.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.text-input.full{width:100%;}
-select.text-input{width:100%;appearance:none;-webkit-appearance:none;}
-.check-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);font-weight:600;margin-bottom:12px;}
-.check-row input{width:16px;height:16px;accent-color:var(--blue);}
-
-/* image upload box (small square, reused for icon/banner/package image) */
-.img-upload{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
-.img-upload-box{width:52px;height:52px;border-radius:12px;background:var(--surface-2);border:1px dashed var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative;}
-.img-upload-box.wide{width:96px;height:52px;border-radius:10px;}
-.img-upload-box img{width:100%;height:100%;object-fit:cover;display:block;}
-.img-upload-box .up-ico{color:var(--text-faint);}
-.img-upload-actions{flex:1;display:flex;flex-direction:column;gap:6px;}
-.img-upload-actions .up-lbl{font-size:11px;color:var(--text-faint);}
-.img-upload-actions .up-row{display:flex;gap:8px;}
-.mini-btn{padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
-.mini-btn:active{background:var(--surface-3);}
-.mini-btn.danger{color:var(--red);border-color:rgba(255,67,101,.35);}
-
-.list-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;transition:background .15s ease;}
-.list-item .li-thumb{width:38px;height:38px;border-radius:9px;background:var(--surface-3);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:11px;font-weight:800;color:var(--text-dim);}
-.list-item .li-thumb img{width:100%;height:100%;object-fit:cover;}
-.list-item .li-info{flex:1;min-width:0;}
-.list-item .li-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.list-item .li-sub{font-size:10.5px;color:var(--text-faint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.list-item .li-actions{display:flex;gap:6px;flex-shrink:0;}
-.badge{display:inline-block;font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:5px;background:var(--surface-3);color:var(--text-dim);margin-left:6px;}
-.badge.gold{background:rgba(255,201,74,.18);color:var(--gold);}
-.empty-note{font-size:11.5px;color:var(--text-faint);text-align:center;padding:16px 0;}
-
-.user-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;cursor:pointer;transition:background .15s ease, border-color .15s ease;}
-.user-card:active{background:var(--surface-3);}
-.user-card-top{display:flex;align-items:center;gap:10px;}
-.user-ava{width:38px;height:38px;border-radius:50%;background:var(--surface-3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text-dim);overflow:hidden;}
-.user-ava img{width:100%;height:100%;object-fit:cover;}
-.user-info{flex:1;min-width:0;}
-.user-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.user-email{font-size:10.5px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.user-balance{font-size:12.5px;font-weight:800;color:var(--gold);flex-shrink:0;text-align:right;}
-.user-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-dim);line-height:1.9;}
-.user-detail.show{display:block;}
-.user-detail .d-row{display:flex;justify-content:space-between;gap:10px;}
-.user-detail .d-row span:first-child{color:var(--text-faint);}
-.user-detail .d-row span:last-child{text-align:right;word-break:break-all;}
-
-/* ---- Games accordion (each game expands to show/edit/add its own packages) ---- */
-.game-acc{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);margin-bottom:10px;overflow:hidden;}
-.game-acc-header{display:flex;align-items:center;gap:10px;padding:11px;cursor:pointer;}
-.game-acc-header .chevron{width:16px;height:16px;color:var(--text-faint);transition:transform .2s ease;flex-shrink:0;}
-.game-acc.open .game-acc-header .chevron{transform:rotate(180deg);}
-.game-acc-body{display:none;padding:0 11px 12px;}
-.game-acc.open .game-acc-body{display:block;border-top:1px solid var(--border);padding-top:12px;}
-.game-acc-actions{display:flex;gap:8px;margin-bottom:12px;}
-.game-acc-actions .mini-btn{flex:1;text-align:center;}
-.pkg-sub-list .list-item{background:var(--surface-3);margin-bottom:6px;}
-.pkg-sub-list .list-item:last-child{margin-bottom:0;}
-.pkg-sub-hd{font-size:10.5px;font-weight:800;color:var(--text-faint);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;}
-.add-pkg-btn{width:100%;margin-top:10px;border-style:dashed;}
-.pkg-inline-form{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
-
-/* ---- Top-up requests (orders) ---- */
-.order-summary{display:flex;gap:10px;margin-bottom:14px;}
-.order-summary .os-item{flex:1;text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 6px;}
-.order-summary .os-num{font-size:19px;font-weight:800;}
-.order-summary .os-lbl{font-size:10px;color:var(--text-faint);margin-top:2px;}
-.order-card{padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;transition:border-color .15s ease;}
-.order-top{display:flex;align-items:center;gap:10px;cursor:pointer;}
-.order-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-dim);line-height:1.9;}
-.order-detail.show{display:block;}
-.order-detail .d-row{display:flex;justify-content:space-between;gap:10px;}
-.order-detail .d-row span:first-child{color:var(--text-faint);flex-shrink:0;}
-.order-detail .d-row span:last-child{text-align:right;word-break:break-word;}
-.order-proof{margin-top:8px;}
-.order-proof img{width:100%;max-height:170px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:var(--surface-3);display:block;}
-.order-actions{display:flex;gap:8px;margin-top:10px;}
-.order-actions .mini-btn{flex:1;text-align:center;}
-.confirm-btn{color:var(--green);border-color:rgba(47,232,139,.35);}
-.badge.status-pending{background:rgba(255,201,74,.18);color:var(--gold);}
-.badge.status-confirmed,.badge.status-done{background:rgba(47,232,139,.18);color:var(--green);}
-.badge.status-rejected,.badge.status-cancelled{background:rgba(255,67,101,.18);color:var(--red);}
-
-/* ---- Dashboard ---- */
-.dash-hello{font-size:17px;font-weight:800;margin-bottom:2px;}
-.dash-hello-sub{font-size:11.5px;color:var(--text-faint);margin-bottom:16px;}
-.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.dash-stat-card{--accent:var(--blue);background:linear-gradient(165deg,var(--surface) 0%,var(--surface-2) 100%);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden;box-shadow:0 8px 24px -14px rgba(0,0,0,.5);cursor:pointer;transition:transform .15s ease, border-color .15s ease;}
-.dash-stat-card:active{transform:scale(.97);}
-.dash-stat-card::after{content:"";position:absolute;top:-24px;right:-24px;width:76px;height:76px;border-radius:50%;background:var(--accent);opacity:.16;filter:blur(1px);}
-.dash-stat-icon{width:30px;height:30px;border-radius:9px;background:var(--accent);opacity:.9;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px;position:relative;}
-.dash-stat-label{font-size:10px;color:var(--text-faint);margin-bottom:4px;line-height:1.35;position:relative;}
-.dash-stat-value{font-size:16.5px;font-weight:800;position:relative;letter-spacing:-.01em;}
-.dash-stat-sub{font-size:9.5px;color:var(--text-faint);margin-top:3px;position:relative;}
-.dash-stat-sub.up{color:var(--green);}
-.dash-stat-sub.warn{color:var(--gold);}
-
-.dash-section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
-.dash-section-title .card-title{margin-bottom:0;}
-.dash-range-lbl{font-size:10px;color:var(--text-faint);font-weight:700;}
-
-.chart-bars{display:flex;align-items:flex-end;gap:8px;height:130px;padding:14px 2px 0;}
-.chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0;}
-.chart-bar-val{font-size:8px;color:var(--text-faint);font-weight:700;white-space:nowrap;}
-.chart-bar{width:100%;max-width:28px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--cyan),var(--blue));min-height:4px;transition:height .6s cubic-bezier(.34,1.56,.64,1);}
-.chart-bar.today{background:linear-gradient(180deg,var(--gold),var(--blue));}
-.chart-bar-label{font-size:9.5px;color:var(--text-faint);font-weight:700;}
-
-.dash-game-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
-.dash-game-row:last-child{border-bottom:none;padding-bottom:0;}
-.dash-game-rank{width:20px;height:20px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text-dim);flex-shrink:0;}
-.dash-game-name{font-size:12px;font-weight:700;flex:0 0 auto;width:30%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dash-game-bar-wrap{flex:1;height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;}
-.dash-game-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .5s ease;}
-.dash-game-count{font-size:11px;font-weight:800;color:var(--text-dim);flex-shrink:0;width:30px;text-align:right;}
-
-.activity-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
-.activity-row:last-child{border-bottom:none;padding-bottom:0;}
-.activity-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-.activity-icon.order{background:var(--blue-soft);}
-.activity-icon.wallet{background:var(--cyan-soft);}
-.activity-info{flex:1;min-width:0;}
-.activity-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.activity-sub{font-size:10px;color:var(--text-faint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.activity-time{font-size:9px;color:var(--text-faint);flex-shrink:0;text-align:right;}
-</style>
+        /* Game Editor Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-box { background: #ffffff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 88vh; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.25s ease; }
+        .modal-overlay.show .modal-box { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #E4E6EB; margin-bottom: 14px; }
+        .modal-header h3 { font-size: 17px; font-weight: 700; }
+        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #E4E6EB; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .modal-body label { font-size: 13px; font-weight: 600; color: #65676B; }
+        .modal-body input[type="text"], .modal-body input[type="number"] { padding: 10px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; }
+        .modal-footer { padding-top: 16px; display: flex; gap: 8px; }
+    </style>
 </head>
 <body>
 
-<svg style="display:none" aria-hidden="true">
-<symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
-<symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol>
-</svg>
+    <svg style="display: none;">
+        <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
+        <symbol id="icon-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></symbol>
+        <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
+        <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
+    </svg>
 
-<div class="login-gate" id="loginGate">
-  <div class="login-card">
-    <div class="login-logo" id="loginLogoBox"><span class="logo-skeleton"><span></span><span></span><span></span><span></span></span></div>
-    <div class="login-title">PCA Admin</div>
-    <div class="login-sub">Admin Google Account ဖြင့် Login ဝင်ပါ</div>
-    <button class="google-signin-btn" id="googleSignInBtn">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.5 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
-        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6 29.6 4 24 4c-7.5 0-14 4.2-17.7 10.7z"/>
-        <path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.6C29.6 35 26.9 36 24 36c-5.4 0-9.9-3.5-11.3-8.3l-6.6 5.1C9.9 39.6 16.4 44 24 44z"/>
-        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1 3-3.1 5.4-5.8 7l6.6 5.6C39.4 38 44 32 44 24c0-1.3-.1-2.7-.4-3.5z"/>
-      </svg>
-      <span id="googleSignInBtnLabel">Continue with Google</span>
-    </button>
-    <div class="login-error" id="loginError"></div>
-    <div class="denied-box" id="deniedBox" style="display:none">
-      ဒီ Google account (<span id="deniedEmail"></span>) မှာ admin ခွင့်ပြုချက် မရှိပါ။<br><br>
-      Admin ဖြစ်ချင်ရင် <code>ADMIN_EMAILS</code> list ထဲကို ဒီ email ကို ထည့်ပေးရပါမယ် (ဒီ file ရဲ့ script အထဲက အပေါ်ဆုံးမှာ ရှိပါတယ်)။
-    </div>
-  </div>
-</div>
+    <div id="toast"><svg class="ui-icon" style="color: #4ADE80; width:18px;"><use href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
 
-<div class="app" id="app">
-  <div class="shell">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brand-mark" id="topbarLogoBox"><span class="logo-skeleton"><span></span><span></span><span></span><span></span></span></div>
-        <div>
-          <div class="brand-name">PCA Admin</div>
-          <div class="brand-sub" id="adminEmailLabel"></div>
-        </div>
-      </div>
-      <button class="signout-btn" id="signOutBtn">ထွက်မည်</button>
-    </div>
+    <header class="header">
+        <div class="logo"><div class="logo-icon"><svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg></div> Admin Zone</div>
+        <div class="header-icon"><svg class="ui-icon" style="width:20px;"><use href="#icon-users"></use></svg></div>
+    </header>
 
-    <div class="tabbar">
-      <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-      <button class="tab-btn" data-tab="general">ယေဘုယျ</button>
-      <button class="tab-btn" data-tab="games">Games</button>
-      <button class="tab-btn" data-tab="topups">Orders<span class="badge gold" id="tabTopupBadge" style="display:none;margin-left:5px;"></span></button>
-      <button class="tab-btn" data-tab="wallettopup">ပိုက်ဆံဖြည့်<span class="badge gold" id="tabWalletBadge" style="display:none;margin-left:5px;"></span></button>
-      <button class="tab-btn" data-tab="users">Users</button>
-    </div>
-
-    <!-- ===================== DASHBOARD TAB ===================== -->
-    <div class="tab-panel active" id="tabDashboard">
-      <div class="dash-hello">မင်္ဂလာပါ 👋</div>
-      <div class="dash-hello-sub" id="dashDateLabel">PCA Store စတိုးရဲ့ လက်ရှိအခြေအနေ</div>
-
-      <div class="dash-grid">
-        <div class="dash-stat-card" style="--accent:var(--green)" data-goto-tab="topups">
-          <div class="dash-stat-icon">💰</div>
-          <div class="dash-stat-label">စုစုပေါင်း ဝင်ငွေ (Confirmed)</div>
-          <div class="dash-stat-value" id="dashTotalRevenue">0 Ks</div>
-          <div class="dash-stat-sub" id="dashTodayRevenue">ယနေ့ — 0 Ks</div>
-        </div>
-        <div class="dash-stat-card" style="--accent:var(--gold)" data-goto-tab="topups">
-          <div class="dash-stat-icon">⏳</div>
-          <div class="dash-stat-label">လုပ်ဆောင်ရန် ကျန်နေသည်</div>
-          <div class="dash-stat-value" id="dashPendingActions">0</div>
-          <div class="dash-stat-sub warn" id="dashPendingBreakdown">Order 0 • Wallet 0</div>
-        </div>
-        <div class="dash-stat-card" style="--accent:var(--cyan)" data-goto-tab="users">
-          <div class="dash-stat-icon">👥</div>
-          <div class="dash-stat-label">စုစုပေါင်း Users</div>
-          <div class="dash-stat-value" id="dashTotalUsers">0</div>
-          <div class="dash-stat-sub" id="dashNewUsers">+0 ယနေ့</div>
-        </div>
-        <div class="dash-stat-card" style="--accent:var(--blue)" data-goto-tab="users">
-          <div class="dash-stat-icon">👛</div>
-          <div class="dash-stat-label">Wallet လက်ကျန် (အားလုံး)</div>
-          <div class="dash-stat-value" id="dashWalletBalance">0 Ks</div>
-          <div class="dash-stat-sub" id="dashOrdersDone">Order ပြီးစီး 0</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="dash-section-title">
-          <div class="card-title">ဝင်ငွေ — လွန်ခဲ့သော ၇ ရက်</div>
-          <div class="dash-range-lbl">Confirmed orders</div>
-        </div>
-        <div class="chart-bars" id="dashRevenueChart"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">လူကြိုက်များဆုံး Games</div>
-        <div class="card-sub" style="margin-bottom:10px;">Order အရေအတွက်အလိုက် စီထားပါသည်</div>
-        <div id="dashTopGames"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">မကြာသေးမီက Activity</div>
-        <div class="card-sub" style="margin-bottom:10px;">Order နှင့် Wallet ဖြည့်မှု နောက်ဆုံး ၈ ခု</div>
-        <div id="dashRecentActivity"></div>
-      </div>
-    </div>
-
-    <div class="tab-panel" id="tabGeneral">
-    <div class="card">
-      <div class="card-title">App Logo</div>
-      <div class="card-sub">
-        Login screen နှင့် header ပေါ်က logo ပုံကို ပြင်ပါ။ Image URL တစ်ခု ထည့်ပါ
-        (Firebase Storage, Imgur စတာမှာ upload လုပ်ပြီး link ကူးထည့်နိုင်ပါတယ်)။
-        မထည့်ရသေးရင် skeleton placeholder ကိုပဲ user တွေ မြင်ရမှာပါ။
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        <div class="login-logo" id="logoPreviewBox" style="width:52px;height:52px;border-radius:14px;margin:0;flex-shrink:0;">
-          <span class="logo-skeleton"><span></span><span></span><span></span><span></span></span>
-        </div>
-        <input class="text-input" id="logoUrlInput" placeholder="https://…/logo.png" style="flex:1;">
-      </div>
-      <button class="save-btn" id="saveLogoBtn">Save Logo</button>
-      <div class="save-msg" id="saveLogoMsg"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">ငွေကြေး ဖလှယ်နှုန်း (Exchange Rates)</div>
-      <div class="card-sub">
-        Wallet balance နှင့် ငွေပေးချေမှုအားလုံးက <b>MMK (Ks)</b> ဖြင့်သာ တွက်ချက်ပါသည်။
-        ဒီနေရာက rate တွေက app ထဲမှာ user တွေကို "ခန့်မှန်း" ပြသဖို့ display conversion ပဲ ဖြစ်ပါတယ်
-        — 1 unit က MMK ဘယ်လောက်ညီမျှလဲဆိုတာ ရေးထည့်ပါ။
-      </div>
-
-      <div class="rate-row mmk-row">
-        <div class="rate-flag">🇲🇲</div>
-        <div class="rate-label"><div class="rate-code">MMK</div><div class="rate-name">Myanmar Kyat (base unit)</div></div>
-        <div class="rate-input-wrap"><span class="rate-unit">1 MMK =</span><input value="1" disabled></div>
-      </div>
-
-      <div class="rate-row">
-        <div class="rate-flag">🇺🇸</div>
-        <div class="rate-label"><div class="rate-code">USD</div><div class="rate-name">US Dollar</div></div>
-        <div class="rate-input-wrap"><span class="rate-unit">1 USD =</span><input type="number" inputmode="decimal" id="rateUSD" step="1" min="1"><span class="rate-unit">Ks</span></div>
-      </div>
-
-      <div class="rate-row">
-        <div class="rate-flag">🇹🇭</div>
-        <div class="rate-label"><div class="rate-code">THB</div><div class="rate-name">Thai Baht</div></div>
-        <div class="rate-input-wrap"><span class="rate-unit">1 THB =</span><input type="number" inputmode="decimal" id="rateTHB" step="1" min="1"><span class="rate-unit">Ks</span></div>
-      </div>
-
-      <div class="rate-row">
-        <div class="rate-flag">🇸🇬</div>
-        <div class="rate-label"><div class="rate-code">SGD</div><div class="rate-name">Singapore Dollar</div></div>
-        <div class="rate-input-wrap"><span class="rate-unit">1 SGD =</span><input type="number" inputmode="decimal" id="rateSGD" step="1" min="1"><span class="rate-unit">Ks</span></div>
-      </div>
-
-      <button class="save-btn" id="saveRatesBtn">Save Rates</button>
-      <div class="save-msg" id="saveMsg"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title" style="font-size:12.5px">Note</div>
-      <div class="meta-note">
-        ဒီနေရာမှာ Save လုပ်လိုက်တာနဲ့ <b>index.html</b> ဖွင့်ထားသူအားလုံးရဲ့ currency display ကို
-        live update ဖြစ်သွားပါမယ် (redeploy/refresh မလိုပါ)။ Rate တွေကို <code>config/currency</code>
-        ဆိုတဲ့ Firestore document ထဲမှာ သိမ်းထားပါတယ်.
-      </div>
-    </div>
-    </div>
-
-    <!-- ===================== GAMES TAB ===================== -->
-    <div class="tab-panel" id="tabGames">
-      <div class="card">
-        <div class="card-title" id="gameFormTitle">Game အသစ် ထည့်ရန်</div>
-        <div class="card-sub">Store ထဲက Game list ကို ဒီနေရာက ထိန်းချုပ်ပါတယ် — ထည့်/ပြင်/ဖျက် လုပ်လို့ရပါတယ်။ Game တစ်ခုကို နှိပ်လိုက်ရင် အောက်ပိုင်းမှာ ပွင့်လာပြီး အဲ့ Game ရဲ့ Package (ဈေးနှုန်း) တွေကို တိုက်ရိုက် ထည့်/ပြင်/ဖျက် လုပ်နိုင်ပါတယ်။</div>
-
-        <div class="form-group">
-          <label class="form-label">Game နာမည်</label>
-          <input class="text-input full" id="gameNameInput" placeholder="ဥပမာ — Free Fire">
-        </div>
-        <div class="form-row2">
-          <div class="form-group">
-            <label class="form-label">အတို (2 လုံး, image မထည့်ရသေးရင် ပြမည်)</label>
-            <input class="text-input full" id="gameShortInput" maxlength="3" placeholder="FF">
-          </div>
-          <div class="form-group">
-            <label class="form-label">အရောင်</label>
-            <input class="text-input full" id="gameColorInput" type="color" value="#7C5CFF" style="padding:4px;height:38px;">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Icon ပုံ (list/detail page သေးသေး icon)</label>
-          <div class="img-upload">
-            <div class="img-upload-box" id="gameIconBox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
-            <div class="img-upload-actions">
-              <div class="up-lbl">JPG/PNG file တင်ပါ — Firebase Storage ထဲသို့ upload ဖြစ်ပါမည်</div>
-              <div class="up-row">
-                <button type="button" class="mini-btn" id="gameIconPickBtn">ပုံရွေးမည်</button>
-                <button type="button" class="mini-btn danger" id="gameIconClearBtn">ဖယ်မည်</button>
-              </div>
+    <main class="content-area">
+        
+        <!-- DASHBOARD PAGE (Dummy Stats) -->
+        <div id="dashboard" class="page-section active">
+            <h2 class="title-header">Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-box"><h4>Total Sales</h4><p style="color:#1877F2;" id="stat-total-sales">...</p></div>
+                <div class="stat-box"><h4>Pending</h4><p style="color:#856404;" id="stat-pending">...</p></div>
+                <div class="stat-box"><h4>Completed</h4><p id="stat-completed">...</p></div>
+                <div class="stat-box"><h4>Today's Orders</h4><p id="stat-today">...</p></div>
             </div>
-            <input type="file" accept="image/*" id="gameIconFile" style="display:none">
-          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Banner ပုံ (game detail page ထိပ်ပိုင်း)</label>
-          <div class="img-upload">
-            <div class="img-upload-box wide" id="gameBannerBox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
-            <div class="img-upload-actions">
-              <div class="up-lbl">Landscape ပုံ အသင့်တော်ဆုံးပါ</div>
-              <div class="up-row">
-                <button type="button" class="mini-btn" id="gameBannerPickBtn">ပုံရွေးမည်</button>
-                <button type="button" class="mini-btn danger" id="gameBannerClearBtn">ဖယ်မည်</button>
-              </div>
+        <!-- GAMES PAGE (Live Firestore Data) -->
+        <div id="game-list" class="page-section">
+            <h2 class="title-header">Game List <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button></h2>
+            <div id="admin-games-container">
+                <p class="empty-msg">Loading games...</p>
             </div>
-            <input type="file" accept="image/*" id="gameBannerFile" style="display:none">
-          </div>
         </div>
 
-        <label class="check-row"><input type="checkbox" id="gameNeedsServerInput"> Server ID / Zone ID ပါ ဖြည့်ပေးရမည့် Game</label>
-
-        <div class="form-group">
-          <label class="form-label">Description (game detail page)</label>
-          <input class="text-input full" id="gameDescInput" placeholder="Game အကြောင်း တိုတိုရေးပါ">
+        <!-- ORDERS PAGE (Firebase Connected) -->
+        <div id="order-list" class="page-section">
+            <h2 class="title-header">Pending Orders <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button></h2>
+            <!-- Firebase Container -->
+            <div id="orders-container">
+                <p class="empty-msg">Loading orders...</p>
+            </div>
         </div>
 
-        <button class="save-btn" id="saveGameBtn">Save Game</button>
-        <button class="mini-btn" id="cancelGameEditBtn" style="display:none;width:100%;margin-top:8px;padding:10px;">ပြင်နေတာ ရပ်မည် (Game အသစ်ထည့်ရန် ပြန်သွားမည်)</button>
-        <div class="save-msg" id="saveGameMsg"></div>
-      </div>
+        <!-- USERS PAGE (Dummy Data) -->
+        <div id="user-list" class="page-section">
+            <h2 class="title-header">Manage Users</h2>
+            <div class="admin-card">
+                <div class="ac-header"><span class="ac-id">U-001</span></div>
+                <div class="ac-body">
+                    <p><b>Name:</b> John Doe</p>
+                    <p><b>Email:</b> john@example.com</p>
+                </div>
+                <div class="ac-footer">
+                    <button class="btn btn-danger" onclick="showToast('User Banned!')">Ban User</button>
+                </div>
+            </div>
+        </div>
 
-      <div class="card">
-        <div class="card-title">ရှိပြီးသား Games (<span id="gamesCount">0</span>) <span style="font-weight:600;color:var(--text-faint);font-size:11px;">— နှိပ်ပြီး Package များ စီမံပါ</span></div>
-        <input class="text-input full" id="gameSearchAdmin" placeholder="Game နာမည်ဖြင့် ရှာပါ..." style="margin-bottom:12px;">
-        <div id="gamesListAdmin"></div>
-      </div>
+    </main>
+
+    <!-- Game Editor Modal: add/edit a game, photo uploads straight from the phone via a free image host -->
+    <div class="modal-overlay" id="game-editor-modal-overlay" onclick="if(event.target===this) closeGameEditor()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="game-editor-title">Add Game</h3>
+                <div class="modal-close" onclick="closeGameEditor()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-game-id">
+
+                <label>Game Name</label>
+                <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
+
+                <label>Game Image</label>
+                <img id="edit-game-preview" src="" alt="Preview" style="width:100%;height:140px;object-fit:cover;border-radius:8px;display:none;background:#F0F2F5;">
+                <input type="file" id="edit-game-file" accept="image/*" onchange="previewGameImage(event)" style="font-size:13px;">
+                <p id="upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+
+                <label>Top-up Packages</label>
+                <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
+                <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
+            </div>
+        </div>
     </div>
 
-    <!-- ===================== TOP-UP REQUESTS TAB ===================== -->
-    <div class="tab-panel" id="tabTopups">
-      <div class="card">
-        <div class="card-title">Game Order Requests (<span id="ordersCount">0</span>)</div>
-        <div class="card-sub">
-          User များ ဝယ်ယူလိုက်တဲ့ Game Diamond/Item order များကို ဒီနေရာမှာ Confirm / Reject လုပ်နိုင်ပါတယ် (ငွေကြေးက Wallet ကနေ ချက်ချင်း နုတ်ယူပြီးသားပါ — "ပိုက်ဆံဖြည့်" tab က Wallet ငွေဖြည့်မှုတွေကို သီးခြား ကိုင်တွယ်ပါတယ်)။
-          <b>Confirm</b> = Game ထဲကို Diamond/Item ကို Manual ပို့ပေးပြီးမှသာ နှိပ်ပါ။
-          <b>Reject</b> = User ရဲ့ Wallet Balance ကို ဒီစနစ်က အလိုအလျောက် ပြန်အမ်းပေးပါမည်။
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
+            <svg class="ui-icon"><use href="#icon-pie"></use></svg> Dash
         </div>
-        <div class="order-summary">
-          <div class="os-item"><div class="os-num" id="ordersPendingCount">0</div><div class="os-lbl">Pending</div></div>
-          <div class="os-item"><div class="os-num" id="ordersConfirmedCount">0</div><div class="os-lbl">Confirmed</div></div>
-          <div class="os-item"><div class="os-num" id="ordersRejectedCount">0</div><div class="os-lbl">Rejected</div></div>
+        <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
+            <svg class="ui-icon"><use href="#icon-list"></use></svg> Games
         </div>
-        <div class="form-row2" style="margin-bottom:12px;">
-          <select class="text-input full" id="orderStatusFilter">
-            <option value="pending" selected>Pending (လုပ်ရမည်)</option>
-            <option value="">အခြေအနေ အားလုံး</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <input class="text-input full" id="orderSearchInput" placeholder="User/Game ဖြင့် ရှာပါ...">
+        <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
+            <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
         </div>
-        <div id="ordersListAdmin"></div>
-      </div>
-    </div>
-
-    <!-- ===================== WALLET TOP-UP TAB ===================== -->
-    <div class="tab-panel" id="tabWallettopup">
-      <div class="card">
-        <div class="card-title">Wallet ငွေဖြည့်တောင်းဆိုမှုများ (<span id="walletCount">0</span>)</div>
-        <div class="card-sub">
-          User များ KBZPay/WavePay/AYA Pay ဖြင့် ငွေလွှဲပြီး Receipt ပုံတင်လိုက်တဲ့ Top-up တောင်းဆိုမှုများ။
-          <b>Approve</b> = Receipt စစ်ဆေးပြီး မှန်ကန်ရင် User ရဲ့ Wallet Balance ထဲကို ငွေဖြည့်ပေးပါမည်။
-          <b>Reject</b> = Receipt မှားနေရင် ငြင်းပယ်ပါမည် (ဒီအဆင့်မှာ ငွေမဖြည့်ရသေးလို့ ပြန်အမ်းစရာမလိုပါ)။
+        <div class="nav-item" id="btn-user-list" onclick="showPage('user-list')">
+            <svg class="ui-icon"><use href="#icon-users"></use></svg> Users
         </div>
-        <div class="order-summary">
-          <div class="os-item"><div class="os-num" id="walletPendingCount">0</div><div class="os-lbl">Pending</div></div>
-          <div class="os-item"><div class="os-num" id="walletDoneCount">0</div><div class="os-lbl">Done</div></div>
-          <div class="os-item"><div class="os-num" id="walletRejectedCount">0</div><div class="os-lbl">Rejected</div></div>
-        </div>
-        <div class="form-row2" style="margin-bottom:12px;">
-          <select class="text-input full" id="walletStatusFilter">
-            <option value="pending" selected>Pending (လုပ်ရမည်)</option>
-            <option value="">အခြေအနေ အားလုံး</option>
-            <option value="done">Done</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <input class="text-input full" id="walletSearchInput" placeholder="User/Method ဖြင့် ရှာပါ...">
-        </div>
-        <div id="walletTopupListAdmin"></div>
-      </div>
-    </div>
+    </nav>
 
-    <!-- ===================== USERS TAB ===================== -->
-    <div class="tab-panel" id="tabUsers">
-      <div class="card">
-        <div class="card-title">အသုံးပြုသူများ (<span id="usersCount">0</span>)</div>
-        <div class="card-sub">Store ကို Google login ဝင်ဖူးသူ user အားလုံး၏ profile စာရင်း — အသေးစိတ်ကြည့်ရန် တစ်ယောက်ချင်း နှိပ်ပါ။</div>
-        <input class="text-input full" id="userSearchInput" placeholder="နာမည် / email / ဖုန်းဖြင့် ရှာပါ..." style="margin-bottom:12px;">
-        <div id="usersListAdmin"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-/* =========================================================
-   FIREBASE CONFIG — must be the SAME project/config as index.html
-   ========================================================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyB4kcQXS-C3zXxKg2Lj1TPllEAbJ30noY4",
-  authDomain: "pca-store-47a7f.firebaseapp.com",
-  projectId: "pca-store-47a7f",
-  storageBucket: "pca-store-47a7f.firebasestorage.app",
-  messagingSenderId: "720925768139",
-  appId: "1:720925768139:web:cc4f1ae89dfd8bd1f2de4e",
-  measurementId: "G-QHC6V0C7HD"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err=>console.warn("Auth persistence:", err));
-
-/* Environment banner: same diagnostic as store.html — file:// origins and
-   Facebook/Instagram/Messenger/Line in-app browsers can't reliably keep
-   the admin signed in between visits. */
-(function(){
-  const ua = navigator.userAgent || "";
-  const isFileProtocol = location.protocol === "file:";
-  const isInAppBrowser = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|; ?wv\)/i.test(ua);
-  if(!isFileProtocol && !isInAppBrowser) return;
-
-  function mount(){
-    const card = document.querySelector(".login-card");
-    if(!card) return;
-    const banner = document.createElement("div");
-    banner.id = "envWarningBanner";
-    banner.style.cssText = "background:#3a2a00;color:#ffd76a;font-size:12.5px;line-height:1.55;padding:10px 12px;border-radius:10px;margin:0 0 12px;text-align:left;";
-    if(isFileProtocol){
-      banner.innerHTML = "⚠️ ဒီ file ကို local ကနေ (file://) တိုက်ရိုက်ဖွင့်နေလို့ browser က Login session ကို မသိမ်းပေးနိုင်ပါ — ပြန်ဝင်တိုင်း Login ပြန်ဝင်ရပါလိမ့်မယ်။ Web server ပေါ် တင်ပြီး https:// နဲ့ ဖွင့်မှသာ Login persist ဖြစ်ပါမယ်။";
-    }else{
-      banner.innerHTML = '⚠️ In-app browser ကနေ ဖွင့်နေလို့ App ကို ပိတ်လိုက်တိုင်း Login session ပျောက်တတ်ပါတယ်။ Chrome/Safari ပြင်ပ Browser နဲ့ ဖွင့်ပါ။<br><button id="openExternalBtn" type="button" style="margin-top:8px;padding:8px 14px;border-radius:8px;border:none;background:#ffd76a;color:#1a1200;font-weight:700;font-size:12.5px;cursor:pointer;">Chrome/Safari ထဲဖွင့်မယ်</button>';
-    }
-    card.insertBefore(banner, card.firstChild);
-
-    const btn = document.getElementById("openExternalBtn");
-    if(btn){
-      btn.addEventListener("click", ()=>{
-        const url = location.href;
-        if(/Android/i.test(ua)){
-          location.href = "intent://" + url.replace(/^https?:\/\//,"") + "#Intent;scheme=https;package=com.android.chrome;end";
-        }else{
-          navigator.clipboard?.writeText(url).catch(()=>{});
-          alert("Link ကို Copy ကူးပြီးပါပြီ။ အပေါ်ညာဘက် '•••' ကိုနှိပ်ပြီး 'Open in Safari' ကိုရွေးပေးပါ။");
+    <!-- Vanilla JS -->
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.getElementById(`btn-${pageId}`).classList.add('active');
+            window.scrollTo(0,0);
+            if (pageId === 'dashboard' && window.loadDashboardStats) window.loadDashboardStats();
         }
-      });
-    }
-  }
-  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
-  else mount();
-})();
-
-/* =========================================================
-   ADMIN ALLOWLIST
-   ---------------------------------------------------------
-   Only these Google emails can access this page. Add/remove
-   emails here. (For stronger security, move this check into
-   Firestore Security Rules too — see note at bottom of file.)
-   ========================================================= */
-const ADMIN_EMAILS = [
-  "linpyaesone130@gmail.com"
-];
-
-const loginGate = document.getElementById("loginGate");
-const app = document.getElementById("app");
-const googleSignInBtn = document.getElementById("googleSignInBtn");
-const loginErrorEl = document.getElementById("loginError");
-const deniedBox = document.getElementById("deniedBox");
-const deniedEmail = document.getElementById("deniedEmail");
-const googleProvider = new firebase.auth.GoogleAuthProvider();
-
-async function startGoogleSignIn(){
-  loginErrorEl.textContent = "";
-  deniedBox.style.display = "none";
-  try{
-    await auth.signInWithPopup(googleProvider);
-  }catch(err){
-    console.error("Sign-in failed", err);
-    if(err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment"){
-      try{ await auth.signInWithRedirect(googleProvider); }
-      catch(err2){ loginErrorEl.textContent = `Sign-in မအောင်မြင်ပါ — ${err2.code || err2.message || "unknown error"}`; }
-    } else if(err.code !== "auth/popup-closed-by-user"){
-      loginErrorEl.textContent = `Sign-in မအောင်မြင်ပါ — ${err.code || err.message || "unknown error"}`;
-    }
-  }
-}
-googleSignInBtn.addEventListener("click", startGoogleSignIn);
-
-document.getElementById("signOutBtn").addEventListener("click", ()=>auth.signOut());
-
-function setLogoBoxes(url){
-  const boxes = [
-    document.getElementById("logoPreviewBox"),
-    document.getElementById("loginLogoBox"),
-    document.getElementById("topbarLogoBox")
-  ];
-  boxes.forEach(box=>{
-    if(!box) return;
-    box.innerHTML = url
-      ? `<img src="${url}" alt="Logo">`
-      : `<span class="logo-skeleton"><span></span><span></span><span></span><span></span></span>`;
-  });
-}
-
-let unsubLogo = null;
-function loadLogo(){
-  if(unsubLogo) unsubLogo();
-  unsubLogo = db.collection("config").doc("appearance").onSnapshot(snap=>{
-    const url = snap.exists ? snap.data().logoUrl : null;
-    document.getElementById("logoUrlInput").value = url || "";
-    setLogoBoxes(url);
-  }, err=>console.error("Failed to load logo", err));
-}
-
-document.getElementById("logoUrlInput").addEventListener("input", e=>{
-  setLogoBoxes(e.target.value.trim());
-});
-
-document.getElementById("saveLogoBtn").addEventListener("click", async ()=>{
-  const btn = document.getElementById("saveLogoBtn");
-  const msg = document.getElementById("saveLogoMsg");
-  const url = document.getElementById("logoUrlInput").value.trim();
-  btn.disabled = true; msg.textContent = ""; msg.className = "save-msg";
-  try{
-    await db.collection("config").doc("appearance").set({
-      logoUrl: url || null,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: auth.currentUser ? auth.currentUser.email : null
-    }, {merge:true});
-    msg.textContent = url ? "Logo သိမ်းပြီးပါပြီ" : "Logo ကို ဖယ်ရှားလိုက်ပါပြီ (skeleton ပြန်ပြမယ်)";
-    msg.className = "save-msg ok";
-  }catch(err){
-    console.error("Save failed", err);
-    msg.textContent = "Save မအောင်မြင်ပါ — Firestore rules ကို စစ်ကြည့်ပါ";
-    msg.className = "save-msg err";
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-let ratesLoaded = false;
-function fillRateInputs(d){
-  document.getElementById("rateUSD").value = (d && d.USD) || 4500;
-  document.getElementById("rateTHB").value = (d && d.THB) || 130;
-  document.getElementById("rateSGD").value = (d && d.SGD) || 3400;
-  ratesLoaded = true;
-}
-
-function loadRates(){
-  db.collection("config").doc("currency").get()
-    .then(snap=>fillRateInputs(snap.exists ? snap.data() : null))
-    .catch(err=>{ console.error("Failed to load rates", err); fillRateInputs(null); });
-}
-
-document.getElementById("saveRatesBtn").addEventListener("click", async ()=>{
-  const btn = document.getElementById("saveRatesBtn");
-  const msg = document.getElementById("saveMsg");
-  const usd = Number(document.getElementById("rateUSD").value);
-  const thb = Number(document.getElementById("rateTHB").value);
-  const sgd = Number(document.getElementById("rateSGD").value);
-  if(!usd || !thb || !sgd || usd<=0 || thb<=0 || sgd<=0){
-    msg.textContent = "Rate အားလုံး 0 ထက်ကြီးရပါမယ်"; msg.className = "save-msg err"; return;
-  }
-  btn.disabled = true; msg.textContent = ""; msg.className = "save-msg";
-  try{
-    await db.collection("config").doc("currency").set({
-      USD: usd, THB: thb, SGD: sgd,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: auth.currentUser ? auth.currentUser.email : null
-    }, {merge:true});
-    msg.textContent = "သိမ်းပြီးပါပြီ — index.html ထဲမှာ live update ဖြစ်သွားပါမယ်";
-    msg.className = "save-msg ok";
-  }catch(err){
-    console.error("Save failed", err);
-    msg.textContent = "Save မအောင်မြင်ပါ — Firestore rules ကို စစ်ကြည့်ပါ";
-    msg.className = "save-msg err";
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-/* ---------- TABS ---------- */
-function goToTab(tabName){
-  const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
-  if(btn) btn.click();
-}
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-    document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
-    btn.classList.add("active");
-    const panelId = "tab" + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1);
-    document.getElementById(panelId).classList.add("active");
-    window.scrollTo({top:0, behavior:"smooth"});
-  });
-});
-document.querySelectorAll(".dash-stat-card[data-goto-tab]").forEach(card=>{
-  card.addEventListener("click", ()=>goToTab(card.dataset.gotoTab));
-});
-
-function fmtK(n){ return Math.round(Number(n)||0).toLocaleString("en-US"); }
-function slugify(str){
-  return (str||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || ("id"+Date.now());
-}
-function fmtDate(ts){
-  if(!ts) return "—";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  if(isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
-}
-
-/* ---------- IMAGE UPLOAD HELPER ----------
-   Reused for game icon, game banner, and package image. Shows an instant
-   local preview on file pick. On save, the picked image is resized/
-   compressed in the browser (canvas) and stored as a base64 data-URL
-   directly inside the Firestore document — no Firebase Storage / Blaze
-   plan needed, works fully on the free Spark plan. Firestore documents
-   have a 1MB limit, so images are kept small (see maxDim/quality below). */
-function compressImage(dataUrl, maxDim, quality){
-  return new Promise((resolve, reject)=>{
-    const img = new Image();
-    img.onload = ()=>{
-      let w = img.width, h = img.height;
-      if(w >= h){ if(w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; } }
-      else{ if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; } }
-      const canvas = document.createElement("canvas");
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", quality));
-    };
-    img.onerror = ()=>reject(new Error("ပုံဖတ်လို့ မရပါ — file တခြားတစ်ခု ထပ်စမ်းပါ"));
-    img.src = dataUrl;
-  });
-}
-function setupImageUploadEl({fileInput, pickBtn, clearBtn, box, maxDim, quality}){
-  let currentUrl = null;
-  let pendingDataUrl = null;
-
-  function render(){
-    box.innerHTML = (pendingDataUrl || currentUrl)
-      ? `<img src="${pendingDataUrl || currentUrl}">`
-      : `<svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg>`;
-  }
-  pickBtn.addEventListener("click", ()=>fileInput.click());
-  box.addEventListener("click", ()=>fileInput.click());
-  clearBtn.addEventListener("click", ()=>{
-    pendingDataUrl = null; currentUrl = null; fileInput.value = ""; render();
-  });
-  fileInput.addEventListener("change", e=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ev=>{ pendingDataUrl = ev.target.result; render(); };
-    reader.readAsDataURL(file);
-  });
-  render();
-  return {
-    setUrl(url){ currentUrl = url || null; pendingDataUrl = null; fileInput.value = ""; render(); },
-    reset(){ currentUrl = null; pendingDataUrl = null; fileInput.value = ""; render(); },
-    async resolveUrl(){
-      if(pendingDataUrl){
-        const compressed = await compressImage(pendingDataUrl, maxDim, quality);
-        currentUrl = compressed;
-        pendingDataUrl = null;
-        return compressed;
-      }
-      return currentUrl;
-    }
-  };
-}
-/* Backward-compatible id-based wrapper, used by the game icon/banner uploaders below. */
-function setupImageUpload({fileInputId, pickBtnId, clearBtnId, boxId, maxDim, quality}){
-  return setupImageUploadEl({
-    fileInput: document.getElementById(fileInputId),
-    pickBtn: document.getElementById(pickBtnId),
-    clearBtn: document.getElementById(clearBtnId),
-    box: document.getElementById(boxId),
-    maxDim, quality
-  });
-}
-const gameIconUpload = setupImageUpload({fileInputId:"gameIconFile", pickBtnId:"gameIconPickBtn", clearBtnId:"gameIconClearBtn", boxId:"gameIconBox", maxDim:200, quality:0.8});
-const gameBannerUpload = setupImageUpload({fileInputId:"gameBannerFile", pickBtnId:"gameBannerPickBtn", clearBtnId:"gameBannerClearBtn", boxId:"gameBannerBox", maxDim:640, quality:0.7});
-
-/* ---------- GAMES CRUD ---------- */
-let gamesData = [];
-let editingGameId = null;
-let unsubGamesAdmin = null;
-
-function resetGameForm(){
-  editingGameId = null;
-  document.getElementById("gameFormTitle").textContent = "Game အသစ် ထည့်ရန်";
-  document.getElementById("gameNameInput").value = "";
-  document.getElementById("gameShortInput").value = "";
-  document.getElementById("gameColorInput").value = "#7C5CFF";
-  document.getElementById("gameNeedsServerInput").checked = false;
-  document.getElementById("gameDescInput").value = "";
-  gameIconUpload.reset();
-  gameBannerUpload.reset();
-  document.getElementById("cancelGameEditBtn").style.display = "none";
-  document.getElementById("saveGameMsg").textContent = "";
-}
-function loadGameIntoForm(g){
-  editingGameId = g.id;
-  document.getElementById("gameFormTitle").textContent = `"${g.name}" ကို ပြင်ဆင်ရန်`;
-  document.getElementById("gameNameInput").value = g.name || "";
-  document.getElementById("gameShortInput").value = g.short || "";
-  document.getElementById("gameColorInput").value = g.color || "#7C5CFF";
-  document.getElementById("gameNeedsServerInput").checked = !!g.needsServerId;
-  document.getElementById("gameDescInput").value = g.desc || "";
-  gameIconUpload.setUrl(g.image || null);
-  gameBannerUpload.setUrl(g.bannerImage || null);
-  document.getElementById("cancelGameEditBtn").style.display = "";
-  document.getElementById("saveGameMsg").textContent = "";
-  document.querySelector('.tab-btn[data-tab="games"]').click();
-  window.scrollTo({top:0, behavior:"smooth"});
-}
-document.getElementById("cancelGameEditBtn").addEventListener("click", resetGameForm);
-
-/* ---------- Accordion state + inline package form state (Games tab) ---------- */
-let expandedGameIds = new Set();     // which games are currently expanded
-let openPkgFormGameId = null;        // which game's slot currently shows an add/edit package form
-let pkgFormImgUpload = null;         // the image-upload instance for the currently open inline form
-
-function renderGamesAdmin(){
-  const term = document.getElementById("gameSearchAdmin").value.trim().toLowerCase();
-  const list = term ? gamesData.filter(g=>(g.name||"").toLowerCase().includes(term)) : gamesData;
-  document.getElementById("gamesCount").textContent = gamesData.length;
-  const wrap = document.getElementById("gamesListAdmin");
-  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Game မရှိသေးပါ</div>`; return; }
-  wrap.innerHTML = list.map(g=>{
-    const pkgs = packagesData.filter(p=>p.game===g.name);
-    const isOpen = expandedGameIds.has(g.id);
-    return `
-    <div class="game-acc ${isOpen ? 'open' : ''}" data-gid="${g.id}">
-      <div class="game-acc-header" data-toggle-game="${g.id}">
-        <div class="li-thumb">${g.image ? `<img src="${g.image}">` : (g.short||g.name||"?").slice(0,2).toUpperCase()}</div>
-        <div class="li-info">
-          <div class="li-title">${g.name}${g.needsServerId?'<span class="badge">Server ID</span>':''}</div>
-          <div class="li-sub">${pkgs.length} package(s)</div>
-        </div>
-        <svg class="icon chevron"><use href="#i-chev"></use></svg>
-      </div>
-      <div class="game-acc-body">
-        <div class="game-acc-actions">
-          <button type="button" class="mini-btn" data-edit-game="${g.id}">Game ပြင်မည်</button>
-          <button type="button" class="mini-btn danger" data-del-game="${g.id}">Game ဖျက်မည်</button>
-        </div>
-        <div class="pkg-sub-hd">Packages</div>
-        <div class="pkg-sub-list">
-          ${pkgs.length ? pkgs.map(p=>`
-            <div class="list-item">
-              <div class="li-thumb">${p.img ? `<img src="${p.img}">` : "🎁"}</div>
-              <div class="li-info">
-                <div class="li-title">${p.label}${p.best?'<span class="badge gold">Best</span>':''}</div>
-                <div class="li-sub">${fmtK(p.price)} Ks${p.old?` <s>${fmtK(p.old)}</s>`:''}</div>
-              </div>
-              <div class="li-actions">
-                <button type="button" class="mini-btn" data-edit-pkg-inline="${p.id}" data-gid="${g.id}">ပြင်မည်</button>
-                <button type="button" class="mini-btn danger" data-del-pkg-inline="${p.id}">ဖျက်မည်</button>
-              </div>
-            </div>`).join("") : `<div class="empty-note">Package မထည့်ရသေးပါ</div>`}
-        </div>
-        <button type="button" class="mini-btn add-pkg-btn" data-add-pkg="${g.id}">${openPkgFormGameId===g.id ? '− Package ပုံစံ ပိတ်မည်' : '+ Package အသစ်ထည့်ရန်'}</button>
-        <div class="pkg-form-slot" id="pkgFormSlot-${g.id}"></div>
-      </div>
-    </div>`;
-  }).join("");
-  // Keep any currently-open inline add/edit form visible after a re-render
-  // (re-renders happen whenever games/packages data changes via onSnapshot).
-  if(openPkgFormGameId && list.some(g=>g.id===openPkgFormGameId)){
-    const g = gamesData.find(x=>x.id===openPkgFormGameId);
-    if(g) openPkgInlineForm(g.id, g.name, pendingEditPkgId ? packagesData.find(p=>p.id===pendingEditPkgId) : null, true);
-  }
-}
-document.getElementById("gameSearchAdmin").addEventListener("input", renderGamesAdmin);
-
-let pendingEditPkgId = null; // remembers which package is being edited across re-renders
-
-function closePkgInlineForm(){
-  if(openPkgFormGameId){
-    const slot = document.getElementById("pkgFormSlot-"+openPkgFormGameId);
-    if(slot) slot.innerHTML = "";
-  }
-  openPkgFormGameId = null;
-  pendingEditPkgId = null;
-  pkgFormImgUpload = null;
-}
-
-function openPkgInlineForm(gameId, gameName, existingPkg, silentReopen){
-  if(!silentReopen) closePkgInlineForm();
-  const slot = document.getElementById("pkgFormSlot-"+gameId);
-  if(!slot) return;
-  openPkgFormGameId = gameId;
-  pendingEditPkgId = existingPkg ? existingPkg.id : null;
-  slot.innerHTML = `
-    <div class="pkg-inline-form">
-      <div class="form-group">
-        <label class="form-label">Package အမည် (ဥပမာ — 310 Diamonds)</label>
-        <input class="text-input full pf-label" placeholder="310 Diamonds">
-      </div>
-      <div class="form-row2">
-        <div class="form-group"><label class="form-label">ဈေးနှုန်း (Ks)</label><input class="text-input full pf-price" type="number" min="0" placeholder="6500"></div>
-        <div class="form-group"><label class="form-label">ဈေးဟောင်း (မဖြည့်လည်းရ)</label><input class="text-input full pf-old" type="number" min="0" placeholder="7200"></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Package ပုံ (မထည့်ရသေးရင် default icon ပြမည်)</label>
-        <div class="img-upload">
-          <div class="img-upload-box pf-imgbox"><svg class="icon up-ico" style="width:18px;height:18px"><use href="#i-upload"></use></svg></div>
-          <div class="img-upload-actions">
-            <div class="up-lbl">JPG/PNG file တင်ပါ</div>
-            <div class="up-row">
-              <button type="button" class="mini-btn pf-pick">ပုံရွေးမည်</button>
-              <button type="button" class="mini-btn danger pf-clear">ဖယ်မည်</button>
-            </div>
-          </div>
-          <input type="file" accept="image/*" class="pf-file" style="display:none">
-        </div>
-      </div>
-      <label class="check-row"><input type="checkbox" class="pf-best"> "အရောင်းရဆုံး" tag ပြမည်</label>
-      <div style="display:flex;gap:8px;">
-        <button type="button" class="save-btn pf-save" style="margin-top:0;flex:1;">Save Package</button>
-        <button type="button" class="mini-btn pf-cancel" style="padding:0 16px;">Cancel</button>
-      </div>
-      <div class="save-msg pf-msg"></div>
-    </div>`;
-
-  const root = slot.querySelector(".pkg-inline-form");
-  const labelInp = root.querySelector(".pf-label");
-  const priceInp = root.querySelector(".pf-price");
-  const oldInp = root.querySelector(".pf-old");
-  const bestInp = root.querySelector(".pf-best");
-  const msgEl = root.querySelector(".pf-msg");
-  const saveBtn = root.querySelector(".pf-save");
-
-  pkgFormImgUpload = setupImageUploadEl({
-    fileInput: root.querySelector(".pf-file"),
-    pickBtn: root.querySelector(".pf-pick"),
-    clearBtn: root.querySelector(".pf-clear"),
-    box: root.querySelector(".pf-imgbox"),
-    maxDim: 200, quality: 0.8
-  });
-
-  if(existingPkg){
-    labelInp.value = existingPkg.label || "";
-    priceInp.value = (existingPkg.price||"").toString().replace(/,/g,"");
-    oldInp.value = existingPkg.old ? existingPkg.old.toString().replace(/,/g,"") : "";
-    bestInp.checked = !!existingPkg.best;
-    pkgFormImgUpload.setUrl(existingPkg.img || null);
-  }
-
-  root.querySelector(".pf-cancel").addEventListener("click", ()=>{ closePkgInlineForm(); renderGamesAdmin(); });
-  saveBtn.addEventListener("click", async ()=>{
-    const label = labelInp.value.trim();
-    const price = Number(priceInp.value);
-    const oldRaw = oldInp.value;
-    const best = bestInp.checked;
-    if(!label){ msgEl.textContent = "Package အမည် ဖြည့်ပါ"; msgEl.className = "save-msg err"; return; }
-    if(!price || price<=0){ msgEl.textContent = "ဈေးနှုန်း မှန်ကန်အောင် ဖြည့်ပါ"; msgEl.className = "save-msg err"; return; }
-    saveBtn.disabled = true; msgEl.textContent = "Save လုပ်နေသည်…"; msgEl.className = "save-msg";
-    try{
-      const img = await pkgFormImgUpload.resolveUrl();
-      const id = existingPkg ? existingPkg.id : (slugify(gameName)+"-"+slugify(label)+"-"+Date.now().toString(36));
-      await db.collection("packages").doc(id).set({
-        id, game: gameName, label,
-        price: fmtK(price),
-        old: oldRaw ? fmtK(Number(oldRaw)) : null,
-        icon: img ? null : "gift",
-        img: img || null,
-        best
-      }, {merge:true});
-      closePkgInlineForm();
-      renderGamesAdmin();
-    }catch(err){
-      console.error("Save package failed", err);
-      msgEl.textContent = "Save မအောင်မြင်ပါ — " + (err.code || err.message);
-      msgEl.className = "save-msg err";
-      saveBtn.disabled = false;
-    }
-  });
-}
-
-document.getElementById("gamesListAdmin").addEventListener("click", async e=>{
-  const toggleId = e.target.closest("[data-toggle-game]")?.dataset.toggleGame;
-  const editId = e.target.closest("[data-edit-game]")?.dataset.editGame;
-  const delId = e.target.closest("[data-del-game]")?.dataset.delGame;
-  const addPkgGid = e.target.closest("[data-add-pkg]")?.dataset.addPkg;
-  const editPkgBtn = e.target.closest("[data-edit-pkg-inline]");
-  const delPkgId = e.target.closest("[data-del-pkg-inline]")?.dataset.delPkgInline;
-
-  if(toggleId){
-    if(expandedGameIds.has(toggleId)) expandedGameIds.delete(toggleId);
-    else expandedGameIds.add(toggleId);
-    if(openPkgFormGameId && openPkgFormGameId!==toggleId) closePkgInlineForm();
-    renderGamesAdmin();
-    return;
-  }
-  if(editId){ const g = gamesData.find(x=>x.id===editId); if(g) loadGameIntoForm(g); return; }
-  if(delId){
-    const g = gamesData.find(x=>x.id===delId);
-    if(!g) return;
-    if(!confirm(`"${g.name}" ကို ဖျက်မှာ သေချာလား? အောက်က package တွေ ရှိနေရင် ဖျက်ပစ်ပါဦးမလား?`)) return;
-    try{
-      if(openPkgFormGameId===delId) closePkgInlineForm();
-      await db.collection("games").doc(delId).delete();
-      if(editingGameId===delId) resetGameForm();
-    }
-    catch(err){ console.error(err); alert("ဖျက်လို့ မရပါ — Firestore rules စစ်ကြည့်ပါ"); }
-    return;
-  }
-  if(addPkgGid){
-    const g = gamesData.find(x=>x.id===addPkgGid);
-    if(!g) return;
-    if(openPkgFormGameId===addPkgGid){ closePkgInlineForm(); renderGamesAdmin(); return; }
-    if(!expandedGameIds.has(addPkgGid)) expandedGameIds.add(addPkgGid);
-    openPkgInlineForm(addPkgGid, g.name, null);
-    renderGamesAdmin();
-    return;
-  }
-  if(editPkgBtn){
-    const pid = editPkgBtn.dataset.editPkgInline;
-    const gid = editPkgBtn.dataset.gid;
-    const p = packagesData.find(x=>x.id===pid);
-    const g = gamesData.find(x=>x.id===gid);
-    if(p && g){ openPkgInlineForm(gid, g.name, p); renderGamesAdmin(); }
-    return;
-  }
-  if(delPkgId){
-    const p = packagesData.find(x=>x.id===delPkgId);
-    if(!p) return;
-    if(!confirm(`"${p.label}" ကို ဖျက်မှာ သေချာလား?`)) return;
-    try{
-      if(pendingEditPkgId===delPkgId) closePkgInlineForm();
-      await db.collection("packages").doc(delPkgId).delete();
-    }
-    catch(err){ console.error(err); alert("ဖျက်လို့ မရပါ — Firestore rules စစ်ကြည့်ပါ"); }
-    return;
-  }
-});
-
-document.getElementById("saveGameBtn").addEventListener("click", async ()=>{
-  const btn = document.getElementById("saveGameBtn");
-  const msg = document.getElementById("saveGameMsg");
-  const name = document.getElementById("gameNameInput").value.trim();
-  if(!name){ msg.textContent = "Game နာမည် ဖြည့်ပါ"; msg.className = "save-msg err"; return; }
-  const short = document.getElementById("gameShortInput").value.trim().toUpperCase() || name.slice(0,2).toUpperCase();
-  const color = document.getElementById("gameColorInput").value;
-  const needsServerId = document.getElementById("gameNeedsServerInput").checked;
-  const desc = document.getElementById("gameDescInput").value.trim();
-  btn.disabled = true; msg.textContent = "Save လုပ်နေသည်…"; msg.className = "save-msg";
-  try{
-    const image = await gameIconUpload.resolveUrl(name+"-icon");
-    const bannerImage = await gameBannerUpload.resolveUrl(name+"-banner");
-    const id = editingGameId || slugify(name);
-    await db.collection("games").doc(id).set({
-      id, name, short, color,
-      image: image || null,
-      bannerImage: bannerImage || null,
-      needsServerId,
-      desc: desc || null
-    }, {merge:true});
-    msg.textContent = "Game သိမ်းပြီးပါပြီ"; msg.className = "save-msg ok";
-    resetGameForm();
-  }catch(err){
-    console.error("Save game failed", err);
-    msg.textContent = "Save မအောင်မြင်ပါ — " + (err.code || err.message);
-    msg.className = "save-msg err";
-  } finally { btn.disabled = false; }
-});
-
-function bindGamesAdmin(){
-  if(unsubGamesAdmin) unsubGamesAdmin();
-  unsubGamesAdmin = db.collection("games").onSnapshot(snap=>{
-    gamesData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-    renderGamesAdmin();
-  }, err=>console.error("games admin listener error", err));
-}
-
-/* ---------- PACKAGES DATA ----------
-   Packages no longer have their own tab/form — they're now added, edited,
-   and deleted directly inside each game's expandable row on the Games tab
-   (see the accordion code above). This just keeps packagesData in sync. */
-let packagesData = [];
-let unsubPkgsAdmin = null;
-function bindPkgsAdmin(){
-  if(unsubPkgsAdmin) unsubPkgsAdmin();
-  unsubPkgsAdmin = db.collection("packages").onSnapshot(snap=>{
-    packagesData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-    renderGamesAdmin();
-  }, err=>console.error("packages admin listener error", err));
-}
-
-/* ---------- TOP-UP REQUESTS (ORDERS) ----------
-   ⚠️ IMPORTANT — collection/field names below are a best guess since this
-   admin panel is a separate file from your user-facing store app. If your
-   store writes top-up requests under a different collection name or with
-   different field names, just change ORDERS_COLLECTION and the pick(...)
-   key lists inside renderOrdersAdmin()/updateOrderStatus() to match.
-   Assumed shape of one order document:
-     { uid, userName, userEmail, game, package (label), price,
-       playerId, serverId, proofImage, status: "pending"|"confirmed"|"rejected",
-       createdAt }
-   ------------------------------------------------------------------- */
-const ORDERS_COLLECTION = "orders";
-let ordersData = [];
-let unsubOrdersAdmin = null;
-
-function pick(obj, keys, fallback){
-  for(const k of keys){
-    if(obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
-  }
-  return fallback;
-}
-
-function statusLabelMy(s){
-  if(s === "confirmed") return "Confirmed";
-  if(s === "rejected") return "Rejected";
-  return "Pending";
-}
-
-function renderOrdersAdmin(){
-  const statusFilter = document.getElementById("orderStatusFilter").value;
-  const term = document.getElementById("orderSearchInput").value.trim().toLowerCase();
-  let list = ordersData;
-  if(statusFilter) list = list.filter(o=>(o.status||"pending").toLowerCase()===statusFilter);
-  if(term){
-    list = list.filter(o=>{
-      const game = (pick(o,["game","gameName"],"")).toLowerCase();
-      const uname = (pick(o,["userName","name","displayName"],"")).toLowerCase();
-      const uemail = (pick(o,["userEmail","email"],"")).toLowerCase();
-      return game.includes(term) || uname.includes(term) || uemail.includes(term);
-    });
-  }
-  const pendingCount = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="pending").length;
-  const confirmedCount = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="confirmed").length;
-  const rejectedCount = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="rejected").length;
-  document.getElementById("ordersCount").textContent = ordersData.length;
-  document.getElementById("ordersPendingCount").textContent = pendingCount;
-  document.getElementById("ordersConfirmedCount").textContent = confirmedCount;
-  document.getElementById("ordersRejectedCount").textContent = rejectedCount;
-
-  const tabBadge = document.getElementById("tabTopupBadge");
-  if(pendingCount > 0){ tabBadge.textContent = pendingCount; tabBadge.style.display = ""; }
-  else{ tabBadge.style.display = "none"; }
-
-  const wrap = document.getElementById("ordersListAdmin");
-  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Top-up request မတွေ့ပါ</div>`; return; }
-  wrap.innerHTML = list.map(o=>{
-    const game = pick(o,["game","gameName"],"—");
-    const pkgLabel = pick(o,["package","packageLabel","label","pkg"],"—");
-    const price = Number(pick(o,["price","amount","total"],0)) || 0;
-    const userName = pick(o,["userName","name","displayName"],"");
-    const userEmail = pick(o,["userEmail","email"],"");
-    const playerId = pick(o,["playerId","gameId","accountId","userGameId"],null);
-    const serverId = pick(o,["serverId","zoneId","server"],null);
-    const proof = pick(o,["proofImage","screenshot","paymentProof","proof"],null);
-    const adminNote = pick(o,["adminNote","note","rejectReason"],null);
-    const status = (o.status||"pending").toLowerCase();
-    return `
-    <div class="order-card" data-oid="${o.id}">
-      <div class="order-top">
-        <div class="li-thumb">${(game||"?").slice(0,2).toUpperCase()}</div>
-        <div class="li-info">
-          <div class="li-title">${game} — ${pkgLabel}</div>
-          <div class="li-sub">${userName || userEmail || "(user)"} • ${fmtK(price)} Ks</div>
-        </div>
-        <span class="badge status-${status}">${statusLabelMy(status)}</span>
-      </div>
-      <div class="order-detail" id="orderDetail-${o.id}">
-        <div class="d-row"><span>User</span><span>${userName || "—"}${userEmail?` (${userEmail})`:""}</span></div>
-        <div class="d-row"><span>Player / Server ID</span><span>${playerId || "—"}${serverId?` / ${serverId}`:""}</span></div>
-        <div class="d-row"><span>ဈေးနှုန်း</span><span>${fmtK(price)} Ks</span></div>
-        <div class="d-row"><span>Order ID</span><span>${o.id}</span></div>
-        <div class="d-row"><span>တင်သွင်းချိန်</span><span>${fmtDate(o.createdAt)}</span></div>
-        ${adminNote ? `<div class="d-row"><span>မှတ်ချက်</span><span>${adminNote}</span></div>` : ""}
-        ${proof ? `<div class="order-proof"><img src="${proof}"></div>` : ""}
-      </div>
-      ${status === "pending" ? `
-        <div class="order-actions">
-          <button type="button" class="mini-btn confirm-btn" data-confirm-order="${o.id}">Confirm</button>
-          <button type="button" class="mini-btn danger" data-reject-order="${o.id}">Reject</button>
-        </div>` : `
-        <div class="order-actions">
-          <button type="button" class="mini-btn" data-reset-order="${o.id}">Pending ပြန်ထားမည်</button>
-        </div>`}
-    </div>`;
-  }).join("");
-}
-document.getElementById("orderStatusFilter").addEventListener("change", renderOrdersAdmin);
-document.getElementById("orderSearchInput").addEventListener("input", renderOrdersAdmin);
-
-async function updateOrderStatus(orderId, newStatus, opts={}){
-  const ref = db.collection(ORDERS_COLLECTION).doc(orderId);
-  try{
-    await db.runTransaction(async tx=>{
-      const snap = await tx.get(ref);
-      if(!snap.exists) throw new Error("Order not found");
-      const data = snap.data();
-      const prevStatus = (data.status||"pending").toLowerCase();
-      const uid = pick(data, ["uid","userId"], null);
-      const price = Number(pick(data, ["price","amount","total"], 0)) || 0;
-
-      // If rejecting a still-pending order, refund the price back to the
-      // user's wallet balance (users/{uid}.balance) inside the same transaction.
-      const needsRefund = newStatus === "rejected" && prevStatus === "pending" && uid && price > 0;
-      const userRef = needsRefund ? db.collection("users").doc(uid) : null;
-      const userSnap = userRef ? await tx.get(userRef) : null;
-
-      // Keep the linked users/{uid}/transactions/{txId} doc (written by
-      // store.html at purchase time, id saved as orders/{id}.txId) in sync —
-      // this is the doc the customer's app actually listens to in realtime,
-      // so writing it here means the customer sees Confirm/Reject instantly
-      // instead of waiting on the 2-minute client-side auto-confirm fallback.
-      const txId = pick(data, ["txId"], null);
-      const linkedTxRef = (uid && txId) ? db.collection("users").doc(uid).collection("transactions").doc(txId) : null;
-      const linkedTxSnap = linkedTxRef ? await tx.get(linkedTxRef) : null;
-
-      const update = {
-        status: newStatus,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: auth.currentUser ? auth.currentUser.email : null
-      };
-      if(newStatus === "confirmed"){
-        update.confirmedAt = firebase.firestore.FieldValue.serverTimestamp();
-      }
-      if(newStatus === "rejected"){
-        update.rejectedAt = firebase.firestore.FieldValue.serverTimestamp();
-        if(opts.reason) update.adminNote = opts.reason;
-      }
-      if(newStatus === "pending"){
-        update.confirmedAt = firebase.firestore.FieldValue.delete();
-        update.rejectedAt = firebase.firestore.FieldValue.delete();
-      }
-
-      if(userRef && userSnap && userSnap.exists){
-        const curBal = Number(userSnap.data().balance || 0);
-        tx.update(userRef, { balance: curBal + price });
-      }
-      if(linkedTxRef && linkedTxSnap && linkedTxSnap.exists){
-        // purchase-category tx vocabulary (see store.html): pending -> done | cancelled
-        if(newStatus === "confirmed") tx.update(linkedTxRef, { status:"done" });
-        else if(newStatus === "rejected") tx.update(linkedTxRef, { status:"cancelled" });
-        else if(newStatus === "pending") tx.update(linkedTxRef, { status:"pending" });
-      }
-      tx.update(ref, update);
-    });
-  }catch(err){
-    console.error("Order status update failed", err);
-    alert("Update မအောင်မြင်ပါ — " + (err.code || err.message));
-  }
-}
-
-document.getElementById("ordersListAdmin").addEventListener("click", e=>{
-  const confirmId = e.target.closest("[data-confirm-order]")?.dataset.confirmOrder;
-  const rejectId = e.target.closest("[data-reject-order]")?.dataset.rejectOrder;
-  const resetId = e.target.closest("[data-reset-order]")?.dataset.resetOrder;
-
-  if(confirmId){
-    if(!confirm("ဒီ Order ကို Confirm လုပ်မှာ သေချာလား? (Diamond/Item ကို Game ထဲကို ပို့ပေးပြီးမှသာ Confirm နှိပ်ပါ)")) return;
-    updateOrderStatus(confirmId, "confirmed");
-    return;
-  }
-  if(rejectId){
-    const reason = prompt("Reject အကြောင်းရင်း (မဖြည့်လည်းရ) — User ရဲ့ Balance ကို အလိုအလျောက် ပြန်အမ်းပေးပါမည်:", "");
-    if(reason === null) return; // admin cancelled the prompt
-    if(!confirm("ဒီ Order ကို Reject လုပ်မှာ သေချာလား? User ရဲ့ Wallet balance ကို ပြန်အမ်းပေးပါမည်။")) return;
-    updateOrderStatus(rejectId, "rejected", {reason});
-    return;
-  }
-  if(resetId){
-    if(!confirm("ပြန် Pending အခြေအနေ ပြောင်းမှာ သေချာလား?")) return;
-    updateOrderStatus(resetId, "pending");
-    return;
-  }
-  // Otherwise, toggle the order's detail panel open/closed.
-  const card = e.target.closest(".order-card");
-  if(card) document.getElementById("orderDetail-"+card.dataset.oid)?.classList.toggle("show");
-});
-
-function bindOrdersAdmin(){
-  if(unsubOrdersAdmin) unsubOrdersAdmin();
-  unsubOrdersAdmin = db.collection(ORDERS_COLLECTION).orderBy("createdAt","desc").limit(300).onSnapshot(snap=>{
-    ordersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-    renderOrdersAdmin();
-    renderDashboard();
-  }, err=>{
-    console.error("orders admin listener error", err);
-    // Falls back to unordered fetch if createdAt is missing on old docs / index not ready.
-    db.collection(ORDERS_COLLECTION).limit(300).get().then(snap=>{
-      ordersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-      renderOrdersAdmin();
-      renderDashboard();
-    }).catch(err2=>console.error("orders fallback fetch failed", err2));
-  });
-}
-
-/* ---------- WALLET TOP-UP REQUESTS (real cash deposits) ----------
-   These are users/{uid}/transactions/{id} docs with category:"topup",
-   written by store.html when a user submits a KBZPay/WavePay/AYA Pay
-   receipt to add money to their wallet. This is a DIFFERENT collection
-   from ORDERS_COLLECTION above (which is for spending balance on game
-   items) — approving here is what actually credits users/{uid}.balance.
-   Assumed shape of one transaction document:
-     { uid, amount, method, receiptUrl, status: "pending"|"done"|"rejected",
-       adminNote, createdAt }
-   ------------------------------------------------------------------- */
-let walletTopupsData = [];
-let unsubWalletTopups = null;
-
-function statusLabelWallet(s){
-  if(s === "done") return "Done";
-  if(s === "rejected") return "Rejected";
-  return "Pending";
-}
-
-function renderWalletTopupsAdmin(){
-  const statusFilter = document.getElementById("walletStatusFilter").value;
-  const term = document.getElementById("walletSearchInput").value.trim().toLowerCase();
-  let list = walletTopupsData;
-  if(statusFilter) list = list.filter(x=>(x.status||"pending").toLowerCase()===statusFilter);
-  if(term){
-    list = list.filter(x=>{
-      const method = (x.method||"").toLowerCase();
-      const uid = (x.uid||"").toLowerCase();
-      return method.includes(term) || uid.includes(term);
-    });
-  }
-  const pendingCount = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="pending").length;
-  const doneCount = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="done").length;
-  const rejectedCount = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="rejected").length;
-  document.getElementById("walletCount").textContent = walletTopupsData.length;
-  document.getElementById("walletPendingCount").textContent = pendingCount;
-  document.getElementById("walletDoneCount").textContent = doneCount;
-  document.getElementById("walletRejectedCount").textContent = rejectedCount;
-
-  const walletBadge = document.getElementById("tabWalletBadge");
-  if(pendingCount > 0){ walletBadge.textContent = pendingCount; walletBadge.style.display = ""; }
-  else{ walletBadge.style.display = "none"; }
-
-  const wrap = document.getElementById("walletTopupListAdmin");
-  if(!list.length){ wrap.innerHTML = `<div class="empty-note">Top-up တောင်းဆိုမှု မတွေ့ပါ</div>`; return; }
-  wrap.innerHTML = list.map(x=>{
-    const amount = Number(x.amount||0) || 0;
-    const method = x.method || "—";
-    const uid = x.uid || "—";
-    const proof = x.receiptUrl || null;
-    const adminNote = x.adminNote || null;
-    const status = (x.status||"pending").toLowerCase();
-    return `
-    <div class="order-card" data-wid="${x.id}" data-wuid="${x.uid||""}">
-      <div class="order-top">
-        <div class="li-thumb">${method.slice(0,2).toUpperCase()}</div>
-        <div class="li-info">
-          <div class="li-title">${method} — ${fmtK(amount)} Ks</div>
-          <div class="li-sub">UID: ${uid}</div>
-        </div>
-        <span class="badge status-${status}">${statusLabelWallet(status)}</span>
-      </div>
-      <div class="order-detail" id="walletDetail-${x.id}">
-        <div class="d-row"><span>UID</span><span>${uid}</span></div>
-        <div class="d-row"><span>နည်းလမ်း</span><span>${method}</span></div>
-        <div class="d-row"><span>ပမာဏ</span><span>${fmtK(amount)} Ks</span></div>
-        <div class="d-row"><span>တင်သွင်းချိန်</span><span>${fmtDate(x.createdAt)}</span></div>
-        ${adminNote ? `<div class="d-row"><span>မှတ်ချက်</span><span>${adminNote}</span></div>` : ""}
-        ${proof ? `<div class="order-proof"><img src="${proof}"></div>` : ""}
-      </div>
-      ${status === "pending" ? `
-        <div class="order-actions">
-          <button type="button" class="mini-btn confirm-btn" data-approve-wallet="${x.id}">Approve</button>
-          <button type="button" class="mini-btn danger" data-reject-wallet="${x.id}">Reject</button>
-        </div>` : ``}
-    </div>`;
-  }).join("");
-}
-document.getElementById("walletStatusFilter").addEventListener("change", renderWalletTopupsAdmin);
-document.getElementById("walletSearchInput").addEventListener("input", renderWalletTopupsAdmin);
-
-async function updateWalletTopupStatus(uid, txId, newStatus, opts={}){
-  const ref = db.collection("users").doc(uid).collection("transactions").doc(txId);
-  const userRef = db.collection("users").doc(uid);
-  try{
-    await db.runTransaction(async tx=>{
-      const snap = await tx.get(ref);
-      if(!snap.exists) throw new Error("Transaction not found");
-      const data = snap.data();
-      const prevStatus = (data.status||"pending").toLowerCase();
-      if(prevStatus !== "pending") throw new Error("ALREADY_HANDLED");
-
-      const userSnap = newStatus === "done" ? await tx.get(userRef) : null;
-
-      const update = {
-        status: newStatus,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: auth.currentUser ? auth.currentUser.email : null
-      };
-      if(newStatus === "rejected" && opts.reason) update.adminNote = opts.reason;
-
-      if(newStatus === "done" && userSnap && userSnap.exists){
-        const amount = Number(data.amount||0) || 0;
-        const curBal = Number(userSnap.data().balance || 0);
-        tx.update(userRef, { balance: curBal + amount });
-      }
-      tx.update(ref, update);
-    });
-  }catch(err){
-    if(err.message === "ALREADY_HANDLED"){
-      alert("ဒီ Top-up ကို ကိုင်တွယ်ပြီးသားပါ — refresh လုပ်ကြည့်ပါ");
-    }else{
-      console.error("Wallet topup update failed", err);
-      alert("Update မအောင်မြင်ပါ — " + (err.code || err.message));
-    }
-  }
-}
-
-document.getElementById("walletTopupListAdmin").addEventListener("click", e=>{
-  const card = e.target.closest(".order-card");
-  const approveId = e.target.closest("[data-approve-wallet]")?.dataset.approveWallet;
-  const rejectId = e.target.closest("[data-reject-wallet]")?.dataset.rejectWallet;
-  const uid = card?.dataset.wuid;
-
-  if(approveId && uid){
-    if(!confirm("ဒီ Top-up ကို Approve လုပ်မှာ သေချာလား? User ရဲ့ Wallet Balance ထဲကို ငွေဖြည့်ပေးပါမည်။")) return;
-    updateWalletTopupStatus(uid, approveId, "done");
-    return;
-  }
-  if(rejectId && uid){
-    const reason = prompt("Reject အကြောင်းရင်း (မဖြည့်လည်းရ):", "");
-    if(reason === null) return;
-    if(!confirm("ဒီ Top-up ကို Reject လုပ်မှာ သေချာလား?")) return;
-    updateWalletTopupStatus(uid, rejectId, "rejected", {reason});
-    return;
-  }
-  if(card) document.getElementById("walletDetail-"+card.dataset.wid)?.classList.toggle("show");
-});
-
-function bindWalletTopups(){
-  if(unsubWalletTopups) unsubWalletTopups();
-  unsubWalletTopups = db.collectionGroup("transactions")
-    .where("category","==","topup")
-    .orderBy("createdAt","desc").limit(300)
-    .onSnapshot(snap=>{
-      walletTopupsData = snap.docs.map(d=>Object.assign({id:d.id, uid: d.data().uid || d.ref.parent.parent.id}, d.data()));
-      renderWalletTopupsAdmin();
-      renderDashboard();
-    }, err=>{
-      console.error("wallet topups listener error", err);
-      // A composite index is required for this collectionGroup query
-      // (category == + orderBy createdAt) — Firestore's error in the
-      // browser console includes a one-tap link to auto-create it the
-      // first time this runs. Falls back to an unordered fetch meanwhile.
-      db.collectionGroup("transactions").where("category","==","topup").limit(300).get().then(snap=>{
-        walletTopupsData = snap.docs.map(d=>Object.assign({id:d.id, uid: d.data().uid || d.ref.parent.parent.id}, d.data()));
-        renderWalletTopupsAdmin();
-        renderDashboard();
-      }).catch(err2=>console.error("wallet topups fallback fetch failed", err2));
-    });
-}
-
-/* ---------- USERS LIST (read-only view) ---------- */
-let usersData = [];
-let unsubUsersAdmin = null;
-
-function renderUsersAdmin(){
-  const term = document.getElementById("userSearchInput").value.trim().toLowerCase();
-  const list = term ? usersData.filter(u=>
-    (u.name||"").toLowerCase().includes(term) ||
-    (u.email||"").toLowerCase().includes(term) ||
-    (u.phone||"").toLowerCase().includes(term)
-  ) : usersData;
-  document.getElementById("usersCount").textContent = usersData.length;
-  const wrap = document.getElementById("usersListAdmin");
-  if(!list.length){ wrap.innerHTML = `<div class="empty-note">User မတွေ့ပါ</div>`; return; }
-  wrap.innerHTML = list.map(u=>`
-    <div class="user-card" data-uid="${u.id}">
-      <div class="user-card-top">
-        <div class="user-ava">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.initials || (u.name||"?").slice(0,1).toUpperCase())}</div>
-        <div class="user-info">
-          <div class="user-name">${u.name || "(နာမည်မရှိသေးပါ)"}</div>
-          <div class="user-email">${u.email || "—"}</div>
-        </div>
-        <div class="user-balance">${fmtK(u.balance||0)} Ks</div>
-      </div>
-      <div class="user-detail" id="userDetail-${u.id}">
-        <div class="d-row"><span>UID</span><span>${u.id}</span></div>
-        <div class="d-row"><span>ဖုန်း</span><span>${u.phone || "—"}</span></div>
-        <div class="d-row"><span>ကျား/မ</span><span>${u.gender || "—"}</span></div>
-        <div class="d-row"><span>မွေးနေ့</span><span>${u.birthday || "—"}</span></div>
-        <div class="d-row"><span>နေရပ်</span><span>${u.address || "—"}</span></div>
-        <div class="d-row"><span>Referral Code</span><span>${u.referralCode || "—"}</span></div>
-        <div class="d-row"><span>ဖိတ်ခေါ်ခံရသူ (by)</span><span>${u.referredBy || "—"}</span></div>
-        <div class="d-row"><span>Google Login</span><span>${u.googleLinked ? "✓" : "—"}</span></div>
-        <div class="d-row"><span>Telegram Chat ID</span><span>${u.telegramChatId || "—"}</span></div>
-        <div class="d-row"><span>စတင်သုံးစွဲသည့်ရက်</span><span>${fmtDate(u.createdAt)}</span></div>
-      </div>
-    </div>`).join("");
-}
-document.getElementById("userSearchInput").addEventListener("input", renderUsersAdmin);
-document.getElementById("usersListAdmin").addEventListener("click", e=>{
-  const card = e.target.closest(".user-card");
-  if(!card) return;
-  document.getElementById("userDetail-"+card.dataset.uid).classList.toggle("show");
-});
-
-function bindUsersAdmin(){
-  if(unsubUsersAdmin) unsubUsersAdmin();
-  unsubUsersAdmin = db.collection("users").orderBy("createdAt","desc").limit(300).onSnapshot(snap=>{
-    usersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-    renderUsersAdmin();
-    renderDashboard();
-  }, err=>{
-    console.error("users admin listener error", err);
-    // Falls back to unordered fetch if createdAt is missing on old docs / index not ready.
-    db.collection("users").limit(300).get().then(snap=>{
-      usersData = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-      renderUsersAdmin();
-      renderDashboard();
-    }).catch(err2=>console.error("users fallback fetch failed", err2));
-  });
-}
-
-/* ---------- DASHBOARD ----------
-   Pure derived view: reuses ordersData / walletTopupsData / usersData /
-   gamesData that the four listeners above already keep in sync, so this
-   just needs to be re-run whenever any of them changes (see the
-   renderDashboard() calls added inside each bind*() onSnapshot above). */
-function isSameDay(d1, d2){
-  return d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
-}
-function tsToDate(ts){
-  if(!ts) return null;
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-const DASH_DATE_FMT = {year:"numeric", month:"long", day:"numeric"};
-function renderDashboard(){
-  const dateLbl = document.getElementById("dashDateLabel");
-  if(dateLbl) dateLbl.textContent = new Date().toLocaleDateString("en-GB", DASH_DATE_FMT) + " — PCA Store စတိုးရဲ့ လက်ရှိအခြေအနေ";
-
-  const now = new Date();
-  const confirmedOrders = ordersData.filter(o=>(o.status||"").toLowerCase()==="confirmed");
-  const orderAmt = o => Number(pick(o,["price","amount","total"],0)) || 0;
-  const orderDate = o => tsToDate(o.confirmedAt) || tsToDate(o.createdAt);
-
-  const totalRevenue = confirmedOrders.reduce((s,o)=>s+orderAmt(o), 0);
-  const todayRevenue = confirmedOrders.reduce((s,o)=>{
-    const d = orderDate(o);
-    return d && isSameDay(d, now) ? s+orderAmt(o) : s;
-  }, 0);
-
-  const pendingOrders = ordersData.filter(o=>(o.status||"pending").toLowerCase()==="pending").length;
-  const pendingWallet = walletTopupsData.filter(x=>(x.status||"pending").toLowerCase()==="pending").length;
-  const totalUsers = usersData.length;
-  const newUsersToday = usersData.filter(u=>{ const d = tsToDate(u.createdAt); return d && isSameDay(d, now); }).length;
-  const totalWalletBalance = usersData.reduce((s,u)=>s+(Number(u.balance||0)||0), 0);
-
-  document.getElementById("dashTotalRevenue").textContent = fmtK(totalRevenue) + " Ks";
-  document.getElementById("dashTodayRevenue").textContent = "ယနေ့ — " + fmtK(todayRevenue) + " Ks";
-  document.getElementById("dashPendingActions").textContent = pendingOrders + pendingWallet;
-  document.getElementById("dashPendingBreakdown").textContent = `Order ${pendingOrders} • Wallet ${pendingWallet}`;
-  document.getElementById("dashTotalUsers").textContent = totalUsers;
-  document.getElementById("dashNewUsers").textContent = `+${newUsersToday} ယနေ့`;
-  document.getElementById("dashWalletBalance").textContent = fmtK(totalWalletBalance) + " Ks";
-  document.getElementById("dashOrdersDone").textContent = `Order ပြီးစီး ${confirmedOrders.length}`;
-
-  renderDashRevenueChart(confirmedOrders, orderAmt, orderDate, now);
-  renderDashTopGames();
-  renderDashActivity();
-}
-
-function renderDashRevenueChart(confirmedOrders, orderAmt, orderDate, now){
-  const days = [];
-  for(let i=6;i>=0;i--){ const d = new Date(now); d.setDate(d.getDate()-i); days.push(d); }
-  const totals = days.map(d=>confirmedOrders.reduce((s,o)=>{
-    const od = orderDate(o);
-    return od && isSameDay(od, d) ? s+orderAmt(o) : s;
-  }, 0));
-  const max = Math.max(...totals, 1);
-  const wrap = document.getElementById("dashRevenueChart");
-  if(!wrap) return;
-  wrap.innerHTML = totals.map((v,i)=>{
-    const h = v>0 ? Math.max(6, Math.round((v/max)*94)) : 3;
-    const today = isSameDay(days[i], now);
-    const lbl = days[i].toLocaleDateString("en-GB",{weekday:"short"});
-    return `<div class="chart-bar-col">
-      <div class="chart-bar-val">${v>0 ? fmtK(v) : ''}</div>
-      <div class="chart-bar${today?' today':''}" style="height:${h}px"></div>
-      <div class="chart-bar-label">${today?'ယနေ့':lbl}</div>
-    </div>`;
-  }).join("");
-}
-
-function renderDashTopGames(){
-  const counts = {};
-  ordersData.forEach(o=>{
-    const g = pick(o,["game","gameName"],null);
-    if(!g) return;
-    counts[g] = (counts[g]||0) + 1;
-  });
-  const arr = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const wrap = document.getElementById("dashTopGames");
-  if(!wrap) return;
-  if(!arr.length){ wrap.innerHTML = `<div class="empty-note">Order data မရှိသေးပါ</div>`; return; }
-  const max = arr[0][1];
-  wrap.innerHTML = arr.map(([name,count], idx)=>`
-    <div class="dash-game-row">
-      <div class="dash-game-rank">${idx+1}</div>
-      <div class="dash-game-name">${name}</div>
-      <div class="dash-game-bar-wrap"><div class="dash-game-bar-fill" style="width:${Math.max(6,Math.round((count/max)*100))}%"></div></div>
-      <div class="dash-game-count">${count}</div>
-    </div>`).join("");
-}
-
-function renderDashActivity(){
-  const items = [];
-  ordersData.forEach(o=>items.push({
-    type:"order",
-    icon:"🎮",
-    title:`${pick(o,["game","gameName"],"Order")} — ${pick(o,["package","packageLabel","label","pkg"],"")}`,
-    sub:(pick(o,["userName","name","displayName"],"") || pick(o,["userEmail","email"],"") || "user") + " • " + fmtK(Number(pick(o,["price","amount","total"],0))||0) + " Ks",
-    status:(o.status||"pending").toLowerCase(),
-    ts: o.createdAt
-  }));
-  walletTopupsData.forEach(x=>items.push({
-    type:"wallet",
-    icon:"💳",
-    title:`${x.method || "Wallet"} ငွေဖြည့်`,
-    sub:(x.uid || "user") + " • " + fmtK(Number(x.amount||0)||0) + " Ks",
-    status:(x.status||"pending").toLowerCase(),
-    ts: x.createdAt
-  }));
-  items.sort((a,b)=>{
-    const ta = tsToDate(a.ts)?.getTime() || 0;
-    const tb = tsToDate(b.ts)?.getTime() || 0;
-    return tb - ta;
-  });
-  const top = items.slice(0,8);
-  const wrap = document.getElementById("dashRecentActivity");
-  if(!wrap) return;
-  if(!top.length){ wrap.innerHTML = `<div class="empty-note">Activity မရှိသေးပါ</div>`; return; }
-  wrap.innerHTML = top.map(it=>`
-    <div class="activity-row">
-      <div class="activity-icon ${it.type}">${it.icon}</div>
-      <div class="activity-info">
-        <div class="activity-title">${it.title}</div>
-        <div class="activity-sub">${it.sub}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-        <span class="badge status-${it.status}">${it.status}</span>
-        <span class="activity-time">${fmtDate(it.ts)}</span>
-      </div>
-    </div>`).join("");
-}
-
-auth.getRedirectResult().catch(err=>console.error("Redirect result error", err));
-auth.onAuthStateChanged(user=>{
-  if(!user){
-    loginGate.classList.remove("hide");
-    app.classList.remove("show");
-    return;
-  }
-  const email = (user.email||"").toLowerCase();
-  const isAdmin = ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(email);
-  if(!isAdmin){
-    deniedEmail.textContent = user.email || "(no email)";
-    deniedBox.style.display = "block";
-    app.classList.remove("show");
-    loginGate.classList.remove("hide");
-    // Sign them back out so a non-admin Google account isn't left "logged in" here.
-    auth.signOut();
-    return;
-  }
-  loginGate.classList.add("hide");
-  app.classList.add("show");
-  document.getElementById("adminEmailLabel").textContent = user.email;
-  if(!ratesLoaded) loadRates();
-  loadLogo();
-  bindGamesAdmin();
-  bindPkgsAdmin();
-  bindOrdersAdmin();
-  bindWalletTopups();
-  bindUsersAdmin();
-});
-
-/* =========================================================
-   FIRESTORE SECURITY RULES (add to your project's rules,
-   not enforced by this file alone):
-
-   match /config/currency {
-     allow read: if true; // index.html needs to read this for everyone
-     allow write: if request.auth != null
-       && request.auth.token.email in [
-            "linpyaesone130@gmail.com"
-          ];
-   }
-
-   match /config/appearance {
-     allow read: if true; // index.html needs to read this for everyone
-     allow write: if request.auth != null
-       && request.auth.token.email in [
-            "linpyaesone130@gmail.com"
-          ];
-   }
-
-   match /games/{gameId} {
-     allow read: if true; // index.html needs to read this for everyone
-     allow write: if request.auth != null
-       && request.auth.token.email in [
-            "linpyaesone130@gmail.com"
-          ];
-   }
-
-   match /packages/{pkgId} {
-     allow read: if true;
-     allow write: if request.auth != null
-       && request.auth.token.email in [
-            "linpyaesone130@gmail.com"
-          ];
-   }
-
-   match /users/{uid} {
-     // Each user can read/write only their own doc from index.html;
-     // this admin panel additionally needs to READ every user doc to
-     // show the Users tab, and needs to WRITE (update balance) when an
-     // admin rejects a top-up order and the wallet is refunded — so
-     // admin emails get a read+write exception too.
-     allow read: if request.auth != null
-       && (request.auth.uid == uid
-           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
-     allow write: if request.auth != null
-       && (request.auth.uid == uid
-           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
-   }
-
-   match /users/{uid}/transactions/{txId} {
-     // store.html writes these (topup receipts + purchase records) and
-     // listens to them live. This admin panel needs to READ across every
-     // user's transactions (via collectionGroup query, for the Wallet
-     // Top-up tab) and WRITE status/balance updates on Approve/Reject —
-     // and also WRITE here when syncing a game-order Confirm/Reject
-     // (see updateOrderStatus() in this file's <script>).
-     allow read: if request.auth != null
-       && (request.auth.uid == uid
-           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
-     allow create: if request.auth != null && request.auth.uid == uid;
-
-     // Admin: full update rights (Confirm/Reject, wallet top-up approval, etc).
-     allow update: if request.auth != null
-       && request.auth.token.email in ["linpyaesone130@gmail.com"];
-
-     // Owner: NOT a general write — this narrowly mirrors the client-side
-     // 2-minute auto-confirm in store.html's attemptOrderAutoConfirm().
-     // Without this constraint, a user could open devtools and set their
-     // own pending purchase to "done" instantly, or silently rewrite
-     // amount/category/uid on any of their transactions. This rule only
-     // allows: a still-pending PURCHASE tx, flipping to "done", touching
-     // only the status/autoConfirmed fields, and only once the real
-     // 2 minutes have actually elapsed server-side (request.time — not
-     // anything the client can fake).
-     allow update: if request.auth != null
-       && request.auth.uid == uid
-       && resource.data.category == "purchase"
-       && resource.data.status == "pending"
-       && request.resource.data.status == "done"
-       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status","autoConfirmed"])
-       && request.time > resource.data.createdAt + duration.value(2,"m");
-   }
-
-   match /orders/{orderId} {
-     // ⚠️ Adjust the collection name here (and ORDERS_COLLECTION in this
-     // file's <script>) if your store app uses a different name, e.g.
-     // "topups" or "topupRequests".
-     // Users can create/read their own orders; only admins can Confirm/
-     // Reject/delete — with one narrow exception below for auto-confirm.
-     allow read: if request.auth != null
-       && (resource.data.uid == request.auth.uid
-           || request.auth.token.email in ["linpyaesone130@gmail.com"]);
-     allow create: if request.auth != null
-       && request.resource.data.uid == request.auth.uid;
-     allow delete: if request.auth != null
-       && request.auth.token.email in ["linpyaesone130@gmail.com"];
-
-     // Admin: full update rights (Confirm/Reject).
-     allow update: if request.auth != null
-       && request.auth.token.email in ["linpyaesone130@gmail.com"];
-
-     // Owner: mirrors the transactions rule above — this is the second half
-     // of attemptOrderAutoConfirm() in store.html, which updates the linked
-     // order doc in the SAME runTransaction as the transactions-doc update.
-     // Firestore requires every write in a transaction to pass its rule, so
-     // without this the transactions-side update also fails and the whole
-     // 2-minute auto-confirm silently never works. Same constraints as
-     // above: still pending, flips only to confirmed, only status/
-     // autoConfirmed fields, only after 2 real server minutes.
-     allow update: if request.auth != null
-       && request.auth.uid == resource.data.uid
-       && resource.data.status == "pending"
-       && request.resource.data.status == "confirmed"
-       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status","autoConfirmed"])
-       && request.time > resource.data.createdAt + duration.value(2,"m");
-   }
-
-   Keep this list in sync with ADMIN_EMAILS above — this file's
-   allowlist alone does NOT stop someone from writing directly via
-   the Firestore API, only the Security Rules do that.
-
-   NOTE: Games/Packages/Logo images are stored as compressed base64
-   data-URLs directly inside the Firestore documents (see the
-   compressImage()/setupImageUpload() helpers above) — this app does
-   NOT use Firebase Storage, so no Storage rules or Blaze billing
-   plan are required.
-   ========================================================= */
-</script>
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+        window.showPage = showPage;
+        window.showToast = showToast;
+    </script>
+
+    <!-- FIREBASE CODE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4kcQXS-C3zXxKg2Lj1TPllEAbJ30noY4",
+            authDomain: "pca-store-47a7f.firebaseapp.com",
+            projectId: "pca-store-47a7f",
+            storageBucket: "pca-store-47a7f.firebasestorage.app",
+            messagingSenderId: "720925768139",
+            appId: "1:720925768139:web:cc4f1ae89dfd8bd1f2de4e",
+            measurementId: "G-QHC6V0C7HD"
+        };
+
+        // Free image hosting for game photos (no Firebase Storage / Blaze plan needed).
+        // Get your own free key at https://api.imgbb.com/ (email signup, ~1 minute, no card).
+        const IMGBB_API_KEY = "YOUR_IMGBB_API_KEY";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const ordersContainer = document.getElementById('orders-container');
+
+        // Once attached, this listens live - new orders appear automatically with no
+        // refresh needed, and an order disappears from this list the moment it's
+        // approved/rejected (since it no longer matches status == "Pending").
+        let ordersListenerAttached = false;
+
+        function fetchOrders() {
+            if (ordersListenerAttached) {
+                window.showToast('Orders update automatically ✓');
+                return;
+            }
+            ordersListenerAttached = true;
+
+            const q = query(collection(db, "orders"), where("status", "==", "Pending"));
+            onSnapshot(q, (querySnapshot) => {
+                if (querySnapshot.empty) {
+                    ordersContainer.innerHTML = '<p class="empty-msg">No pending orders found.</p>';
+                    return;
+                }
+
+                ordersContainer.innerHTML = querySnapshot.docs.map((docSnap) => {
+                    const data = docSnap.data();
+                    const orderId = docSnap.id;
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+
+                    return `
+                        <div class="admin-card" id="card-${orderId}">
+                            <div class="ac-header">
+                                <span class="ac-id">ID: ${orderId.substring(0, 8)}</span>
+                                <span class="badge badge-pending">Pending</span>
+                            </div>
+                            <div class="ac-body">
+                                <p><b>Game:</b> ${data.game} (${data.itemAmount})</p>
+                                <p><b>Player ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
+                                <p><b>Phone:</b> ${data.contactPhone || 'N/A'}</p>
+                                <p><b>Price:</b> ${Number(data.price).toLocaleString()} MMK</p>
+                                <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
+                            </div>
+                            <div class="ac-footer">
+                                <button class="btn btn-primary" onclick="approveOrder('${orderId}', this)">Approve</button>
+                                <button class="btn btn-danger" onclick="rejectOrder('${orderId}', this)">Reject</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }, (error) => {
+                console.error("Data Fetch Error: ", error);
+                ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
+            });
+        }
+
+        async function approveOrder(orderId, btnElement) {
+            btnElement.innerText = "Approving...";
+            btnElement.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: "Completed" });
+                window.showToast("Order Approved Successfully!");
+                // No manual DOM removal needed - the live listener re-renders the
+                // list automatically now that this order no longer matches "Pending".
+            } catch (error) {
+                console.error("Update Error: ", error);
+                window.showToast("Failed to approve order! Check Rules.");
+                btnElement.innerText = "Approve";
+                btnElement.disabled = false;
+            }
+        }
+
+        async function rejectOrder(orderId, btnElement) {
+            if (!confirm("Reject this order? The customer will need to reorder.")) return;
+            btnElement.innerText = "Rejecting...";
+            btnElement.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: "Rejected" });
+                window.showToast("Order Rejected.");
+            } catch (error) {
+                console.error("Update Error: ", error);
+                window.showToast("Failed to reject order! Check Rules.");
+                btnElement.innerText = "Reject";
+                btnElement.disabled = false;
+            }
+        }
+
+        // Computes real dashboard numbers from the orders collection.
+        async function loadDashboardStats() {
+            try {
+                const snap = await getDocs(collection(db, "orders"));
+                let totalSales = 0, pending = 0, completed = 0, today = 0;
+                const todayStr = new Date().toDateString();
+
+                snap.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const price = Number(data.price) || 0;
+                    if (data.status === 'Completed') { totalSales += price; completed++; }
+                    else if (data.status === 'Pending') { pending++; }
+                    if (data.timestamp && data.timestamp.toDate().toDateString() === todayStr) today++;
+                });
+
+                document.getElementById('stat-total-sales').innerText = totalSales.toLocaleString() + ' MMK';
+                document.getElementById('stat-pending').innerText = pending;
+                document.getElementById('stat-completed').innerText = completed;
+                document.getElementById('stat-today').innerText = today;
+            } catch (error) {
+                console.error("Dashboard stats error: ", error);
+            }
+        }
+
+        // ---------- Manage Games ----------
+        let GAMES = {};   // { docId: { name, image, packages: [{amount, price}] } }
+        let editingImageFile = null;
+
+        function renderAdminGamesList() {
+            const container = document.getElementById('admin-games-container');
+            const ids = Object.keys(GAMES);
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No games yet. Tap + Add to create one.</p>';
+                return;
+            }
+            container.innerHTML = ids.map(id => {
+                const g = GAMES[id];
+                return `
+                    <div class="admin-card">
+                        <div class="ac-header">
+                            <span class="ac-id">${g.name}</span>
+                            <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
+                        </div>
+                        <div class="ac-body" style="display:flex;gap:10px;align-items:center;">
+                            <img src="${g.image}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;">
+                        </div>
+                        <div class="ac-footer">
+                            <button class="btn btn-outline" onclick="openGameEditor('${id}')">Edit</button>
+                            <button class="btn btn-danger" onclick="deleteGame('${id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenGames() {
+            onSnapshot(collection(db, "games"), (snap) => {
+                const newGames = {};
+                snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
+                GAMES = newGames;
+                renderAdminGamesList();
+            }, (error) => {
+                console.error("Games listener error:", error);
+                document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
+            });
+        }
+
+        function previewGameImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-game-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addPackageRow(amount = '', price = '') {
+            const list = document.getElementById('edit-packages-list');
+            const row = document.createElement('div');
+            row.className = 'package-row';
+            row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+            row.innerHTML = `
+                <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                <input type="number" class="pkg-price" placeholder="Price (MMK)" value="${price}" style="width:100px;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                <div onclick="this.parentElement.remove()" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 8px;">&times;</div>
+            `;
+            list.appendChild(row);
+        }
+
+        function openGameEditor(gameId = null) {
+            editingImageFile = null;
+            document.getElementById('edit-game-id').value = gameId || '';
+            document.getElementById('edit-packages-list').innerHTML = '';
+            document.getElementById('edit-game-file').value = '';
+            document.getElementById('upload-status').style.display = 'none';
+
+            const preview = document.getElementById('edit-game-preview');
+            const deleteBtn = document.getElementById('delete-game-btn');
+
+            if (gameId && GAMES[gameId]) {
+                const g = GAMES[gameId];
+                document.getElementById('game-editor-title').innerText = 'Edit Game';
+                document.getElementById('edit-game-name').value = g.name;
+                preview.src = g.image;
+                preview.style.display = 'block';
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.price));
+                deleteBtn.style.display = 'block';
+            } else {
+                document.getElementById('game-editor-title').innerText = 'Add New Game';
+                document.getElementById('edit-game-name').value = '';
+                preview.src = '';
+                preview.style.display = 'none';
+                addPackageRow();
+                deleteBtn.style.display = 'none';
+            }
+            document.getElementById('game-editor-modal-overlay').classList.add('show');
+        }
+
+        function closeGameEditor() {
+            document.getElementById('game-editor-modal-overlay').classList.remove('show');
+        }
+
+        // Uploads a phone photo to a free image host (ImgBB) and resolves with its direct URL.
+        // No Firebase Storage / Blaze plan involved.
+        async function uploadImageToImgBB(file) {
+            if (!IMGBB_API_KEY || IMGBB_API_KEY === "YOUR_IMGBB_API_KEY") {
+                throw new Error("Add your free ImgBB API key first (see IMGBB_API_KEY at the top of the Firebase script). Get one at https://api.imgbb.com/");
+            }
+            const statusEl = document.getElementById('upload-status');
+            statusEl.style.display = 'block';
+            statusEl.innerText = 'Uploading photo...';
+
+            const form = new FormData();
+            form.append('image', file);
+
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: form
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error?.message || 'Upload failed');
+
+            statusEl.innerText = 'Photo uploaded ✓';
+            return data.data.url;
+        }
+
+        async function saveGame() {
+            const gameId = document.getElementById('edit-game-id').value;
+            const name = document.getElementById('edit-game-name').value.trim();
+            if (!name) { window.showToast('Please enter a game name'); return; }
+
+            const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
+                amount: row.querySelector('.pkg-amount').value.trim(),
+                price: Number(row.querySelector('.pkg-price').value) || 0
+            })).filter(p => p.amount && p.price > 0);
+
+            if (packages.length === 0) { window.showToast('Add at least one valid package'); return; }
+
+            const saveBtn = document.getElementById('save-game-btn');
+            const originalText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                let imageUrl = (gameId && GAMES[gameId]) ? GAMES[gameId].image : '';
+
+                if (editingImageFile) {
+                    imageUrl = await uploadImageToImgBB(editingImageFile);
+                }
+
+                if (!imageUrl) {
+                    window.showToast('Please add a game image');
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = originalText;
+                    return;
+                }
+
+                const data = { name, image: imageUrl, packages };
+
+                if (gameId) {
+                    await updateDoc(doc(db, "games", gameId), data);
+                } else {
+                    await addDoc(collection(db, "games"), data);
+                }
+
+                window.showToast('Game saved!');
+                closeGameEditor();
+            } catch (error) {
+                console.error("Save game error:", error);
+                window.showToast(error.message || 'Failed to save game.');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalText;
+            }
+        }
+
+        async function deleteGame(gameId) {
+            if (!confirm('Delete this game? This cannot be undone.')) return;
+            try {
+                await deleteDoc(doc(db, "games", gameId));
+                window.showToast('Game deleted');
+            } catch (error) {
+                console.error("Delete game error:", error);
+                window.showToast('Failed to delete game.');
+            }
+        }
+
+        async function deleteCurrentGame() {
+            const gameId = document.getElementById('edit-game-id').value;
+            if (!gameId) return;
+            if (!confirm('Delete this game? This cannot be undone.')) return;
+            try {
+                await deleteDoc(doc(db, "games", gameId));
+                window.showToast('Game deleted');
+                closeGameEditor();
+            } catch (error) {
+                console.error("Delete game error:", error);
+                window.showToast('Failed to delete game.');
+            }
+        }
+
+        window.fetchOrders = fetchOrders;
+        window.approveOrder = approveOrder;
+        window.rejectOrder = rejectOrder;
+        window.loadDashboardStats = loadDashboardStats;
+        window.openGameEditor = openGameEditor;
+        window.closeGameEditor = closeGameEditor;
+        window.previewGameImage = previewGameImage;
+        window.addPackageRow = addPackageRow;
+        window.saveGame = saveGame;
+        window.deleteGame = deleteGame;
+        window.deleteCurrentGame = deleteCurrentGame;
+
+        // Start live order tracking and load real dashboard numbers as soon as the
+        // admin panel opens, so nothing depends on remembering to click Refresh.
+        loadDashboardStats();
+        fetchOrders();
+        listenGames();
+    </script>
 </body>
 </html>
