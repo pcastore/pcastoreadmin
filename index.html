@@ -7,7 +7,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #F0F2F5; color: #1C1E21; padding-bottom: 70px; }
+        body { background-color: #F0F2F5; color: #1C1E21; }
         .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         
         /* Header */
@@ -16,8 +16,11 @@
         .logo-icon { background: #1877F2; color: white; padding: 4px; border-radius: 6px; display: flex; }
         .header-icon { background: #E4E6EB; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         
+        /* App Layout (sidebar + content) */
+        .app-layout { display: flex; align-items: flex-start; }
+
         /* Content & Pages */
-        .content-area { padding: 15px 15px; }
+        .content-area { padding: 15px 15px; flex: 1; min-width: 0; }
         .page-section { display: none; animation: fadeIn 0.3s ease-in-out; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -47,10 +50,10 @@
         .btn-danger { background-color: #FA3E3E; color: white; }
         .btn-outline { background-color: #E4E6EB; color: #1C1E21; }
         
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #ffffff; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #E4E6EB; z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #65676B; cursor: pointer; flex: 1; }
-        .nav-item.active { color: #1877F2; }
+        /* Side Nav (was a bottom nav; now a left sidebar) */
+        .side-nav { width: 70px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #E4E6EB; display: flex; flex-direction: column; position: sticky; top: 61px; height: calc(100vh - 61px); overflow-y: auto; z-index: 90; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: #65676B; cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; }
+        .nav-item.active { color: #1877F2; background: #E7F3FF; border-right-color: #1877F2; }
         .nav-item.active .ui-icon { stroke: #1877F2; }
         
         /* Utility */
@@ -58,6 +61,20 @@
         #toast.show { transform: translate(-50%, 0); }
         .empty-msg { text-align: center; color: #65676B; font-size: 14px; padding: 20px 0; }
         .highlight-id { font-weight: bold; color: #1877F2; font-size: 15px; }
+
+        /* Users list & details */
+        .user-card { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .user-card:active { background: #F8FBFF; }
+        .user-avatar { width: 46px; height: 46px; border-radius: 50%; background: #E7F3FF; color: #1877F2; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .user-card-info { flex: 1; min-width: 0; }
+        .user-card-info h5 { font-size: 15px; font-weight: 700; color: #050505; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-card-info p { font-size: 12px; color: #65676B; }
+        .detail-section-title { font-size: 14px; font-weight: 700; color: #050505; margin-bottom: 8px; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .details-grid-item { background: #F8F9FA; border: 1px solid #E4E6EB; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .details-grid-item span { font-size: 11px; color: #9C9EA1; font-weight: 600; text-transform: uppercase; }
+        .details-grid-item b { font-size: 14px; color: #050505; font-weight: 700; }
 
         /* Game Editor Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
@@ -118,9 +135,11 @@
         <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></symbol>
         <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></symbol>
         <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></symbol>
+        <symbol id="icon-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></symbol>
+        <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
     </svg>
 
-    <div id="toast"><svg class="ui-icon" style="color: #4ADE80; width:18px;"><use href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
+    <div id="toast"><svg class="ui-icon" id="toast-icon" style="color: #4ADE80; width:18px;"><use id="toast-icon-use" href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
 
     <!-- Reusable Delete / Warning / Information dialog (replaces browser confirm()/alert()) -->
     <div class="dialog-overlay" id="action-dialog-overlay" onclick="if(event.target===this) window.closeActionDialog()">
@@ -140,6 +159,29 @@
         <div class="header-icon"><svg class="ui-icon" style="width:20px;"><use href="#icon-users"></use></svg></div>
     </header>
 
+    <div class="app-layout">
+    <!-- Side Navigation -->
+    <nav class="side-nav">
+        <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
+            <svg class="ui-icon"><use href="#icon-pie"></use></svg> Dash
+        </div>
+        <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
+            <svg class="ui-icon"><use href="#icon-list"></use></svg> Games
+        </div>
+        <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
+            <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
+        </div>
+        <div class="nav-item" id="btn-notify-list" onclick="showPage('notify-list')">
+            <svg class="ui-icon"><use href="#icon-bell"></use></svg> Notify
+        </div>
+        <div class="nav-item" id="btn-payment-list" onclick="showPage('payment-list')">
+            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Payment
+        </div>
+        <div class="nav-item" id="btn-user-list" onclick="showPage('user-list')">
+            <svg class="ui-icon"><use href="#icon-users"></use></svg> Users
+        </div>
+    </nav>
+
     <main class="content-area">
         
         <!-- DASHBOARD PAGE (Dummy Stats) -->
@@ -154,16 +196,21 @@
                 <div class="stat-box"><h4>Today's Orders</h4><p id="stat-today">...</p></div>
             </div>
 
-            <h2 class="title-header" style="margin-top:20px;">Social Links</h2>
-            <div class="admin-card">
-                <p style="font-size:12px;color:#65676B;margin-bottom:10px;">These appear as tappable icons on the Store app's Profile page.</p>
-                <label style="font-size:13px;font-weight:600;color:#65676B;">Facebook URL</label>
-                <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                <label style="font-size:13px;font-weight:600;color:#65676B;">Telegram URL</label>
-                <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                <label style="font-size:13px;font-weight:600;color:#65676B;">TikTok URL</label>
-                <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
+            <div class="admin-card" style="margin-top:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSocialLinks()">
+                    <span style="font-size:15px;font-weight:700;">Social Links</span>
+                    <svg class="ui-icon" id="social-links-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="social-links-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">These appear as tappable icons on the Store app's Profile page.</p>
+                    <label style="font-size:13px;font-weight:600;color:#65676B;">Facebook URL</label>
+                    <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight:600;color:#65676B;">Telegram URL</label>
+                    <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight:600;color:#65676B;">TikTok URL</label>
+                    <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
+                </div>
             </div>
         </div>
 
@@ -208,22 +255,16 @@
             </div>
         </div>
 
-        <!-- USERS PAGE (Dummy Data) -->
+        <!-- USERS PAGE (Firebase Connected) -->
         <div id="user-list" class="page-section">
             <h2 class="title-header">Manage Users</h2>
-            <div class="admin-card">
-                <div class="ac-header"><span class="ac-id">U-001</span></div>
-                <div class="ac-body">
-                    <p><b>Name:</b> John Doe</p>
-                    <p><b>Email:</b> john@example.com</p>
-                </div>
-                <div class="ac-footer">
-                    <button class="btn btn-danger" onclick="showToast('User Banned!')">Ban User</button>
-                </div>
+            <div id="admin-users-container">
+                <p class="empty-msg">Loading users...</p>
             </div>
         </div>
 
     </main>
+    </div>
 
     <!-- Game Editor Modal: add/edit a game, photo uploads straight from the phone via a free image host -->
     <div class="modal-overlay" id="game-editor-modal-overlay" onclick="if(event.target===this) closeGameEditor()">
@@ -317,27 +358,41 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
-            <svg class="ui-icon"><use href="#icon-pie"></use></svg> Dash
+    <!-- User Details Modal: profile grid + that user's order history -->
+    <div class="modal-overlay" id="user-details-modal-overlay" onclick="if(event.target===this) closeUserDetails()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>User Details</h3>
+                <div class="modal-close" onclick="closeUserDetails()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+                    <div class="user-avatar" id="ud-avatar" style="width:64px;height:64px;">
+                        <img id="ud-avatar-img" src="" alt="" style="display:none;">
+                        <svg class="ui-icon" id="ud-avatar-icon" style="width:28px;height:28px;"><use href="#icon-users"></use></svg>
+                    </div>
+                    <div>
+                        <div id="ud-name" style="font-size:17px;font-weight:700;color:#050505;">Guest</div>
+                        <div id="ud-guestid" style="font-size:12px;color:#9C9EA1;">-</div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="details-grid-item"><span>Phone</span><b id="ud-phone">N/A</b></div>
+                    <div class="details-grid-item"><span>Total Orders</span><b id="ud-order-count">0</b></div>
+                    <div class="details-grid-item"><span>Total Spent</span><b id="ud-total-spent">0 MMK</b></div>
+                    <div class="details-grid-item"><span>Last Seen</span><b id="ud-last-seen">N/A</b></div>
+                </div>
+
+                <h3 class="detail-section-title" style="margin-top:18px;">Order History</h3>
+                <div id="ud-orders-container">
+                    <p class="empty-msg">No orders yet.</p>
+                </div>
+            </div>
         </div>
-        <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
-            <svg class="ui-icon"><use href="#icon-list"></use></svg> Games
-        </div>
-        <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
-            <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
-        </div>
-        <div class="nav-item" id="btn-notify-list" onclick="showPage('notify-list')">
-            <svg class="ui-icon"><use href="#icon-bell"></use></svg> Notify
-        </div>
-        <div class="nav-item" id="btn-payment-list" onclick="showPage('payment-list')">
-            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Payment
-        </div>
-        <div class="nav-item" id="btn-user-list" onclick="showPage('user-list')">
-            <svg class="ui-icon"><use href="#icon-users"></use></svg> Users
-        </div>
-    </nav>
+    </div>
 
     <!-- Vanilla JS -->
     <script>
@@ -350,8 +405,16 @@
             if (pageId === 'dashboard' && window.loadDashboardStats) window.loadDashboardStats();
         }
 
-        function showToast(message) {
+        function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
+            const styles = {
+                success: { icon: '#icon-check', color: '#4ADE80' },
+                fail: { icon: '#icon-close', color: '#FA3E3E' },
+                cancel: { icon: '#icon-info', color: '#E4E6EB' }
+            };
+            const s = styles[type] || styles.success;
+            document.getElementById('toast-icon-use').setAttribute('href', s.icon);
+            document.getElementById('toast-icon').style.color = s.color;
             document.getElementById('toast-msg').innerText = message;
             toast.classList.add('show');
             setTimeout(() => { toast.classList.remove('show'); }, 3000);
@@ -403,6 +466,15 @@
         window.showActionDialog = showActionDialog;
         window.closeActionDialog = closeActionDialog;
         window.confirmActionDialog = confirmActionDialog;
+        function toggleSocialLinks() {
+            const body = document.getElementById('social-links-body');
+            const chevron = document.getElementById('social-links-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleSocialLinks = toggleSocialLinks;
+
         window.showInfoDialog = showInfoDialog;
     </script>
 
@@ -433,6 +505,20 @@
         // (or from elsewhere) appear automatically with no refresh needed. All orders
         // stay visible regardless of status, newest first.
         let ordersListenerAttached = false;
+        const expandedOrders = new Set();
+        let ORDERS = {}; // { orderId: {...data, id} } - kept in sync for the Users tab
+
+        function toggleOrderCard(orderId) {
+            if (expandedOrders.has(orderId)) expandedOrders.delete(orderId); else expandedOrders.add(orderId);
+            const body = document.getElementById('body-' + orderId);
+            const footer = document.getElementById('footer-' + orderId);
+            const chevron = document.getElementById('chevron-' + orderId);
+            const isOpen = expandedOrders.has(orderId);
+            if (body) body.style.display = isOpen ? 'block' : 'none';
+            if (footer) footer.style.display = isOpen ? 'flex' : 'none';
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        window.toggleOrderCard = toggleOrderCard;
 
         function fetchOrders() {
             if (ordersListenerAttached) {
@@ -443,6 +529,11 @@
 
             const q = query(collection(db, "orders"));
             onSnapshot(q, (querySnapshot) => {
+                const newOrders = {};
+                querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
+                ORDERS = newOrders;
+                if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
+
                 if (querySnapshot.empty) {
                     ordersContainer.innerHTML = '<p class="empty-msg">No orders found.</p>';
                     return;
@@ -476,13 +567,18 @@
                         actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>`;
                     }
 
+                    const isOpen = expandedOrders.has(orderId);
                     return `
                         <div class="admin-card" id="card-${orderId}">
-                            <div class="ac-header">
+                            <div class="ac-header" style="cursor:pointer;margin-bottom:0;padding-bottom:0;border-bottom:none;" onclick="toggleOrderCard('${orderId}')">
                                 <span class="ac-id">ID: ${orderId.substring(0, 8)}</span>
-                                <span class="badge ${badgeClass}">${data.status}</span>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <span class="badge ${badgeClass}">${data.status}</span>
+                                    <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:#9C9EA1;transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
+                                </div>
                             </div>
-                            <div class="ac-body">
+                            <p style="font-size:13px;color:#65676B;margin:8px 0 10px;cursor:pointer;" onclick="toggleOrderCard('${orderId}')">${data.game} (${data.itemAmount}) &middot; <b style="color:#1C1E21;">${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
+                            <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;border-top:1px solid #F0F2F5;">
                                 <p><b>Game:</b> ${data.game} (${data.itemAmount})</p>
                                 <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
                                 ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
@@ -491,7 +587,7 @@
                                 ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
                                 <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
                             </div>
-                            <div class="ac-footer">
+                            <div class="ac-footer" id="footer-${orderId}" style="display:${isOpen ? 'flex' : 'none'};">
                                 ${actionButtons}
                             </div>
                         </div>
@@ -509,10 +605,10 @@
 
             try {
                 await updateDoc(doc(db, "orders", orderId), { status: "Processing" });
-                window.showToast("Order moved to Processing.");
+                window.showToast("Order moved to Processing.", 'success');
             } catch (error) {
                 console.error("Update Error: ", error);
-                window.showToast("Failed to update order! Check Rules.");
+                window.showToast("Failed to update order! Check Rules.", 'fail');
                 btnElement.innerText = "Start Processing";
                 btnElement.disabled = false;
             }
@@ -524,12 +620,12 @@
 
             try {
                 await updateDoc(doc(db, "orders", orderId), { status: "Success" });
-                window.showToast("Order marked as Success!");
+                window.showToast("Order marked as Success!", 'success');
                 // No manual DOM removal needed - the live listener re-renders the
                 // list automatically now that this order no longer matches the query.
             } catch (error) {
                 console.error("Update Error: ", error);
-                window.showToast("Failed to update order! Check Rules.");
+                window.showToast("Failed to update order! Check Rules.", 'fail');
                 btnElement.innerText = "Mark Success";
                 btnElement.disabled = false;
             }
@@ -551,10 +647,10 @@
 
             try {
                 await updateDoc(doc(db, "orders", orderId), { status: "Fail" });
-                window.showToast("Order marked as Fail.");
+                window.showToast("Order marked as Fail.", 'fail');
             } catch (error) {
                 console.error("Update Error: ", error);
-                window.showToast("Failed to update order! Check Rules.");
+                window.showToast("Failed to update order! Check Rules.", 'fail');
                 btnElement.innerText = "Mark Fail";
                 btnElement.disabled = false;
             }
@@ -609,8 +705,8 @@
                             <span class="ac-id">${g.name}</span>
                             <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
                         </div>
-                        <div class="ac-body" style="display:flex;gap:10px;align-items:center;">
-                            <div style="width:72px;height:72px;flex-shrink:0;border-radius:8px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;">
+                        <div class="ac-body" style="display:flex;gap:12px;align-items:center;">
+                            <div style="width:104px;height:104px;flex-shrink:0;border-radius:10px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;">
                                 <img src="${g.image}" style="width:100%;height:100%;object-fit:cover;display:block;">
                             </div>
                         </div>
@@ -787,14 +883,14 @@
         async function saveGame() {
             const gameId = document.getElementById('edit-game-id').value;
             const name = document.getElementById('edit-game-name').value.trim();
-            if (!name) { window.showToast('Please enter a game name'); return; }
+            if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
 
             const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
                 amount: row.querySelector('.pkg-amount').value.trim(),
                 price: Number(row.querySelector('.pkg-price').value) || 0
             })).filter(p => p.amount && p.price > 0);
 
-            if (packages.length === 0) { window.showToast('Add at least one valid package'); return; }
+            if (packages.length === 0) { window.showToast('Add at least one valid package', 'fail'); return; }
 
             const saveBtn = document.getElementById('save-game-btn');
             const originalText = saveBtn.innerText;
@@ -810,7 +906,7 @@
                 }
 
                 if (!imageUrl) {
-                    window.showToast('Please add a game image');
+                    window.showToast('Please add a game image', 'fail');
                     saveBtn.disabled = false;
                     saveBtn.innerText = originalText;
                     return;
@@ -829,12 +925,12 @@
                     await addDoc(collection(db, "games"), data);
                 }
 
-                window.showToast('Game saved!');
+                window.showToast('Game saved!', 'success');
                 closeGameEditor();
             } catch (error) {
                 console.error("Save game error:", error);
                 const msg = error.message || 'Failed to save game.';
-                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg); }
+                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg, 'fail'); }
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = originalText;
@@ -850,10 +946,10 @@
                 onConfirm: async () => {
                     try {
                         await deleteDoc(doc(db, "games", gameId));
-                        window.showToast('Game deleted');
+                        window.showToast('Game deleted', 'cancel');
                     } catch (error) {
                         console.error("Delete game error:", error);
-                        window.showToast('Failed to delete game.');
+                        window.showToast('Failed to delete game.', 'fail');
                     }
                 }
             });
@@ -870,11 +966,11 @@
                 onConfirm: async () => {
                     try {
                         await deleteDoc(doc(db, "games", gameId));
-                        window.showToast('Game deleted');
+                        window.showToast('Game deleted', 'cancel');
                         closeGameEditor();
                     } catch (error) {
                         console.error("Delete game error:", error);
-                        window.showToast('Failed to delete game.');
+                        window.showToast('Failed to delete game.', 'fail');
                     }
                 }
             });
@@ -889,7 +985,7 @@
             const title = titleEl.value.trim();
             const message = msgEl.value.trim();
 
-            if (!title || !message) { window.showToast('Please enter a title and message'); return; }
+            if (!title || !message) { window.showToast('Please enter a title and message', 'fail'); return; }
 
             const btn = document.getElementById('send-notif-btn');
             const originalText = btn.innerText;
@@ -904,10 +1000,10 @@
                 });
                 titleEl.value = '';
                 msgEl.value = '';
-                window.showToast('Notification sent to all users!');
+                window.showToast('Notification sent to all users!', 'success');
             } catch (error) {
                 console.error("Send notification error:", error);
-                window.showToast('Failed to send notification.');
+                window.showToast('Failed to send notification.', 'fail');
             } finally {
                 btn.disabled = false;
                 btn.innerText = originalText;
@@ -958,10 +1054,10 @@
                 onConfirm: async () => {
                     try {
                         await deleteDoc(doc(db, "notifications", notifId));
-                        window.showToast('Notification deleted');
+                        window.showToast('Notification deleted', 'cancel');
                     } catch (error) {
                         console.error("Delete notification error:", error);
-                        window.showToast('Failed to delete notification.');
+                        window.showToast('Failed to delete notification.', 'fail');
                     }
                 }
             });
@@ -1013,6 +1109,129 @@
             });
         }
 
+        // ---------- Users (real customers, synced from the Store app's local profile) ----------
+        let USERS = {};
+        let usersListenerAttached = false;
+        let currentUserDetailsId = null;
+
+        function fmtMoney(n) { return Number(n || 0).toLocaleString() + ' MMK'; }
+
+        function renderAdminUsersList() {
+            const container = document.getElementById('admin-users-container');
+            const ids = Object.keys(USERS);
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No users yet. They\'ll appear here once someone opens the Store app.</p>';
+                return;
+            }
+            // Most recently active first.
+            ids.sort((a, b) => {
+                const ta = USERS[a].lastSeen ? USERS[a].lastSeen.toMillis() : 0;
+                const tb = USERS[b].lastSeen ? USERS[b].lastSeen.toMillis() : 0;
+                return tb - ta;
+            });
+            container.innerHTML = ids.map(id => {
+                const u = USERS[id];
+                const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
+                const orderCount = Object.values(ORDERS).filter(o => o.userId === id).length;
+                return `
+                    <div class="admin-card user-card" onclick="openUserDetails('${id}')">
+                        <div class="user-avatar">
+                            ${u.photo ? `<img src="${u.photo}">` : `<svg class="ui-icon" style="width:22px;height:22px;"><use href="#icon-users"></use></svg>`}
+                        </div>
+                        <div class="user-card-info">
+                            <h5>${displayName}</h5>
+                            <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'}</p>
+                        </div>
+                        <svg class="ui-icon" style="width:18px;height:18px;color:#BCC0C4;flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenUsers() {
+            if (usersListenerAttached) return;
+            usersListenerAttached = true;
+            onSnapshot(collection(db, "users"), (snap) => {
+                const newUsers = {};
+                snap.forEach(docSnap => { newUsers[docSnap.id] = docSnap.data(); });
+                USERS = newUsers;
+                renderAdminUsersList();
+            }, (error) => {
+                console.error("Users listener error:", error);
+                document.getElementById('admin-users-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load users.</p>';
+            });
+        }
+
+        // Renders the order-history list inside the currently open User Details modal.
+        function renderUserOrders(userId) {
+            const container = document.getElementById('ud-orders-container');
+            const userOrders = Object.values(ORDERS)
+                .filter(o => o.userId === userId)
+                .sort((a, b) => (b.timestamp ? b.timestamp.toMillis() : 0) - (a.timestamp ? a.timestamp.toMillis() : 0));
+
+            document.getElementById('ud-order-count').innerText = userOrders.length;
+            const totalSpent = userOrders.filter(o => o.status === 'Success').reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            document.getElementById('ud-total-spent').innerText = fmtMoney(totalSpent);
+
+            if (userOrders.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No orders yet.</p>';
+                return;
+            }
+
+            const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
+            container.innerHTML = userOrders.map(o => {
+                const dateStr = o.timestamp ? o.timestamp.toDate().toLocaleString() : 'Just now';
+                const badgeClass = badgeClassByStatus[o.status] || 'badge-pending';
+                return `
+                    <div class="admin-card" style="padding:12px;">
+                        <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;">
+                            <span class="ac-id">${o.game} (${o.itemAmount})</span>
+                            <span class="badge ${badgeClass}">${o.status}</span>
+                        </div>
+                        <p style="font-size:13px;color:#65676B;">${fmtMoney(o.price)} &middot; ${o.paymentMethod || 'N/A'}</p>
+                        <p style="font-size:12px;color:#9C9EA1;margin-top:4px;">${dateStr}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openUserDetails(userId) {
+            const u = USERS[userId];
+            if (!u) return;
+            currentUserDetailsId = userId;
+
+            const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || userId);
+            document.getElementById('ud-name').innerText = displayName;
+            document.getElementById('ud-guestid').innerText = 'ID: ' + (u.guestId || userId);
+            document.getElementById('ud-phone').innerText = u.phone || 'N/A';
+            document.getElementById('ud-last-seen').innerText = u.lastSeen ? u.lastSeen.toDate().toLocaleString() : 'N/A';
+
+            const avatarImg = document.getElementById('ud-avatar-img');
+            const avatarIcon = document.getElementById('ud-avatar-icon');
+            if (u.photo) {
+                avatarImg.src = u.photo; avatarImg.style.display = 'block'; avatarIcon.style.display = 'none';
+            } else {
+                avatarImg.src = ''; avatarImg.style.display = 'none'; avatarIcon.style.display = 'block';
+            }
+
+            renderUserOrders(userId);
+            document.getElementById('user-details-modal-overlay').classList.add('show');
+        }
+
+        function closeUserDetails() {
+            document.getElementById('user-details-modal-overlay').classList.remove('show');
+            currentUserDetailsId = null;
+        }
+
+        // Called whenever the orders cache refreshes, so an open modal stays live.
+        function renderUserDetailsIfOpen() {
+            if (currentUserDetailsId) renderUserOrders(currentUserDetailsId);
+        }
+
+        window.openUserDetails = openUserDetails;
+        window.closeUserDetails = closeUserDetails;
+        window.renderUserDetailsIfOpen = renderUserDetailsIfOpen;
+
         // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
         let socialListenerAttached = false;
 
@@ -1041,10 +1260,10 @@
 
             try {
                 await setDoc(doc(db, "settings", "social"), { facebook, telegram, tiktok }, { merge: true });
-                window.showToast('Social links saved!');
+                window.showToast('Social links saved!', 'success');
             } catch (error) {
                 console.error("Save social links error:", error);
-                window.showToast('Failed to save social links.');
+                window.showToast('Failed to save social links.', 'fail');
             } finally {
                 btn.disabled = false;
                 btn.innerText = originalText;
@@ -1100,7 +1319,7 @@
             const number = document.getElementById('edit-payment-number').value.trim();
             const accountName = document.getElementById('edit-payment-accountname').value.trim();
 
-            if (!name || !number || !accountName) { window.showToast('Please fill in all fields'); return; }
+            if (!name || !number || !accountName) { window.showToast('Please fill in all fields', 'fail'); return; }
 
             const saveBtn = document.getElementById('save-payment-btn');
             const originalText = saveBtn.innerText;
@@ -1119,12 +1338,12 @@
                 } else {
                     await addDoc(collection(db, "paymentMethods"), data);
                 }
-                window.showToast('Payment method saved!');
+                window.showToast('Payment method saved!', 'success');
                 closePaymentEditor();
             } catch (error) {
                 console.error("Save payment method error:", error);
                 const msg = error.message || 'Failed to save payment method.';
-                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg); }
+                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg, 'fail'); }
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = originalText;
@@ -1140,10 +1359,10 @@
                 onConfirm: async () => {
                     try {
                         await deleteDoc(doc(db, "paymentMethods", paymentId));
-                        window.showToast('Payment method deleted');
+                        window.showToast('Payment method deleted', 'cancel');
                     } catch (error) {
                         console.error("Delete payment method error:", error);
-                        window.showToast('Failed to delete payment method.');
+                        window.showToast('Failed to delete payment method.', 'fail');
                     }
                 }
             });
@@ -1160,11 +1379,11 @@
                 onConfirm: async () => {
                     try {
                         await deleteDoc(doc(db, "paymentMethods", paymentId));
-                        window.showToast('Payment method deleted');
+                        window.showToast('Payment method deleted', 'cancel');
                         closePaymentEditor();
                     } catch (error) {
                         console.error("Delete payment method error:", error);
-                        window.showToast('Failed to delete payment method.');
+                        window.showToast('Failed to delete payment method.', 'fail');
                     }
                 }
             });
@@ -1201,6 +1420,7 @@
         listenNotifications();
         listenPaymentMethods();
         listenSocialLinks();
+        listenUsers();
     </script>
 </body>
 </html>
