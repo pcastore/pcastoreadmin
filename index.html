@@ -2848,7 +2848,15 @@
 
             const sortedKeys = Object.keys(params).sort();
             const queryStr = sortedKeys.map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join('&');
-            const sign = md5(md5(queryStr + '&' + s.mKey));
+            // Per JCPlays' documented algorithm: build key1=value1&key2=value2&...&m_key
+            // (note the '&' before the raw m_key), then sign = md5(md5(str)).
+            const stringToSign = queryStr + '&' + s.mKey;
+            const sign = md5(md5(stringToSign));
+            // DEBUG: compare this against the "Live Example" string shown on
+            // JCPlays' own dashboard docs page (same uid/email/api/time) if
+            // verification still fails — open DevTools console to see it.
+            console.log('[JCPlays] string to sign:', stringToSign);
+            console.log('[JCPlays] sign:', sign);
             params.sign = sign;
             return params;
         }
