@@ -49,11 +49,24 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .title-header { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E4E6EB; padding-bottom: 10px;}
         
-        /* Stats Box */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;}
-        .stat-box { background: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #E4E6EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .stat-box h4 { color: #65676B; font-size: 13px; margin-bottom: 6px; font-weight: 500; }
-        .stat-box p { font-size: 22px; font-weight: 700; color: #050505; }
+        /* Dashboard: hero total-sales card + secondary stat cards */
+        .dash-hero { background: linear-gradient(135deg, #1877F2 0%, #0F5FD1 100%); border-radius: 16px; padding: 20px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 18px rgba(24,119,242,0.25); position: relative; overflow: hidden; }
+        .dash-hero::after { content: ''; position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.08); top: -50px; right: -30px; }
+        .dash-hero-label { color: rgba(255,255,255,0.85); font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+        .dash-hero-value { color: #fff; font-size: 26px; font-weight: 700; line-height: 1.2; }
+        .dash-hero-icon { width: 46px; height: 46px; border-radius: 12px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; }
+        .dash-hero-icon svg { width: 24px; height: 24px; stroke: #fff; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 6px; }
+        .stat-box { background: #ffffff; padding: 13px 14px; border-radius: 12px; border: 1px solid #E4E6EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 11px; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .stat-box:active { transform: scale(0.98); }
+        .stat-box-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .stat-box-icon svg { width: 19px; height: 19px; }
+        .stat-box-text { min-width: 0; }
+        .stat-box h4 { color: #65676B; font-size: 12px; margin-bottom: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stat-box p { font-size: 18px; font-weight: 700; color: #050505; line-height: 1.15; }
+
+        .dash-section-label { font-size: 12px; font-weight: 700; color: #9C9EA1; text-transform: uppercase; letter-spacing: 0.4px; margin: 16px 0 8px; }
 
         /* Admin Cards */
         .admin-card { background: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #E4E6EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
@@ -95,6 +108,16 @@
         .empty-msg { text-align: center; color: #65676B; font-size: 14px; padding: 20px 0; }
         .highlight-id { font-weight: bold; color: #1877F2; font-size: 15px; }
 
+        /* Tier Limits page */
+        .tier-row { display: flex; align-items: center; gap: 12px; background: #ffffff; border: 1px solid #E4E6EB; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .tier-row-badge { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 20px; flex-shrink: 0; width: 118px; justify-content: center; }
+        .tier-row-badge svg { width: 14px; height: 14px; }
+        .tier-row-input-wrap { flex: 1; min-width: 0; position: relative; }
+        .tier-row-input-wrap input { width: 100%; padding: 9px 52px 9px 12px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; font-weight: 600; color: #050505; }
+        .tier-row-input-wrap input:disabled { background: #F8F9FA; color: #9C9EA1; }
+        .tier-row-input-wrap input:focus { outline: none; border-color: #1877F2; }
+        .tier-row-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #9C9EA1; font-weight: 600; pointer-events: none; }
+
         /* Users list & details */
         .user-card { display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .user-card:active { background: #F8FBFF; }
@@ -103,6 +126,8 @@
         .user-card-info { flex: 1; min-width: 0; }
         .user-card-info h5 { font-size: 15px; font-weight: 700; color: #050505; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .user-card-info p { font-size: 12px; color: #65676B; }
+        .tier-mini-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; padding: 2px 8px 2px 6px; border-radius: 10px; margin-top: 4px; }
+        .tier-mini-badge svg { width: 10px; height: 10px; }
         .detail-section-title { font-size: 14px; font-weight: 700; color: #050505; margin-bottom: 8px; }
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
         .details-grid-item { background: #F8F9FA; border: 1px solid #E4E6EB; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -274,6 +299,12 @@
         <symbol id="icon-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></symbol>
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
         <symbol id="icon-grip" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.6"></circle><circle cx="15" cy="5" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="19" r="1.6"></circle><circle cx="15" cy="19" r="1.6"></circle></symbol>
+        <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></symbol>
+        <symbol id="icon-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></symbol>
+        <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></symbol>
+        <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
+        <symbol id="icon-trending-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></symbol>
     </svg>
 
     <div id="toast"><svg class="ui-icon" id="toast-icon" style="color: #4ADE80; width:18px;"><use id="toast-icon-use" href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
@@ -329,23 +360,51 @@
         <div class="nav-item" id="btn-user-list" onclick="showPage('user-list')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> Users
         </div>
+        <div class="nav-item" id="btn-tier-list" onclick="showPage('tier-list')">
+            <svg class="ui-icon"><use href="#icon-trophy"></use></svg> Tiers
+        </div>
     </nav>
 
     <main class="content-area">
         
-        <!-- DASHBOARD PAGE (Dummy Stats) -->
+        <!-- DASHBOARD PAGE -->
         <div id="dashboard" class="page-section active">
             <h2 class="title-header">Overview</h2>
-            <div class="stats-grid">
-                <div class="stat-box"><h4>Total Sales</h4><p style="color:#1877F2;" id="stat-total-sales">...</p></div>
-                <div class="stat-box"><h4>Pending</h4><p style="color:#856404;" id="stat-pending">...</p></div>
-                <div class="stat-box"><h4>Processing</h4><p style="color:#405DE6;" id="stat-processing">...</p></div>
-                <div class="stat-box"><h4>Success</h4><p style="color:#1877F2;" id="stat-completed">...</p></div>
-                <div class="stat-box"><h4>Fail</h4><p style="color:#C0392B;" id="stat-fail">...</p></div>
-                <div class="stat-box"><h4>Today's Orders</h4><p id="stat-today">...</p></div>
+
+            <div class="dash-hero">
+                <div>
+                    <div class="dash-hero-label"><svg class="ui-icon" style="width:14px;height:14px;stroke:rgba(255,255,255,0.85);"><use href="#icon-trending-up"></use></svg> Total Sales</div>
+                    <div class="dash-hero-value" id="stat-total-sales">...</div>
+                </div>
+                <div class="dash-hero-icon"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
             </div>
 
-            <div class="admin-card" style="margin-top:20px;">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-box-icon" style="background:#FFF3CD;"><svg class="ui-icon" style="stroke:#856404;"><use href="#icon-clock"></use></svg></div>
+                    <div class="stat-box-text"><h4>Pending</h4><p style="color:#856404;" id="stat-pending">...</p></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-icon" style="background:#E4E6EB;"><svg class="ui-icon" style="stroke:#405DE6;"><use href="#icon-loader"></use></svg></div>
+                    <div class="stat-box-text"><h4>Processing</h4><p style="color:#405DE6;" id="stat-processing">...</p></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-icon" style="background:#E7F3FF;"><svg class="ui-icon" style="stroke:#1877F2;"><use href="#icon-check"></use></svg></div>
+                    <div class="stat-box-text"><h4>Success</h4><p style="color:#1877F2;" id="stat-completed">...</p></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-icon" style="background:#FDE8E8;"><svg class="ui-icon" style="stroke:#C0392B;"><use href="#icon-x-circle"></use></svg></div>
+                    <div class="stat-box-text"><h4>Fail</h4><p style="color:#C0392B;" id="stat-fail">...</p></div>
+                </div>
+                <div class="stat-box" style="grid-column: span 2;">
+                    <div class="stat-box-icon" style="background:#F0EAFC;"><svg class="ui-icon" style="stroke:#7B4FE0;"><use href="#icon-calendar"></use></svg></div>
+                    <div class="stat-box-text"><h4>Today's Orders</h4><p style="color:#7B4FE0;" id="stat-today">...</p></div>
+                </div>
+            </div>
+
+            <div class="dash-section-label">Settings</div>
+
+            <div class="admin-card" style="margin-top:0;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSocialLinks()">
                     <span style="font-size:15px;font-weight:700;">Social Links</span>
                     <svg class="ui-icon" id="social-links-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
@@ -482,6 +541,19 @@
             <div id="admin-users-container">
                 <p class="empty-msg">Loading users...</p>
             </div>
+        </div>
+
+        <!-- TIER LIMITS PAGE (Firebase Connected) — sets the lifetime-spend
+             threshold (MMK) each VIP rank requires. Read live by Store.html. -->
+        <div id="tier-list" class="page-section">
+            <h2 class="title-header">VIP Tier Limits</h2>
+            <p style="font-size:12.5px;color:#65676B;margin:-8px 0 14px;line-height:1.5;">
+                Set the minimum lifetime top-up spend (MMK) a customer needs to reach each rank. Changes apply instantly in the Store app. Bronze is always the starting rank at 0 MMK.
+            </p>
+            <div id="tier-limits-container">
+                <p class="empty-msg">Loading tier settings...</p>
+            </div>
+            <button class="btn btn-primary" id="save-tiers-btn" style="margin-top:6px;" onclick="saveTierSettings()">Save Tier Limits</button>
         </div>
 
     </main>
@@ -887,6 +959,7 @@
                 querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                 ORDERS = newOrders;
                 if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
+                if (Object.keys(USERS).length) renderAdminUsersList();
                 renderOrdersList();
             }, (error) => {
                 console.error("Data Fetch Error: ", error);
@@ -1835,7 +1908,10 @@
             container.innerHTML = ids.map(id => {
                 const u = USERS[id];
                 const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
-                const orderCount = Object.values(ORDERS).filter(o => o.userId === id).length;
+                const userOrders = Object.values(ORDERS).filter(o => o.userId === id);
+                const orderCount = userOrders.length;
+                const spend = userOrders.filter(o => o.status === 'Success').reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+                const tier = tierForSpendAdmin(spend);
                 return `
                     <div class="admin-card user-card" onclick="openUserDetails('${id}')">
                         <div class="user-avatar">
@@ -1844,6 +1920,7 @@
                         <div class="user-card-info">
                             <h5>${displayName} ${u.banned ? '<span class="badge badge-danger" style="margin-left:4px;">Banned</span>' : ''}</h5>
                             <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'}</p>
+                            ${adminTierBadgeHTML(tier)}
                         </div>
                         <svg class="ui-icon" style="width:18px;height:18px;color:#BCC0C4;flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
                     </div>
@@ -1999,6 +2076,109 @@
         window.openUserDetails = openUserDetails;
         window.closeUserDetails = closeUserDetails;
         window.renderUserDetailsIfOpen = renderUserDetailsIfOpen;
+
+        // ---------- VIP Tier Limits (min lifetime spend per rank, MMK) ----------
+        // Rank names/colors are fixed here and mirrored in Store.html; only the
+        // MMK thresholds are admin-editable, stored at settings/tiers and read
+        // live (onSnapshot) by the Store app so rank-ups apply instantly.
+        // Ordered highest-to-lowest to match how Store.html resolves a rank.
+        const TIER_META = [
+            { name: 'Immortal',  color: '#8A6D00', bg: '#FFF6D9' },
+            { name: 'Mythical',  color: '#FF5A36', bg: '#FFE9E2' },
+            { name: 'Conqueror', color: '#D6338E', bg: '#FDE8F3' },
+            { name: 'Legend',    color: '#7B4FE0', bg: '#F0EAFC' },
+            { name: 'Diamond',   color: '#00B8D9', bg: '#E5FAFD' },
+            { name: 'Platinum',  color: '#5B7DB1', bg: '#EAF0FB' },
+            { name: 'Gold',      color: '#B8860B', bg: '#FFF6DF' },
+            { name: 'Bronze',    color: '#A9673A', bg: '#FBEEE6' },
+        ];
+        const DEFAULT_TIER_MINS = {
+            Bronze: 0, Gold: 100000, Platinum: 300000, Diamond: 700000,
+            Legend: 1500000, Conqueror: 3000000, Mythical: 6000000, Immortal: 12000000
+        };
+        let tierListenerAttached = false;
+        let currentTierMins = { ...DEFAULT_TIER_MINS };
+
+        function tierForSpendAdmin(spend) {
+            for (const t of TIER_META) {
+                if (spend >= (currentTierMins[t.name] ?? DEFAULT_TIER_MINS[t.name])) return t;
+            }
+            return TIER_META[TIER_META.length - 1];
+        }
+        function adminTierBadgeHTML(tier) {
+            return `<span class="tier-mini-badge" style="background:${tier.bg};color:${tier.color};">
+                <svg class="ui-icon"><use href="#icon-trophy"></use></svg>${tier.name}
+            </span>`;
+        }
+
+        function renderTierLimitsForm(mins) {
+            const container = document.getElementById('tier-limits-container');
+            if (!container) return;
+            container.innerHTML = TIER_META.map(t => {
+                const isBronze = t.name === 'Bronze';
+                const val = Number.isFinite(mins[t.name]) ? mins[t.name] : DEFAULT_TIER_MINS[t.name];
+                return `
+                    <div class="tier-row">
+                        <span class="tier-row-badge" style="background:${t.bg};color:${t.color};">
+                            <svg class="ui-icon"><use href="#icon-trophy"></use></svg>${t.name}
+                        </span>
+                        <div class="tier-row-input-wrap">
+                            <input type="number" min="0" step="1000" inputmode="numeric"
+                                id="tier-min-${t.name}" value="${val}" ${isBronze ? 'disabled' : ''}>
+                            <span class="tier-row-unit">MMK</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenTierSettings() {
+            if (tierListenerAttached) return;
+            tierListenerAttached = true;
+            onSnapshot(doc(db, "settings", "tiers"), (docSnap) => {
+                const data = docSnap.exists() ? (docSnap.data().mins || {}) : {};
+                const mins = { ...DEFAULT_TIER_MINS, ...data };
+                currentTierMins = mins;
+                renderTierLimitsForm(mins);
+                if (Object.keys(USERS).length) renderAdminUsersList();
+            }, (error) => {
+                console.error("Tier settings listener error:", error);
+            });
+        }
+
+        async function saveTierSettings() {
+            const mins = {};
+            for (const t of TIER_META) {
+                if (t.name === 'Bronze') { mins.Bronze = 0; continue; }
+                const el = document.getElementById(`tier-min-${t.name}`);
+                mins[t.name] = Math.max(0, Number(el ? el.value : 0) || 0);
+            }
+            // Ranks should climb as you go up the list — warn (but still allow)
+            // if a higher rank was set lower than the one beneath it.
+            const orderedLowToHigh = [...TIER_META].reverse();
+            for (let i = 1; i < orderedLowToHigh.length; i++) {
+                if (mins[orderedLowToHigh[i].name] <= mins[orderedLowToHigh[i - 1].name]) {
+                    window.showToast(`${orderedLowToHigh[i].name} should be higher than ${orderedLowToHigh[i - 1].name}.`, 'fail');
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('save-tiers-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                await setDoc(doc(db, "settings", "tiers"), { mins }, { merge: true });
+                window.showToast('Tier limits saved!', 'success');
+            } catch (error) {
+                console.error("Save tier settings error:", error);
+                window.showToast('Failed to save tier limits.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveTierSettings = saveTierSettings;
 
         // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
         let socialListenerAttached = false;
@@ -2643,6 +2823,7 @@
             listenBranding();
             listenG2Bulk();
             listenUsers();
+            listenTierSettings();
         }
     </script>
 </body>
