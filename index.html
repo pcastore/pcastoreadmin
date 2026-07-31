@@ -184,13 +184,32 @@
         .g2bulk-combo-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; pointer-events: none; transition: transform 0.15s ease; }
         .g2bulk-combo.open .g2bulk-combo-chevron { transform: translateY(-50%) rotate(180deg); }
         .g2bulk-combo-clear { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; cursor: pointer; display: none; }
-        .g2bulk-combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #E4E6EB; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); max-height: 240px; overflow-y: auto; z-index: 50; display: none; }
-        .g2bulk-combo.open .g2bulk-combo-list { display: block; }
-        .g2bulk-combo-option { padding: 10px 12px; font-size: 13px; color: #050505; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-        .g2bulk-combo-option:hover, .g2bulk-combo-option.active { background: #F0F6FF; }
-        .g2bulk-combo-option.muted { color: #9C9EA1; }
-        .g2bulk-combo-option.selected { color: #1877F2; font-weight: 700; }
-        .g2bulk-combo-empty { padding: 14px 12px; font-size: 12px; color: #9C9EA1; text-align: center; }
+
+        /* Dropdown panel container */
+        .g2bulk-combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid #E4E6EB; border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); max-height: 320px; overflow-y: auto; z-index: 50; display: none; padding: 10px; }
+        .g2bulk-combo.open .g2bulk-combo-list { display: block; animation: g2bulkComboIn 0.15s ease; }
+        @keyframes g2bulkComboIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* "Not linked" row — full width, sits above the grid */
+        .g2bulk-combo-unlink { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; font-size: 12.5px; color: #9C9EA1; cursor: pointer; border: 1px dashed #E4E6EB; margin-bottom: 8px; transition: background 0.12s ease, border-color 0.12s ease; }
+        .g2bulk-combo-unlink:hover { background: #F7F8FA; border-color: #C9CCD1; }
+        .g2bulk-combo-unlink.selected { color: #1877F2; border-color: #1877F2; background: #F0F6FF; font-weight: 600; }
+        .g2bulk-combo-unlink svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+        /* Grid of game cards */
+        .g2bulk-combo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .g2bulk-combo-card { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px; border-radius: 12px; border: 1px solid #E4E6EB; background: #FAFBFC; cursor: pointer; transition: all 0.14s ease; overflow: hidden; }
+        .g2bulk-combo-card:hover { border-color: #1877F2; background: #F0F6FF; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(24,119,242,0.14); }
+        .g2bulk-combo-card.selected { border-color: #1877F2; background: #EAF2FF; box-shadow: 0 0 0 1.5px #1877F2 inset; }
+        .g2bulk-combo-card-avatar { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #1877F2, #4E9BFF); flex-shrink: 0; }
+        .g2bulk-combo-card-name { font-size: 12.5px; font-weight: 600; color: #050505; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+        .g2bulk-combo-card-code { font-size: 10px; color: #9C9EA1; }
+        .g2bulk-combo-card-check { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; color: #1877F2; }
+        .g2bulk-combo-loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 24px 12px; font-size: 12px; color: #9C9EA1; }
+        .g2bulk-combo-spinner { width: 15px; height: 15px; border: 2px solid #E4E6EB; border-top-color: #1877F2; border-radius: 50%; animation: g2bulkSpin 0.7s linear infinite; }
+        @keyframes g2bulkSpin { to { transform: rotate(360deg); } }
+        .g2bulk-combo-empty { padding: 20px 12px; font-size: 12px; color: #9C9EA1; text-align: center; grid-column: 1 / -1; }
+
 
         /* Toggle switches (Mark as Popular / Requires Server ID) */
         .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
@@ -2572,7 +2591,10 @@
 
         async function fetchG2BulkGamesList() {
             if (G2BULK_GAMES_LIST) return G2BULK_GAMES_LIST;
-            const res = await fetch('https://api.g2bulk.com/v1/games');
+            if (!G2BULK_SETTINGS.apiKey) throw new Error('G2Bulk API key not set — add it in G2Bulk Settings first.');
+            const res = await fetch('https://api.g2bulk.com/v1/games', {
+                headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey }
+            });
             const data = await res.json();
             if (!data.success) throw new Error(data.message || 'Failed to load G2Bulk games list');
             G2BULK_GAMES_LIST = data.games || [];
@@ -2605,22 +2627,35 @@
             return div.innerHTML;
         }
 
-        // Renders the dropdown list of options inside the combobox, optionally
-        // filtered by a search term. Always keeps "Not linked" at the top.
+        // Renders the dropdown panel: a "Not linked" row plus a 2-column grid of
+        // game cards, optionally filtered by a search term.
         function renderG2BulkComboOptions(games, filterText = '') {
             const listEl = document.getElementById('g2bulk-combo-list');
             const currentCode = document.getElementById('edit-game-g2bulk-code').value;
             const term = filterText.trim().toLowerCase();
             const filtered = term ? games.filter(g => g.name.toLowerCase().includes(term)) : games;
 
+            const checkIcon = '<svg class="g2bulk-combo-card-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
             let html = '';
             if (!term) {
-                html += `<div class="g2bulk-combo-option muted${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">-- Not linked (manual fulfillment) --</div>`;
+                html += `<div class="g2bulk-combo-unlink${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Not linked (manual fulfillment)
+                </div>`;
             }
             if (filtered.length === 0) {
                 html += `<div class="g2bulk-combo-empty">No games match "${escapeHtml(filterText)}"</div>`;
             } else {
-                html += filtered.map(g => `<div class="g2bulk-combo-option${currentCode === g.code ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">${escapeHtml(g.name)}</div>`).join('');
+                html += '<div class="g2bulk-combo-grid">' + filtered.map(g => {
+                    const initials = escapeHtml(g.name.trim().slice(0, 2).toUpperCase());
+                    const selected = currentCode === g.code;
+                    return `<div class="g2bulk-combo-card${selected ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">
+                        ${selected ? checkIcon : ''}
+                        <div class="g2bulk-combo-card-avatar">${initials}</div>
+                        <div class="g2bulk-combo-card-name">${escapeHtml(g.name)}</div>
+                    </div>`;
+                }).join('') + '</div>';
             }
             listEl.innerHTML = html;
         }
@@ -2628,14 +2663,24 @@
         // Event delegation for option clicks - attached once to the (stable)
         // list container, since its inner HTML gets replaced on every render.
         document.getElementById('g2bulk-combo-list').addEventListener('click', (e) => {
-            const opt = e.target.closest('.g2bulk-combo-option');
+            const opt = e.target.closest('.g2bulk-combo-card, .g2bulk-combo-unlink');
             if (!opt) return;
             selectG2BulkGame(opt.dataset.code || '', opt.dataset.name || '');
         });
 
+        function showG2BulkComboLoading() {
+            document.getElementById('g2bulk-combo-list').innerHTML = `<div class="g2bulk-combo-loading"><span class="g2bulk-combo-spinner"></span>Loading games…</div>`;
+        }
+
+        function showG2BulkComboError(err) {
+            const listEl = document.getElementById('g2bulk-combo-list');
+            listEl.innerHTML = `<div class="g2bulk-combo-empty" style="color:#C0392B;">${escapeHtml(err.message || 'Failed to load games')}</div>`;
+        }
+
         function openG2BulkCombo() {
             document.getElementById('g2bulk-combo').classList.add('open');
-            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, document.getElementById('g2bulk-combo-search').value)).catch(() => {});
+            if (!G2BULK_GAMES_LIST) showG2BulkComboLoading();
+            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, document.getElementById('g2bulk-combo-search').value)).catch(showG2BulkComboError);
         }
         window.openG2BulkCombo = openG2BulkCombo;
 
@@ -2648,7 +2693,8 @@
             const term = document.getElementById('g2bulk-combo-search').value;
             document.getElementById('g2bulk-combo-clear').style.display = term ? 'block' : 'none';
             document.getElementById('g2bulk-combo').classList.add('open');
-            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, term)).catch(() => {});
+            if (!G2BULK_GAMES_LIST) showG2BulkComboLoading();
+            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, term)).catch(showG2BulkComboError);
         }
         window.filterG2BulkCombo = filterG2BulkCombo;
 
@@ -2693,7 +2739,9 @@
             statusEl.innerText = '';
 
             try {
-                const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(code)}/catalogue`);
+                const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(code)}/catalogue`, {
+                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey }
+                });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Import failed');
 
