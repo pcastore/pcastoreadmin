@@ -1169,6 +1169,7 @@
                 }
             }
 
+            let data;
             try {
                 const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(order.g2bulkGameCode)}/order`, {
                     method: 'POST',
@@ -1180,12 +1181,28 @@
                         remark: `PCA Store order ${orderId}`
                     })
                 });
-                const data = await res.json();
+                data = await res.json();
                 if (!res.ok || data.success === false) {
                     throw new Error(data.message || 'G2Bulk rejected the order');
                 }
+            } catch (error) {
+                // Failed before G2Bulk confirmed/accepted the order (network error,
+                // or G2Bulk itself rejected it) - the same idempotency key will be
+                // reused on retry, so it's safe to let the admin click again.
+                console.error("G2Bulk place order error:", error);
+                window.showToast('G2Bulk order failed: ' + error.message, 'fail');
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+                return;
+            }
 
-                const g2bulkOrderId = data.order?.order_id;
+            // G2Bulk has accepted the order at this point. Saving locally from
+            // here on - if this fails, don't invite a blind retry (the
+            // idempotency key is a backstop, not a guarantee for every possible
+            // failure mode); surface it clearly instead so the admin can
+            // reconcile manually via G2Bulk's dashboard/order_id.
+            const g2bulkOrderId = data.order?.order_id;
+            try {
                 await updateDoc(doc(db, "orders", orderId), {
                     status: "Processing",
                     g2bulkOrderId: g2bulkOrderId || null,
@@ -1197,10 +1214,13 @@
                     pollG2BulkOrder(orderId, g2bulkOrderId, 5); // ~5 tries, 4s apart = 20s
                 }
             } catch (error) {
-                console.error("G2Bulk place order error:", error);
-                window.showToast('G2Bulk order failed: ' + error.message, 'fail');
-                btnElement.innerText = "Start Processing";
-                btnElement.disabled = false;
+                console.error("G2Bulk order accepted but saving the result failed:", error);
+                window.showInfoDialog(
+                    'Order Accepted, But Not Saved',
+                    `G2Bulk accepted this order${g2bulkOrderId ? ' (order_id: ' + g2bulkOrderId + ')' : ''}, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order — refresh the page instead; if it's still stuck, check the order_id directly on G2Bulk's dashboard before doing anything else.`
+                );
+                btnElement.innerText = "Refresh Page";
+                // Left disabled on purpose - see note above.
             }
         }
 
@@ -3046,34 +3066,57 @@
             btnElement.innerText = "Placing order...";
             btnElement.disabled = true;
 
+            let data;
             try {
-                const data = await jcplaysRequest('createorder', {
+                data = await jcplaysRequest('createorder', {
                     product: order.jcplaysProduct,
                     productid: order.jcplaysProductId,
                     userid: order.playerId,
                     ...(order.serverId ? { zoneid: order.serverId } : {})
                 });
-
-                if (data.status === 200) {
-                    await updateDoc(doc(db, "orders", orderId), {
-                        status: "Success",
-                        confirmedAt: serverTimestamp(),
-                        jcplaysOrderId: data.order_id || null
-                    });
-                    window.showToast('JCPlays order placed — top-up completed ✓', 'success');
-                } else {
-                    window.showInfoDialog(
-                        'JCPlays Order Failed',
-                        `JCPlays rejected the order (status ${data.status}): ${data.message || 'unknown error'}. The order stays Pending — fix the issue (e.g. balance, player ID) and try again, or fulfill manually.`
-                    );
-                    btnElement.innerText = "Start Processing";
-                    btnElement.disabled = false;
-                }
             } catch (error) {
+                // Failed before JCPlays confirmed anything (network/credential
+                // error) - nothing was charged, so it's safe to let the admin retry.
                 console.error("JCPlays place order error:", error);
                 window.showToast('JCPlays order failed: ' + error.message, 'fail');
                 btnElement.innerText = "Start Processing";
                 btnElement.disabled = false;
+                return;
+            }
+
+            if (data.status !== 200) {
+                // JCPlays itself rejected the order (bad params, insufficient
+                // balance, etc.) - nothing was charged, safe to retry.
+                window.showInfoDialog(
+                    'JCPlays Order Failed',
+                    `JCPlays rejected the order (status ${data.status}): ${data.message || 'unknown error'}. The order stays Pending — fix the issue (e.g. balance, player ID) and try again, or fulfill manually.`
+                );
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+                return;
+            }
+
+            // JCPlays confirmed the top-up and charged the balance. From this
+            // point on we must NOT let the admin click "Start Processing" again
+            // for this order — JCPlays' API has no idempotency key, so a retry
+            // here would place a second real, paid order. If saving the result
+            // to Firestore fails, surface that clearly instead of silently
+            // re-enabling the button.
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "Success",
+                    confirmedAt: serverTimestamp(),
+                    jcplaysOrderId: data.order_id || null
+                });
+                window.showToast('JCPlays order placed — top-up completed ✓', 'success');
+            } catch (error) {
+                console.error("JCPlays order succeeded but saving the result failed:", error);
+                window.showInfoDialog(
+                    'Top-up Completed, But Not Saved',
+                    `JCPlays confirmed this top-up (order_id: ${data.order_id || 'n/a'}) and your balance was charged, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order (it would charge a second time) — refresh the page and mark it Success manually instead.`
+                );
+                btnElement.innerText = "Refresh Page";
+                // Left disabled on purpose - see note above.
             }
         }
         window.placeJCPlaysOrder = placeJCPlaysOrder;
