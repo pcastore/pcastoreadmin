@@ -144,6 +144,23 @@
         .g2bulk-combo-option.muted { color: #9C9EA1; }
         .g2bulk-combo-option.selected { color: #1877F2; font-weight: 700; }
         .g2bulk-combo-empty { padding: 14px 12px; font-size: 12px; color: #9C9EA1; text-align: center; }
+
+        /* Toggle switches (Mark as Popular / Requires Server ID) */
+        .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
+        .switch-label { font-size: 14px; font-weight: 600; color: #1C1E21; display: block; }
+        .switch-hint { font-size: 11px; color: #9C9EA1; margin-top: 2px; }
+        .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: #E4E6EB; border-radius: 24px; cursor: pointer; transition: 0.2s; }
+        .toggle-slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: 0.2s; }
+        .toggle-switch input:checked + .toggle-slider { background: #1877F2; }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+        /* Package (currency grid) reorder controls */
+        .pkg-move-col { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+        .pkg-move-btn { width: 22px; height: 17px; border: none; border-radius: 4px; background: #E4E6EB; color: #1C1E21; font-size: 10px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .pkg-move-btn:active { background: #BCC0C4; }
+        .pkg-order-num { width: 18px; flex-shrink: 0; text-align: center; font-size: 12px; font-weight: 700; color: #9C9EA1; }
     </style>
 </head>
 <body>
@@ -163,6 +180,7 @@
         <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></symbol>
         <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></symbol>
         <symbol id="icon-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></symbol>
+        <symbol id="icon-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></symbol>
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
     </svg>
 
@@ -197,6 +215,9 @@
     <nav class="side-nav">
         <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
             <svg class="ui-icon"><use href="#icon-pie"></use></svg> Dash
+        </div>
+        <div class="nav-item" id="btn-g2bulk" onclick="showPage('g2bulk')">
+            <svg class="ui-icon"><use href="#icon-zap"></use></svg> G2Bulk
         </div>
         <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
             <svg class="ui-icon"><use href="#icon-list"></use></svg> Games
@@ -268,7 +289,13 @@
                 </div>
             </div>
 
-            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+        </div>
+
+        <!-- G2BULK PAGE (own sidebar tab, kept separate from Dashboard) -->
+        <div id="g2bulk" class="page-section">
+            <h2 class="title-header">G2Bulk</h2>
+
+            <div class="admin-card" style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                     <span style="font-size:15px;font-weight:700;display:block;">G2Bulk API Key</span>
                     <span style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via G2Bulk</span>
@@ -363,6 +390,28 @@
 
                 <label>Game Name</label>
                 <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
+
+                <div class="switch-row">
+                    <div>
+                        <span class="switch-label">Mark as Popular</span>
+                        <span class="switch-hint">Shows in the "Popular Games" horizontal row on the Store home page</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-game-popular">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <div>
+                        <span class="switch-label">Requires Server ID</span>
+                        <span class="switch-hint">Turn off for games that don't need a Server ID field</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-game-serverid" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
 
                 <label>Game Image</label>
                 <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Photo auto-crops to a square — center the character/logo for the best fit.</p>
@@ -529,7 +578,7 @@
             document.getElementById(`btn-${pageId}`).classList.add('active');
             window.scrollTo(0,0);
             if (pageId === 'dashboard' && window.loadDashboardStats) window.loadDashboardStats();
-            if (pageId === 'dashboard' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
+            if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
         }
 
         function showToast(message, type = 'success') {
@@ -976,7 +1025,11 @@
                     <div class="admin-card">
                         <div class="ac-header">
                             <span class="ac-id">${g.name}</span>
-                            <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+                                ${g.popular ? `<span class="badge" style="background:#FFF3CD;color:#856404;">★ Popular</span>` : ''}
+                                ${g.serverIdRequired === false ? `<span class="badge" style="background:#E4E6EB;color:#65676B;">No Server ID</span>` : ''}
+                                <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
+                            </div>
                         </div>
                         <div class="ac-body" style="display:flex;gap:12px;align-items:center;">
                             <div style="width:104px;height:104px;flex-shrink:0;border-radius:10px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;">
@@ -1043,13 +1096,49 @@
             row.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:8px;border:1px solid #E4E6EB;border-radius:8px;';
             row.innerHTML = `
                 <div style="display:flex;gap:6px;align-items:center;">
+                    <div class="pkg-move-col">
+                        <button type="button" class="pkg-move-btn" onclick="movePackageRow(this,-1)" title="Move up">▲</button>
+                        <button type="button" class="pkg-move-btn" onclick="movePackageRow(this,1)" title="Move down">▼</button>
+                    </div>
+                    <span class="pkg-order-num">1</span>
                     <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
                     <input type="number" class="pkg-price" placeholder="Price (MMK)" value="${price}" style="width:100px;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
-                    <div onclick="this.closest('.package-row').remove()" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 8px;">&times;</div>
+                    <div onclick="removePackageRow(this)" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 8px;">&times;</div>
                 </div>
                 <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
             `;
             list.appendChild(row);
+            renumberPackageRows();
+        }
+
+        // Removes a package row (called from the × button) and refreshes order numbers.
+        function removePackageRow(el) {
+            el.closest('.package-row').remove();
+            renumberPackageRows();
+        }
+        window.removePackageRow = removePackageRow;
+
+        // Moves a package row up (-1) or down (+1) in the list. Since saveGame()
+        // reads packages back out in DOM order, this reorder is exactly what
+        // gets saved to Firestore and therefore exactly what the Store shows.
+        function movePackageRow(btn, direction) {
+            const row = btn.closest('.package-row');
+            const list = row.parentElement;
+            if (direction === -1 && row.previousElementSibling) {
+                list.insertBefore(row, row.previousElementSibling);
+            } else if (direction === 1 && row.nextElementSibling) {
+                list.insertBefore(row.nextElementSibling, row);
+            }
+            renumberPackageRows();
+        }
+        window.movePackageRow = movePackageRow;
+
+        // Refreshes the "#1, #2, ..." order labels shown next to each package row.
+        function renumberPackageRows() {
+            document.querySelectorAll('#edit-packages-list .package-row').forEach((row, i) => {
+                const numEl = row.querySelector('.pkg-order-num');
+                if (numEl) numEl.innerText = i + 1;
+            });
         }
 
         function openGameEditor(gameId = null) {
@@ -1075,6 +1164,9 @@
                 const g = GAMES[gameId];
                 document.getElementById('game-editor-title').innerText = 'Edit Game';
                 document.getElementById('edit-game-name').value = g.name;
+                document.getElementById('edit-game-popular').checked = !!g.popular;
+                // Missing field on older games defaults to "required" so nothing changes for them.
+                document.getElementById('edit-game-serverid').checked = g.serverIdRequired !== false;
                 preview.src = g.image;
                 preview.style.display = 'block';
                 updateBox.classList.add('has-image');
@@ -1099,6 +1191,8 @@
             } else {
                 document.getElementById('game-editor-title').innerText = 'Add New Game';
                 document.getElementById('edit-game-name').value = '';
+                document.getElementById('edit-game-popular').checked = false;
+                document.getElementById('edit-game-serverid').checked = true;
                 document.getElementById('edit-game-g2bulk-code').value = '';
                 preview.src = '';
                 preview.style.display = 'none';
@@ -1167,6 +1261,8 @@
             if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
 
             const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
+            const popular = document.getElementById('edit-game-popular').checked;
+            const serverIdRequired = document.getElementById('edit-game-serverid').checked;
 
             const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
                 amount: row.querySelector('.pkg-amount').value.trim(),
@@ -1201,7 +1297,7 @@
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
-                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '' };
+                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
