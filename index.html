@@ -823,7 +823,7 @@
                 // onAuthStateChanged below takes it from here
             } catch (error) {
                 console.error('Admin login error:', error);
-                errEl.textContent = 'Wrong email or password.';
+                errEl.textContent = 'Wrong email or password. (' + (error.code || error.message || 'unknown error') + ')';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerText = 'Sign In';
