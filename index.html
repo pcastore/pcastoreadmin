@@ -13,7 +13,8 @@
         /* Header */
         .header { background-color: #ffffff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-bottom: 2px solid #1877F2;}
         .logo { color: #1C1E21; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .logo-icon { background: #1877F2; color: white; padding: 4px; border-radius: 6px; display: flex; }
+        .logo-icon { background: #1877F2; color: white; padding: 4px; border-radius: 6px; display: flex; width: 26px; height: 26px; }
+        .logo-icon.has-custom-logo { padding: 0; background: transparent; overflow: hidden; }
         .header-icon { background: #E4E6EB; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         
         /* App Layout (sidebar + content) */
@@ -38,6 +39,16 @@
         .ac-id { font-size: 13px; font-weight: 700; color: #65676B; }
         .ac-body p { font-size: 14px; margin-bottom: 6px; color: #1C1E21; }
         .ac-footer { margin-top: 12px; display: flex; gap: 8px; }
+
+        /* Order Card: game thumbnail + tidy title/meta layout */
+        .oc-top { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .oc-thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: #F0F2F5; border: 1px solid #E4E6EB; flex-shrink: 0; }
+        .oc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .oc-info { flex: 1; min-width: 0; }
+        .oc-game-name { display: block; font-size: 15px; font-weight: 700; color: #050505; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oc-meta { font-size: 12.5px; color: #65676B; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oc-meta b { color: #1C1E21; font-weight: 600; }
+        .oc-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
         
         /* Badges & Buttons */
         .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
@@ -155,7 +166,13 @@
     </div>
 
     <header class="header">
-        <div class="logo"><div class="logo-icon"><svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg></div> PCA Store</div>
+        <div class="logo">
+            <div class="logo-icon" id="header-logo-icon">
+                <svg class="ui-icon" id="header-logo-default-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg>
+                <img id="header-logo-img" src="" alt="PCA Store" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
+            </div>
+            PCA Store
+        </div>
         <div class="header-icon"><svg class="ui-icon" style="width:20px;"><use href="#icon-users"></use></svg></div>
     </header>
 
@@ -210,6 +227,28 @@
                     <label style="font-size:13px;font-weight:600;color:#65676B;">TikTok URL</label>
                     <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
                     <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBrandingSettings()">
+                    <span style="font-size:15px;font-weight:700;">Store Logo</span>
+                    <svg class="ui-icon" id="branding-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="branding-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Shown next to "PCA Store" in the header here and in the Store app.</p>
+                    <label class="img-update-box" id="logo-img-update-box" for="edit-logo-file">
+                        <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                        <span class="img-update-label">Image Update</span>
+                        <span class="img-update-hint">Tap to choose a logo photo</span>
+                        <img id="edit-logo-preview" src="" alt="Preview" style="display:none;">
+                        <span class="img-update-change" id="logo-img-update-change" style="display:none;">
+                            <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                        </span>
+                    </label>
+                    <input type="file" id="edit-logo-file" class="img-update-input" accept="image/*" onchange="previewLogoImage(event)">
+                    <p id="logo-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+                    <button class="btn btn-primary" id="save-logo-btn" style="margin-top:10px;" onclick="saveLogo()">Save Logo</button>
                 </div>
             </div>
         </div>
@@ -481,7 +520,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB4kcQXS-C3zXxKg2Lj1TPllEAbJ30noY4",
@@ -533,70 +572,82 @@
                 querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                 ORDERS = newOrders;
                 if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
-
-                if (querySnapshot.empty) {
-                    ordersContainer.innerHTML = '<p class="empty-msg">No orders found.</p>';
-                    return;
-                }
-
-                const sortedDocs = querySnapshot.docs.slice().sort((a, b) => {
-                    const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
-                    const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
-                    return tb - ta;
-                });
-
-                ordersContainer.innerHTML = sortedDocs.map((docSnap) => {
-                    const data = docSnap.data();
-                    const orderId = docSnap.id;
-                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
-                    const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
-                    const badgeClass = badgeClassByStatus[data.status] || 'badge-pending';
-
-                    // Pending orders can be moved into Processing or Failed straight away;
-                    // Processing orders are resolved into Success or Fail; Success/Fail
-                    // orders are done and just show their final status.
-                    let actionButtons;
-                    if (data.status === 'Processing') {
-                        actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
-                                          <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
-                    } else if (data.status === 'Pending') {
-                        actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">Start Processing</button>
-                                          <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
-                    } else {
-                        const doneLabel = data.status === 'Success' ? 'Order Completed' : 'Order Failed';
-                        actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>`;
-                    }
-
-                    const isOpen = expandedOrders.has(orderId);
-                    return `
-                        <div class="admin-card" id="card-${orderId}">
-                            <div class="ac-header" style="cursor:pointer;margin-bottom:0;padding-bottom:0;border-bottom:none;" onclick="toggleOrderCard('${orderId}')">
-                                <span class="ac-id">ID: ${orderId.substring(0, 8)}</span>
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <span class="badge ${badgeClass}">${data.status}</span>
-                                    <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:#9C9EA1;transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
-                                </div>
-                            </div>
-                            <p style="font-size:13px;color:#65676B;margin:8px 0 10px;cursor:pointer;" onclick="toggleOrderCard('${orderId}')">${data.game} (${data.itemAmount}) &middot; <b style="color:#1C1E21;">${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
-                            <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;border-top:1px solid #F0F2F5;">
-                                <p><b>Game:</b> ${data.game} (${data.itemAmount})</p>
-                                <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
-                                ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
-                                <p><b>Price:</b> ${Number(data.price).toLocaleString()} MMK</p>
-                                <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
-                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
-                                <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
-                            </div>
-                            <div class="ac-footer" id="footer-${orderId}" style="display:${isOpen ? 'flex' : 'none'};">
-                                ${actionButtons}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                renderOrdersList();
             }, (error) => {
                 console.error("Data Fetch Error: ", error);
                 ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
             });
+        }
+
+        // Renders from the ORDERS cache rather than a live snapshot, so it can also be
+        // called from listenGames() to fill in thumbnails once game images arrive.
+        function renderOrdersList() {
+            const allOrders = Object.values(ORDERS);
+            if (allOrders.length === 0) {
+                ordersContainer.innerHTML = '<p class="empty-msg">No orders found.</p>';
+                return;
+            }
+
+            const sorted = allOrders.slice().sort((a, b) => {
+                const ta = a.timestamp ? a.timestamp.toMillis() : 0;
+                const tb = b.timestamp ? b.timestamp.toMillis() : 0;
+                return tb - ta;
+            });
+
+            ordersContainer.innerHTML = sorted.map((data) => {
+                const orderId = data.id;
+                const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
+                const badgeClass = badgeClassByStatus[data.status] || 'badge-pending';
+                const gameImg = findGameImage(data.game);
+
+                // Pending orders can be moved into Processing or Failed straight away;
+                // Processing orders are resolved into Success or Fail; Success/Fail
+                // orders are done and just show their final status.
+                let actionButtons;
+                if (data.status === 'Processing') {
+                    actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else if (data.status === 'Pending') {
+                    actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">Start Processing</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else {
+                    const doneLabel = data.status === 'Success' ? 'Order Completed' : 'Order Failed';
+                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>`;
+                }
+
+                const durationLine = (data.status === 'Success' && data.confirmedAt && data.timestamp)
+                    ? `<p style="color:#65676B; font-size:12px;">Confirmed in: <b style="color:#1877F2;">${formatDuration(data.confirmedAt.toMillis() - data.timestamp.toMillis())}</b></p>`
+                    : '';
+
+                const isOpen = expandedOrders.has(orderId);
+                return `
+                    <div class="admin-card" id="card-${orderId}">
+                        <div class="oc-top" onclick="toggleOrderCard('${orderId}')">
+                            <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" onerror="this.style.display='none'">` : ''}</div>
+                            <div class="oc-info">
+                                <span class="oc-game-name">${data.game}</span>
+                                <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
+                            </div>
+                            <div class="oc-status">
+                                <span class="badge ${badgeClass}">${data.status}</span>
+                                <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:#9C9EA1;transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
+                            </div>
+                        </div>
+                        <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid #F0F2F5;">
+                            <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
+                            ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
+                            <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
+                            ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
+                            <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
+                            ${durationLine}
+                        </div>
+                        <div class="ac-footer" id="footer-${orderId}" style="display:${isOpen ? 'flex' : 'none'};">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function startProcessing(orderId, btnElement) {
@@ -619,7 +670,7 @@
             btnElement.disabled = true;
 
             try {
-                await updateDoc(doc(db, "orders", orderId), { status: "Success" });
+                await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp() });
                 window.showToast("Order marked as Success!", 'success');
                 // No manual DOM removal needed - the live listener re-renders the
                 // list automatically now that this order no longer matches the query.
@@ -686,6 +737,26 @@
 
         // ---------- Manage Games ----------
         let GAMES = {};   // { docId: { name, image, banner, packages: [{amount, price}] } }
+
+        // Order documents only store the game's name (not its id), so order cards
+        // look the image up by matching name against the loaded games catalogue.
+        function findGameImage(gameName) {
+            const match = Object.values(GAMES).find(g => g.name === gameName);
+            return match ? match.image : '';
+        }
+
+        // Formats a millisecond duration as e.g. "45s", "12m 30s", "3h 5m", "2d 4h".
+        function formatDuration(ms) {
+            const totalSec = Math.max(0, Math.floor(ms / 1000));
+            const days = Math.floor(totalSec / 86400);
+            const hours = Math.floor((totalSec % 86400) / 3600);
+            const mins = Math.floor((totalSec % 3600) / 60);
+            const secs = totalSec % 60;
+            if (days > 0) return `${days}d ${hours}h`;
+            if (hours > 0) return `${hours}h ${mins}m`;
+            if (mins > 0) return `${mins}m ${secs}s`;
+            return `${secs}s`;
+        }
         let editingImageFile = null;
         let editingBannerImageFile = null;
         let editingPaymentImageFile = null;
@@ -725,6 +796,7 @@
                 snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
                 GAMES = newGames;
                 renderAdminGamesList();
+                if (ordersListenerAttached) renderOrdersList();
             }, (error) => {
                 console.error("Games listener error:", error);
                 document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
@@ -1272,6 +1344,94 @@
 
         window.saveSocialLinks = saveSocialLinks;
 
+        // ---------- Store Logo (optional custom image shown in the header here and in the Store app) ----------
+        let editingLogoImageFile = null;
+        let brandingListenerAttached = false;
+
+        function renderHeaderLogo(data) {
+            const img = document.getElementById('header-logo-img');
+            const defaultIcon = document.getElementById('header-logo-default-icon');
+            const box = document.getElementById('header-logo-icon');
+            if (data && data.logoUrl) {
+                img.src = data.logoUrl;
+                img.style.display = 'block';
+                defaultIcon.style.display = 'none';
+                box.classList.add('has-custom-logo');
+            } else {
+                img.style.display = 'none';
+                defaultIcon.style.display = '';
+                box.classList.remove('has-custom-logo');
+            }
+        }
+
+        function toggleBrandingSettings() {
+            const body = document.getElementById('branding-body');
+            const chevron = document.getElementById('branding-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleBrandingSettings = toggleBrandingSettings;
+
+        function previewLogoImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingLogoImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-logo-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('logo-img-update-box').classList.add('has-image');
+                document.getElementById('logo-img-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+        window.previewLogoImage = previewLogoImage;
+
+        function listenBranding() {
+            if (brandingListenerAttached) return;
+            brandingListenerAttached = true;
+            onSnapshot(doc(db, "settings", "branding"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                renderHeaderLogo(data);
+                if (data.logoUrl) {
+                    const preview = document.getElementById('edit-logo-preview');
+                    preview.src = data.logoUrl;
+                    preview.style.display = 'block';
+                    document.getElementById('logo-img-update-box').classList.add('has-image');
+                    document.getElementById('logo-img-update-change').style.display = 'flex';
+                }
+            }, (error) => {
+                console.error("Branding listener error:", error);
+            });
+        }
+
+        async function saveLogo() {
+            if (!editingLogoImageFile) {
+                window.showToast('Choose a logo photo first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('save-logo-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                const logoUrl = await uploadImageToImgBB(editingLogoImageFile, 'logo-upload-status');
+                await setDoc(doc(db, "settings", "branding"), { logoUrl }, { merge: true });
+                window.showToast('Store logo updated!', 'success');
+                editingLogoImageFile = null;
+            } catch (error) {
+                console.error("Save logo error:", error);
+                window.showToast(error.message || 'Failed to update logo.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveLogo = saveLogo;
+
         function openPaymentEditor(paymentId = null) {
             editingPaymentImageFile = null;
             document.getElementById('edit-payment-id').value = paymentId || '';
@@ -1420,6 +1580,7 @@
         listenNotifications();
         listenPaymentMethods();
         listenSocialLinks();
+        listenBranding();
         listenUsers();
     </script>
 </body>
