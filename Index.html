@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PCA Store - Admin</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #F0F2F5; color: #1C1E21; }
+        .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        
+        /* Header */
+        .header { background-color: #ffffff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-bottom: 2px solid #1877F2;}
+        .logo { color: #1C1E21; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .logo-icon { background: #1877F2; color: white; padding: 4px; border-radius: 6px; display: flex; width: 26px; height: 26px; }
+        .logo-icon.has-custom-logo { padding: 0; background: transparent; overflow: hidden; }
+        .header-icon { background: #E4E6EB; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        
+        /* App Layout (sidebar + content) */
+        .app-layout { display: flex; align-items: flex-start; }
+
+        /* Content & Pages */
+        .content-area { padding: 15px 15px; flex: 1; min-width: 0; }
+        .page-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .title-header { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E4E6EB; padding-bottom: 10px;}
+        
+        /* Stats Box */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;}
+        .stat-box { background: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #E4E6EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .stat-box h4 { color: #65676B; font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+        .stat-box p { font-size: 22px; font-weight: 700; color: #050505; }
+
+        /* Admin Cards */
+        .admin-card { background: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #E4E6EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #F0F2F5; }
+        .ac-id { font-size: 13px; font-weight: 700; color: #65676B; }
+        .ac-body p { font-size: 14px; margin-bottom: 6px; color: #1C1E21; }
+        .ac-footer { margin-top: 12px; display: flex; gap: 8px; }
+
+        /* Order Card: game thumbnail + tidy title/meta layout */
+        .oc-top { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .oc-thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: #F0F2F5; border: 1px solid #E4E6EB; flex-shrink: 0; }
+        .oc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .oc-info { flex: 1; min-width: 0; }
+        .oc-game-name { display: block; font-size: 15px; font-weight: 700; color: #050505; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oc-meta { font-size: 12.5px; color: #65676B; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oc-meta b { color: #1C1E21; font-weight: 600; }
+        .oc-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+        
+        /* Badges & Buttons */
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
+        .badge-pending { background: #FFF3CD; color: #856404; }
+        .badge-processing { background: #E4E6EB; color: #405DE6; }
+        .badge-success { background: #E7F3FF; color: #1877F2; }
+        .badge-danger { background: #FDE8E8; color: #C0392B; }
+        .btn { padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; text-align: center; flex: 1; }
+        .btn-primary { background-color: #1877F2; color: white; }
+        .btn-danger { background-color: #FA3E3E; color: white; }
+        .btn-outline { background-color: #E4E6EB; color: #1C1E21; }
+        
+        /* Side Nav (was a bottom nav; now a left sidebar) */
+        .side-nav { width: 70px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #E4E6EB; display: flex; flex-direction: column; position: sticky; top: 61px; height: calc(100vh - 61px); overflow-y: auto; z-index: 90; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: #65676B; cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; }
+        .nav-item.active { color: #1877F2; background: #E7F3FF; border-right-color: #1877F2; }
+        .nav-item.active .ui-icon { stroke: #1877F2; }
+        
+        /* Utility */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150%); background: #333; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; z-index: 1000;}
+        #toast.show { transform: translate(-50%, 0); }
+        .empty-msg { text-align: center; color: #65676B; font-size: 14px; padding: 20px 0; }
+        .highlight-id { font-weight: bold; color: #1877F2; font-size: 15px; }
+
+        /* Users list & details */
+        .user-card { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .user-card:active { background: #F8FBFF; }
+        .user-avatar { width: 46px; height: 46px; border-radius: 50%; background: #E7F3FF; color: #1877F2; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .user-card-info { flex: 1; min-width: 0; }
+        .user-card-info h5 { font-size: 15px; font-weight: 700; color: #050505; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-card-info p { font-size: 12px; color: #65676B; }
+        .detail-section-title { font-size: 14px; font-weight: 700; color: #050505; margin-bottom: 8px; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .details-grid-item { background: #F8F9FA; border: 1px solid #E4E6EB; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .details-grid-item span { font-size: 11px; color: #9C9EA1; font-weight: 600; text-transform: uppercase; }
+        .details-grid-item b { font-size: 14px; color: #050505; font-weight: 700; }
+
+        /* Game Editor Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-box { background: #ffffff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 88vh; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.25s ease; }
+        .modal-overlay.show .modal-box { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #E4E6EB; margin-bottom: 14px; }
+        .modal-header h3 { font-size: 17px; font-weight: 700; }
+        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #E4E6EB; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .modal-body label { font-size: 13px; font-weight: 600; color: #65676B; }
+        .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; }
+        .modal-footer { padding-top: 16px; display: flex; gap: 8px; }
+
+        /* Custom "Image Update" upload control (replaces default Browse/Choose file input) */
+        .img-update-input { display: none; }
+        .img-update-box { position: relative; border: 2px dashed #BCC0C4; border-radius: 12px; background: #F8F9FA; padding: 18px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: 0.15s; text-align: center; }
+        .img-update-box:active { background: #E7F3FF; border-color: #1877F2; }
+        .img-update-box.has-image { padding: 0; border-style: solid; border-color: #1877F2; overflow: hidden; }
+        .img-update-box.has-image .img-update-icon,
+        .img-update-box.has-image .img-update-label,
+        .img-update-box.has-image .img-update-hint { display: none; }
+        .img-update-icon { width: 40px; height: 40px; border-radius: 50%; background: #E7F3FF; color: #1877F2; display: flex; align-items: center; justify-content: center; }
+        .img-update-label { font-size: 13px; font-weight: 600; color: #050505; }
+        .img-update-hint { font-size: 11px; color: #9C9EA1; }
+        .img-update-box img { width: 100%; max-height: 220px; object-fit: contain; background: #F0F2F5; display: block; }
+        .img-update-change { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+        .img-update-change svg { width: 13px; height: 13px; }
+
+        /* Custom Delete / Warning / Information dialog (replaces browser confirm()/alert()) */
+        .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; padding: 24px; }
+        .dialog-overlay.show { opacity: 1; pointer-events: auto; }
+        .dialog-box { background: #ffffff; width: 100%; max-width: 340px; border-radius: 16px; padding: 24px 20px 18px; text-align: center; transform: scale(0.92); transition: transform 0.2s ease; }
+        .dialog-overlay.show .dialog-box { transform: scale(1); }
+        .dialog-icon { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .dialog-icon.type-delete { background: #FDE8E8; color: #C0392B; }
+        .dialog-icon.type-warning { background: #FFF3CD; color: #B8860B; }
+        .dialog-icon.type-info { background: #E7F3FF; color: #1877F2; }
+        .dialog-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #050505; }
+        .dialog-message { font-size: 14px; color: #65676B; line-height: 1.45; margin-bottom: 20px; white-space: pre-line; }
+        .dialog-actions { display: flex; gap: 8px; }
+        .dialog-actions .btn { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <svg style="display: none;">
+        <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
+        <symbol id="icon-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></symbol>
+        <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
+        <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
+        <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></symbol>
+        <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path></symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></symbol>
+        <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></symbol>
+        <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></symbol>
+        <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></symbol>
+        <symbol id="icon-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></symbol>
+        <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
+    </svg>
+
+    <div id="toast"><svg class="ui-icon" id="toast-icon" style="color: #4ADE80; width:18px;"><use id="toast-icon-use" href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
+
+    <!-- Reusable Delete / Warning / Information dialog (replaces browser confirm()/alert()) -->
+    <div class="dialog-overlay" id="action-dialog-overlay" onclick="if(event.target===this) window.closeActionDialog()">
+        <div class="dialog-box">
+            <div class="dialog-icon" id="action-dialog-icon"></div>
+            <div class="dialog-title" id="action-dialog-title">Title</div>
+            <div class="dialog-message" id="action-dialog-message">Message</div>
+            <div class="dialog-actions">
+                <button class="btn btn-outline" id="action-dialog-cancel" onclick="window.closeActionDialog()">Cancel</button>
+                <button class="btn btn-primary" id="action-dialog-confirm" onclick="window.confirmActionDialog()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon" id="header-logo-icon">
+                <svg class="ui-icon" id="header-logo-default-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg>
+                <img id="header-logo-img" src="" alt="PCA Store" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
+            </div>
+            PCA Store
+        </div>
+        <div class="header-icon"><svg class="ui-icon" style="width:20px;"><use href="#icon-users"></use></svg></div>
+    </header>
+
+    <div class="app-layout">
+    <!-- Side Navigation -->
+    <nav class="side-nav">
+        <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
+            <svg class="ui-icon"><use href="#icon-pie"></use></svg> Dash
+        </div>
+        <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
+            <svg class="ui-icon"><use href="#icon-list"></use></svg> Games
+        </div>
+        <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
+            <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
+        </div>
+        <div class="nav-item" id="btn-notify-list" onclick="showPage('notify-list')">
+            <svg class="ui-icon"><use href="#icon-bell"></use></svg> Notify
+        </div>
+        <div class="nav-item" id="btn-payment-list" onclick="showPage('payment-list')">
+            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Payment
+        </div>
+        <div class="nav-item" id="btn-user-list" onclick="showPage('user-list')">
+            <svg class="ui-icon"><use href="#icon-users"></use></svg> Users
+        </div>
+    </nav>
+
+    <main class="content-area">
+        
+        <!-- DASHBOARD PAGE (Dummy Stats) -->
+        <div id="dashboard" class="page-section active">
+            <h2 class="title-header">Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-box"><h4>Total Sales</h4><p style="color:#1877F2;" id="stat-total-sales">...</p></div>
+                <div class="stat-box"><h4>Pending</h4><p style="color:#856404;" id="stat-pending">...</p></div>
+                <div class="stat-box"><h4>Processing</h4><p style="color:#405DE6;" id="stat-processing">...</p></div>
+                <div class="stat-box"><h4>Success</h4><p style="color:#1877F2;" id="stat-completed">...</p></div>
+                <div class="stat-box"><h4>Fail</h4><p style="color:#C0392B;" id="stat-fail">...</p></div>
+                <div class="stat-box"><h4>Today's Orders</h4><p id="stat-today">...</p></div>
+            </div>
+
+            <div class="admin-card" style="margin-top:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSocialLinks()">
+                    <span style="font-size:15px;font-weight:700;">Social Links</span>
+                    <svg class="ui-icon" id="social-links-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="social-links-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">These appear as tappable icons on the Store app's Profile page.</p>
+                    <label style="font-size:13px;font-weight:600;color:#65676B;">Facebook URL</label>
+                    <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight:600;color:#65676B;">Telegram URL</label>
+                    <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight:600;color:#65676B;">TikTok URL</label>
+                    <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBrandingSettings()">
+                    <span style="font-size:15px;font-weight:700;">Store Logo</span>
+                    <svg class="ui-icon" id="branding-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="branding-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Shown next to "PCA Store" in the header here and in the Store app.</p>
+                    <label class="img-update-box" id="logo-img-update-box" for="edit-logo-file">
+                        <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                        <span class="img-update-label">Image Update</span>
+                        <span class="img-update-hint">Tap to choose a logo photo</span>
+                        <img id="edit-logo-preview" src="" alt="Preview" style="display:none;">
+                        <span class="img-update-change" id="logo-img-update-change" style="display:none;">
+                            <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                        </span>
+                    </label>
+                    <input type="file" id="edit-logo-file" class="img-update-input" accept="image/*" onchange="previewLogoImage(event)">
+                    <p id="logo-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+                    <button class="btn btn-primary" id="save-logo-btn" style="margin-top:10px;" onclick="saveLogo()">Save Logo</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-size:15px;font-weight:700;display:block;">G2Bulk API Key</span>
+                    <span style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via G2Bulk</span>
+                </div>
+                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" onclick="openG2BulkModal()">Settings</button>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-size:15px;font-weight:700;display:block;">G2Bulk Wallet Balance</span>
+                    <span style="font-size:20px;font-weight:700;color:#1877F2;" id="g2bulk-balance-display">—</span>
+                </div>
+                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" id="g2bulk-balance-refresh-btn" onclick="refreshG2BulkBalance()">Refresh</button>
+            </div>
+        </div>
+
+        <!-- GAMES PAGE (Live Firestore Data) -->
+        <div id="game-list" class="page-section">
+            <h2 class="title-header">Game List <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button></h2>
+            <div id="admin-games-container">
+                <p class="empty-msg">Loading games...</p>
+            </div>
+        </div>
+
+        <!-- ORDERS PAGE (Firebase Connected) -->
+        <div id="order-list" class="page-section">
+            <h2 class="title-header">Active Orders <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button></h2>
+            <!-- Firebase Container -->
+            <div id="orders-container">
+                <p class="empty-msg">Loading orders...</p>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS PAGE (Firebase Connected) -->
+        <div id="notify-list" class="page-section">
+            <h2 class="title-header">Send Notification</h2>
+            <div class="admin-card">
+                <label style="font-size:13px;font-weight:600;color:#65676B;">Title</label>
+                <input type="text" id="notif-title" placeholder="e.g. Server Maintenance" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight:600;color:#65676B;">Message</label>
+                <textarea id="notif-message" placeholder="Write the announcement..." rows="3" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;font-family:inherit;resize:vertical;"></textarea>
+                <button class="btn btn-primary" id="send-notif-btn" onclick="sendNotification()">Send to All Users</button>
+            </div>
+            <h2 class="title-header" style="margin-top:20px;">Sent History</h2>
+            <div id="notif-history-container">
+                <p class="empty-msg">Loading notifications...</p>
+            </div>
+        </div>
+
+        <!-- PAYMENT METHODS PAGE (Firebase Connected) -->
+        <div id="payment-list" class="page-section">
+            <h2 class="title-header">Payment Methods <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openPaymentEditor()">+ Add</button></h2>
+            <div id="admin-payment-container">
+                <p class="empty-msg">Loading payment methods...</p>
+            </div>
+        </div>
+
+        <!-- USERS PAGE (Firebase Connected) -->
+        <div id="user-list" class="page-section">
+            <h2 class="title-header">Manage Users</h2>
+            <div id="admin-users-container">
+                <p class="empty-msg">Loading users...</p>
+            </div>
+        </div>
+
+    </main>
+    </div>
+
+    <!-- Game Editor Modal: add/edit a game, photo uploads straight from the phone via a free image host -->
+    <div class="modal-overlay" id="game-editor-modal-overlay" onclick="if(event.target===this) closeGameEditor()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="game-editor-title">Add Game</h3>
+                <div class="modal-close" onclick="closeGameEditor()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-game-id">
+
+                <label>Game Name</label>
+                <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
+
+                <label>Game Image</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Photo auto-crops to a square — center the character/logo for the best fit.</p>
+                <label class="img-update-box" id="game-img-update-box" for="edit-game-file">
+                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                    <span class="img-update-label">Image Update</span>
+                    <span class="img-update-hint">Tap to choose a game photo</span>
+                    <img id="edit-game-preview" src="" alt="Preview" style="display:none;">
+                    <span class="img-update-change" id="game-img-update-change" style="display:none;">
+                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                    </span>
+                </label>
+                <input type="file" id="edit-game-file" class="img-update-input" accept="image/*" onchange="previewGameImage(event)">
+                <p id="upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+
+                <label>Banner Image</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Wide photo shown at the top of the game's page. Leave empty to reuse the Game Image above.</p>
+                <label class="img-update-box" id="game-banner-update-box" for="edit-game-banner-file">
+                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                    <span class="img-update-label">Banner Update</span>
+                    <span class="img-update-hint">Tap to choose a banner photo (16:9)</span>
+                    <img id="edit-game-banner-preview" src="" alt="Banner preview" style="display:none;">
+                    <span class="img-update-change" id="game-banner-update-change" style="display:none;">
+                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                    </span>
+                </label>
+                <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
+                <p id="banner-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+
+                <label>G2Bulk Game (optional — enables auto-fulfillment)</label>
+                <select id="edit-game-g2bulk-code" style="width:100%;padding:9px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;background:#fff;" onchange="onG2BulkGameChange()">
+                    <option value="">-- Not linked (manual fulfillment) --</option>
+                </select>
+                <p id="g2bulk-import-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;"></p>
+
+                <label>Top-up Packages</label>
+                <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
+                    <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
+                <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Editor Modal -->
+    <div class="modal-overlay" id="payment-editor-modal-overlay" onclick="if(event.target===this) closePaymentEditor()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="payment-editor-title">Add Payment Method</h3>
+                <div class="modal-close" onclick="closePaymentEditor()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-payment-id">
+                <label>Method Name</label>
+                <input type="text" id="edit-payment-name" placeholder="e.g. KBZ Pay, Wave Pay">
+                <label>Account Number</label>
+                <input type="text" id="edit-payment-number" placeholder="e.g. 09123456789">
+                <label>Account Name</label>
+                <input type="text" id="edit-payment-accountname" placeholder="e.g. Mg Mg Aung">
+
+                <label>Logo / QR Image (optional)</label>
+                <label class="img-update-box" id="payment-img-update-box" for="edit-payment-file">
+                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                    <span class="img-update-label">Image Update</span>
+                    <span class="img-update-hint">Tap to choose a logo / QR photo</span>
+                    <img id="edit-payment-preview" src="" alt="Preview" style="display:none;">
+                    <span class="img-update-change" id="payment-img-update-change" style="display:none;">
+                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                    </span>
+                </label>
+                <input type="file" id="edit-payment-file" class="img-update-input" accept="image/*" onchange="previewPaymentImage(event)">
+                <p id="payment-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
+                <button class="btn btn-primary" id="save-payment-btn" onclick="savePaymentMethod()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- G2Bulk Settings Modal: API key entry, kept off the Dashboard since it's sensitive -->
+    <div class="modal-overlay" id="g2bulk-modal-overlay" onclick="if(event.target===this) closeG2BulkModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>G2Bulk API Key</h3>
+                <div class="modal-close" onclick="closeG2BulkModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via G2Bulk. This key can spend your G2Bulk wallet balance — keep it private, it is not shown anywhere in the Store app.</p>
+                <label>API Key</label>
+                <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" autocomplete="off">
+                <p id="g2bulk-status" style="font-size:12px;color:#65676B;display:none;margin-top:4px;"></p>
+                <div id="g2bulk-result-grid" style="display:none;"></div>
+
+                <label>USD → MMK Rate</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">G2Bulk prices are in USD. This rate is used to pre-fill MMK prices when you tap "Import from G2Bulk" — you can still edit each price by hand afterward.</p>
+                <input type="number" id="g2bulk-usd-rate" placeholder="e.g. 4500" step="1">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
+                <button class="btn btn-primary" id="save-g2bulk-btn" onclick="saveG2BulkKey()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Details Modal: profile grid + that user's order history -->
+    <div class="modal-overlay" id="user-details-modal-overlay" onclick="if(event.target===this) closeUserDetails()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>User Details</h3>
+                <div class="modal-close" onclick="closeUserDetails()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+                    <div class="user-avatar" id="ud-avatar" style="width:64px;height:64px;">
+                        <img id="ud-avatar-img" src="" alt="" style="display:none;">
+                        <svg class="ui-icon" id="ud-avatar-icon" style="width:28px;height:28px;"><use href="#icon-users"></use></svg>
+                    </div>
+                    <div>
+                        <div id="ud-name" style="font-size:17px;font-weight:700;color:#050505;">Guest</div>
+                        <div id="ud-guestid" style="font-size:12px;color:#9C9EA1;">-</div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="details-grid-item"><span>Phone</span><b id="ud-phone">N/A</b></div>
+                    <div class="details-grid-item"><span>Total Orders</span><b id="ud-order-count">0</b></div>
+                    <div class="details-grid-item"><span>Total Spent</span><b id="ud-total-spent">0 MMK</b></div>
+                    <div class="details-grid-item"><span>Last Seen</span><b id="ud-last-seen">N/A</b></div>
+                </div>
+
+                <h3 class="detail-section-title" style="margin-top:18px;">Order History</h3>
+                <div id="ud-orders-container">
+                    <p class="empty-msg">No orders yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vanilla JS -->
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.getElementById(`btn-${pageId}`).classList.add('active');
+            window.scrollTo(0,0);
+            if (pageId === 'dashboard' && window.loadDashboardStats) window.loadDashboardStats();
+            if (pageId === 'dashboard' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const styles = {
+                success: { icon: '#icon-check', color: '#4ADE80' },
+                fail: { icon: '#icon-close', color: '#FA3E3E' },
+                cancel: { icon: '#icon-info', color: '#E4E6EB' }
+            };
+            const s = styles[type] || styles.success;
+            document.getElementById('toast-icon-use').setAttribute('href', s.icon);
+            document.getElementById('toast-icon').style.color = s.color;
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+        // Reusable Delete / Warning / Information dialog — replaces window.confirm() / alert().
+        // type: 'delete' (red, destructive) | 'warning' (amber, needs a decision) | 'info' (blue, OK-only notice)
+        let actionDialogCallback = null;
+
+        function showActionDialog({ type = 'warning', title = '', message = '', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm = null }) {
+            const iconEl = document.getElementById('action-dialog-icon');
+            const iconUse = type === 'delete' ? '#icon-trash' : (type === 'info' ? '#icon-info' : '#icon-warning');
+            iconEl.className = 'dialog-icon type-' + type;
+            iconEl.innerHTML = `<svg class="ui-icon" style="width:26px;"><use href="${iconUse}"></use></svg>`;
+
+            document.getElementById('action-dialog-title').innerText = title;
+            document.getElementById('action-dialog-message').innerText = message;
+
+            const cancelBtn = document.getElementById('action-dialog-cancel');
+            const confirmBtn = document.getElementById('action-dialog-confirm');
+            const infoOnly = (type === 'info');
+
+            cancelBtn.style.display = infoOnly ? 'none' : 'block';
+            cancelBtn.innerText = cancelText;
+            confirmBtn.innerText = confirmText;
+            confirmBtn.className = 'btn ' + (type === 'delete' ? 'btn-danger' : 'btn-primary');
+
+            actionDialogCallback = onConfirm;
+            document.getElementById('action-dialog-overlay').classList.add('show');
+        }
+
+        function closeActionDialog() {
+            document.getElementById('action-dialog-overlay').classList.remove('show');
+            actionDialogCallback = null;
+        }
+
+        function confirmActionDialog() {
+            const cb = actionDialogCallback;
+            closeActionDialog();
+            if (cb) cb();
+        }
+
+        // Convenience wrapper for a plain informational notice (single OK button).
+        function showInfoDialog(title, message) {
+            showActionDialog({ type: 'info', title, message, confirmText: 'OK' });
+        }
+
+        window.showPage = showPage;
+        window.showToast = showToast;
+        window.showActionDialog = showActionDialog;
+        window.closeActionDialog = closeActionDialog;
+        window.confirmActionDialog = confirmActionDialog;
+        function toggleSocialLinks() {
+            const body = document.getElementById('social-links-body');
+            const chevron = document.getElementById('social-links-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleSocialLinks = toggleSocialLinks;
+
+        window.showInfoDialog = showInfoDialog;
+    </script>
+
+    <!-- FIREBASE CODE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4kcQXS-C3zXxKg2Lj1TPllEAbJ30noY4",
+            authDomain: "pca-store-47a7f.firebaseapp.com",
+            projectId: "pca-store-47a7f",
+            storageBucket: "pca-store-47a7f.firebasestorage.app",
+            messagingSenderId: "720925768139",
+            appId: "1:720925768139:web:cc4f1ae89dfd8bd1f2de4e",
+            measurementId: "G-QHC6V0C7HD"
+        };
+
+        // Free image hosting for game photos (no Firebase Storage / Blaze plan needed).
+        // Get your own free key at https://api.imgbb.com/ (email signup, ~1 minute, no card).
+        const IMGBB_API_KEY = "3c061bbc2b77dfb4bcb5d9b8e6509a33";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const ordersContainer = document.getElementById('orders-container');
+
+        // Once attached, this listens live - new orders and status changes made here
+        // (or from elsewhere) appear automatically with no refresh needed. All orders
+        // stay visible regardless of status, newest first.
+        let ordersListenerAttached = false;
+        const expandedOrders = new Set();
+        let ORDERS = {}; // { orderId: {...data, id} } - kept in sync for the Users tab
+
+        function toggleOrderCard(orderId) {
+            if (expandedOrders.has(orderId)) expandedOrders.delete(orderId); else expandedOrders.add(orderId);
+            const body = document.getElementById('body-' + orderId);
+            const footer = document.getElementById('footer-' + orderId);
+            const chevron = document.getElementById('chevron-' + orderId);
+            const isOpen = expandedOrders.has(orderId);
+            if (body) body.style.display = isOpen ? 'block' : 'none';
+            if (footer) footer.style.display = isOpen ? 'flex' : 'none';
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        window.toggleOrderCard = toggleOrderCard;
+
+        function fetchOrders() {
+            if (ordersListenerAttached) {
+                window.showToast('Orders update automatically ✓');
+                return;
+            }
+            ordersListenerAttached = true;
+
+            const q = query(collection(db, "orders"));
+            onSnapshot(q, (querySnapshot) => {
+                const newOrders = {};
+                querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
+                ORDERS = newOrders;
+                if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
+                renderOrdersList();
+            }, (error) => {
+                console.error("Data Fetch Error: ", error);
+                ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
+            });
+        }
+
+        // Renders from the ORDERS cache rather than a live snapshot, so it can also be
+        // called from listenGames() to fill in thumbnails once game images arrive.
+        function renderOrdersList() {
+            const allOrders = Object.values(ORDERS);
+            if (allOrders.length === 0) {
+                ordersContainer.innerHTML = '<p class="empty-msg">No orders found.</p>';
+                return;
+            }
+
+            const sorted = allOrders.slice().sort((a, b) => {
+                const ta = a.timestamp ? a.timestamp.toMillis() : 0;
+                const tb = b.timestamp ? b.timestamp.toMillis() : 0;
+                return tb - ta;
+            });
+
+            ordersContainer.innerHTML = sorted.map((data) => {
+                const orderId = data.id;
+                const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
+                const badgeClass = badgeClassByStatus[data.status] || 'badge-pending';
+                const gameImg = findGameImage(data.game);
+
+                // Pending orders can be moved into Processing or Failed straight away;
+                // Processing orders are resolved into Success or Fail; Success/Fail
+                // orders are done and just show their final status.
+                let actionButtons;
+                if (data.status === 'Processing' && data.g2bulkOrderId) {
+                    actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})">Check G2Bulk Status (${data.g2bulkStatus || 'PENDING'})</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else if (data.status === 'Processing') {
+                    actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else if (data.status === 'Pending') {
+                    const startLabel = (data.g2bulkGameCode && data.g2bulkCatalogueName) ? 'Auto-Fulfill via G2Bulk' : 'Start Processing';
+                    actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">${startLabel}</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else {
+                    const doneLabel = data.status === 'Success' ? 'Order Completed' : 'Order Failed';
+                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>`;
+                }
+
+                const durationLine = (data.status === 'Success' && data.confirmedAt && data.timestamp)
+                    ? `<p style="color:#65676B; font-size:12px;">Confirmed in: <b style="color:#1877F2;">${formatDuration(data.confirmedAt.toMillis() - data.timestamp.toMillis())}</b></p>`
+                    : '';
+
+                const isOpen = expandedOrders.has(orderId);
+                return `
+                    <div class="admin-card" id="card-${orderId}">
+                        <div class="oc-top" onclick="toggleOrderCard('${orderId}')">
+                            <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" onerror="this.style.display='none'">` : ''}</div>
+                            <div class="oc-info">
+                                <span class="oc-game-name">${data.game}</span>
+                                <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
+                            </div>
+                            <div class="oc-status">
+                                <span class="badge ${badgeClass}">${data.status}</span>
+                                <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:#9C9EA1;transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
+                            </div>
+                        </div>
+                        <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid #F0F2F5;">
+                            <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
+                            ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
+                            <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
+                            ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
+                            <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
+                            ${durationLine}
+                        </div>
+                        <div class="ac-footer" id="footer-${orderId}" style="display:${isOpen ? 'flex' : 'none'};">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function startProcessing(orderId, btnElement) {
+            const order = ORDERS[orderId];
+            // Orders placed against a G2Bulk-linked package carry these two fields
+            // (see submitOrder in store.html) - route those through auto-fulfillment.
+            if (order && order.g2bulkGameCode && order.g2bulkCatalogueName) {
+                return placeG2BulkOrder(orderId, order, btnElement);
+            }
+
+            btnElement.innerText = "Updating...";
+            btnElement.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: "Processing" });
+                window.showToast("Order moved to Processing.", 'success');
+            } catch (error) {
+                console.error("Update Error: ", error);
+                window.showToast("Failed to update order! Check Rules.", 'fail');
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+            }
+        }
+
+        // ---------- G2Bulk auto-fulfillment ----------
+
+        // Places the top-up order with G2Bulk, moves the local order to Processing,
+        // and briefly auto-polls for completion (G2Bulk's typical completion time is
+        // 5-10s). If it's not done by then, the order stays in Processing with its
+        // g2bulkOrderId saved - the "Check Status" button lets the admin re-check
+        // any time (a browser tab left open can't be relied on for long background
+        // polling on a phone).
+        async function placeG2BulkOrder(orderId, order, btnElement) {
+            if (!G2BULK_SETTINGS.apiKey) {
+                window.showToast('Add your G2Bulk API key first (Dashboard → G2Bulk API Key).', 'fail');
+                return;
+            }
+            btnElement.innerText = "Placing order...";
+            btnElement.disabled = true;
+
+            try {
+                const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(order.g2bulkGameCode)}/order`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        catalogue_name: order.g2bulkCatalogueName,
+                        player_id: order.playerId,
+                        server_id: order.serverId || undefined,
+                        remark: `PCA Store order ${orderId}`
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || data.success === false) {
+                    throw new Error(data.message || 'G2Bulk rejected the order');
+                }
+
+                const g2bulkOrderId = data.order?.order_id;
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "Processing",
+                    g2bulkOrderId: g2bulkOrderId || null,
+                    g2bulkStatus: data.order?.status || 'PENDING'
+                });
+                window.showToast('Order placed with G2Bulk — checking for completion...', 'success');
+
+                if (g2bulkOrderId) {
+                    pollG2BulkOrder(orderId, g2bulkOrderId, 5); // ~5 tries, 4s apart = 20s
+                }
+            } catch (error) {
+                console.error("G2Bulk place order error:", error);
+                window.showToast('G2Bulk order failed: ' + error.message, 'fail');
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+            }
+        }
+
+        // Checks G2Bulk's order status once and applies it to the local order doc.
+        async function checkG2BulkOrderStatus(orderId, g2bulkOrderId) {
+            if (!G2BULK_SETTINGS.apiKey) {
+                window.showToast('Add your G2Bulk API key first.', 'fail');
+                return;
+            }
+            try {
+                const res = await fetch('https://api.g2bulk.com/v1/games/order/status', {
+                    method: 'POST',
+                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: g2bulkOrderId })
+                });
+                const data = await res.json();
+                const status = (data.order?.status || data.status || '').toUpperCase();
+
+                if (status === 'COMPLETED') {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), g2bulkStatus: status });
+                    window.showToast('G2Bulk order completed ✓', 'success');
+                } else if (status === 'FAILED' || status === 'REFUNDED') {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Fail", g2bulkStatus: status });
+                    window.showToast('G2Bulk order failed/refunded.', 'fail');
+                } else {
+                    await updateDoc(doc(db, "orders", orderId), { g2bulkStatus: status || 'PROCESSING' });
+                    window.showToast('Still processing on G2Bulk (' + (status || 'PROCESSING') + ')...');
+                }
+                return status;
+            } catch (error) {
+                console.error("G2Bulk status check error:", error);
+                window.showToast('Could not reach G2Bulk to check status.', 'fail');
+            }
+        }
+        window.checkG2BulkOrderStatus = checkG2BulkOrderStatus;
+
+        async function pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft) {
+            if (triesLeft <= 0) return;
+            await new Promise(r => setTimeout(r, 4000));
+            const status = await checkG2BulkOrderStatus(orderId, g2bulkOrderId);
+            if (status === 'COMPLETED' || status === 'FAILED' || status === 'REFUNDED') return;
+            pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft - 1);
+        }
+
+        async function markSuccess(orderId, btnElement) {
+            btnElement.innerText = "Updating...";
+            btnElement.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp() });
+                window.showToast("Order marked as Success!", 'success');
+                // No manual DOM removal needed - the live listener re-renders the
+                // list automatically now that this order no longer matches the query.
+            } catch (error) {
+                console.error("Update Error: ", error);
+                window.showToast("Failed to update order! Check Rules.", 'fail');
+                btnElement.innerText = "Mark Success";
+                btnElement.disabled = false;
+            }
+        }
+
+        function markFail(orderId, btnElement) {
+            window.showActionDialog({
+                type: 'warning',
+                title: 'Mark as Failed?',
+                message: 'The customer will need to reorder. This action cannot be undone.',
+                confirmText: 'Mark as Failed',
+                onConfirm: () => doMarkFail(orderId, btnElement)
+            });
+        }
+
+        async function doMarkFail(orderId, btnElement) {
+            btnElement.innerText = "Updating...";
+            btnElement.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: "Fail" });
+                window.showToast("Order marked as Fail.", 'fail');
+            } catch (error) {
+                console.error("Update Error: ", error);
+                window.showToast("Failed to update order! Check Rules.", 'fail');
+                btnElement.innerText = "Mark Fail";
+                btnElement.disabled = false;
+            }
+        }
+
+        // Computes real dashboard numbers from the orders collection.
+        async function loadDashboardStats() {
+            try {
+                const snap = await getDocs(collection(db, "orders"));
+                let totalSales = 0, pending = 0, processing = 0, completed = 0, fail = 0, today = 0;
+                const todayStr = new Date().toDateString();
+
+                snap.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const price = Number(data.price) || 0;
+                    if (data.status === 'Success') { totalSales += price; completed++; }
+                    else if (data.status === 'Pending') { pending++; }
+                    else if (data.status === 'Processing') { processing++; }
+                    else if (data.status === 'Fail') { fail++; }
+                    if (data.timestamp && data.timestamp.toDate().toDateString() === todayStr) today++;
+                });
+
+                document.getElementById('stat-total-sales').innerText = totalSales.toLocaleString() + ' MMK';
+                document.getElementById('stat-pending').innerText = pending;
+                document.getElementById('stat-processing').innerText = processing;
+                document.getElementById('stat-completed').innerText = completed;
+                document.getElementById('stat-fail').innerText = fail;
+                document.getElementById('stat-today').innerText = today;
+            } catch (error) {
+                console.error("Dashboard stats error: ", error);
+            }
+        }
+
+        // ---------- Manage Games ----------
+        let GAMES = {};   // { docId: { name, image, banner, packages: [{amount, price}] } }
+
+        // Order documents only store the game's name (not its id), so order cards
+        // look the image up by matching name against the loaded games catalogue.
+        function findGameImage(gameName) {
+            const match = Object.values(GAMES).find(g => g.name === gameName);
+            return match ? match.image : '';
+        }
+
+        // Formats a millisecond duration as e.g. "45s", "12m 30s", "3h 5m", "2d 4h".
+        function formatDuration(ms) {
+            const totalSec = Math.max(0, Math.floor(ms / 1000));
+            const days = Math.floor(totalSec / 86400);
+            const hours = Math.floor((totalSec % 86400) / 3600);
+            const mins = Math.floor((totalSec % 3600) / 60);
+            const secs = totalSec % 60;
+            if (days > 0) return `${days}d ${hours}h`;
+            if (hours > 0) return `${hours}h ${mins}m`;
+            if (mins > 0) return `${mins}m ${secs}s`;
+            return `${secs}s`;
+        }
+        let editingImageFile = null;
+        let editingBannerImageFile = null;
+        let editingPaymentImageFile = null;
+
+        function renderAdminGamesList() {
+            const container = document.getElementById('admin-games-container');
+            const ids = Object.keys(GAMES);
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No games yet. Tap + Add to create one.</p>';
+                return;
+            }
+            container.innerHTML = ids.map(id => {
+                const g = GAMES[id];
+                return `
+                    <div class="admin-card">
+                        <div class="ac-header">
+                            <span class="ac-id">${g.name}</span>
+                            <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
+                        </div>
+                        <div class="ac-body" style="display:flex;gap:12px;align-items:center;">
+                            <div style="width:104px;height:104px;flex-shrink:0;border-radius:10px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;">
+                                <img src="${g.image}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                            </div>
+                        </div>
+                        <div class="ac-footer">
+                            <button class="btn btn-outline" onclick="openGameEditor('${id}')">Edit</button>
+                            <button class="btn btn-danger" onclick="deleteGame('${id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenGames() {
+            onSnapshot(collection(db, "games"), (snap) => {
+                const newGames = {};
+                snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
+                GAMES = newGames;
+                renderAdminGamesList();
+                if (ordersListenerAttached) renderOrdersList();
+            }, (error) => {
+                console.error("Games listener error:", error);
+                document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
+            });
+        }
+
+        function previewGameImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-game-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('game-img-update-box').classList.add('has-image');
+                document.getElementById('game-img-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Lets the banner (16:9 detail-page image) be updated independently of the square Game Image icon.
+        function previewGameBanner(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingBannerImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-game-banner-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('game-banner-update-box').classList.add('has-image');
+                document.getElementById('game-banner-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addPackageRow(amount = '', price = '', g2bulkName = '') {
+            const list = document.getElementById('edit-packages-list');
+            const row = document.createElement('div');
+            row.className = 'package-row';
+            row.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:8px;border:1px solid #E4E6EB;border-radius:8px;';
+            row.innerHTML = `
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                    <input type="number" class="pkg-price" placeholder="Price (MMK)" value="${price}" style="width:100px;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                    <div onclick="this.closest('.package-row').remove()" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 8px;">&times;</div>
+                </div>
+                <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
+            `;
+            list.appendChild(row);
+        }
+
+        function openGameEditor(gameId = null) {
+            editingImageFile = null;
+            editingBannerImageFile = null;
+            document.getElementById('edit-game-id').value = gameId || '';
+            document.getElementById('edit-packages-list').innerHTML = '';
+            document.getElementById('edit-game-file').value = '';
+            document.getElementById('edit-game-banner-file').value = '';
+            document.getElementById('upload-status').style.display = 'none';
+            document.getElementById('banner-upload-status').style.display = 'none';
+
+            const preview = document.getElementById('edit-game-preview');
+            const deleteBtn = document.getElementById('delete-game-btn');
+            const updateBox = document.getElementById('game-img-update-box');
+            const changeBadge = document.getElementById('game-img-update-change');
+
+            const bannerPreview = document.getElementById('edit-game-banner-preview');
+            const bannerUpdateBox = document.getElementById('game-banner-update-box');
+            const bannerChangeBadge = document.getElementById('game-banner-update-change');
+
+            if (gameId && GAMES[gameId]) {
+                const g = GAMES[gameId];
+                document.getElementById('game-editor-title').innerText = 'Edit Game';
+                document.getElementById('edit-game-name').value = g.name;
+                preview.src = g.image;
+                preview.style.display = 'block';
+                updateBox.classList.add('has-image');
+                changeBadge.style.display = 'flex';
+
+                const bannerSrc = g.banner || g.image;
+                if (bannerSrc) {
+                    bannerPreview.src = bannerSrc;
+                    bannerPreview.style.display = 'block';
+                    bannerUpdateBox.classList.add('has-image');
+                    bannerChangeBadge.style.display = 'flex';
+                } else {
+                    bannerPreview.src = '';
+                    bannerPreview.style.display = 'none';
+                    bannerUpdateBox.classList.remove('has-image');
+                    bannerChangeBadge.style.display = 'none';
+                }
+
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.price, p.g2bulk || ''));
+                document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
+                deleteBtn.style.display = 'block';
+            } else {
+                document.getElementById('game-editor-title').innerText = 'Add New Game';
+                document.getElementById('edit-game-name').value = '';
+                document.getElementById('edit-game-g2bulk-code').value = '';
+                preview.src = '';
+                preview.style.display = 'none';
+                updateBox.classList.remove('has-image');
+                changeBadge.style.display = 'none';
+
+                bannerPreview.src = '';
+                bannerPreview.style.display = 'none';
+                bannerUpdateBox.classList.remove('has-image');
+                bannerChangeBadge.style.display = 'none';
+
+                addPackageRow();
+                deleteBtn.style.display = 'none';
+            }
+            populateG2BulkGamesDropdown();
+            onG2BulkGameChange();
+            document.getElementById('game-editor-modal-overlay').classList.add('show');
+        }
+
+        function closeGameEditor() {
+            document.getElementById('game-editor-modal-overlay').classList.remove('show');
+        }
+
+        // Uploads a phone photo to a free image host (ImgBB) and resolves with its direct URL.
+        // No Firebase Storage / Blaze plan involved.
+        async function uploadImageToImgBB(file, statusElId = 'upload-status') {
+            if (!IMGBB_API_KEY || IMGBB_API_KEY === "YOUR_IMGBB_API_KEY") {
+                throw new Error("Add your free ImgBB API key first (see IMGBB_API_KEY at the top of the Firebase script). Get one at https://api.imgbb.com/");
+            }
+            const statusEl = document.getElementById(statusElId);
+            statusEl.style.display = 'block';
+            statusEl.innerText = 'Uploading photo...';
+
+            const form = new FormData();
+            form.append('image', file);
+
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: form
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error?.message || 'Upload failed');
+
+            statusEl.innerText = 'Photo uploaded ✓';
+            return data.data.url;
+        }
+
+        function previewPaymentImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingPaymentImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-payment-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('payment-img-update-box').classList.add('has-image');
+                document.getElementById('payment-img-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveGame() {
+            const gameId = document.getElementById('edit-game-id').value;
+            const name = document.getElementById('edit-game-name').value.trim();
+            if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
+
+            const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
+
+            const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
+                amount: row.querySelector('.pkg-amount').value.trim(),
+                price: Number(row.querySelector('.pkg-price').value) || 0,
+                g2bulk: row.querySelector('.pkg-g2bulk').value.trim()
+            })).filter(p => p.amount && p.price > 0);
+
+            if (packages.length === 0) { window.showToast('Add at least one valid package', 'fail'); return; }
+
+            const saveBtn = document.getElementById('save-game-btn');
+            const originalText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                let imageUrl = (gameId && GAMES[gameId]) ? GAMES[gameId].image : '';
+                let bannerUrl = (gameId && GAMES[gameId]) ? (GAMES[gameId].banner || '') : '';
+
+                if (editingImageFile) {
+                    imageUrl = await uploadImageToImgBB(editingImageFile, 'upload-status');
+                }
+
+                if (!imageUrl) {
+                    window.showToast('Please add a game image', 'fail');
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = originalText;
+                    return;
+                }
+
+                if (editingBannerImageFile) {
+                    bannerUrl = await uploadImageToImgBB(editingBannerImageFile, 'banner-upload-status');
+                }
+
+                // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
+                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '' };
+
+                if (gameId) {
+                    await updateDoc(doc(db, "games", gameId), data);
+                } else {
+                    await addDoc(collection(db, "games"), data);
+                }
+
+                window.showToast('Game saved!', 'success');
+                closeGameEditor();
+            } catch (error) {
+                console.error("Save game error:", error);
+                const msg = error.message || 'Failed to save game.';
+                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg, 'fail'); }
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalText;
+            }
+        }
+
+        function deleteGame(gameId) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Game?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "games", gameId));
+                        window.showToast('Game deleted', 'cancel');
+                    } catch (error) {
+                        console.error("Delete game error:", error);
+                        window.showToast('Failed to delete game.', 'fail');
+                    }
+                }
+            });
+        }
+
+        function deleteCurrentGame() {
+            const gameId = document.getElementById('edit-game-id').value;
+            if (!gameId) return;
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Game?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "games", gameId));
+                        window.showToast('Game deleted', 'cancel');
+                        closeGameEditor();
+                    } catch (error) {
+                        console.error("Delete game error:", error);
+                        window.showToast('Failed to delete game.', 'fail');
+                    }
+                }
+            });
+        }
+
+        // ---------- Notifications (broadcast to all users) ----------
+        let notifListenerAttached = false;
+
+        async function sendNotification() {
+            const titleEl = document.getElementById('notif-title');
+            const msgEl = document.getElementById('notif-message');
+            const title = titleEl.value.trim();
+            const message = msgEl.value.trim();
+
+            if (!title || !message) { window.showToast('Please enter a title and message', 'fail'); return; }
+
+            const btn = document.getElementById('send-notif-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Sending...';
+
+            try {
+                await addDoc(collection(db, "notifications"), {
+                    title,
+                    message,
+                    timestamp: serverTimestamp()
+                });
+                titleEl.value = '';
+                msgEl.value = '';
+                window.showToast('Notification sent to all users!', 'success');
+            } catch (error) {
+                console.error("Send notification error:", error);
+                window.showToast('Failed to send notification.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        function listenNotifications() {
+            if (notifListenerAttached) return;
+            notifListenerAttached = true;
+            const container = document.getElementById('notif-history-container');
+
+            const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snap) => {
+                if (snap.empty) {
+                    container.innerHTML = '<p class="empty-msg">No notifications sent yet.</p>';
+                    return;
+                }
+                container.innerHTML = snap.docs.map(docSnap => {
+                    const data = docSnap.data();
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                    return `
+                        <div class="admin-card">
+                            <div class="ac-header">
+                                <span class="ac-id">${data.title}</span>
+                            </div>
+                            <div class="ac-body">
+                                <p>${data.message}</p>
+                                <p style="color:#65676B; font-size:12px;">Sent: ${dateStr}</p>
+                            </div>
+                            <div class="ac-footer">
+                                <button class="btn btn-danger" onclick="deleteNotification('${docSnap.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }, (error) => {
+                console.error("Notifications listener error:", error);
+                container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load notifications.</p>';
+            });
+        }
+
+        function deleteNotification(notifId) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Notification?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "notifications", notifId));
+                        window.showToast('Notification deleted', 'cancel');
+                    } catch (error) {
+                        console.error("Delete notification error:", error);
+                        window.showToast('Failed to delete notification.', 'fail');
+                    }
+                }
+            });
+        }
+
+        // ---------- Payment Methods ----------
+        let PAYMENT_METHODS = {};
+        let paymentListenerAttached = false;
+
+        function renderAdminPaymentList() {
+            const container = document.getElementById('admin-payment-container');
+            const ids = Object.keys(PAYMENT_METHODS);
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No payment methods yet. Tap + Add to create one.</p>';
+                return;
+            }
+            container.innerHTML = ids.map(id => {
+                const p = PAYMENT_METHODS[id];
+                return `
+                    <div class="admin-card">
+                        <div class="ac-header"><span class="ac-id">${p.name}</span></div>
+                        <div class="ac-body" style="display:flex;gap:10px;align-items:center;">
+                            ${p.image ? `<div style="width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;"><img src="${p.image}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>` : ''}
+                            <div>
+                                <p><b>Number:</b> ${p.number}</p>
+                                <p><b>Account Name:</b> ${p.accountName}</p>
+                            </div>
+                        </div>
+                        <div class="ac-footer">
+                            <button class="btn btn-outline" onclick="openPaymentEditor('${id}')">Edit</button>
+                            <button class="btn btn-danger" onclick="deletePaymentMethod('${id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenPaymentMethods() {
+            if (paymentListenerAttached) return;
+            paymentListenerAttached = true;
+            onSnapshot(collection(db, "paymentMethods"), (snap) => {
+                const newMethods = {};
+                snap.forEach(docSnap => { newMethods[docSnap.id] = docSnap.data(); });
+                PAYMENT_METHODS = newMethods;
+                renderAdminPaymentList();
+            }, (error) => {
+                console.error("Payment methods listener error:", error);
+                document.getElementById('admin-payment-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load payment methods.</p>';
+            });
+        }
+
+        // ---------- Users (real customers, synced from the Store app's local profile) ----------
+        let USERS = {};
+        let usersListenerAttached = false;
+        let currentUserDetailsId = null;
+
+        function fmtMoney(n) { return Number(n || 0).toLocaleString() + ' MMK'; }
+
+        function renderAdminUsersList() {
+            const container = document.getElementById('admin-users-container');
+            const ids = Object.keys(USERS);
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No users yet. They\'ll appear here once someone opens the Store app.</p>';
+                return;
+            }
+            // Most recently active first.
+            ids.sort((a, b) => {
+                const ta = USERS[a].lastSeen ? USERS[a].lastSeen.toMillis() : 0;
+                const tb = USERS[b].lastSeen ? USERS[b].lastSeen.toMillis() : 0;
+                return tb - ta;
+            });
+            container.innerHTML = ids.map(id => {
+                const u = USERS[id];
+                const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
+                const orderCount = Object.values(ORDERS).filter(o => o.userId === id).length;
+                return `
+                    <div class="admin-card user-card" onclick="openUserDetails('${id}')">
+                        <div class="user-avatar">
+                            ${u.photo ? `<img src="${u.photo}">` : `<svg class="ui-icon" style="width:22px;height:22px;"><use href="#icon-users"></use></svg>`}
+                        </div>
+                        <div class="user-card-info">
+                            <h5>${displayName}</h5>
+                            <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'}</p>
+                        </div>
+                        <svg class="ui-icon" style="width:18px;height:18px;color:#BCC0C4;flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenUsers() {
+            if (usersListenerAttached) return;
+            usersListenerAttached = true;
+            onSnapshot(collection(db, "users"), (snap) => {
+                const newUsers = {};
+                snap.forEach(docSnap => { newUsers[docSnap.id] = docSnap.data(); });
+                USERS = newUsers;
+                renderAdminUsersList();
+            }, (error) => {
+                console.error("Users listener error:", error);
+                document.getElementById('admin-users-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load users.</p>';
+            });
+        }
+
+        // Renders the order-history list inside the currently open User Details modal.
+        function renderUserOrders(userId) {
+            const container = document.getElementById('ud-orders-container');
+            const userOrders = Object.values(ORDERS)
+                .filter(o => o.userId === userId)
+                .sort((a, b) => (b.timestamp ? b.timestamp.toMillis() : 0) - (a.timestamp ? a.timestamp.toMillis() : 0));
+
+            document.getElementById('ud-order-count').innerText = userOrders.length;
+            const totalSpent = userOrders.filter(o => o.status === 'Success').reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            document.getElementById('ud-total-spent').innerText = fmtMoney(totalSpent);
+
+            if (userOrders.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No orders yet.</p>';
+                return;
+            }
+
+            const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
+            container.innerHTML = userOrders.map(o => {
+                const dateStr = o.timestamp ? o.timestamp.toDate().toLocaleString() : 'Just now';
+                const badgeClass = badgeClassByStatus[o.status] || 'badge-pending';
+                return `
+                    <div class="admin-card" style="padding:12px;">
+                        <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;">
+                            <span class="ac-id">${o.game} (${o.itemAmount})</span>
+                            <span class="badge ${badgeClass}">${o.status}</span>
+                        </div>
+                        <p style="font-size:13px;color:#65676B;">${fmtMoney(o.price)} &middot; ${o.paymentMethod || 'N/A'}</p>
+                        <p style="font-size:12px;color:#9C9EA1;margin-top:4px;">${dateStr}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openUserDetails(userId) {
+            const u = USERS[userId];
+            if (!u) return;
+            currentUserDetailsId = userId;
+
+            const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || userId);
+            document.getElementById('ud-name').innerText = displayName;
+            document.getElementById('ud-guestid').innerText = 'ID: ' + (u.guestId || userId);
+            document.getElementById('ud-phone').innerText = u.phone || 'N/A';
+            document.getElementById('ud-last-seen').innerText = u.lastSeen ? u.lastSeen.toDate().toLocaleString() : 'N/A';
+
+            const avatarImg = document.getElementById('ud-avatar-img');
+            const avatarIcon = document.getElementById('ud-avatar-icon');
+            if (u.photo) {
+                avatarImg.src = u.photo; avatarImg.style.display = 'block'; avatarIcon.style.display = 'none';
+            } else {
+                avatarImg.src = ''; avatarImg.style.display = 'none'; avatarIcon.style.display = 'block';
+            }
+
+            renderUserOrders(userId);
+            document.getElementById('user-details-modal-overlay').classList.add('show');
+        }
+
+        function closeUserDetails() {
+            document.getElementById('user-details-modal-overlay').classList.remove('show');
+            currentUserDetailsId = null;
+        }
+
+        // Called whenever the orders cache refreshes, so an open modal stays live.
+        function renderUserDetailsIfOpen() {
+            if (currentUserDetailsId) renderUserOrders(currentUserDetailsId);
+        }
+
+        window.openUserDetails = openUserDetails;
+        window.closeUserDetails = closeUserDetails;
+        window.renderUserDetailsIfOpen = renderUserDetailsIfOpen;
+
+        // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
+        let socialListenerAttached = false;
+
+        function listenSocialLinks() {
+            if (socialListenerAttached) return;
+            socialListenerAttached = true;
+            onSnapshot(doc(db, "settings", "social"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('social-facebook').value = data.facebook || '';
+                document.getElementById('social-telegram').value = data.telegram || '';
+                document.getElementById('social-tiktok').value = data.tiktok || '';
+            }, (error) => {
+                console.error("Social links listener error:", error);
+            });
+        }
+
+        async function saveSocialLinks() {
+            const facebook = document.getElementById('social-facebook').value.trim();
+            const telegram = document.getElementById('social-telegram').value.trim();
+            const tiktok = document.getElementById('social-tiktok').value.trim();
+
+            const btn = document.getElementById('save-social-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                await setDoc(doc(db, "settings", "social"), { facebook, telegram, tiktok }, { merge: true });
+                window.showToast('Social links saved!', 'success');
+            } catch (error) {
+                console.error("Save social links error:", error);
+                window.showToast('Failed to save social links.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        window.saveSocialLinks = saveSocialLinks;
+
+        // ---------- Store Logo (optional custom image shown in the header here and in the Store app) ----------
+        let editingLogoImageFile = null;
+        let brandingListenerAttached = false;
+
+        function renderHeaderLogo(data) {
+            const img = document.getElementById('header-logo-img');
+            const defaultIcon = document.getElementById('header-logo-default-icon');
+            const box = document.getElementById('header-logo-icon');
+            if (data && data.logoUrl) {
+                img.src = data.logoUrl;
+                img.style.display = 'block';
+                defaultIcon.style.display = 'none';
+                box.classList.add('has-custom-logo');
+            } else {
+                img.style.display = 'none';
+                defaultIcon.style.display = '';
+                box.classList.remove('has-custom-logo');
+            }
+        }
+
+        function toggleBrandingSettings() {
+            const body = document.getElementById('branding-body');
+            const chevron = document.getElementById('branding-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleBrandingSettings = toggleBrandingSettings;
+
+        function previewLogoImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingLogoImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-logo-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('logo-img-update-box').classList.add('has-image');
+                document.getElementById('logo-img-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+        window.previewLogoImage = previewLogoImage;
+
+        function listenBranding() {
+            if (brandingListenerAttached) return;
+            brandingListenerAttached = true;
+            onSnapshot(doc(db, "settings", "branding"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                renderHeaderLogo(data);
+                if (data.logoUrl) {
+                    const preview = document.getElementById('edit-logo-preview');
+                    preview.src = data.logoUrl;
+                    preview.style.display = 'block';
+                    document.getElementById('logo-img-update-box').classList.add('has-image');
+                    document.getElementById('logo-img-update-change').style.display = 'flex';
+                }
+            }, (error) => {
+                console.error("Branding listener error:", error);
+            });
+        }
+
+        async function saveLogo() {
+            if (!editingLogoImageFile) {
+                window.showToast('Choose a logo photo first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('save-logo-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                const logoUrl = await uploadImageToImgBB(editingLogoImageFile, 'logo-upload-status');
+                await setDoc(doc(db, "settings", "branding"), { logoUrl }, { merge: true });
+                window.showToast('Store logo updated!', 'success');
+                editingLogoImageFile = null;
+            } catch (error) {
+                console.error("Save logo error:", error);
+                window.showToast(error.message || 'Failed to update logo.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveLogo = saveLogo;
+
+        // ---------- G2Bulk API Key (stored in Firestore, not hardcoded - see saveG2BulkKey) ----------
+        let g2bulkListenerAttached = false;
+        // Module-wide cache of the current key/rate so order auto-fulfillment
+        // doesn't need to re-read Firestore on every click.
+        let G2BULK_SETTINGS = { apiKey: '', usdRate: 4500 };
+        // Cache of GET /v1/games so the game editor dropdown doesn't re-fetch every open.
+        let G2BULK_GAMES_LIST = null;
+
+        function openG2BulkModal() {
+            document.getElementById('g2bulk-status').style.display = 'none';
+            document.getElementById('g2bulk-result-grid').style.display = 'none';
+            document.getElementById('g2bulk-modal-overlay').classList.add('show');
+        }
+        window.openG2BulkModal = openG2BulkModal;
+
+        function closeG2BulkModal() {
+            document.getElementById('g2bulk-modal-overlay').classList.remove('show');
+        }
+        window.closeG2BulkModal = closeG2BulkModal;
+
+        function listenG2Bulk() {
+            if (g2bulkListenerAttached) return;
+            g2bulkListenerAttached = true;
+            onSnapshot(doc(db, "settings", "g2bulk"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('g2bulk-api-key').value = data.apiKey || '';
+                document.getElementById('g2bulk-usd-rate').value = data.usdRate || 4500;
+                G2BULK_SETTINGS = { apiKey: data.apiKey || '', usdRate: Number(data.usdRate) || 4500 };
+                if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
+            }, (error) => {
+                console.error("G2Bulk settings listener error:", error);
+            });
+        }
+
+        async function saveG2BulkKey() {
+            const apiKey = document.getElementById('g2bulk-api-key').value.trim();
+            const usdRate = Number(document.getElementById('g2bulk-usd-rate').value) || 4500;
+            const btn = document.getElementById('save-g2bulk-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate }, { merge: true });
+                window.showToast('G2Bulk key saved!', 'success');
+            } catch (error) {
+                console.error("Save G2Bulk key error:", error);
+                window.showToast('Failed to save G2Bulk key.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveG2BulkKey = saveG2BulkKey;
+
+        // ---------- G2Bulk wallet balance (SMM panel style: key in body, action=balance) ----------
+        // Deliberately uses the SMM panel endpoint (POST /api/v2, key+action in body)
+        // rather than the main API's /v1/getMe, per how this was set up.
+        async function refreshG2BulkBalance() {
+            const displayEl = document.getElementById('g2bulk-balance-display');
+            const btn = document.getElementById('g2bulk-balance-refresh-btn');
+            if (!G2BULK_SETTINGS.apiKey) {
+                displayEl.innerText = 'No key set';
+                displayEl.style.color = '#9C9EA1';
+                return;
+            }
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = '...';
+            displayEl.innerText = 'Loading...';
+            displayEl.style.color = '#9C9EA1';
+
+            try {
+                const res = await fetch('https://api.g2bulk.com/api/v2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: G2BULK_SETTINGS.apiKey, action: 'balance' })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                displayEl.innerText = `${Number(data.balance).toFixed(2)} ${data.currency || 'USD'}`;
+                displayEl.style.color = '#1877F2';
+            } catch (error) {
+                console.error("G2Bulk balance error:", error);
+                displayEl.innerText = 'Error: ' + error.message;
+                displayEl.style.color = '#C0392B';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.refreshG2BulkBalance = refreshG2BulkBalance;
+
+        // ---------- G2Bulk game catalogue import ----------
+
+        async function fetchG2BulkGamesList() {
+            if (G2BULK_GAMES_LIST) return G2BULK_GAMES_LIST;
+            const res = await fetch('https://api.g2bulk.com/v1/games');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Failed to load G2Bulk games list');
+            G2BULK_GAMES_LIST = data.games || [];
+            return G2BULK_GAMES_LIST;
+        }
+
+        async function populateG2BulkGamesDropdown() {
+            const select = document.getElementById('edit-game-g2bulk-code');
+            const currentValue = select.value;
+            try {
+                const games = await fetchG2BulkGamesList();
+                select.innerHTML = '<option value="">-- Not linked (manual fulfillment) --</option>' +
+                    games.map(g => `<option value="${g.code}">${g.name}</option>`).join('');
+                select.value = currentValue;
+            } catch (error) {
+                console.error("Load G2Bulk games list error:", error);
+                // Leave the dropdown as-is (just the default option) - linking is optional,
+                // so a failed fetch here shouldn't block editing the game otherwise.
+            }
+        }
+        window.populateG2BulkGamesDropdown = populateG2BulkGamesDropdown;
+
+        function onG2BulkGameChange() {
+            const code = document.getElementById('edit-game-g2bulk-code').value;
+            document.getElementById('g2bulk-import-btn').style.display = code ? 'block' : 'none';
+        }
+        window.onG2BulkGameChange = onG2BulkGameChange;
+
+        // Fetches the live G2Bulk catalogue for the selected game and pre-fills
+        // the packages list with its denominations, converted to MMK using the
+        // saved USD rate. Admin can still hand-edit any price afterward.
+        async function importG2BulkCatalogue() {
+            const code = document.getElementById('edit-game-g2bulk-code').value;
+            if (!code) return;
+            const statusEl = document.getElementById('g2bulk-import-status');
+            const btn = document.getElementById('g2bulk-import-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Importing...';
+            statusEl.innerText = '';
+
+            try {
+                const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(code)}/catalogue`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Import failed');
+
+                const rate = G2BULK_SETTINGS.usdRate || 4500;
+                document.getElementById('edit-packages-list').innerHTML = '';
+                (data.catalogues || []).forEach(c => {
+                    addPackageRow(c.name, Math.round(c.amount * rate), c.name);
+                });
+                statusEl.style.color = '#1877F2';
+                statusEl.innerText = `Imported ${(data.catalogues || []).length} packages ✓ — review prices before saving.`;
+                window.showToast('Catalogue imported ✓', 'success');
+            } catch (error) {
+                console.error("Import G2Bulk catalogue error:", error);
+                statusEl.style.color = '#C0392B';
+                statusEl.innerText = 'Import failed: ' + error.message;
+                window.showToast('Failed to import catalogue.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.importG2BulkCatalogue = importG2BulkCatalogue;
+
+        // Calls G2Bulk's /v1/getMe directly from the browser to sanity-check the key.
+        // Note: this may fail with a CORS/network error if G2Bulk doesn't allow
+        // browser-origin requests to this endpoint (common for secret-key APIs).
+        // If that happens, verification (and later, placing orders) will need to
+        // go through a small server-side proxy instead of calling G2Bulk directly
+        // from this page.
+        async function verifyG2BulkKey() {
+            const apiKey = document.getElementById('g2bulk-api-key').value.trim();
+            const statusEl = document.getElementById('g2bulk-status');
+            const gridEl = document.getElementById('g2bulk-result-grid');
+            if (!apiKey) {
+                window.showToast('Enter a key first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('verify-g2bulk-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.display = 'block';
+            gridEl.style.display = 'none';
+            statusEl.innerText = 'Checking key...';
+
+            try {
+                const res = await fetch('https://api.g2bulk.com/v1/getMe', {
+                    headers: { 'X-API-Key': apiKey }
+                });
+                const data = await res.json();
+                if (res.ok && data && data.success !== false) {
+                    statusEl.innerText = 'Key valid ✓';
+                    statusEl.style.color = '#1877F2';
+                    gridEl.className = 'details-grid';
+                    gridEl.innerHTML = `
+                        <div class="details-grid-item"><span>Balance</span><b>${data.balance ?? '-'}</b></div>
+                        <div class="details-grid-item"><span>Name</span><b>${data.first_name || '-'}</b></div>
+                        ${data.user_id ? `<div class="details-grid-item full" style="grid-column:1/-1;"><span>User ID</span><b>${data.user_id}</b></div>` : ''}
+                    `;
+                    gridEl.style.display = 'grid';
+                    window.showToast('G2Bulk key verified!', 'success');
+                } else {
+                    statusEl.style.color = '#C0392B';
+                    statusEl.innerText = 'Key check failed: ' + (data.message || data.error || JSON.stringify(data));
+                    window.showToast('Key check failed.', 'fail');
+                }
+            } catch (error) {
+                console.error("G2Bulk verify error:", error);
+                statusEl.style.color = '#C0392B';
+                statusEl.innerText = 'Could not reach G2Bulk - likely blocked by CORS. See the chat for what this means.';
+                window.showToast('Could not verify key.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.verifyG2BulkKey = verifyG2BulkKey;
+
+        function openPaymentEditor(paymentId = null) {
+            editingPaymentImageFile = null;
+            document.getElementById('edit-payment-id').value = paymentId || '';
+            document.getElementById('edit-payment-file').value = '';
+            document.getElementById('payment-upload-status').style.display = 'none';
+            const preview = document.getElementById('edit-payment-preview');
+            const deleteBtn = document.getElementById('delete-payment-btn');
+            const updateBox = document.getElementById('payment-img-update-box');
+            const changeBadge = document.getElementById('payment-img-update-change');
+            if (paymentId && PAYMENT_METHODS[paymentId]) {
+                const p = PAYMENT_METHODS[paymentId];
+                document.getElementById('payment-editor-title').innerText = 'Edit Payment Method';
+                document.getElementById('edit-payment-name').value = p.name;
+                document.getElementById('edit-payment-number').value = p.number;
+                document.getElementById('edit-payment-accountname').value = p.accountName;
+                if (p.image) {
+                    preview.src = p.image; preview.style.display = 'block';
+                    updateBox.classList.add('has-image'); changeBadge.style.display = 'flex';
+                } else {
+                    preview.src = ''; preview.style.display = 'none';
+                    updateBox.classList.remove('has-image'); changeBadge.style.display = 'none';
+                }
+                deleteBtn.style.display = 'block';
+            } else {
+                document.getElementById('payment-editor-title').innerText = 'Add Payment Method';
+                document.getElementById('edit-payment-name').value = '';
+                document.getElementById('edit-payment-number').value = '';
+                document.getElementById('edit-payment-accountname').value = '';
+                preview.src = '';
+                preview.style.display = 'none';
+                updateBox.classList.remove('has-image');
+                changeBadge.style.display = 'none';
+                deleteBtn.style.display = 'none';
+            }
+            document.getElementById('payment-editor-modal-overlay').classList.add('show');
+        }
+
+        function closePaymentEditor() {
+            document.getElementById('payment-editor-modal-overlay').classList.remove('show');
+        }
+
+        async function savePaymentMethod() {
+            const paymentId = document.getElementById('edit-payment-id').value;
+            const name = document.getElementById('edit-payment-name').value.trim();
+            const number = document.getElementById('edit-payment-number').value.trim();
+            const accountName = document.getElementById('edit-payment-accountname').value.trim();
+
+            if (!name || !number || !accountName) { window.showToast('Please fill in all fields', 'fail'); return; }
+
+            const saveBtn = document.getElementById('save-payment-btn');
+            const originalText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                let imageUrl = (paymentId && PAYMENT_METHODS[paymentId]) ? (PAYMENT_METHODS[paymentId].image || '') : '';
+                if (editingPaymentImageFile) {
+                    imageUrl = await uploadImageToImgBB(editingPaymentImageFile, 'payment-upload-status');
+                }
+
+                const data = { name, number, accountName, image: imageUrl };
+                if (paymentId) {
+                    await updateDoc(doc(db, "paymentMethods", paymentId), data);
+                } else {
+                    await addDoc(collection(db, "paymentMethods"), data);
+                }
+                window.showToast('Payment method saved!', 'success');
+                closePaymentEditor();
+            } catch (error) {
+                console.error("Save payment method error:", error);
+                const msg = error.message || 'Failed to save payment method.';
+                if (msg.length > 60) { window.showInfoDialog('Setup Required', msg); } else { window.showToast(msg, 'fail'); }
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalText;
+            }
+        }
+
+        function deletePaymentMethod(paymentId) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Payment Method?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "paymentMethods", paymentId));
+                        window.showToast('Payment method deleted', 'cancel');
+                    } catch (error) {
+                        console.error("Delete payment method error:", error);
+                        window.showToast('Failed to delete payment method.', 'fail');
+                    }
+                }
+            });
+        }
+
+        function deleteCurrentPaymentMethod() {
+            const paymentId = document.getElementById('edit-payment-id').value;
+            if (!paymentId) return;
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Payment Method?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "paymentMethods", paymentId));
+                        window.showToast('Payment method deleted', 'cancel');
+                        closePaymentEditor();
+                    } catch (error) {
+                        console.error("Delete payment method error:", error);
+                        window.showToast('Failed to delete payment method.', 'fail');
+                    }
+                }
+            });
+        }
+
+        window.openPaymentEditor = openPaymentEditor;
+        window.closePaymentEditor = closePaymentEditor;
+        window.previewPaymentImage = previewPaymentImage;
+        window.savePaymentMethod = savePaymentMethod;
+        window.deletePaymentMethod = deletePaymentMethod;
+        window.deleteCurrentPaymentMethod = deleteCurrentPaymentMethod;
+
+        window.sendNotification = sendNotification;
+        window.deleteNotification = deleteNotification;
+        window.fetchOrders = fetchOrders;
+        window.startProcessing = startProcessing;
+        window.markSuccess = markSuccess;
+        window.markFail = markFail;
+        window.loadDashboardStats = loadDashboardStats;
+        window.openGameEditor = openGameEditor;
+        window.closeGameEditor = closeGameEditor;
+        window.previewGameImage = previewGameImage;
+        window.previewGameBanner = previewGameBanner;
+        window.addPackageRow = addPackageRow;
+        window.saveGame = saveGame;
+        window.deleteGame = deleteGame;
+        window.deleteCurrentGame = deleteCurrentGame;
+
+        // Start live order tracking and load real dashboard numbers as soon as the
+        // admin panel opens, so nothing depends on remembering to click Refresh.
+        loadDashboardStats();
+        fetchOrders();
+        listenGames();
+        listenNotifications();
+        listenPaymentMethods();
+        listenSocialLinks();
+        listenBranding();
+        listenG2Bulk();
+        listenUsers();
+    </script>
+</body>
+</html>
