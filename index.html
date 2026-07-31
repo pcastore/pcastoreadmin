@@ -97,7 +97,7 @@
         .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #E4E6EB; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
         .modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .modal-body label { font-size: 13px; font-weight: 600; color: #65676B; }
-        .modal-body input[type="text"], .modal-body input[type="number"] { padding: 10px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; }
+        .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; }
         .modal-footer { padding-top: 16px; display: flex; gap: 8px; }
 
         /* Custom "Image Update" upload control (replaces default Browse/Choose file input) */
@@ -252,21 +252,12 @@
                 </div>
             </div>
 
-            <div class="admin-card" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleG2BulkSettings()">
-                    <span style="font-size:15px;font-weight:700;">G2Bulk API Key</span>
-                    <svg class="ui-icon" id="g2bulk-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-size:15px;font-weight:700;display:block;">G2Bulk API Key</span>
+                    <span style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via G2Bulk</span>
                 </div>
-                <div id="g2bulk-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Used to auto-fulfill top-ups via G2Bulk. This key can spend your G2Bulk wallet balance — keep it private, it is not shown anywhere in the Store app.</p>
-                    <label style="font-size:13px;font-weight:600;color:#65676B;">API Key</label>
-                    <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;" autocomplete="off">
-                    <div style="display:flex;gap:8px;">
-                        <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
-                        <button class="btn btn-primary" id="save-g2bulk-btn" onclick="saveG2BulkKey()">Save</button>
-                    </div>
-                    <p id="g2bulk-status" style="font-size:12px;color:#65676B;display:none;margin-top:8px;"></p>
-                </div>
+                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" onclick="openG2BulkModal()">Settings</button>
             </div>
         </div>
 
@@ -410,6 +401,29 @@
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
                 <button class="btn btn-primary" id="save-payment-btn" onclick="savePaymentMethod()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- G2Bulk Settings Modal: API key entry, kept off the Dashboard since it's sensitive -->
+    <div class="modal-overlay" id="g2bulk-modal-overlay" onclick="if(event.target===this) closeG2BulkModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>G2Bulk API Key</h3>
+                <div class="modal-close" onclick="closeG2BulkModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via G2Bulk. This key can spend your G2Bulk wallet balance — keep it private, it is not shown anywhere in the Store app.</p>
+                <label>API Key</label>
+                <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" autocomplete="off">
+                <p id="g2bulk-status" style="font-size:12px;color:#65676B;display:none;margin-top:4px;"></p>
+                <div id="g2bulk-result-grid" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
+                <button class="btn btn-primary" id="save-g2bulk-btn" onclick="saveG2BulkKey()">Save</button>
             </div>
         </div>
     </div>
@@ -1452,14 +1466,17 @@
         // ---------- G2Bulk API Key (stored in Firestore, not hardcoded - see saveG2BulkKey) ----------
         let g2bulkListenerAttached = false;
 
-        function toggleG2BulkSettings() {
-            const body = document.getElementById('g2bulk-body');
-            const chevron = document.getElementById('g2bulk-chevron');
-            const isOpen = body.style.display === 'block';
-            body.style.display = isOpen ? 'none' : 'block';
-            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        function openG2BulkModal() {
+            document.getElementById('g2bulk-status').style.display = 'none';
+            document.getElementById('g2bulk-result-grid').style.display = 'none';
+            document.getElementById('g2bulk-modal-overlay').classList.add('show');
         }
-        window.toggleG2BulkSettings = toggleG2BulkSettings;
+        window.openG2BulkModal = openG2BulkModal;
+
+        function closeG2BulkModal() {
+            document.getElementById('g2bulk-modal-overlay').classList.remove('show');
+        }
+        window.closeG2BulkModal = closeG2BulkModal;
 
         function listenG2Bulk() {
             if (g2bulkListenerAttached) return;
@@ -1501,6 +1518,7 @@
         async function verifyG2BulkKey() {
             const apiKey = document.getElementById('g2bulk-api-key').value.trim();
             const statusEl = document.getElementById('g2bulk-status');
+            const gridEl = document.getElementById('g2bulk-result-grid');
             if (!apiKey) {
                 window.showToast('Enter a key first.', 'fail');
                 return;
@@ -1510,6 +1528,7 @@
             btn.disabled = true;
             btn.innerText = 'Checking...';
             statusEl.style.display = 'block';
+            gridEl.style.display = 'none';
             statusEl.innerText = 'Checking key...';
 
             try {
@@ -1518,14 +1537,24 @@
                 });
                 const data = await res.json();
                 if (res.ok && data && data.success !== false) {
-                    statusEl.innerText = 'Key valid ✓ ' + JSON.stringify(data);
+                    statusEl.innerText = 'Key valid ✓';
+                    statusEl.style.color = '#1877F2';
+                    gridEl.className = 'details-grid';
+                    gridEl.innerHTML = `
+                        <div class="details-grid-item"><span>Balance</span><b>${data.balance ?? '-'}</b></div>
+                        <div class="details-grid-item"><span>Name</span><b>${data.first_name || '-'}</b></div>
+                        ${data.user_id ? `<div class="details-grid-item full" style="grid-column:1/-1;"><span>User ID</span><b>${data.user_id}</b></div>` : ''}
+                    `;
+                    gridEl.style.display = 'grid';
                     window.showToast('G2Bulk key verified!', 'success');
                 } else {
-                    statusEl.innerText = 'Key check failed: ' + JSON.stringify(data);
+                    statusEl.style.color = '#C0392B';
+                    statusEl.innerText = 'Key check failed: ' + (data.message || data.error || JSON.stringify(data));
                     window.showToast('Key check failed.', 'fail');
                 }
             } catch (error) {
                 console.error("G2Bulk verify error:", error);
+                statusEl.style.color = '#C0392B';
                 statusEl.innerText = 'Could not reach G2Bulk - likely blocked by CORS. See the chat for what this means.';
                 window.showToast('Could not verify key.', 'fail');
             } finally {
