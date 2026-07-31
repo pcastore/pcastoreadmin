@@ -259,6 +259,26 @@
                 </div>
                 <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" onclick="openG2BulkModal()">Settings</button>
             </div>
+
+            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-size:15px;font-weight:700;display:block;">G2Bulk Wallet Balance</span>
+                    <span style="font-size:20px;font-weight:700;color:#1877F2;" id="g2bulk-balance-display">—</span>
+                </div>
+                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" id="g2bulk-balance-refresh-btn" onclick="refreshG2BulkBalance()">Refresh</button>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleG2BulkTransactions()">
+                    <span style="font-size:15px;font-weight:700;">G2Bulk Transactions</span>
+                    <svg class="ui-icon" id="g2bulk-tx-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="g2bulk-tx-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Every charge and top-up on your G2Bulk wallet, straight from their ledger — use this to reconcile against your own sales.</p>
+                    <button class="btn btn-outline" id="g2bulk-tx-refresh-btn" onclick="loadG2BulkTransactions()" style="margin-bottom:10px;">Load / Refresh</button>
+                    <div id="g2bulk-tx-list"></div>
+                </div>
+            </div>
         </div>
 
         <!-- GAMES PAGE (Live Firestore Data) -->
@@ -356,9 +376,18 @@
                 <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
                 <p id="banner-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
 
+                <label>G2Bulk Game (optional — enables auto-fulfillment)</label>
+                <select id="edit-game-g2bulk-code" style="width:100%;padding:9px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;background:#fff;" onchange="onG2BulkGameChange()">
+                    <option value="">-- Not linked (manual fulfillment) --</option>
+                </select>
+                <p id="g2bulk-import-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;"></p>
+
                 <label>Top-up Packages</label>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-                <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
+                    <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
@@ -420,6 +449,10 @@
                 <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" autocomplete="off">
                 <p id="g2bulk-status" style="font-size:12px;color:#65676B;display:none;margin-top:4px;"></p>
                 <div id="g2bulk-result-grid" style="display:none;"></div>
+
+                <label>USD → MMK Rate</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">G2Bulk prices are in USD. This rate is used to pre-fill MMK prices when you tap "Import from G2Bulk" — you can still edit each price by hand afterward.</p>
+                <input type="number" id="g2bulk-usd-rate" placeholder="e.g. 4500" step="1">
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
@@ -473,6 +506,7 @@
             document.getElementById(`btn-${pageId}`).classList.add('active');
             window.scrollTo(0,0);
             if (pageId === 'dashboard' && window.loadDashboardStats) window.loadDashboardStats();
+            if (pageId === 'dashboard' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
         }
 
         function showToast(message, type = 'success') {
@@ -636,11 +670,15 @@
                 // Processing orders are resolved into Success or Fail; Success/Fail
                 // orders are done and just show their final status.
                 let actionButtons;
-                if (data.status === 'Processing') {
+                if (data.status === 'Processing' && data.g2bulkOrderId) {
+                    actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})">Check G2Bulk Status (${data.g2bulkStatus || 'PENDING'})</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else if (data.status === 'Processing') {
                     actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Pending') {
-                    actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">Start Processing</button>
+                    const startLabel = (data.g2bulkGameCode && data.g2bulkCatalogueName) ? 'Auto-Fulfill via G2Bulk' : 'Start Processing';
+                    actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">${startLabel}</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else {
                     const doneLabel = data.status === 'Success' ? 'Order Completed' : 'Order Failed';
@@ -682,6 +720,13 @@
         }
 
         async function startProcessing(orderId, btnElement) {
+            const order = ORDERS[orderId];
+            // Orders placed against a G2Bulk-linked package carry these two fields
+            // (see submitOrder in store.html) - route those through auto-fulfillment.
+            if (order && order.g2bulkGameCode && order.g2bulkCatalogueName) {
+                return placeG2BulkOrder(orderId, order, btnElement);
+            }
+
             btnElement.innerText = "Updating...";
             btnElement.disabled = true;
 
@@ -694,6 +739,109 @@
                 btnElement.innerText = "Start Processing";
                 btnElement.disabled = false;
             }
+        }
+
+        // ---------- G2Bulk auto-fulfillment ----------
+
+        // Places the top-up order with G2Bulk, moves the local order to Processing,
+        // and briefly auto-polls for completion (G2Bulk's typical completion time is
+        // 5-10s). If it's not done by then, the order stays in Processing with its
+        // g2bulkOrderId saved - the "Check Status" button lets the admin re-check
+        // any time (a browser tab left open can't be relied on for long background
+        // polling on a phone).
+        async function placeG2BulkOrder(orderId, order, btnElement) {
+            if (!G2BULK_SETTINGS.apiKey) {
+                window.showToast('Add your G2Bulk API key first (Dashboard → G2Bulk API Key).', 'fail');
+                return;
+            }
+            btnElement.innerText = "Placing order...";
+            btnElement.disabled = true;
+
+            // Reuse the same idempotency key on a retry (order already carries one
+            // from a prior failed attempt) so G2Bulk can't charge twice for it.
+            const idempotencyKey = order.g2bulkIdempotencyKey || crypto.randomUUID();
+            if (!order.g2bulkIdempotencyKey) {
+                try {
+                    await updateDoc(doc(db, "orders", orderId), { g2bulkIdempotencyKey: idempotencyKey });
+                } catch (error) {
+                    console.error("Save idempotency key error:", error);
+                }
+            }
+
+            try {
+                const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(order.g2bulkGameCode)}/order`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'X-Idempotency-Key': idempotencyKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        catalogue_name: order.g2bulkCatalogueName,
+                        player_id: order.playerId,
+                        server_id: order.serverId || undefined,
+                        remark: `PCA Store order ${orderId}`
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || data.success === false) {
+                    throw new Error(data.message || 'G2Bulk rejected the order');
+                }
+
+                const g2bulkOrderId = data.order?.order_id;
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "Processing",
+                    g2bulkOrderId: g2bulkOrderId || null,
+                    g2bulkStatus: data.order?.status || 'PENDING'
+                });
+                window.showToast('Order placed with G2Bulk — checking for completion...', 'success');
+
+                if (g2bulkOrderId) {
+                    pollG2BulkOrder(orderId, g2bulkOrderId, 5); // ~5 tries, 4s apart = 20s
+                }
+            } catch (error) {
+                console.error("G2Bulk place order error:", error);
+                window.showToast('G2Bulk order failed: ' + error.message, 'fail');
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+            }
+        }
+
+        // Checks G2Bulk's order status once and applies it to the local order doc.
+        async function checkG2BulkOrderStatus(orderId, g2bulkOrderId) {
+            if (!G2BULK_SETTINGS.apiKey) {
+                window.showToast('Add your G2Bulk API key first.', 'fail');
+                return;
+            }
+            try {
+                const res = await fetch('https://api.g2bulk.com/v1/games/order/status', {
+                    method: 'POST',
+                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: g2bulkOrderId })
+                });
+                const data = await res.json();
+                const status = (data.order?.status || data.status || '').toUpperCase();
+
+                if (status === 'COMPLETED') {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), g2bulkStatus: status });
+                    window.showToast('G2Bulk order completed ✓', 'success');
+                } else if (status === 'FAILED' || status === 'REFUNDED') {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Fail", g2bulkStatus: status });
+                    window.showToast('G2Bulk order failed/refunded.', 'fail');
+                } else {
+                    await updateDoc(doc(db, "orders", orderId), { g2bulkStatus: status || 'PROCESSING' });
+                    window.showToast('Still processing on G2Bulk (' + (status || 'PROCESSING') + ')...');
+                }
+                return status;
+            } catch (error) {
+                console.error("G2Bulk status check error:", error);
+                window.showToast('Could not reach G2Bulk to check status.', 'fail');
+            }
+        }
+        window.checkG2BulkOrderStatus = checkG2BulkOrderStatus;
+
+        async function pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft) {
+            if (triesLeft <= 0) return;
+            await new Promise(r => setTimeout(r, 4000));
+            const status = await checkG2BulkOrderStatus(orderId, g2bulkOrderId);
+            if (status === 'COMPLETED' || status === 'FAILED' || status === 'REFUNDED') return;
+            pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft - 1);
         }
 
         async function markSuccess(orderId, btnElement) {
@@ -865,15 +1013,18 @@
             reader.readAsDataURL(file);
         }
 
-        function addPackageRow(amount = '', price = '') {
+        function addPackageRow(amount = '', price = '', g2bulkName = '') {
             const list = document.getElementById('edit-packages-list');
             const row = document.createElement('div');
             row.className = 'package-row';
-            row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+            row.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:8px;border:1px solid #E4E6EB;border-radius:8px;';
             row.innerHTML = `
-                <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
-                <input type="number" class="pkg-price" placeholder="Price (MMK)" value="${price}" style="width:100px;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
-                <div onclick="this.parentElement.remove()" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 8px;">&times;</div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                    <input type="number" class="pkg-price" placeholder="Price (MMK)" value="${price}" style="width:100px;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                    <div onclick="this.closest('.package-row').remove()" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 8px;">&times;</div>
+                </div>
+                <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
             `;
             list.appendChild(row);
         }
@@ -919,11 +1070,13 @@
                     bannerChangeBadge.style.display = 'none';
                 }
 
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.price));
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.price, p.g2bulk || ''));
+                document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 deleteBtn.style.display = 'block';
             } else {
                 document.getElementById('game-editor-title').innerText = 'Add New Game';
                 document.getElementById('edit-game-name').value = '';
+                document.getElementById('edit-game-g2bulk-code').value = '';
                 preview.src = '';
                 preview.style.display = 'none';
                 updateBox.classList.remove('has-image');
@@ -937,6 +1090,8 @@
                 addPackageRow();
                 deleteBtn.style.display = 'none';
             }
+            populateG2BulkGamesDropdown();
+            onG2BulkGameChange();
             document.getElementById('game-editor-modal-overlay').classList.add('show');
         }
 
@@ -988,9 +1143,12 @@
             const name = document.getElementById('edit-game-name').value.trim();
             if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
 
+            const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
+
             const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
                 amount: row.querySelector('.pkg-amount').value.trim(),
-                price: Number(row.querySelector('.pkg-price').value) || 0
+                price: Number(row.querySelector('.pkg-price').value) || 0,
+                g2bulk: row.querySelector('.pkg-g2bulk').value.trim()
             })).filter(p => p.amount && p.price > 0);
 
             if (packages.length === 0) { window.showToast('Add at least one valid package', 'fail'); return; }
@@ -1020,7 +1178,7 @@
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
-                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages };
+                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '' };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -1465,6 +1623,11 @@
 
         // ---------- G2Bulk API Key (stored in Firestore, not hardcoded - see saveG2BulkKey) ----------
         let g2bulkListenerAttached = false;
+        // Module-wide cache of the current key/rate so order auto-fulfillment
+        // doesn't need to re-read Firestore on every click.
+        let G2BULK_SETTINGS = { apiKey: '', usdRate: 4500 };
+        // Cache of GET /v1/games so the game editor dropdown doesn't re-fetch every open.
+        let G2BULK_GAMES_LIST = null;
 
         function openG2BulkModal() {
             document.getElementById('g2bulk-status').style.display = 'none';
@@ -1484,6 +1647,9 @@
             onSnapshot(doc(db, "settings", "g2bulk"), (docSnap) => {
                 const data = docSnap.exists() ? docSnap.data() : {};
                 document.getElementById('g2bulk-api-key').value = data.apiKey || '';
+                document.getElementById('g2bulk-usd-rate').value = data.usdRate || 4500;
+                G2BULK_SETTINGS = { apiKey: data.apiKey || '', usdRate: Number(data.usdRate) || 4500 };
+                if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             }, (error) => {
                 console.error("G2Bulk settings listener error:", error);
             });
@@ -1491,13 +1657,14 @@
 
         async function saveG2BulkKey() {
             const apiKey = document.getElementById('g2bulk-api-key').value.trim();
+            const usdRate = Number(document.getElementById('g2bulk-usd-rate').value) || 4500;
             const btn = document.getElementById('save-g2bulk-btn');
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Saving...';
 
             try {
-                await setDoc(doc(db, "settings", "g2bulk"), { apiKey }, { merge: true });
+                await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate }, { merge: true });
                 window.showToast('G2Bulk key saved!', 'success');
             } catch (error) {
                 console.error("Save G2Bulk key error:", error);
@@ -1508,6 +1675,177 @@
             }
         }
         window.saveG2BulkKey = saveG2BulkKey;
+
+        // ---------- G2Bulk wallet balance (SMM panel style: key in body, action=balance) ----------
+        // Deliberately uses the SMM panel endpoint (POST /api/v2, key+action in body)
+        // rather than the main API's /v1/getMe, per how this was set up.
+        async function refreshG2BulkBalance() {
+            const displayEl = document.getElementById('g2bulk-balance-display');
+            const btn = document.getElementById('g2bulk-balance-refresh-btn');
+            if (!G2BULK_SETTINGS.apiKey) {
+                displayEl.innerText = 'No key set';
+                displayEl.style.color = '#9C9EA1';
+                return;
+            }
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = '...';
+            displayEl.innerText = 'Loading...';
+            displayEl.style.color = '#9C9EA1';
+
+            try {
+                const res = await fetch('https://api.g2bulk.com/api/v2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: G2BULK_SETTINGS.apiKey, action: 'balance' })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                displayEl.innerText = `${Number(data.balance).toFixed(2)} ${data.currency || 'USD'}`;
+                displayEl.style.color = '#1877F2';
+            } catch (error) {
+                console.error("G2Bulk balance error:", error);
+                displayEl.innerText = 'Error: ' + error.message;
+                displayEl.style.color = '#C0392B';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.refreshG2BulkBalance = refreshG2BulkBalance;
+
+        // ---------- G2Bulk transactions (reconciliation) ----------
+        let g2bulkTxLoaded = false;
+
+        function toggleG2BulkTransactions() {
+            const body = document.getElementById('g2bulk-tx-body');
+            const chevron = document.getElementById('g2bulk-tx-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            if (!isOpen && !g2bulkTxLoaded) loadG2BulkTransactions();
+        }
+        window.toggleG2BulkTransactions = toggleG2BulkTransactions;
+
+        async function loadG2BulkTransactions() {
+            const listEl = document.getElementById('g2bulk-tx-list');
+            const btn = document.getElementById('g2bulk-tx-refresh-btn');
+            if (!G2BULK_SETTINGS.apiKey) {
+                listEl.innerHTML = '<p class="empty-msg">Add your G2Bulk API key first.</p>';
+                return;
+            }
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Loading...';
+            listEl.innerHTML = '<p class="empty-msg">Loading...</p>';
+
+            try {
+                const res = await fetch('https://api.g2bulk.com/v1/transactions?page=1&limit=20', {
+                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey }
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Failed to load transactions');
+
+                g2bulkTxLoaded = true;
+                const rows = data.data || [];
+                if (rows.length === 0) {
+                    listEl.innerHTML = '<p class="empty-msg">No transactions yet.</p>';
+                    return;
+                }
+                listEl.innerHTML = rows.map(t => {
+                    const isCharge = t.transaction_type === 'charge_balance';
+                    const dateStr = t.created_at ? new Date(t.created_at).toLocaleString() : '';
+                    return `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0F2F5;">
+                            <div>
+                                <p style="font-size:13px;font-weight:600;color:#050505;">${t.description || (isCharge ? 'Charge' : 'Balance added')}</p>
+                                <p style="font-size:11px;color:#9C9EA1;">${dateStr} &middot; balance after: ${t.balance_after}</p>
+                            </div>
+                            <span style="font-size:14px;font-weight:700;color:${isCharge ? '#C0392B' : '#28a745'};">${isCharge ? '-' : '+'}${t.amount}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error("G2Bulk transactions error:", error);
+                listEl.innerHTML = `<p class="empty-msg" style="color:red;">${error.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.loadG2BulkTransactions = loadG2BulkTransactions;
+
+        // ---------- G2Bulk game catalogue import ----------
+
+        async function fetchG2BulkGamesList() {
+            if (G2BULK_GAMES_LIST) return G2BULK_GAMES_LIST;
+            const res = await fetch('https://api.g2bulk.com/v1/games');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Failed to load G2Bulk games list');
+            G2BULK_GAMES_LIST = data.games || [];
+            return G2BULK_GAMES_LIST;
+        }
+
+        async function populateG2BulkGamesDropdown() {
+            const select = document.getElementById('edit-game-g2bulk-code');
+            const currentValue = select.value;
+            try {
+                const games = await fetchG2BulkGamesList();
+                select.innerHTML = '<option value="">-- Not linked (manual fulfillment) --</option>' +
+                    games.map(g => `<option value="${g.code}">${g.name}</option>`).join('');
+                select.value = currentValue;
+            } catch (error) {
+                console.error("Load G2Bulk games list error:", error);
+                // Leave the dropdown as-is (just the default option) - linking is optional,
+                // so a failed fetch here shouldn't block editing the game otherwise.
+            }
+        }
+        window.populateG2BulkGamesDropdown = populateG2BulkGamesDropdown;
+
+        function onG2BulkGameChange() {
+            const code = document.getElementById('edit-game-g2bulk-code').value;
+            document.getElementById('g2bulk-import-btn').style.display = code ? 'block' : 'none';
+        }
+        window.onG2BulkGameChange = onG2BulkGameChange;
+
+        // Fetches the live G2Bulk catalogue for the selected game and pre-fills
+        // the packages list with its denominations, converted to MMK using the
+        // saved USD rate. Admin can still hand-edit any price afterward.
+        async function importG2BulkCatalogue() {
+            const code = document.getElementById('edit-game-g2bulk-code').value;
+            if (!code) return;
+            const statusEl = document.getElementById('g2bulk-import-status');
+            const btn = document.getElementById('g2bulk-import-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Importing...';
+            statusEl.innerText = '';
+
+            try {
+                const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(code)}/catalogue`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Import failed');
+
+                const rate = G2BULK_SETTINGS.usdRate || 4500;
+                document.getElementById('edit-packages-list').innerHTML = '';
+                (data.catalogues || []).forEach(c => {
+                    addPackageRow(c.name, Math.round(c.amount * rate), c.name);
+                });
+                statusEl.style.color = '#1877F2';
+                statusEl.innerText = `Imported ${(data.catalogues || []).length} packages ✓ — review prices before saving.`;
+                window.showToast('Catalogue imported ✓', 'success');
+            } catch (error) {
+                console.error("Import G2Bulk catalogue error:", error);
+                statusEl.style.color = '#C0392B';
+                statusEl.innerText = 'Import failed: ' + error.message;
+                window.showToast('Failed to import catalogue.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.importG2BulkCatalogue = importG2BulkCatalogue;
 
         // Calls G2Bulk's /v1/getMe directly from the browser to sanity-check the key.
         // Note: this may fail with a CORS/network error if G2Bulk doesn't allow
