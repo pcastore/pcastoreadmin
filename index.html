@@ -251,6 +251,23 @@
                     <button class="btn btn-primary" id="save-logo-btn" style="margin-top:10px;" onclick="saveLogo()">Save Logo</button>
                 </div>
             </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleG2BulkSettings()">
+                    <span style="font-size:15px;font-weight:700;">G2Bulk API Key</span>
+                    <svg class="ui-icon" id="g2bulk-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="g2bulk-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Used to auto-fulfill top-ups via G2Bulk. This key can spend your G2Bulk wallet balance — keep it private, it is not shown anywhere in the Store app.</p>
+                    <label style="font-size:13px;font-weight:600;color:#65676B;">API Key</label>
+                    <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;" autocomplete="off">
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
+                        <button class="btn btn-primary" id="save-g2bulk-btn" onclick="saveG2BulkKey()">Save</button>
+                    </div>
+                    <p id="g2bulk-status" style="font-size:12px;color:#65676B;display:none;margin-top:8px;"></p>
+                </div>
+            </div>
         </div>
 
         <!-- GAMES PAGE (Live Firestore Data) -->
@@ -1432,6 +1449,92 @@
         }
         window.saveLogo = saveLogo;
 
+        // ---------- G2Bulk API Key (stored in Firestore, not hardcoded - see saveG2BulkKey) ----------
+        let g2bulkListenerAttached = false;
+
+        function toggleG2BulkSettings() {
+            const body = document.getElementById('g2bulk-body');
+            const chevron = document.getElementById('g2bulk-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleG2BulkSettings = toggleG2BulkSettings;
+
+        function listenG2Bulk() {
+            if (g2bulkListenerAttached) return;
+            g2bulkListenerAttached = true;
+            onSnapshot(doc(db, "settings", "g2bulk"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('g2bulk-api-key').value = data.apiKey || '';
+            }, (error) => {
+                console.error("G2Bulk settings listener error:", error);
+            });
+        }
+
+        async function saveG2BulkKey() {
+            const apiKey = document.getElementById('g2bulk-api-key').value.trim();
+            const btn = document.getElementById('save-g2bulk-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                await setDoc(doc(db, "settings", "g2bulk"), { apiKey }, { merge: true });
+                window.showToast('G2Bulk key saved!', 'success');
+            } catch (error) {
+                console.error("Save G2Bulk key error:", error);
+                window.showToast('Failed to save G2Bulk key.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveG2BulkKey = saveG2BulkKey;
+
+        // Calls G2Bulk's /v1/getMe directly from the browser to sanity-check the key.
+        // Note: this may fail with a CORS/network error if G2Bulk doesn't allow
+        // browser-origin requests to this endpoint (common for secret-key APIs).
+        // If that happens, verification (and later, placing orders) will need to
+        // go through a small server-side proxy instead of calling G2Bulk directly
+        // from this page.
+        async function verifyG2BulkKey() {
+            const apiKey = document.getElementById('g2bulk-api-key').value.trim();
+            const statusEl = document.getElementById('g2bulk-status');
+            if (!apiKey) {
+                window.showToast('Enter a key first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('verify-g2bulk-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.display = 'block';
+            statusEl.innerText = 'Checking key...';
+
+            try {
+                const res = await fetch('https://api.g2bulk.com/v1/getMe', {
+                    headers: { 'X-API-Key': apiKey }
+                });
+                const data = await res.json();
+                if (res.ok && data && data.success !== false) {
+                    statusEl.innerText = 'Key valid ✓ ' + JSON.stringify(data);
+                    window.showToast('G2Bulk key verified!', 'success');
+                } else {
+                    statusEl.innerText = 'Key check failed: ' + JSON.stringify(data);
+                    window.showToast('Key check failed.', 'fail');
+                }
+            } catch (error) {
+                console.error("G2Bulk verify error:", error);
+                statusEl.innerText = 'Could not reach G2Bulk - likely blocked by CORS. See the chat for what this means.';
+                window.showToast('Could not verify key.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.verifyG2BulkKey = verifyG2BulkKey;
+
         function openPaymentEditor(paymentId = null) {
             editingPaymentImageFile = null;
             document.getElementById('edit-payment-id').value = paymentId || '';
@@ -1581,6 +1684,7 @@
         listenPaymentMethods();
         listenSocialLinks();
         listenBranding();
+        listenG2Bulk();
         listenUsers();
     </script>
 </body>
