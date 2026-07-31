@@ -128,6 +128,22 @@
         .dialog-message { font-size: 14px; color: #65676B; line-height: 1.45; margin-bottom: 20px; white-space: pre-line; }
         .dialog-actions { display: flex; gap: 8px; }
         .dialog-actions .btn { flex: 1; }
+
+        /* Searchable combobox for picking a G2Bulk game (replaces the native <select>) */
+        .g2bulk-combo { position: relative; }
+        .g2bulk-combo-input-wrap { position: relative; }
+        .g2bulk-combo-input-wrap input { width: 100%; padding: 9px 34px 9px 12px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 13px; background: #fff; }
+        .g2bulk-combo-input-wrap input:focus { outline: none; border-color: #1877F2; }
+        .g2bulk-combo-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; pointer-events: none; transition: transform 0.15s ease; }
+        .g2bulk-combo.open .g2bulk-combo-chevron { transform: translateY(-50%) rotate(180deg); }
+        .g2bulk-combo-clear { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; cursor: pointer; display: none; }
+        .g2bulk-combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #E4E6EB; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); max-height: 240px; overflow-y: auto; z-index: 50; display: none; }
+        .g2bulk-combo.open .g2bulk-combo-list { display: block; }
+        .g2bulk-combo-option { padding: 10px 12px; font-size: 13px; color: #050505; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+        .g2bulk-combo-option:hover, .g2bulk-combo-option.active { background: #F0F6FF; }
+        .g2bulk-combo-option.muted { color: #9C9EA1; }
+        .g2bulk-combo-option.selected { color: #1877F2; font-weight: 700; }
+        .g2bulk-combo-empty { padding: 14px 12px; font-size: 12px; color: #9C9EA1; text-align: center; }
     </style>
 </head>
 <body>
@@ -377,9 +393,16 @@
                 <p id="banner-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
 
                 <label>G2Bulk Game (optional — enables auto-fulfillment)</label>
-                <select id="edit-game-g2bulk-code" style="width:100%;padding:9px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;background:#fff;" onchange="onG2BulkGameChange()">
-                    <option value="">-- Not linked (manual fulfillment) --</option>
-                </select>
+                <div class="g2bulk-combo" id="g2bulk-combo">
+                    <input type="hidden" id="edit-game-g2bulk-code" value="">
+                    <div class="g2bulk-combo-input-wrap">
+                        <input type="text" id="g2bulk-combo-search" placeholder="-- Not linked (manual fulfillment) --" autocomplete="off"
+                            onfocus="openG2BulkCombo()" oninput="filterG2BulkCombo()">
+                        <svg class="g2bulk-combo-clear" id="g2bulk-combo-clear" onclick="clearG2BulkCombo(event)" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <svg class="g2bulk-combo-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                    </div>
+                    <div class="g2bulk-combo-list" id="g2bulk-combo-list"></div>
+                </div>
                 <p id="g2bulk-import-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;"></p>
 
                 <label>Top-up Packages</label>
@@ -1788,20 +1811,98 @@
         }
 
         async function populateG2BulkGamesDropdown() {
-            const select = document.getElementById('edit-game-g2bulk-code');
-            const currentValue = select.value;
+            const hiddenInput = document.getElementById('edit-game-g2bulk-code');
+            const currentCode = hiddenInput.value;
             try {
                 const games = await fetchG2BulkGamesList();
-                select.innerHTML = '<option value="">-- Not linked (manual fulfillment) --</option>' +
-                    games.map(g => `<option value="${g.code}">${g.name}</option>`).join('');
-                select.value = currentValue;
+                renderG2BulkComboOptions(games);
+                // Reflect the currently-selected code (if any) in the visible search box
+                const match = games.find(g => g.code === currentCode);
+                document.getElementById('g2bulk-combo-search').value = match ? match.name : '';
+                document.getElementById('g2bulk-combo-clear').style.display = match ? 'block' : 'none';
             } catch (error) {
                 console.error("Load G2Bulk games list error:", error);
-                // Leave the dropdown as-is (just the default option) - linking is optional,
+                // Leave the combo as-is (just the "not linked" option) - linking is optional,
                 // so a failed fetch here shouldn't block editing the game otherwise.
             }
         }
         window.populateG2BulkGamesDropdown = populateG2BulkGamesDropdown;
+
+        // Escapes a string for safe insertion into HTML (used for G2Bulk game
+        // names, which are outside our control and could contain quotes/HTML).
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Renders the dropdown list of options inside the combobox, optionally
+        // filtered by a search term. Always keeps "Not linked" at the top.
+        function renderG2BulkComboOptions(games, filterText = '') {
+            const listEl = document.getElementById('g2bulk-combo-list');
+            const currentCode = document.getElementById('edit-game-g2bulk-code').value;
+            const term = filterText.trim().toLowerCase();
+            const filtered = term ? games.filter(g => g.name.toLowerCase().includes(term)) : games;
+
+            let html = '';
+            if (!term) {
+                html += `<div class="g2bulk-combo-option muted${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">-- Not linked (manual fulfillment) --</div>`;
+            }
+            if (filtered.length === 0) {
+                html += `<div class="g2bulk-combo-empty">No games match "${escapeHtml(filterText)}"</div>`;
+            } else {
+                html += filtered.map(g => `<div class="g2bulk-combo-option${currentCode === g.code ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">${escapeHtml(g.name)}</div>`).join('');
+            }
+            listEl.innerHTML = html;
+        }
+
+        // Event delegation for option clicks - attached once to the (stable)
+        // list container, since its inner HTML gets replaced on every render.
+        document.getElementById('g2bulk-combo-list').addEventListener('click', (e) => {
+            const opt = e.target.closest('.g2bulk-combo-option');
+            if (!opt) return;
+            selectG2BulkGame(opt.dataset.code || '', opt.dataset.name || '');
+        });
+
+        function openG2BulkCombo() {
+            document.getElementById('g2bulk-combo').classList.add('open');
+            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, document.getElementById('g2bulk-combo-search').value)).catch(() => {});
+        }
+        window.openG2BulkCombo = openG2BulkCombo;
+
+        function closeG2BulkCombo() {
+            document.getElementById('g2bulk-combo').classList.remove('open');
+        }
+        window.closeG2BulkCombo = closeG2BulkCombo;
+
+        function filterG2BulkCombo() {
+            const term = document.getElementById('g2bulk-combo-search').value;
+            document.getElementById('g2bulk-combo-clear').style.display = term ? 'block' : 'none';
+            document.getElementById('g2bulk-combo').classList.add('open');
+            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, term)).catch(() => {});
+        }
+        window.filterG2BulkCombo = filterG2BulkCombo;
+
+        function selectG2BulkGame(code, name) {
+            document.getElementById('edit-game-g2bulk-code').value = code;
+            document.getElementById('g2bulk-combo-search').value = name;
+            document.getElementById('g2bulk-combo-clear').style.display = code ? 'block' : 'none';
+            closeG2BulkCombo();
+            onG2BulkGameChange();
+        }
+        window.selectG2BulkGame = selectG2BulkGame;
+
+        function clearG2BulkCombo(event) {
+            event.stopPropagation();
+            selectG2BulkGame('', '');
+        }
+        window.clearG2BulkCombo = clearG2BulkCombo;
+
+        // Close the combo dropdown when tapping/clicking anywhere outside it
+        document.addEventListener('click', (e) => {
+            const combo = document.getElementById('g2bulk-combo');
+            if (combo && !combo.contains(e.target)) closeG2BulkCombo();
+        });
 
         function onG2BulkGameChange() {
             const code = document.getElementById('edit-game-g2bulk-code').value;
