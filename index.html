@@ -305,6 +305,7 @@
         <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></symbol>
         <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
         <symbol id="icon-trending-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></symbol>
+        <symbol id="icon-key" viewBox="0 0 24 24"><path d="M21 2l-9.6 9.6"></path><circle cx="7.5" cy="16.5" r="5.5"></circle><path d="M15.5 7.5l2 2M18 5l2 2"></path></symbol>
     </svg>
 
     <div id="toast"><svg class="ui-icon" id="toast-icon" style="color: #4ADE80; width:18px;"><use id="toast-icon-use" href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
@@ -341,6 +342,9 @@
         </div>
         <div class="nav-item" id="btn-g2bulk" onclick="showPage('g2bulk')">
             <svg class="ui-icon"><use href="#icon-zap"></use></svg> G2Bulk
+        </div>
+        <div class="nav-item" id="btn-jcplays" onclick="showPage('jcplays')">
+            <svg class="ui-icon"><use href="#icon-key"></use></svg> JCPlays
         </div>
         <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
             <svg class="ui-icon"><use href="#icon-list"></use></svg> Games
@@ -443,6 +447,33 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- JCPLAYS PAGE (SmileCoin-compatible reseller — same pattern as G2Bulk above) -->
+        <div id="jcplays" class="page-section">
+            <h2 class="title-header">JCPlays</h2>
+
+            <div class="admin-card" style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-size:15px;font-weight:700;display:block;">JCPlays API Credentials</span>
+                    <span style="font-size:12px;color:#65676B;">Used to auto-fulfill PUBG Mobile UC / Honor of Kings top-ups via jcplays.com</span>
+                </div>
+                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" onclick="openJCPlaysModal()">Settings</button>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-size:15px;font-weight:700;display:block;">JCPlays Balance</span>
+                    <span style="font-size:20px;font-weight:700;color:#1877F2;" id="jcplays-balance-display">—</span>
+                </div>
+                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" id="jcplays-balance-refresh-btn" onclick="refreshJCPlaysBalance()">Refresh</button>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <span style="font-size:13px;color:#65676B;background:#F0F2F5;padding:8px 10px;border-radius:8px;display:block;">
+                    Games linked with a JCPlays Product Code (in the game editor) and packages linked with a JCPlays Product ID will auto-fulfill from the Orders page, the same way G2Bulk-linked ones do.
+                </span>
+            </div>
         </div>
 
         <!-- G2BULK PAGE (own sidebar tab, kept separate from Dashboard) -->
@@ -637,6 +668,14 @@
                 </div>
                 <p id="g2bulk-import-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;"></p>
 
+                <label>JCPlays Product Code (optional — enables auto-fulfillment via JCPlays)</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">e.g. <code>mobilelegends</code>, <code>pubgmobilecoin</code>, <code>pubgmobileone</code> — from JCPlays' Get Products list.</p>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="edit-game-jcplays-code" placeholder="-- Not linked (manual fulfillment) --" style="flex:1;">
+                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="loadJCPlaysDenominations()">Load IDs</button>
+                </div>
+                <p id="jcplays-denom-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;white-space:pre-wrap;"></p>
+
                 <label>Top-up Packages</label>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
                 <div style="display:flex;gap:8px;">
@@ -685,6 +724,38 @@
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
                 <button class="btn btn-primary" id="save-payment-btn" onclick="savePaymentMethod()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JCPlays Settings Modal: SmileCoin-compatible credentials (Base URL, UID, Email, M_KEY) -->
+    <div class="modal-overlay" id="jcplays-modal-overlay" onclick="if(event.target===this) closeJCPlaysModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>JCPlays API Credentials</h3>
+                <div class="modal-close" onclick="closeJCPlaysModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via jcplays.com. These credentials can spend your jcplays balance — keep them private, they are not shown anywhere in the Store app.</p>
+
+                <label>Base URL</label>
+                <input type="text" id="jcplays-base-url" placeholder="https://jcplays.com/smilecoin/api">
+
+                <label>UID</label>
+                <input type="text" id="jcplays-uid" placeholder="e.g. 5b4a2416-5dce-48bf-8a46-138b2e8a020a" autocomplete="off">
+
+                <label>Email</label>
+                <input type="text" id="jcplays-email" placeholder="your account email" autocomplete="off">
+
+                <label>M_KEY (API Key)</label>
+                <input type="password" id="jcplays-mkey" placeholder="your_m_key_here" autocomplete="off">
+                <p id="jcplays-status" style="font-size:12px;color:#65676B;display:none;margin-top:4px;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="verify-jcplays-btn" onclick="verifyJCPlaysKey()">Verify Key</button>
+                <button class="btn btn-primary" id="save-jcplays-btn" onclick="saveJCPlaysKey()">Save</button>
             </div>
         </div>
     </div>
@@ -1000,7 +1071,9 @@
                     actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Pending') {
-                    const startLabel = (data.g2bulkGameCode && data.g2bulkCatalogueName) ? 'Auto-Fulfill via G2Bulk' : 'Start Processing';
+                    let startLabel = 'Start Processing';
+                    if (data.g2bulkGameCode && data.g2bulkCatalogueName) startLabel = 'Auto-Fulfill via G2Bulk';
+                    else if (data.jcplaysProductId) startLabel = 'Auto-Fulfill via JCPlays';
                     actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">${startLabel}</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else {
@@ -1048,6 +1121,11 @@
             // (see submitOrder in store.html) - route those through auto-fulfillment.
             if (order && order.g2bulkGameCode && order.g2bulkCatalogueName) {
                 return placeG2BulkOrder(orderId, order, btnElement);
+            }
+            // Orders placed against a JCPlays-linked package carry jcplaysProductId -
+            // route those through JCPlays auto-fulfillment (see note on placeJCPlaysOrder).
+            if (order && order.jcplaysProductId) {
+                return placeJCPlaysOrder(orderId, order, btnElement);
             }
 
             btnElement.innerText = "Updating...";
@@ -1340,7 +1418,7 @@
             reader.readAsDataURL(file);
         }
 
-        function addPackageRow(amount = '', price = '', g2bulkName = '') {
+        function addPackageRow(amount = '', price = '', g2bulkName = '', jcplaysProductId = '') {
             const list = document.getElementById('edit-packages-list');
             const row = document.createElement('div');
             row.className = 'package-row';
@@ -1356,6 +1434,7 @@
                         <div onclick="removePackageRow(this)" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 6px;flex-shrink:0;">&times;</div>
                     </div>
                     <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
+                    <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID (leave blank = manual order)" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
                 </div>
             `;
             list.appendChild(row);
@@ -1503,8 +1582,10 @@
                     bannerChangeBadge.style.display = 'none';
                 }
 
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.price, p.g2bulk || ''));
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.price, p.g2bulk || '', p.jcplays || ''));
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
+                document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
+                document.getElementById('jcplays-denom-status').innerText = '';
                 deleteBtn.style.display = 'block';
             } else {
                 document.getElementById('game-editor-title').innerText = 'Add New Game';
@@ -1512,6 +1593,8 @@
                 document.getElementById('edit-game-popular').checked = false;
                 document.getElementById('edit-game-serverid').checked = true;
                 document.getElementById('edit-game-g2bulk-code').value = '';
+                document.getElementById('edit-game-jcplays-code').value = '';
+                document.getElementById('jcplays-denom-status').innerText = '';
                 preview.src = '';
                 preview.style.display = 'none';
                 updateBox.classList.remove('has-image');
@@ -1579,13 +1662,15 @@
             if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
 
             const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
+            const jcplaysProduct = document.getElementById('edit-game-jcplays-code').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
             const serverIdRequired = document.getElementById('edit-game-serverid').checked;
 
             const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
                 amount: row.querySelector('.pkg-amount').value.trim(),
                 price: Number(row.querySelector('.pkg-price').value) || 0,
-                g2bulk: row.querySelector('.pkg-g2bulk').value.trim()
+                g2bulk: row.querySelector('.pkg-g2bulk').value.trim(),
+                jcplays: row.querySelector('.pkg-jcplays').value.trim()
             })).filter(p => p.amount && p.price > 0);
 
             if (packages.length === 0) { window.showToast('Add at least one valid package', 'fail'); return; }
@@ -1615,7 +1700,7 @@
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
-                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', popular, serverIdRequired };
+                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -2667,6 +2752,332 @@
         }
         window.verifyG2BulkKey = verifyG2BulkKey;
 
+        // ---------- JCPlays API Credentials (SmileCoin-compatible, stored in Firestore) ----------
+        // Same pattern as G2Bulk above, but jcplays.com identifies the reseller
+        // account with four fields (Base URL, UID, Email, M_KEY) instead of a
+        // single API key, and every request must be signed (see md5/jcplaysSign
+        // below) per jcplays.com's Authentication & Signing docs. Credential
+        // verification, balance, product lookup, and order placement are all
+        // wired up to the real endpoints.
+        let jcplaysListenerAttached = false;
+        let JCPLAYS_SETTINGS = { baseUrl: 'https://jcplays.com/smilecoin/api', uid: '', email: '', mKey: '' };
+
+        // ---------- MD5 (pure JS, no external dependency) ----------
+        // Small self-contained MD5 implementation, used only to replicate
+        // JCPlays' documented signature formula (sign = md5(md5(str))).
+        function md5(input) {
+            function rotl(x, c) { return (x << c) | (x >>> (32 - c)); }
+            const K = [];
+            for (let i = 0; i < 64; i++) K[i] = (Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296)) | 0;
+            const S = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+                       5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+                       4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+                       6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21];
+
+            const bytes = Array.from(new TextEncoder().encode(input));
+            const len = bytes.length;
+            const words = [];
+            for (let i = 0; i < len; i++) words[i >> 2] = (words[i >> 2] || 0) | (bytes[i] << ((i % 4) * 8));
+
+            const bitLen = len * 8;
+            words[len >> 2] = (words[len >> 2] || 0) | (0x80 << ((len % 4) * 8));
+            const wLen = (((len + 8) >> 6) + 1) * 16;
+            for (let i = 0; i < wLen; i++) if (words[i] === undefined) words[i] = 0;
+            words[wLen - 2] = bitLen >>> 0;
+            words[wLen - 1] = Math.floor(bitLen / 4294967296) >>> 0;
+
+            let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
+
+            for (let chunk = 0; chunk < wLen; chunk += 16) {
+                let A = a0, B = b0, C = c0, D = d0;
+                for (let i = 0; i < 64; i++) {
+                    let F, g;
+                    if (i < 16) { F = (B & C) | (~B & D); g = i; }
+                    else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+                    else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
+                    else { F = C ^ (B | ~D); g = (7 * i) % 16; }
+                    F = (F + A + K[i] + (words[chunk + g] | 0)) | 0;
+                    A = D; D = C; C = B;
+                    B = (B + rotl(F, S[i])) | 0;
+                }
+                a0 = (a0 + A) | 0; b0 = (b0 + B) | 0; c0 = (c0 + C) | 0; d0 = (d0 + D) | 0;
+            }
+
+            const toHex = (n) => [n & 0xff, (n >>> 8) & 0xff, (n >>> 16) & 0xff, (n >>> 24) & 0xff]
+                .map(b => b.toString(16).padStart(2, '0')).join('');
+            return toHex(a0) + toHex(b0) + toHex(c0) + toHex(d0);
+        }
+
+        // Builds the full signed parameter set for a JCPlays request, per their
+        // documented algorithm:
+        //   1. collect all params (uid, email, api=M_KEY, time, + endpoint-specific ones)
+        //   2. sort by key, build key1=value1&key2=value2&...
+        //   3. append '&' + raw M_KEY
+        //   4. sign = md5(md5(that string))
+        // `settings` defaults to the saved JCPLAYS_SETTINGS but can be overridden
+        // (e.g. by verifyJCPlaysKey, which checks the values currently in the
+        // form before they're saved).
+        function jcplaysBuildSignedParams(extraParams, settings) {
+            const s = settings || JCPLAYS_SETTINGS;
+            const params = Object.assign({
+                uid: s.uid,
+                email: s.email,
+                api: s.mKey,
+                time: Math.floor(Date.now() / 1000)
+            }, extraParams);
+
+            const sortedKeys = Object.keys(params).sort();
+            const queryStr = sortedKeys.map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join('&');
+            const sign = md5(md5(queryStr + '&' + s.mKey));
+            params.sign = sign;
+            return params;
+        }
+
+        // Low-level helper: signs + POSTs to a JCPlays endpoint and returns the
+        // parsed JSON body. Throws if credentials are missing or the response
+        // isn't valid JSON (e.g. an HTML error page).
+        async function jcplaysRequest(endpointPath, extraParams, settings) {
+            const s = settings || JCPLAYS_SETTINGS;
+            if (!s.uid || !s.email || !s.mKey) {
+                throw new Error('Add your JCPlays UID, Email and M_KEY first (Dashboard → JCPlays → Settings).');
+            }
+            const params = jcplaysBuildSignedParams(extraParams, s);
+            const body = new URLSearchParams(params).toString();
+            const res = await fetch(`${(s.baseUrl || 'https://jcplays.com/smilecoin/api').replace(/\/$/, '')}/${endpointPath}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            });
+            try {
+                return await res.json();
+            } catch (e) {
+                throw new Error(`JCPlays returned a non-JSON response (HTTP ${res.status}).`);
+            }
+        }
+
+        function openJCPlaysModal() {
+            document.getElementById('jcplays-status').style.display = 'none';
+            document.getElementById('jcplays-modal-overlay').classList.add('show');
+        }
+        window.openJCPlaysModal = openJCPlaysModal;
+
+        function closeJCPlaysModal() {
+            document.getElementById('jcplays-modal-overlay').classList.remove('show');
+        }
+        window.closeJCPlaysModal = closeJCPlaysModal;
+
+        function listenJCPlays() {
+            if (jcplaysListenerAttached) return;
+            jcplaysListenerAttached = true;
+            onSnapshot(doc(db, "settings", "jcplays"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('jcplays-base-url').value = data.baseUrl || 'https://jcplays.com/smilecoin/api';
+                document.getElementById('jcplays-uid').value = data.uid || '';
+                document.getElementById('jcplays-email').value = data.email || '';
+                document.getElementById('jcplays-mkey').value = data.mKey || '';
+                JCPLAYS_SETTINGS = {
+                    baseUrl: data.baseUrl || 'https://jcplays.com/smilecoin/api',
+                    uid: data.uid || '',
+                    email: data.email || '',
+                    mKey: data.mKey || ''
+                };
+                if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
+            }, (error) => {
+                console.error("JCPlays settings listener error:", error);
+            });
+        }
+
+        async function saveJCPlaysKey() {
+            const baseUrl = document.getElementById('jcplays-base-url').value.trim() || 'https://jcplays.com/smilecoin/api';
+            const uid = document.getElementById('jcplays-uid').value.trim();
+            const email = document.getElementById('jcplays-email').value.trim();
+            const mKey = document.getElementById('jcplays-mkey').value.trim();
+            const btn = document.getElementById('save-jcplays-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                await setDoc(doc(db, "settings", "jcplays"), { baseUrl, uid, email, mKey }, { merge: true });
+                window.showToast('JCPlays credentials saved!', 'success');
+            } catch (error) {
+                console.error("Save JCPlays credentials error:", error);
+                window.showToast('Failed to save JCPlays credentials.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveJCPlaysKey = saveJCPlaysKey;
+
+        // Verifies credentials with a real signed querypoints (balance) call —
+        // the lightest authenticated endpoint JCPlays offers — using whatever
+        // is currently typed in the form (not the possibly-stale saved
+        // JCPLAYS_SETTINGS), so an admin can check before hitting Save.
+        async function verifyJCPlaysKey() {
+            const baseUrl = document.getElementById('jcplays-base-url').value.trim() || 'https://jcplays.com/smilecoin/api';
+            const uid = document.getElementById('jcplays-uid').value.trim();
+            const email = document.getElementById('jcplays-email').value.trim();
+            const mKey = document.getElementById('jcplays-mkey').value.trim();
+            const statusEl = document.getElementById('jcplays-status');
+            const btn = document.getElementById('verify-jcplays-btn');
+
+            if (!uid || !email || !mKey) {
+                window.showToast('Fill in UID, Email and M_KEY first.', 'fail');
+                return;
+            }
+
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.display = 'block';
+            statusEl.style.color = '#65676B';
+            statusEl.innerText = 'Checking credentials against JCPlays...';
+
+            try {
+                const data = await jcplaysRequest('querypoints', {}, { baseUrl, uid, email, mKey });
+                if (data.status === 200) {
+                    statusEl.style.color = '#28a745';
+                    statusEl.innerText = `Connected ✓ — jcnew balance: ${data.smile_points}`;
+                    window.showToast('JCPlays credentials verified!', 'success');
+                } else {
+                    statusEl.style.color = '#C0392B';
+                    statusEl.innerText = `JCPlays rejected the request (status ${data.status}): ${data.message || 'unknown error'}`;
+                    window.showToast('JCPlays credentials rejected — check UID/Email/M_KEY.', 'fail');
+                }
+            } catch (error) {
+                console.error("JCPlays verify error:", error);
+                statusEl.style.color = '#C0392B';
+                statusEl.innerText = 'Could not reach JCPlays: ' + error.message;
+                window.showToast('Could not reach JCPlays.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.verifyJCPlaysKey = verifyJCPlaysKey;
+
+        // ---------- JCPlays balance ----------
+        async function refreshJCPlaysBalance() {
+            const displayEl = document.getElementById('jcplays-balance-display');
+            const btn = document.getElementById('jcplays-balance-refresh-btn');
+            if (!displayEl) return;
+            if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
+                displayEl.innerText = 'No credentials set';
+                displayEl.style.color = '#9C9EA1';
+                return;
+            }
+            const originalText = btn ? btn.innerText : '';
+            if (btn) { btn.disabled = true; btn.innerText = '...'; }
+            displayEl.innerText = 'Loading...';
+            displayEl.style.color = '#9C9EA1';
+
+            try {
+                const data = await jcplaysRequest('querypoints', {});
+                if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
+                displayEl.innerText = `${Number(data.smile_points).toLocaleString()} pts`;
+                displayEl.style.color = '#1877F2';
+            } catch (error) {
+                console.error("JCPlays balance error:", error);
+                displayEl.innerText = 'Error: ' + error.message;
+                displayEl.style.color = '#C0392B';
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = originalText; }
+            }
+        }
+        window.refreshJCPlaysBalance = refreshJCPlaysBalance;
+
+        // ---------- JCPlays denomination lookup (helper for the game editor) ----------
+        // Looks up the public product code currently typed into the game
+        // editor and lists its denominations (id + name + price) so the admin
+        // can copy the right "id" into each package row's JCPlays Product ID
+        // field, without needing to leave the app.
+        async function loadJCPlaysDenominations() {
+            const product = document.getElementById('edit-game-jcplays-code').value.trim();
+            const statusEl = document.getElementById('jcplays-denom-status');
+            if (!product) {
+                statusEl.innerText = 'Enter a JCPlays Product Code first (e.g. mobilelegends).';
+                return;
+            }
+            if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
+                statusEl.innerText = 'Add your JCPlays credentials first (Dashboard → JCPlays → Settings).';
+                return;
+            }
+            statusEl.innerText = 'Loading denominations...';
+            try {
+                const data = await jcplaysRequest('productlist', { product });
+                if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
+                const rows = (data.data && data.data.product) || [];
+                if (rows.length === 0) {
+                    statusEl.innerText = 'No denominations returned for this product code.';
+                    return;
+                }
+                statusEl.innerText = rows.map(r => `#${r.id}  ${r.spu}  ($${r.price})`).join('\n');
+            } catch (error) {
+                console.error("JCPlays productlist error:", error);
+                statusEl.innerText = 'Error: ' + error.message;
+            }
+        }
+        window.loadJCPlaysDenominations = loadJCPlaysDenominations;
+
+        // Places a top-up order with JCPlays. Called from startProcessing()
+        // whenever an order carries both a game-level jcplaysProduct code and
+        // a package-level jcplaysProductId (i.e. the game + package were
+        // linked to JCPlays in the game editor). JCPlays' createorder
+        // endpoint is synchronous — a 200 means the top-up is already done,
+        // there's no separate async status-check step like G2Bulk has.
+        async function placeJCPlaysOrder(orderId, order, btnElement) {
+            if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
+                window.showToast('Add your JCPlays credentials first (Dashboard → JCPlays → Settings).', 'fail');
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+                return;
+            }
+            if (!order.jcplaysProduct || !order.jcplaysProductId) {
+                window.showInfoDialog(
+                    'JCPlays Not Fully Linked',
+                    'This order is missing its JCPlays Product Code or Product ID. Open the game in the game editor, fill in "JCPlays Product Code" and the package\'s JCPlays Product ID, save, and have the customer reorder — or fulfill this one manually.'
+                );
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+                return;
+            }
+
+            btnElement.innerText = "Placing order...";
+            btnElement.disabled = true;
+
+            try {
+                const data = await jcplaysRequest('createorder', {
+                    product: order.jcplaysProduct,
+                    productid: order.jcplaysProductId,
+                    userid: order.playerId,
+                    ...(order.serverId ? { zoneid: order.serverId } : {})
+                });
+
+                if (data.status === 200) {
+                    await updateDoc(doc(db, "orders", orderId), {
+                        status: "Success",
+                        confirmedAt: serverTimestamp(),
+                        jcplaysOrderId: data.order_id || null
+                    });
+                    window.showToast('JCPlays order placed — top-up completed ✓', 'success');
+                } else {
+                    window.showInfoDialog(
+                        'JCPlays Order Failed',
+                        `JCPlays rejected the order (status ${data.status}): ${data.message || 'unknown error'}. The order stays Pending — fix the issue (e.g. balance, player ID) and try again, or fulfill manually.`
+                    );
+                    btnElement.innerText = "Start Processing";
+                    btnElement.disabled = false;
+                }
+            } catch (error) {
+                console.error("JCPlays place order error:", error);
+                window.showToast('JCPlays order failed: ' + error.message, 'fail');
+                btnElement.innerText = "Start Processing";
+                btnElement.disabled = false;
+            }
+        }
+        window.placeJCPlaysOrder = placeJCPlaysOrder;
+
         function openPaymentEditor(paymentId = null) {
             editingPaymentImageFile = null;
             document.getElementById('edit-payment-id').value = paymentId || '';
@@ -2822,6 +3233,7 @@
             listenSocialLinks();
             listenBranding();
             listenG2Bulk();
+            listenJCPlays();
             listenUsers();
             listenTierSettings();
         }
