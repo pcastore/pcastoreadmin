@@ -10,6 +10,28 @@
         body { background-color: #F0F2F5; color: #1C1E21; }
         .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         
+        /* Login gate — covers the whole admin panel until an authenticated
+           admin signs in. Nothing behind it loads/queries Firestore before that. */
+        #login-screen { position: fixed; inset: 0; background: #F0F2F5; z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        #login-screen.hidden { display: none; }
+        .login-box { background: #ffffff; width: 100%; max-width: 360px; border-radius: 16px; padding: 28px 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid #E4E6EB; }
+        .login-box .logo-icon { background: #1877F2; color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .login-box h2 { text-align: center; font-size: 19px; font-weight: 700; margin-bottom: 4px; }
+        .login-box p.sub { text-align: center; font-size: 13px; color: #65676B; margin-bottom: 20px; }
+        .login-box label { font-size: 13px; font-weight: 600; color: #65676B; display: block; margin-bottom: 6px; }
+        .login-box input { width: 100%; padding: 11px 12px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
+        .login-box input:focus { outline: none; border-color: #1877F2; }
+        .login-box button { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: #1877F2; color: #fff; cursor: pointer; }
+        .login-box button:disabled { opacity: 0.6; }
+        #login-error { color: #C0392B; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        .login-msg-error { color: #C0392B; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        .login-msg-info { font-size: 13px; color: #1C1E21; text-align: center; margin-bottom: 16px; line-height: 1.5; }
+        .login-msg-hint { font-size: 12px; color: #65676B; text-align: center; margin: -6px 0 14px; }
+        .login-secondary-btn { background: #E4E6EB !important; color: #1C1E21 !important; margin-top: 8px; }
+        .mfa-secret-box { background: #F8F9FA; border: 1px dashed #BCC0C4; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
+        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #1877F2; }
+        #resend-verify-btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: #1877F2; color: #fff; cursor: pointer; margin-bottom: 8px; }
+
         /* Header */
         .header { background-color: #ffffff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-bottom: 2px solid #1877F2;}
         .logo { color: #1C1E21; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
@@ -165,15 +187,78 @@
 </head>
 <body>
 
+    <!-- Login gate: nothing in the admin panel loads until this passes.
+         Steps: password -> (verify email if needed) -> TOTP enroll (first time)
+         or TOTP challenge (already enrolled) -> app unlocks. -->
+    <div id="login-screen">
+        <div class="login-box">
+            <div class="logo-icon">
+                <svg class="ui-icon" style="width:22px;height:22px;stroke:#fff;"><use href="#icon-shield"></use></svg>
+            </div>
+
+            <!-- Step 1: email + password -->
+            <div id="step-login">
+                <h2>PCA Store Admin</h2>
+                <p class="sub">Sign in to manage orders, games &amp; G2Bulk</p>
+                <p id="login-error" class="login-msg-error"></p>
+                <form id="login-form" onsubmit="handleAdminLogin(); return false;">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" autocomplete="username" placeholder="admin@example.com">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
+                    <button type="submit" id="login-btn">Sign In</button>
+                </form>
+            </div>
+
+            <!-- Step 2: verify email (required before TOTP can be set up) -->
+            <div id="step-verify-email" style="display:none;">
+                <h2>Verify Your Email</h2>
+                <p class="sub">Authenticator setup requires a verified email first.</p>
+                <p class="login-msg-info">We've sent a verification link to <b id="verify-email-address"></b>. Open it, then come back and sign in again.</p>
+                <p id="verify-email-error" class="login-msg-error"></p>
+                <button type="button" id="resend-verify-btn" onclick="resendVerificationEmail()">Resend Email</button>
+                <button type="button" class="login-secondary-btn" onclick="backToLogin()">Back to Sign In</button>
+            </div>
+
+            <!-- Step 3a: first-time TOTP enrollment -->
+            <div id="step-mfa-enroll" style="display:none;">
+                <h2>Set Up Authenticator</h2>
+                <p class="sub">Scan or enter this key into Google Authenticator / Authy, then enter the 6-digit code it shows.</p>
+                <div class="mfa-secret-box">
+                    <span id="mfa-secret-key">—</span>
+                </div>
+                <p class="login-msg-hint">Account name: <b id="mfa-account-name">—</b> · Issuer: PCA Store Admin</p>
+                <p id="mfa-enroll-error" class="login-msg-error"></p>
+                <label for="mfa-enroll-code">6-digit code</label>
+                <input type="text" id="mfa-enroll-code" inputmode="numeric" maxlength="6" placeholder="123456">
+                <button type="button" id="mfa-enroll-btn" onclick="confirmMfaEnrollment()">Confirm &amp; Enable</button>
+                <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
+            </div>
+
+            <!-- Step 3b: TOTP challenge on subsequent sign-ins -->
+            <div id="step-mfa-challenge" style="display:none;">
+                <h2>Enter Authenticator Code</h2>
+                <p class="sub">Open your authenticator app and enter the current 6-digit code.</p>
+                <p id="mfa-challenge-error" class="login-msg-error"></p>
+                <label for="mfa-challenge-code">6-digit code</label>
+                <input type="text" id="mfa-challenge-code" inputmode="numeric" maxlength="6" placeholder="123456">
+                <button type="button" id="mfa-challenge-btn" onclick="confirmMfaChallenge()">Verify &amp; Sign In</button>
+                <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <svg style="display: none;">
         <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
         <symbol id="icon-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></symbol>
         <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
         <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
         <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
+        <symbol id="icon-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></symbol>
         <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></symbol>
         <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
         <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></symbol>
+        <symbol id="icon-megaphone" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></symbol>
         <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path></symbol>
         <symbol id="icon-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></symbol>
         <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></symbol>
@@ -207,7 +292,7 @@
             </div>
             PCA Store
         </div>
-        <div class="header-icon"><svg class="ui-icon" style="width:20px;"><use href="#icon-users"></use></svg></div>
+        <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
     </header>
 
     <div class="app-layout">
@@ -227,6 +312,9 @@
         </div>
         <div class="nav-item" id="btn-notify-list" onclick="showPage('notify-list')">
             <svg class="ui-icon"><use href="#icon-bell"></use></svg> Notify
+        </div>
+        <div class="nav-item" id="btn-ticker-list" onclick="showPage('ticker-list')">
+            <svg class="ui-icon"><use href="#icon-megaphone"></use></svg> Ticker
         </div>
         <div class="nav-item" id="btn-payment-list" onclick="showPage('payment-list')">
             <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Payment
@@ -354,6 +442,22 @@
             <h2 class="title-header" style="margin-top:20px;">Sent History</h2>
             <div id="notif-history-container">
                 <p class="empty-msg">Loading notifications...</p>
+            </div>
+        </div>
+
+        <!-- STORE TICKER PAGE (Firebase Connected) — short messages that scroll
+             across the Store app's ticker bar, alongside real order activity. -->
+        <div id="ticker-list" class="page-section">
+            <h2 class="title-header">Store Ticker</h2>
+            <div class="admin-card">
+                <label style="font-size:13px;font-weight:600;color:#65676B;">New message</label>
+                <input type="text" id="ticker-text" placeholder="e.g. Shop open daily 9AM - 9PM" maxlength="120" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <button class="btn btn-primary" id="add-ticker-btn" onclick="addAnnouncement()">Add to Ticker</button>
+                <p style="font-size:12px;color:#65676B;margin-top:10px;">Shows in the Store app's scrolling ticker at the top, mixed in with real top-up activity. Stays until you delete it — it doesn't expire on its own.</p>
+            </div>
+            <h2 class="title-header" style="margin-top:20px;">Current Messages</h2>
+            <div id="ticker-list-container">
+                <p class="empty-msg">Loading ticker messages...</p>
             </div>
         </div>
 
@@ -566,6 +670,10 @@
                     <p class="empty-msg">No orders yet.</p>
                 </div>
             </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="ud-ban-btn" onclick="toggleBanCurrentUser()">Ban User</button>
+                <button class="btn btn-danger" onclick="deleteCurrentUser()">Delete</button>
+            </div>
         </div>
     </div>
 
@@ -658,6 +766,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB4kcQXS-C3zXxKg2Lj1TPllEAbJ30noY4",
@@ -675,7 +784,69 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+        // Keep the admin signed in across app restarts / closed tabs. This is
+        // stored in the browser's IndexedDB, so it only clears if the admin
+        // explicitly signs out or clears site data — never just from closing the app.
+        setPersistence(auth, browserLocalPersistence).catch((e) => console.error('Auth persistence error:', e));
         const ordersContainer = document.getElementById('orders-container');
+
+        // ---------- Admin login gate ----------
+        // Nothing below (orders, games, G2Bulk key, etc.) is fetched until
+        // Firebase confirms a signed-in admin. Pair this with Firestore rules
+        // that require request.auth != null on every admin-only collection —
+        // this screen alone is just UX, the rules are what actually enforce it.
+        let adminAppStarted = false;
+
+        async function handleAdminLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errEl = document.getElementById('login-error');
+            const btn = document.getElementById('login-btn');
+            errEl.style.display = 'none';
+            if (!email || !password) {
+                errEl.textContent = 'Enter both email and password.';
+                errEl.style.display = 'block';
+                return;
+            }
+            btn.disabled = true;
+            btn.innerText = 'Signing in...';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged below takes it from here
+            } catch (error) {
+                console.error('Admin login error:', error);
+                errEl.textContent = 'Wrong email or password.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerText = 'Sign In';
+            }
+        }
+        window.handleAdminLogin = handleAdminLogin;
+
+        function handleAdminLogout() {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Sign out?',
+                message: 'You will need to sign back in to manage the store.',
+                confirmText: 'Sign Out',
+                onConfirm: async () => { await signOut(auth); }
+            });
+        }
+        window.handleAdminLogout = handleAdminLogout;
+
+        onAuthStateChanged(auth, (user) => {
+            const loginScreen = document.getElementById('login-screen');
+            const loginBtn = document.getElementById('login-btn');
+            if (user) {
+                loginScreen.classList.add('hidden');
+                if (loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'Sign In'; }
+                if (!adminAppStarted) { adminAppStarted = true; startAdminApp(); }
+            } else {
+                loginScreen.classList.remove('hidden');
+                adminAppStarted = false;
+            }
+        });
 
         // Once attached, this listens live - new orders and status changes made here
         // (or from elsewhere) appear automatically with no refresh needed. All orders
@@ -1443,6 +1614,84 @@
             });
         }
 
+        // ---------- Store Ticker (admin-written messages shown in the Store
+        // app's scrolling ticker, mixed in with real order activity) ----------
+        let tickerListenerAttached = false;
+
+        async function addAnnouncement() {
+            const textEl = document.getElementById('ticker-text');
+            const text = textEl.value.trim();
+            if (!text) { window.showToast('Type a message first', 'fail'); return; }
+
+            const btn = document.getElementById('add-ticker-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Adding...';
+
+            try {
+                await addDoc(collection(db, "announcements"), {
+                    text,
+                    createdAt: serverTimestamp()
+                });
+                textEl.value = '';
+                window.showToast('Added to the store ticker!', 'success');
+            } catch (error) {
+                console.error("Add announcement error:", error);
+                window.showToast('Failed to add message.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        function listenAnnouncementsAdmin() {
+            if (tickerListenerAttached) return;
+            tickerListenerAttached = true;
+            const container = document.getElementById('ticker-list-container');
+
+            const q = query(collection(db, "announcements"), orderBy("createdAt", "asc"));
+            onSnapshot(q, (snap) => {
+                if (snap.empty) {
+                    container.innerHTML = '<p class="empty-msg">No ticker messages yet.</p>';
+                    return;
+                }
+                container.innerHTML = snap.docs.map(docSnap => {
+                    const data = docSnap.data();
+                    return `
+                        <div class="admin-card">
+                            <div class="ac-body">
+                                <p>${data.text}</p>
+                            </div>
+                            <div class="ac-footer">
+                                <button class="btn btn-danger" onclick="deleteAnnouncement('${docSnap.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }, (error) => {
+                console.error("Announcements listener error:", error);
+                container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load ticker messages.</p>';
+            });
+        }
+
+        function deleteAnnouncement(id) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Remove this ticker message?',
+                message: 'It will disappear from the Store app right away.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "announcements", id));
+                        window.showToast('Ticker message removed', 'cancel');
+                    } catch (error) {
+                        console.error("Delete announcement error:", error);
+                        window.showToast('Failed to delete message.', 'fail');
+                    }
+                }
+            });
+        }
+
         // ---------- Payment Methods ----------
         let PAYMENT_METHODS = {};
         let paymentListenerAttached = false;
@@ -1519,7 +1768,7 @@
                             ${u.photo ? `<img src="${u.photo}">` : `<svg class="ui-icon" style="width:22px;height:22px;"><use href="#icon-users"></use></svg>`}
                         </div>
                         <div class="user-card-info">
-                            <h5>${displayName}</h5>
+                            <h5>${displayName} ${u.banned ? '<span class="badge badge-danger" style="margin-left:4px;">Banned</span>' : ''}</h5>
                             <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'}</p>
                         </div>
                         <svg class="ui-icon" style="width:18px;height:18px;color:#BCC0C4;flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
@@ -1594,6 +1843,17 @@
                 avatarImg.src = ''; avatarImg.style.display = 'none'; avatarIcon.style.display = 'block';
             }
 
+            const banBtn = document.getElementById('ud-ban-btn');
+            if (u.banned) {
+                banBtn.innerText = 'Unban User';
+                banBtn.classList.remove('btn-outline');
+                banBtn.classList.add('btn-primary');
+            } else {
+                banBtn.innerText = 'Ban User';
+                banBtn.classList.remove('btn-primary');
+                banBtn.classList.add('btn-outline');
+            }
+
             renderUserOrders(userId);
             document.getElementById('user-details-modal-overlay').classList.add('show');
         }
@@ -1602,6 +1862,60 @@
             document.getElementById('user-details-modal-overlay').classList.remove('show');
             currentUserDetailsId = null;
         }
+
+        // Banning blocks the customer from placing new orders (checked in the
+        // Store app before it submits an order) — it doesn't touch their past
+        // order history, which stays visible here either way.
+        function toggleBanCurrentUser() {
+            if (!currentUserDetailsId) return;
+            const userId = currentUserDetailsId;
+            const u = USERS[userId];
+            if (!u) return;
+            const willBan = !u.banned;
+            window.showActionDialog({
+                type: willBan ? 'delete' : 'warning',
+                title: willBan ? 'Ban this user?' : 'Unban this user?',
+                message: willBan
+                    ? 'They won\'t be able to place new orders until unbanned. Past orders are unaffected.'
+                    : 'They will be able to place orders again.',
+                confirmText: willBan ? 'Ban' : 'Unban',
+                onConfirm: async () => {
+                    try {
+                        await updateDoc(doc(db, "users", userId), { banned: willBan });
+                        window.showToast(willBan ? 'User banned' : 'User unbanned', willBan ? 'fail' : 'success');
+                    } catch (error) {
+                        console.error("Ban toggle error:", error);
+                        window.showToast('Failed to update user.', 'fail');
+                    }
+                }
+            });
+        }
+        window.toggleBanCurrentUser = toggleBanCurrentUser;
+
+        // Deletes the customer's profile doc (name/phone/photo/ban status).
+        // Their past orders stay in the Orders tab for your records - this
+        // only removes the profile record itself, not their order history.
+        function deleteCurrentUser() {
+            if (!currentUserDetailsId) return;
+            const userId = currentUserDetailsId;
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete this user?',
+                message: 'Their profile will be removed. Past orders stay in your Orders tab. This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "users", userId));
+                        window.showToast('User deleted', 'cancel');
+                        closeUserDetails();
+                    } catch (error) {
+                        console.error("Delete user error:", error);
+                        window.showToast('Failed to delete user.', 'fail');
+                    }
+                }
+            });
+        }
+        window.deleteCurrentUser = deleteCurrentUser;
 
         // Called whenever the orders cache refreshes, so an open modal stays live.
         function renderUserDetailsIfOpen() {
@@ -2225,6 +2539,8 @@
 
         window.sendNotification = sendNotification;
         window.deleteNotification = deleteNotification;
+        window.addAnnouncement = addAnnouncement;
+        window.deleteAnnouncement = deleteAnnouncement;
         window.fetchOrders = fetchOrders;
         window.startProcessing = startProcessing;
         window.markSuccess = markSuccess;
@@ -2239,17 +2555,21 @@
         window.deleteGame = deleteGame;
         window.deleteCurrentGame = deleteCurrentGame;
 
-        // Start live order tracking and load real dashboard numbers as soon as the
-        // admin panel opens, so nothing depends on remembering to click Refresh.
-        loadDashboardStats();
-        fetchOrders();
-        listenGames();
-        listenNotifications();
-        listenPaymentMethods();
-        listenSocialLinks();
-        listenBranding();
-        listenG2Bulk();
-        listenUsers();
+        // Start live order tracking and load real dashboard numbers, but only
+        // once an authenticated admin has actually signed in (see the auth
+        // gate above) — nothing here runs against Firestore before that.
+        function startAdminApp() {
+            loadDashboardStats();
+            fetchOrders();
+            listenGames();
+            listenNotifications();
+            listenAnnouncementsAdmin();
+            listenPaymentMethods();
+            listenSocialLinks();
+            listenBranding();
+            listenG2Bulk();
+            listenUsers();
+        }
     </script>
 </body>
 </html>
