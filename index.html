@@ -171,26 +171,52 @@
         .dialog-icon.type-delete { background: #FDE8E8; color: #C0392B; }
         .dialog-icon.type-warning { background: #FFF3CD; color: #B8860B; }
         .dialog-icon.type-info { background: #E7F3FF; color: #1877F2; }
+        .dialog-icon.type-success { background: #E3F9E9; color: #31A24C; }
         .dialog-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #050505; }
         .dialog-message { font-size: 14px; color: #65676B; line-height: 1.45; margin-bottom: 20px; white-space: pre-line; }
         .dialog-actions { display: flex; gap: 8px; }
         .dialog-actions .btn { flex: 1; }
 
-        /* Searchable combobox for picking a G2Bulk game (replaces the native <select>) */
-        .g2bulk-combo { position: relative; }
-        .g2bulk-combo-input-wrap { position: relative; }
-        .g2bulk-combo-input-wrap input { width: 100%; padding: 9px 34px 9px 12px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 13px; background: #fff; }
-        .g2bulk-combo-input-wrap input:focus { outline: none; border-color: #1877F2; }
-        .g2bulk-combo-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; pointer-events: none; transition: transform 0.15s ease; }
-        .g2bulk-combo.open .g2bulk-combo-chevron { transform: translateY(-50%) rotate(180deg); }
-        .g2bulk-combo-clear { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; cursor: pointer; display: none; }
-        .g2bulk-combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #E4E6EB; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); max-height: 240px; overflow-y: auto; z-index: 50; display: none; }
-        .g2bulk-combo.open .g2bulk-combo-list { display: block; }
-        .g2bulk-combo-option { padding: 10px 12px; font-size: 13px; color: #050505; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-        .g2bulk-combo-option:hover, .g2bulk-combo-option.active { background: #F0F6FF; }
-        .g2bulk-combo-option.muted { color: #9C9EA1; }
-        .g2bulk-combo-option.selected { color: #1877F2; font-weight: 700; }
-        .g2bulk-combo-empty { padding: 14px 12px; font-size: 12px; color: #9C9EA1; text-align: center; }
+        /* Game Category chip-select (Moba / Battle Royale / Survival / Fun / Creative) —
+           icon + label pills, each with its own accent color that lights up on select. */
+        .category-chip-select { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px; }
+        .category-chip-select .cat-chip {
+            display: flex; align-items: center; gap: 6px; padding: 8px 13px 8px 10px; border-radius: 18px;
+            background: #F7F8FA; border: 1.5px solid #E4E6EB; color: #65676B; font-size: 12.5px; font-weight: 700;
+            cursor: pointer; user-select: none; transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+        .category-chip-select .cat-chip svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.75; transition: opacity 0.15s ease; }
+        .category-chip-select .cat-chip:active { transform: scale(0.95); }
+        .category-chip-select .cat-chip.active { color: #fff; border-color: transparent; background: var(--cat-color, #1877F2); box-shadow: 0 4px 12px -2px var(--cat-color, #1877F2); }
+        .category-chip-select .cat-chip.active svg { opacity: 1; }
+        /* Small category badge shown on admin game cards / store game cards */
+        .cat-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; font-size: 10.5px; font-weight: 700; color: #fff; }
+        .cat-badge svg { width: 11px; height: 11px; }
+
+        /* Game picker: a button that opens a searchable grid-of-images modal,
+           used for both linking a G2Bulk game and a JCPlays game. */
+        .picker-btn { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #E4E6EB; border-radius: 10px; background: #fff; cursor: pointer; transition: border-color 0.15s ease; }
+        .picker-btn:hover { border-color: #1877F2; }
+        .picker-btn-thumb { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; overflow: hidden; background: #F0F2F5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+        .picker-btn-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .picker-btn-label { flex: 1; font-size: 13px; color: #050505; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .picker-btn-label.muted { color: #9C9EA1; }
+        .picker-btn-chevron { width: 16px; height: 16px; color: #9C9EA1; flex-shrink: 0; }
+
+        .game-picker-search-wrap { position: relative; margin-bottom: 12px; flex-shrink: 0; }
+        .game-picker-search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .game-picker-search-wrap input { width: 100%; padding: 10px 12px 10px 34px; border: 1px solid #E4E6EB; border-radius: 10px; font-size: 14px; background: #F7F8FA; box-sizing: border-box; }
+        .game-picker-search-wrap input:focus { outline: none; border-color: #1877F2; background: #fff; }
+
+        .game-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 6px; }
+        .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid #E4E6EB; border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
+        .game-picker-card:active { transform: scale(0.96); }
+        .game-picker-card.selected { border-color: #1877F2; background: #F0F6FF; }
+        .game-picker-card span { font-size: 11.5px; font-weight: 600; color: #050505; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .game-picker-thumb { width: 54px; height: 54px; border-radius: 14px; overflow: hidden; background: #F0F2F5; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: #fff; }
+        .game-picker-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .game-picker-card.unlink-card .game-picker-thumb { background: #F0F2F5; color: #9C9EA1; }
+        .game-picker-empty-msg, .game-picker-loading { grid-column: 1 / -1; text-align: center; font-size: 12.5px; color: #9C9EA1; padding: 28px 0; }
 
         /* Toggle switches (Mark as Popular / Requires Server ID) */
         .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
@@ -214,6 +240,12 @@
         .pkg-order-num { flex-shrink: 0; width: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #9C9EA1; background: #F7F8FA; }
         .pkg-row-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
         .pkg-row-top { display: flex; gap: 6px; align-items: center; }
+        .pkg-row-pricing { display: flex; gap: 6px; align-items: flex-end; }
+        .pkg-price-field { flex: 1; min-width: 0; }
+        .pkg-price-field label { display: block; font-size: 10px; font-weight: 700; color: #9C9EA1; text-transform: uppercase; margin-bottom: 3px; }
+        .pkg-profit-badge { flex-shrink: 0; min-width: 52px; text-align: center; padding: 8px 6px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #F0F2F5; color: #65676B; }
+        .pkg-profit-badge.positive { background: #E3F9E9; color: #31A24C; }
+        .pkg-profit-badge.negative { background: #FDE8E8; color: #C0392B; }
     </style>
 </head>
 <body>
@@ -306,6 +338,11 @@
         <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
         <symbol id="icon-trending-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></symbol>
         <symbol id="icon-key" viewBox="0 0 24 24"><path d="M21 2l-9.6 9.6"></path><circle cx="7.5" cy="16.5" r="5.5"></circle><path d="M15.5 7.5l2 2M18 5l2 2"></path></symbol>
+        <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></symbol>
+        <symbol id="icon-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></symbol>
+        <symbol id="icon-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></symbol>
+        <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></symbol>
+        <symbol id="icon-feather" viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></symbol>
     </svg>
 
     <div id="toast"><svg class="ui-icon" id="toast-icon" style="color: #4ADE80; width:18px;"><use id="toast-icon-use" href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
@@ -316,6 +353,12 @@
             <div class="dialog-icon" id="action-dialog-icon"></div>
             <div class="dialog-title" id="action-dialog-title">Title</div>
             <div class="dialog-message" id="action-dialog-message">Message</div>
+            <!-- Optional reason/note field — hidden unless showActionDialog() is called
+                 with showNote:true (used by Mark Success / Mark Fail on orders so the
+                 admin can record why, visible to the customer in their order detail). -->
+            <div id="action-dialog-note-wrap" style="display:none;margin-top:2px;">
+                <textarea id="action-dialog-note" rows="3" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
+            </div>
             <div class="dialog-actions">
                 <button class="btn btn-outline" id="action-dialog-cancel" onclick="window.closeActionDialog()">Cancel</button>
                 <button class="btn btn-primary" id="action-dialog-confirm" onclick="window.confirmActionDialog()">Confirm</button>
@@ -605,6 +648,10 @@
                 <label>Game Name</label>
                 <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
 
+                <label>Game Category</label>
+                <input type="hidden" id="edit-game-category" value="">
+                <div class="category-chip-select" id="game-category-select"></div>
+
                 <div class="switch-row">
                     <div>
                         <span class="switch-label">Mark as Popular</span>
@@ -655,28 +702,34 @@
                 <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
                 <p id="banner-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
 
-                <label>G2Bulk Game (optional — enables auto-fulfillment)</label>
-                <div class="g2bulk-combo" id="g2bulk-combo">
-                    <input type="hidden" id="edit-game-g2bulk-code" value="">
-                    <div class="g2bulk-combo-input-wrap">
-                        <input type="text" id="g2bulk-combo-search" placeholder="-- Not linked (manual fulfillment) --" autocomplete="off"
-                            onfocus="openG2BulkCombo()" oninput="filterG2BulkCombo()">
-                        <svg class="g2bulk-combo-clear" id="g2bulk-combo-clear" onclick="clearG2BulkCombo(event)" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        <svg class="g2bulk-combo-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
-                    </div>
-                    <div class="g2bulk-combo-list" id="g2bulk-combo-list"></div>
-                </div>
-                <p id="g2bulk-import-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;"></p>
+                <div style="margin:4px 0 2px;padding:12px;background:#F7F8FA;border-radius:12px;border:1px solid #E4E6EB;">
+                    <p style="font-size:11px;font-weight:700;color:#65676B;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional) — link ONE provider, then Import to fill packages</p>
 
-                <label>JCPlays Product Code (optional — enables auto-fulfillment via JCPlays)</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">e.g. <code>mobilelegends</code>, <code>pubgmobilecoin</code>, <code>pubgmobileone</code> — from JCPlays' Get Products list.</p>
-                <div style="display:flex;gap:8px;">
-                    <input type="text" id="edit-game-jcplays-code" placeholder="-- Not linked (manual fulfillment) --" style="flex:1;">
-                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="loadJCPlaysDenominations()">Load IDs</button>
+                    <label style="margin-top:0;">G2Bulk Game</label>
+                    <input type="hidden" id="edit-game-g2bulk-code" value="">
+                    <div class="picker-btn" id="g2bulk-picker-btn" onclick="openGamePicker('g2bulk')">
+                        <div class="picker-btn-thumb" id="g2bulk-picker-thumb"></div>
+                        <span class="picker-btn-label muted" id="g2bulk-picker-display">-- Not linked (manual fulfillment) --</span>
+                        <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                    </div>
+                    <p id="g2bulk-import-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;"></p>
+
+                    <label>JCPlays Game</label>
+                    <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Pick from the list, or type a custom Product Code if a game isn't listed yet.</p>
+                    <div class="picker-btn" id="jcplays-picker-btn" onclick="openGamePicker('jcplays')">
+                        <div class="picker-btn-thumb" id="jcplays-picker-thumb"></div>
+                        <span class="picker-btn-label muted" id="jcplays-picker-display">-- Not linked (manual fulfillment) --</span>
+                        <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:6px;">
+                        <input type="text" id="edit-game-jcplays-code" placeholder="or type a custom product code" style="flex:1;" oninput="onJCPlaysCodeTyped()">
+                        <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
+                    </div>
+                    <p id="jcplays-denom-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;white-space:pre-wrap;"></p>
                 </div>
-                <p id="jcplays-denom-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;white-space:pre-wrap;"></p>
 
                 <label>Top-up Packages</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Cost = your wholesale price (Store never shows this). Price = what the customer pays. The badge on the right shows your profit %.</p>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
                 <div style="display:flex;gap:8px;">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
@@ -687,6 +740,24 @@
                 <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
                 <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Game Picker Modal: shared grid-with-images + search picker for linking a
+         game to a G2Bulk or JCPlays provider game, opened from the Game Editor above. -->
+    <div class="modal-overlay" id="game-picker-modal-overlay" onclick="if(event.target===this) closeGamePicker()">
+        <div class="modal-box" style="max-height:82vh;">
+            <div class="modal-header">
+                <h3 id="game-picker-title">Choose Game</h3>
+                <div class="modal-close" onclick="closeGamePicker()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="game-picker-search-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="game-picker-search" placeholder="Search game name..." autocomplete="off" oninput="filterGamePicker(this.value)">
+            </div>
+            <div class="game-picker-grid" id="game-picker-grid"></div>
         </div>
     </div>
 
@@ -857,9 +928,9 @@
         // type: 'delete' (red, destructive) | 'warning' (amber, needs a decision) | 'info' (blue, OK-only notice)
         let actionDialogCallback = null;
 
-        function showActionDialog({ type = 'warning', title = '', message = '', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm = null }) {
+        function showActionDialog({ type = 'warning', title = '', message = '', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm = null, showNote = false, notePlaceholder = 'Reason (optional) — the customer will see this' }) {
             const iconEl = document.getElementById('action-dialog-icon');
-            const iconUse = type === 'delete' ? '#icon-trash' : (type === 'info' ? '#icon-info' : '#icon-warning');
+            const iconUse = type === 'delete' ? '#icon-trash' : (type === 'info' ? '#icon-info' : (type === 'success' ? '#icon-check' : '#icon-warning'));
             iconEl.className = 'dialog-icon type-' + type;
             iconEl.innerHTML = `<svg class="ui-icon" style="width:26px;"><use href="${iconUse}"></use></svg>`;
 
@@ -875,8 +946,15 @@
             confirmBtn.innerText = confirmText;
             confirmBtn.className = 'btn ' + (type === 'delete' ? 'btn-danger' : 'btn-primary');
 
+            const noteWrap = document.getElementById('action-dialog-note-wrap');
+            const noteInput = document.getElementById('action-dialog-note');
+            noteWrap.style.display = showNote ? 'block' : 'none';
+            noteInput.value = '';
+            noteInput.placeholder = notePlaceholder;
+
             actionDialogCallback = onConfirm;
             document.getElementById('action-dialog-overlay').classList.add('show');
+            if (showNote) setTimeout(() => noteInput.focus(), 50);
         }
 
         function closeActionDialog() {
@@ -886,8 +964,9 @@
 
         function confirmActionDialog() {
             const cb = actionDialogCallback;
+            const note = document.getElementById('action-dialog-note').value.trim();
             closeActionDialog();
-            if (cb) cb();
+            if (cb) cb(note);
         }
 
         // Convenience wrapper for a plain informational notice (single OK button).
@@ -1296,12 +1375,28 @@
             pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft - 1);
         }
 
-        async function markSuccess(orderId, btnElement) {
+        function markSuccess(orderId, btnElement) {
+            window.showActionDialog({
+                type: 'success',
+                title: 'Mark as Success?',
+                message: 'The customer will see this order as completed.',
+                confirmText: 'Mark as Success',
+                showNote: true,
+                notePlaceholder: 'Note (optional) — e.g. "Delivered manually, 5 min late"',
+                onConfirm: (note) => doMarkSuccess(orderId, btnElement, note)
+            });
+        }
+
+        async function doMarkSuccess(orderId, btnElement, note) {
             btnElement.innerText = "Updating...";
             btnElement.disabled = true;
 
             try {
-                await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp() });
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "Success",
+                    confirmedAt: serverTimestamp(),
+                    ...(note ? { statusNote: note } : {})
+                });
                 window.showToast("Order marked as Success!", 'success');
                 // No manual DOM removal needed - the live listener re-renders the
                 // list automatically now that this order no longer matches the query.
@@ -1319,16 +1414,21 @@
                 title: 'Mark as Failed?',
                 message: 'The customer will need to reorder. This action cannot be undone.',
                 confirmText: 'Mark as Failed',
-                onConfirm: () => doMarkFail(orderId, btnElement)
+                showNote: true,
+                notePlaceholder: 'Reason (optional) — e.g. "Wrong player ID, please recheck and reorder"',
+                onConfirm: (note) => doMarkFail(orderId, btnElement, note)
             });
         }
 
-        async function doMarkFail(orderId, btnElement) {
+        async function doMarkFail(orderId, btnElement, note) {
             btnElement.innerText = "Updating...";
             btnElement.disabled = true;
 
             try {
-                await updateDoc(doc(db, "orders", orderId), { status: "Fail" });
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "Fail",
+                    ...(note ? { statusNote: note } : {})
+                });
                 window.showToast("Order marked as Fail.", 'fail');
             } catch (error) {
                 console.error("Update Error: ", error);
@@ -1406,6 +1506,7 @@
                         <div class="ac-header">
                             <span class="ac-id">${g.name}</span>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+                                ${categoryBadgeHtml(g.category)}
                                 ${g.popular ? `<span class="badge" style="background:#FFF3CD;color:#856404;">★ Popular</span>` : ''}
                                 ${g.serverIdRequired === false ? `<span class="badge" style="background:#E4E6EB;color:#65676B;">No Server ID</span>` : ''}
                                 <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
@@ -1469,7 +1570,7 @@
             reader.readAsDataURL(file);
         }
 
-        function addPackageRow(amount = '', price = '', g2bulkName = '', jcplaysProductId = '') {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '') {
             const list = document.getElementById('edit-packages-list');
             const row = document.createElement('div');
             row.className = 'package-row';
@@ -1481,8 +1582,18 @@
                 <div class="pkg-row-fields">
                     <div class="pkg-row-top">
                         <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
-                        <input type="number" class="pkg-price" placeholder="Price (MMK)" value="${price}" style="width:96px;flex-shrink:0;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
                         <div onclick="removePackageRow(this)" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 6px;flex-shrink:0;">&times;</div>
+                    </div>
+                    <div class="pkg-row-pricing">
+                        <div class="pkg-price-field">
+                            <label>Cost (မသိမ်း — Store မှာ မပြပါ)</label>
+                            <input type="number" class="pkg-cost" placeholder="0" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                        </div>
+                        <div class="pkg-price-field">
+                            <label>Price (Store မှာ ပြမည်)</label>
+                            <input type="number" class="pkg-price" placeholder="0" value="${price}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                        </div>
+                        <div class="pkg-profit-badge" title="Profit margin = (Price − Cost) / Cost">--</div>
                     </div>
                     <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
                     <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID (leave blank = manual order)" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
@@ -1491,7 +1602,28 @@
             list.appendChild(row);
             makePackageRowDraggable(row);
             renumberPackageRows();
+            updatePackageProfit(row.querySelector('.pkg-price'));
         }
+
+        // Recomputes and redraws the profit-% badge for one package row whenever
+        // its Cost or Price field changes. Cost is never sent to the Store (only
+        // saveGame()'s `packages` array includes it, and store.html only ever
+        // reads `.price`) — it's purely for this admin-side margin readout.
+        function updatePackageProfit(fieldEl) {
+            const row = fieldEl.closest('.package-row');
+            const badge = row.querySelector('.pkg-profit-badge');
+            const cost = Number(row.querySelector('.pkg-cost').value) || 0;
+            const price = Number(row.querySelector('.pkg-price').value) || 0;
+            if (cost <= 0) {
+                badge.className = 'pkg-profit-badge';
+                badge.innerText = '--';
+                return;
+            }
+            const pct = ((price - cost) / cost) * 100;
+            badge.className = 'pkg-profit-badge ' + (pct > 0 ? 'positive' : (pct < 0 ? 'negative' : ''));
+            badge.innerText = (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
+        }
+        window.updatePackageProfit = updatePackageProfit;
 
         // Removes a package row (called from the × button) and refreshes order numbers.
         function removePackageRow(el) {
@@ -1612,6 +1744,8 @@
                 const g = GAMES[gameId];
                 document.getElementById('game-editor-title').innerText = 'Edit Game';
                 document.getElementById('edit-game-name').value = g.name;
+                document.getElementById('edit-game-category').value = g.category || '';
+                renderGameCategorySelect();
                 document.getElementById('edit-game-popular').checked = !!g.popular;
                 // Missing field on older games defaults to "required" so nothing changes for them.
                 document.getElementById('edit-game-serverid').checked = g.serverIdRequired !== false;
@@ -1633,7 +1767,7 @@
                     bannerChangeBadge.style.display = 'none';
                 }
 
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.price, p.g2bulk || '', p.jcplays || ''));
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || ''));
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
@@ -1641,6 +1775,8 @@
             } else {
                 document.getElementById('game-editor-title').innerText = 'Add New Game';
                 document.getElementById('edit-game-name').value = '';
+                document.getElementById('edit-game-category').value = '';
+                renderGameCategorySelect();
                 document.getElementById('edit-game-popular').checked = false;
                 document.getElementById('edit-game-serverid').checked = true;
                 document.getElementById('edit-game-g2bulk-code').value = '';
@@ -1659,8 +1795,13 @@
                 addPackageRow();
                 deleteBtn.style.display = 'none';
             }
-            populateG2BulkGamesDropdown();
+            refreshPickerButton('g2bulk');
+            refreshPickerButton('jcplays');
             onG2BulkGameChange();
+            // Fetch G2Bulk's games list in the background (cached after first
+            // load) so the button already shows the right name/thumb even
+            // before the admin opens the picker, instead of just the raw code.
+            fetchG2BulkGamesList().then(() => refreshPickerButton('g2bulk')).catch(() => {});
             document.getElementById('game-editor-modal-overlay').classList.add('show');
         }
 
@@ -1714,11 +1855,13 @@
 
             const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
             const jcplaysProduct = document.getElementById('edit-game-jcplays-code').value.trim();
+            const category = document.getElementById('edit-game-category').value;
             const popular = document.getElementById('edit-game-popular').checked;
             const serverIdRequired = document.getElementById('edit-game-serverid').checked;
 
             const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
                 amount: row.querySelector('.pkg-amount').value.trim(),
+                cost: Number(row.querySelector('.pkg-cost').value) || 0,
                 price: Number(row.querySelector('.pkg-price').value) || 0,
                 g2bulk: row.querySelector('.pkg-g2bulk').value.trim(),
                 jcplays: row.querySelector('.pkg-jcplays').value.trim()
@@ -1751,7 +1894,7 @@
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
-                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', popular, serverIdRequired };
+                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', category: category || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -2610,25 +2753,46 @@
             return G2BULK_GAMES_LIST;
         }
 
-        async function populateG2BulkGamesDropdown() {
-            const hiddenInput = document.getElementById('edit-game-g2bulk-code');
-            const currentCode = hiddenInput.value;
-            try {
-                const games = await fetchG2BulkGamesList();
-                renderG2BulkComboOptions(games);
-                // Reflect the currently-selected code (if any) in the visible search box
-                const match = games.find(g => g.code === currentCode);
-                document.getElementById('g2bulk-combo-search').value = match ? match.name : '';
-                document.getElementById('g2bulk-combo-clear').style.display = match ? 'block' : 'none';
-            } catch (error) {
-                console.error("Load G2Bulk games list error:", error);
-                // Leave the combo as-is (just the "not linked" option) - linking is optional,
-                // so a failed fetch here shouldn't block editing the game otherwise.
-            }
-        }
-        window.populateG2BulkGamesDropdown = populateG2BulkGamesDropdown;
+        // ---------- Game Category (Moba / Battle Royale / Survival / Fun / Creative) ----------
+        // Shown as an icon+color chip-select in the game editor, and used by the
+        // Store app to power its category filter chips on the Home page. The Store
+        // app reads this same list (kept in sync manually) to render matching chips.
+        const GAME_CATEGORIES = [
+            { id: 'moba', label: 'MOBA', icon: 'icon-target', color: '#7C3AED' },
+            { id: 'battle_royale', label: 'Battle Royale', icon: 'icon-zap', color: '#E53935' },
+            { id: 'survival', label: 'Survival', icon: 'icon-compass', color: '#16A34A' },
+            { id: 'fun', label: 'Fun', icon: 'icon-smile', color: '#EC4899' },
+            { id: 'creative', label: 'Creative', icon: 'icon-feather', color: '#0891B2' }
+        ];
+        function findCategory(id) { return GAME_CATEGORIES.find(c => c.id === id); }
 
-        // Escapes a string for safe insertion into HTML (used for G2Bulk game
+        function renderGameCategorySelect() {
+            const current = document.getElementById('edit-game-category').value;
+            const noneChip = `<div class="cat-chip${current === '' ? ' active' : ''}" data-cat="" style="--cat-color:#65676B;">
+                <svg class="ui-icon"><use href="#icon-grid"></use></svg>None
+            </div>`;
+            document.getElementById('game-category-select').innerHTML = noneChip + GAME_CATEGORIES.map(c => `
+                <div class="cat-chip${current === c.id ? ' active' : ''}" data-cat="${c.id}" style="--cat-color:${c.color};">
+                    <svg class="ui-icon"><use href="#${c.icon}"></use></svg>${c.label}
+                </div>`).join('');
+        }
+
+        document.getElementById('game-category-select').addEventListener('click', (e) => {
+            const chip = e.target.closest('.cat-chip');
+            if (!chip) return;
+            document.getElementById('edit-game-category').value = chip.dataset.cat;
+            renderGameCategorySelect();
+        });
+
+        // Small colored "MOBA" / "Fun" / etc. badge, reused on the admin Game
+        // List cards. Returns '' when the game has no category set.
+        function categoryBadgeHtml(categoryId) {
+            const c = findCategory(categoryId);
+            if (!c) return '';
+            return `<span class="cat-badge" style="background:${c.color};"><svg><use href="#${c.icon}"></use></svg>${c.label}</span>`;
+        }
+
+        // Escapes a string for safe insertion into HTML (used for provider game
         // names, which are outside our control and could contain quotes/HTML).
         function escapeHtml(str) {
             const div = document.createElement('div');
@@ -2636,79 +2800,181 @@
             return div.innerHTML;
         }
 
-        // Renders the dropdown list of options inside the combobox, optionally
-        // filtered by a search term. Always keeps "Not linked" at the top.
-        function renderG2BulkComboOptions(games, filterText = '') {
-            const listEl = document.getElementById('g2bulk-combo-list');
-            const currentCode = document.getElementById('edit-game-g2bulk-code').value;
-            const term = filterText.trim().toLowerCase();
-            const filtered = term ? games.filter(g => g.name.toLowerCase().includes(term)) : games;
-
-            let html = '';
-            if (!term) {
-                html += `<div class="g2bulk-combo-option muted${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">-- Not linked (manual fulfillment) --</div>`;
-            }
-            if (filtered.length === 0) {
-                html += `<div class="g2bulk-combo-empty">No games match "${escapeHtml(filterText)}"</div>`;
-            } else {
-                html += filtered.map(g => `<div class="g2bulk-combo-option${currentCode === g.code ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">${escapeHtml(g.name)}</div>`).join('');
-            }
-            listEl.innerHTML = html;
-        }
-
-        // Event delegation for option clicks - attached once to the (stable)
-        // list container, since its inner HTML gets replaced on every render.
-        document.getElementById('g2bulk-combo-list').addEventListener('click', (e) => {
-            const opt = e.target.closest('.g2bulk-combo-option');
-            if (!opt) return;
-            selectG2BulkGame(opt.dataset.code || '', opt.dataset.name || '');
-        });
-
-        function openG2BulkCombo() {
-            document.getElementById('g2bulk-combo').classList.add('open');
-            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, document.getElementById('g2bulk-combo-search').value)).catch(() => {});
-        }
-        window.openG2BulkCombo = openG2BulkCombo;
-
-        function closeG2BulkCombo() {
-            document.getElementById('g2bulk-combo').classList.remove('open');
-        }
-        window.closeG2BulkCombo = closeG2BulkCombo;
-
-        function filterG2BulkCombo() {
-            const term = document.getElementById('g2bulk-combo-search').value;
-            document.getElementById('g2bulk-combo-clear').style.display = term ? 'block' : 'none';
-            document.getElementById('g2bulk-combo').classList.add('open');
-            fetchG2BulkGamesList().then(games => renderG2BulkComboOptions(games, term)).catch(() => {});
-        }
-        window.filterG2BulkCombo = filterG2BulkCombo;
-
-        function selectG2BulkGame(code, name) {
-            document.getElementById('edit-game-g2bulk-code').value = code;
-            document.getElementById('g2bulk-combo-search').value = name;
-            document.getElementById('g2bulk-combo-clear').style.display = code ? 'block' : 'none';
-            closeG2BulkCombo();
-            onG2BulkGameChange();
-        }
-        window.selectG2BulkGame = selectG2BulkGame;
-
-        function clearG2BulkCombo(event) {
-            event.stopPropagation();
-            selectG2BulkGame('', '');
-        }
-        window.clearG2BulkCombo = clearG2BulkCombo;
-
-        // Close the combo dropdown when tapping/clicking anywhere outside it
-        document.addEventListener('click', (e) => {
-            const combo = document.getElementById('g2bulk-combo');
-            if (combo && !combo.contains(e.target)) closeG2BulkCombo();
-        });
-
         function onG2BulkGameChange() {
             const code = document.getElementById('edit-game-g2bulk-code').value;
             document.getElementById('g2bulk-import-btn').style.display = code ? 'block' : 'none';
         }
         window.onG2BulkGameChange = onG2BulkGameChange;
+
+        // ---------- Shared Game Picker (grid with images + search) ----------
+        // One modal, used for both "G2Bulk Game" and "JCPlays Game" — G2Bulk's
+        // list (with real cover images) comes live from their /v1/games endpoint;
+        // JCPlays has no public "list all games" endpoint, so JCPLAYS_CATALOGUE
+        // below is a curated starting list of common SmileOne-compatible product
+        // codes. Add more rows to it any time — or an admin can always fall back
+        // to typing a custom code in the field under the picker button.
+        const JCPLAYS_CATALOGUE = [
+            { code: 'mobilelegends', name: 'Mobile Legends: Bang Bang' },
+            { code: 'mobilelegendsph', name: 'Mobile Legends (PH)' },
+            { code: 'pubgmobilecoin', name: 'PUBG Mobile UC' },
+            { code: 'pubgmobileone', name: 'PUBG Mobile (Starlight)' },
+            { code: 'freefire', name: 'Free Fire' },
+            { code: 'freefirethailand', name: 'Free Fire (Thailand)' },
+            { code: 'honorofkings', name: 'Honor of Kings' },
+            { code: 'genshinimpact', name: 'Genshin Impact' },
+            { code: 'honkaistarrail', name: 'Honkai: Star Rail' },
+            { code: 'higgsdomino', name: 'Higgs Domino' },
+            { code: 'callofdutymobile', name: 'Call of Duty: Mobile' },
+            { code: 'bloodstrike', name: 'Blood Strike' },
+            { code: 'identityv', name: 'Identity V' },
+            { code: 'arenaofvalor', name: 'Arena of Valor' },
+            { code: 'valorant', name: 'Valorant' },
+            { code: 'zepeto', name: 'ZEPETO' },
+            { code: 'lifeafter', name: 'LifeAfter' }
+        ];
+
+        let gamePickerProvider = null;     // 'g2bulk' | 'jcplays'
+        let gamePickerItems = [];          // [{code, name, image?}] for the active provider
+
+        // Deterministic accent color per game name, used behind its initials
+        // whenever no cover image is available (e.g. most JCPlays entries).
+        const PICKER_COLORS = ['#1877F2', '#8E44AD', '#E67E22', '#16A085', '#C0392B', '#2C3E50', '#D35400', '#2980B9'];
+        function pickerColorFor(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+            return PICKER_COLORS[hash % PICKER_COLORS.length];
+        }
+        function pickerInitials(name) {
+            return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+        }
+        function pickerThumbHtml(item, sizeClass) {
+            if (item.image) {
+                return `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" onerror="this.parentElement.style.background='${pickerColorFor(item.name)}';this.remove();this.parentElement.innerText='${escapeHtml(pickerInitials(item.name))}';">`;
+            }
+            return '';
+        }
+
+        // Updates the picker button's thumbnail + label to reflect whatever
+        // code is currently in the hidden/manual input for that provider.
+        function refreshPickerButton(provider) {
+            const codeEl = document.getElementById(provider === 'g2bulk' ? 'edit-game-g2bulk-code' : 'edit-game-jcplays-code');
+            const displayEl = document.getElementById(provider + '-picker-display');
+            const thumbEl = document.getElementById(provider + '-picker-thumb');
+            const code = codeEl.value;
+            const list = provider === 'g2bulk' ? (G2BULK_GAMES_LIST || []) : JCPLAYS_CATALOGUE;
+            const match = list.find(g => g.code === code);
+
+            if (!code) {
+                displayEl.innerText = '-- Not linked (manual fulfillment) --';
+                displayEl.classList.add('muted');
+                thumbEl.style.background = '#F0F2F5';
+                thumbEl.innerHTML = '';
+            } else if (match) {
+                displayEl.innerText = match.name;
+                displayEl.classList.remove('muted');
+                thumbEl.style.background = match.image ? '#F0F2F5' : pickerColorFor(match.name);
+                thumbEl.innerHTML = pickerThumbHtml(match) || escapeHtml(pickerInitials(match.name));
+            } else {
+                // A code we don't have metadata for (e.g. hand-typed JCPlays code)
+                displayEl.innerText = code;
+                displayEl.classList.remove('muted');
+                thumbEl.style.background = pickerColorFor(code);
+                thumbEl.innerHTML = escapeHtml(pickerInitials(code));
+            }
+        }
+        window.refreshPickerButton = refreshPickerButton;
+
+        function openGamePicker(provider) {
+            gamePickerProvider = provider;
+            document.getElementById('game-picker-title').innerText = provider === 'g2bulk' ? 'Choose G2Bulk Game' : 'Choose JCPlays Game';
+            document.getElementById('game-picker-search').value = '';
+            document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-loading">Loading games…</p>';
+            document.getElementById('game-picker-modal-overlay').classList.add('show');
+
+            if (provider === 'g2bulk') {
+                fetchG2BulkGamesList()
+                    .then(games => {
+                        gamePickerItems = games.map(g => ({
+                            code: g.code,
+                            name: g.name,
+                            image: g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : ''
+                        }));
+                        renderGamePickerGrid('');
+                    })
+                    .catch(error => {
+                        console.error("Load G2Bulk games list error:", error);
+                        document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Couldn\'t load G2Bulk\'s games list. Close and try again.</p>';
+                    });
+            } else {
+                gamePickerItems = JCPLAYS_CATALOGUE;
+                renderGamePickerGrid('');
+            }
+        }
+        window.openGamePicker = openGamePicker;
+
+        function closeGamePicker() {
+            document.getElementById('game-picker-modal-overlay').classList.remove('show');
+        }
+        window.closeGamePicker = closeGamePicker;
+
+        function filterGamePicker(term) {
+            renderGamePickerGrid(term);
+        }
+        window.filterGamePicker = filterGamePicker;
+
+        function renderGamePickerGrid(term) {
+            const gridEl = document.getElementById('game-picker-grid');
+            const q = (term || '').trim().toLowerCase();
+            const filtered = q ? gamePickerItems.filter(g => g.name.toLowerCase().includes(q)) : gamePickerItems;
+            const currentCode = document.getElementById(gamePickerProvider === 'g2bulk' ? 'edit-game-g2bulk-code' : 'edit-game-jcplays-code').value;
+
+            let html = `<div class="game-picker-card unlink-card${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">
+                <div class="game-picker-thumb"><svg class="ui-icon" style="width:20px;height:20px;"><use href="#icon-close"></use></svg></div>
+                <span>Not linked</span>
+            </div>`;
+
+            if (filtered.length === 0) {
+                html += `<div class="game-picker-empty-msg">No games match "${escapeHtml(term)}"</div>`;
+            } else {
+                html += filtered.map(g => `
+                    <div class="game-picker-card${currentCode === g.code ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">
+                        <div class="game-picker-thumb" style="${g.image ? '' : `background:${pickerColorFor(g.name)}`}">${pickerThumbHtml(g) || escapeHtml(pickerInitials(g.name))}</div>
+                        <span>${escapeHtml(g.name)}</span>
+                    </div>`).join('');
+            }
+            gridEl.innerHTML = html;
+        }
+
+        // Event delegation for card taps - attached once to the (stable) grid
+        // container, since its inner HTML gets replaced on every render.
+        document.getElementById('game-picker-grid').addEventListener('click', (e) => {
+            const card = e.target.closest('.game-picker-card');
+            if (!card) return;
+            selectGamePickerItem(card.dataset.code || '', card.dataset.name || '');
+        });
+
+        function selectGamePickerItem(code, name) {
+            const codeEl = document.getElementById(gamePickerProvider === 'g2bulk' ? 'edit-game-g2bulk-code' : 'edit-game-jcplays-code');
+            codeEl.value = code;
+            // Linking a game also fills in the Game Name field, so there's no need
+            // to type the same name twice — but only if it's still empty, so an
+            // admin's already-typed custom name is never overwritten.
+            const nameInput = document.getElementById('edit-game-name');
+            if (code && !nameInput.value.trim()) nameInput.value = name;
+
+            refreshPickerButton(gamePickerProvider);
+            if (gamePickerProvider === 'g2bulk') onG2BulkGameChange();
+            closeGamePicker();
+        }
+        window.selectGamePickerItem = selectGamePickerItem;
+
+        // Keeps the JCPlays picker button's label/thumb in sync whenever the
+        // admin types a custom code directly into the field instead of picking
+        // one from the grid.
+        function onJCPlaysCodeTyped() {
+            refreshPickerButton('jcplays');
+        }
+        window.onJCPlaysCodeTyped = onJCPlaysCodeTyped;
 
         // Fetches the live G2Bulk catalogue for the selected game and pre-fills
         // the packages list with its denominations, converted to MMK using the
@@ -2731,10 +2997,11 @@
                 const rate = G2BULK_SETTINGS.usdRate || 4500;
                 document.getElementById('edit-packages-list').innerHTML = '';
                 (data.catalogues || []).forEach(c => {
-                    addPackageRow(c.name, Math.round(c.amount * rate), c.name);
+                    const cost = Math.round(c.amount * rate);
+                    addPackageRow(c.name, cost, cost, c.name);
                 });
                 statusEl.style.color = '#1877F2';
-                statusEl.innerText = `Imported ${(data.catalogues || []).length} packages ✓ — review prices before saving.`;
+                statusEl.innerText = `Imported ${(data.catalogues || []).length} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
                 window.showToast('Catalogue imported ✓', 'success');
             } catch (error) {
                 console.error("Import G2Bulk catalogue error:", error);
@@ -3048,33 +3315,58 @@
         // editor and lists its denominations (id + name + price) so the admin
         // can copy the right "id" into each package row's JCPlays Product ID
         // field, without needing to leave the app.
-        async function loadJCPlaysDenominations() {
+        // Fetches JCPlays' live denomination list for the entered Product Code and
+        // pre-fills the packages list (Cost + Price + JCPlays Product ID per row) —
+        // same one-click pattern as importG2BulkCatalogue() above. Replaces whatever
+        // packages are currently listed. Converts each USD price to MMK using the
+        // same USD rate stored for G2Bulk, since JCPlays doesn't have its own rate.
+        async function importJCPlaysCatalogue() {
             const product = document.getElementById('edit-game-jcplays-code').value.trim();
             const statusEl = document.getElementById('jcplays-denom-status');
+            const btn = document.getElementById('jcplays-import-btn');
             if (!product) {
+                statusEl.style.color = '#C0392B';
                 statusEl.innerText = 'Enter a JCPlays Product Code first (e.g. mobilelegends).';
                 return;
             }
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
+                statusEl.style.color = '#C0392B';
                 statusEl.innerText = 'Add your JCPlays credentials first (Dashboard → JCPlays → Settings).';
                 return;
             }
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Importing...';
+            statusEl.style.color = '#65676B';
             statusEl.innerText = 'Loading denominations...';
             try {
                 const data = await jcplaysRequest('productlist', { product });
                 if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
                 const rows = (data.data && data.data.product) || [];
                 if (rows.length === 0) {
+                    statusEl.style.color = '#C0392B';
                     statusEl.innerText = 'No denominations returned for this product code.';
                     return;
                 }
-                statusEl.innerText = rows.map(r => `#${r.id}  ${r.spu}  ($${r.price})`).join('\n');
+                const rate = G2BULK_SETTINGS.usdRate || 4500;
+                document.getElementById('edit-packages-list').innerHTML = '';
+                rows.forEach(r => {
+                    const cost = Math.round(Number(r.price) * rate);
+                    addPackageRow(r.spu, cost, cost, '', String(r.id));
+                });
+                statusEl.style.color = '#1877F2';
+                statusEl.innerText = `Imported ${rows.length} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                window.showToast('JCPlays denominations imported ✓', 'success');
             } catch (error) {
                 console.error("JCPlays productlist error:", error);
+                statusEl.style.color = '#C0392B';
                 statusEl.innerText = 'Error: ' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         }
-        window.loadJCPlaysDenominations = loadJCPlaysDenominations;
+        window.importJCPlaysCatalogue = importJCPlaysCatalogue;
 
         // Places a top-up order with JCPlays. Called from startProcessing()
         // whenever an order carries both a game-level jcplaysProduct code and
