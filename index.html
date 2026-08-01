@@ -70,6 +70,26 @@
 
         /* Admin Cards */
         .admin-card { background: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #E4E6EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        /* API tab: one row per credential (icon + name/description + action) */
+        .api-doc-card { display: flex; align-items: center; gap: 12px; background: #ffffff; border: 1px solid #E4E6EB; border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .api-doc-icon { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .api-doc-icon svg { width: 18px; height: 18px; }
+        .api-doc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .api-doc-title { font-size: 14px; font-weight: 700; color: #050505; }
+        .api-doc-desc { font-size: 11.5px; color: #65676B; line-height: 1.4; }
+        .api-doc-btn { flex: unset !important; padding: 8px 14px !important; white-space: nowrap; }
+        .api-doc-static-key { font-family: monospace; font-size: 12.5px; color: #9C9EA1; background: #F0F2F5; padding: 6px 10px; border-radius: 8px; cursor: pointer; user-select: none; white-space: nowrap; }
+
+        /* Transaction / ledger history rows (G2Bulk Transactions, etc.) */
+        .tx-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #F0F2F5; }
+        .tx-row:last-child { border-bottom: none; }
+        .tx-row-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .tx-row-icon svg { width: 16px; height: 16px; }
+        .tx-row-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+        .tx-row-title { font-size: 13px; font-weight: 700; color: #050505; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tx-row-sub { font-size: 11px; color: #9C9EA1; }
+        .tx-row-amount { font-size: 14px; font-weight: 700; flex-shrink: 0; }
         .ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #F0F2F5; }
         .ac-id { font-size: 13px; font-weight: 700; color: #65676B; }
         .ac-body p { font-size: 14px; margin-bottom: 6px; color: #1C1E21; }
@@ -343,6 +363,7 @@
         <symbol id="icon-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></symbol>
         <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></symbol>
         <symbol id="icon-feather" viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></symbol>
+        <symbol id="icon-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></symbol>
     </svg>
 
     <div id="toast"><svg class="ui-icon" id="toast-icon" style="color: #4ADE80; width:18px;"><use id="toast-icon-use" href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
@@ -388,6 +409,9 @@
         </div>
         <div class="nav-item" id="btn-jcplays" onclick="showPage('jcplays')">
             <svg class="ui-icon"><use href="#icon-key"></use></svg> JCPlays
+        </div>
+        <div class="nav-item" id="btn-api-docs" onclick="showPage('api-docs')">
+            <svg class="ui-icon"><use href="#icon-code"></use></svg> API
         </div>
         <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
             <svg class="ui-icon"><use href="#icon-list"></use></svg> Games
@@ -498,14 +522,6 @@
 
             <div class="admin-card" style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <span style="font-size:15px;font-weight:700;display:block;">JCPlays API Credentials</span>
-                    <span style="font-size:12px;color:#65676B;">Used to auto-fulfill PUBG Mobile UC / Honor of Kings top-ups via jcplays.com</span>
-                </div>
-                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" onclick="openJCPlaysModal()">Settings</button>
-            </div>
-
-            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
-                <div>
                     <span style="font-size:15px;font-weight:700;display:block;">JCPlays Balance</span>
                     <span style="font-size:20px;font-weight:700;color:#1877F2;" id="jcplays-balance-display">—</span>
                 </div>
@@ -514,7 +530,7 @@
 
             <div class="admin-card" style="margin-top:14px;">
                 <span style="font-size:13px;color:#65676B;background:#F0F2F5;padding:8px 10px;border-radius:8px;display:block;">
-                    Games linked with a JCPlays Product Code (in the game editor) and packages linked with a JCPlays Product ID will auto-fulfill from the Orders page, the same way G2Bulk-linked ones do.
+                    Games linked with a JCPlays Product Code (in the game editor) and packages linked with a JCPlays Product ID will auto-fulfill from the Orders page, the same way G2Bulk-linked ones do. API credentials are managed from the <b>API</b> tab.
                 </span>
             </div>
         </div>
@@ -524,14 +540,6 @@
             <h2 class="title-header">G2Bulk</h2>
 
             <div class="admin-card" style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                    <span style="font-size:15px;font-weight:700;display:block;">G2Bulk API Key</span>
-                    <span style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via G2Bulk</span>
-                </div>
-                <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" onclick="openG2BulkModal()">Settings</button>
-            </div>
-
-            <div class="admin-card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
                 <div>
                     <span style="font-size:15px;font-weight:700;display:block;">G2Bulk Wallet Balance</span>
                     <span style="font-size:20px;font-weight:700;color:#1877F2;" id="g2bulk-balance-display">—</span>
@@ -545,11 +553,45 @@
                     <svg class="ui-icon" id="g2bulk-tx-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="g2bulk-tx-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Every charge and top-up on your G2Bulk wallet, straight from their ledger — use this to reconcile against your own sales.</p>
+                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Every charge and top-up on your G2Bulk wallet, straight from their ledger — use this to reconcile against your own sales. API key is managed from the <b>API</b> tab.</p>
                     <button class="btn btn-outline" id="g2bulk-tx-refresh-btn" onclick="loadG2BulkTransactions()" style="margin-bottom:10px;">Load / Refresh</button>
                     <div id="g2bulk-tx-list"></div>
                 </div>
             </div>
+        </div>
+
+        <!-- API TAB: every third-party key/credential the app uses, in one place -->
+        <div id="api-docs" class="page-section">
+            <h2 class="title-header">API &amp; Integrations</h2>
+            <p style="font-size:12.5px;color:#65676B;margin-top:-8px;margin-bottom:14px;">Keys and credentials that power auto-fulfillment, image uploads, and balance checks across the app.</p>
+
+            <div class="api-doc-card">
+                <div class="api-doc-icon" style="background:#7C3AED;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-zap"></use></svg></div>
+                <div class="api-doc-info">
+                    <span class="api-doc-title">G2Bulk API Key</span>
+                    <span class="api-doc-desc">Auto-fulfills top-ups via g2bulk.com — also powers wallet balance and the Transactions ledger on the G2Bulk tab.</span>
+                </div>
+                <button class="btn btn-outline api-doc-btn" onclick="openG2BulkModal()">Settings</button>
+            </div>
+
+            <div class="api-doc-card">
+                <div class="api-doc-icon" style="background:#16A34A;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-key"></use></svg></div>
+                <div class="api-doc-info">
+                    <span class="api-doc-title">JCPlays API Credentials</span>
+                    <span class="api-doc-desc">Auto-fulfills PUBG Mobile UC / Honor of Kings via jcplays.com (SmileCoin-compatible) — Base URL, UID, Email, M_KEY.</span>
+                </div>
+                <button class="btn btn-outline api-doc-btn" onclick="openJCPlaysModal()">Settings</button>
+            </div>
+
+            <div class="api-doc-card">
+                <div class="api-doc-icon" style="background:#E67E22;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-camera"></use></svg></div>
+                <div class="api-doc-info">
+                    <span class="api-doc-title">ImgBB API Key</span>
+                    <span class="api-doc-desc">Hosts every image uploaded from this panel — game covers, banners, logo, and customer payment receipts.</span>
+                </div>
+                <span class="api-doc-static-key" id="imgbb-key-display" onclick="toggleImgBBKeyReveal()">••••••••</span>
+            </div>
+            <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">This one's hardcoded in the app's source (not stored in Firestore) — to rotate it, replace the <code>IMGBB_API_KEY</code> constant near the top of the file and re-upload.</p>
         </div>
 
         <!-- GAMES PAGE (Live Firestore Data) -->
@@ -1011,6 +1053,16 @@
         // Get your own free key at https://api.imgbb.com/ (email signup, ~1 minute, no card).
         const IMGBB_API_KEY = "3c061bbc2b77dfb4bcb5d9b8e6509a33";
 
+        // The ImgBB key is a hardcoded constant (not a Firestore setting like the
+        // others), so it's just displayed - masked by default, tap to reveal.
+        let imgbbKeyRevealed = false;
+        function toggleImgBBKeyReveal() {
+            imgbbKeyRevealed = !imgbbKeyRevealed;
+            const el = document.getElementById('imgbb-key-display');
+            if (el) el.innerText = imgbbKeyRevealed ? IMGBB_API_KEY : '•'.repeat(Math.min(IMGBB_API_KEY.length, 20));
+        }
+        window.toggleImgBBKeyReveal = toggleImgBBKeyReveal;
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -1145,6 +1197,7 @@
                 let actionButtons;
                 if (data.status === 'Processing' && data.g2bulkOrderId) {
                     actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})">Check G2Bulk Status (${data.g2bulkStatus || 'PENDING'})</button>
+                                      <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself (e.g. via the G2Bulk Telegram bot) and don't want to wait on the API check">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Processing') {
                     actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
@@ -2757,12 +2810,15 @@
                     const isCharge = t.transaction_type === 'charge_balance';
                     const dateStr = t.created_at ? new Date(t.created_at).toLocaleString() : '';
                     return `
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0F2F5;">
-                            <div>
-                                <p style="font-size:13px;font-weight:600;color:#050505;">${t.description || (isCharge ? 'Charge' : 'Balance added')}</p>
-                                <p style="font-size:11px;color:#9C9EA1;">${dateStr} &middot; balance after: ${t.balance_after}</p>
+                        <div class="tx-row">
+                            <div class="tx-row-icon" style="background:${isCharge ? '#FDE8E8' : '#E7F6EC'};">
+                                <svg class="ui-icon" style="stroke:${isCharge ? '#C0392B' : '#1E8E4F'};"><use href="#${isCharge ? 'icon-trending-up' : 'icon-dollar'}"></use></svg>
                             </div>
-                            <span style="font-size:14px;font-weight:700;color:${isCharge ? '#C0392B' : '#28a745'};">${isCharge ? '-' : '+'}${t.amount}</span>
+                            <div class="tx-row-info">
+                                <span class="tx-row-title">${t.description || (isCharge ? 'Charge' : 'Balance added')}</span>
+                                <span class="tx-row-sub">${dateStr}${dateStr ? ' · ' : ''}Balance after: ${t.balance_after}</span>
+                            </div>
+                            <span class="tx-row-amount" style="color:${isCharge ? '#C0392B' : '#1E8E4F'};">${isCharge ? '-' : '+'}${t.amount}</span>
                         </div>
                     `;
                 }).join('');
