@@ -1167,7 +1167,15 @@
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else {
                     const doneLabel = data.status === 'Success' ? 'Order Completed' : 'Order Failed';
-                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>`;
+                    // Even after a local Fail, G2Bulk may finish the job later (it was
+                    // still "Processing" there when we gave up on it) — so if we have
+                    // its order_id, keep a recheck button around instead of a dead end.
+                    // checkG2BulkOrderStatus() already flips the local status to
+                    // Success/Fail based on whatever G2Bulk actually reports.
+                    const recheckBtn = (data.status === 'Fail' && data.g2bulkOrderId)
+                        ? `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})" title="Re-check in case G2Bulk actually finished it after we marked this Fail">Recheck G2Bulk Status</button>`
+                        : '';
+                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>${recheckBtn}`;
                 }
 
                 const durationLine = (data.status === 'Success' && data.confirmedAt && data.timestamp)
@@ -1335,9 +1343,11 @@
         }
 
         // Checks G2Bulk's order status once and applies it to the local order doc.
-        async function checkG2BulkOrderStatus(orderId, g2bulkOrderId) {
+        // silent=true is used by the background auto-poller below, so it doesn't
+        // pop a toast every ~25s for orders that are still just "processing".
+        async function checkG2BulkOrderStatus(orderId, g2bulkOrderId, silent = false) {
             if (!G2BULK_SETTINGS.apiKey) {
-                window.showToast('Add your G2Bulk API key first.', 'fail');
+                if (!silent) window.showToast('Add your G2Bulk API key first.', 'fail');
                 return;
             }
             try {
@@ -1354,18 +1364,42 @@
                     window.showToast('G2Bulk order completed ✓', 'success');
                 } else if (status === 'FAILED' || status === 'REFUNDED') {
                     await updateDoc(doc(db, "orders", orderId), { status: "Fail", g2bulkStatus: status });
-                    window.showToast('G2Bulk order failed/refunded.', 'fail');
+                    if (!silent) window.showToast('G2Bulk order failed/refunded.', 'fail');
                 } else {
                     await updateDoc(doc(db, "orders", orderId), { g2bulkStatus: status || 'PROCESSING' });
-                    window.showToast('Still processing on G2Bulk (' + (status || 'PROCESSING') + ')...');
+                    if (!silent) window.showToast('Still processing on G2Bulk (' + (status || 'PROCESSING') + ')...');
                 }
                 return status;
             } catch (error) {
                 console.error("G2Bulk status check error:", error);
-                window.showToast('Could not reach G2Bulk to check status.', 'fail');
+                if (!silent) window.showToast('Could not reach G2Bulk to check status.', 'fail');
             }
         }
         window.checkG2BulkOrderStatus = checkG2BulkOrderStatus;
+
+        // ---------- Background auto-sync for orders sent to G2Bulk ----------
+        // Every ~25s (while this admin panel tab is open), quietly re-checks every
+        // order that's still "Processing" and has a g2bulkOrderId against G2Bulk's
+        // API. The moment G2Bulk reports COMPLETED, the order flips to Success here
+        // — and since the Store app listens to the same Firestore doc in real time,
+        // it shows Success there too, automatically, with no Telegram bot integration
+        // needed (we already talk to G2Bulk directly through their REST API).
+        let g2bulkAutoPollRunning = false;
+        async function autoPollG2BulkOrders() {
+            if (g2bulkAutoPollRunning || !G2BULK_SETTINGS.apiKey) return;
+            const pending = Object.values(ORDERS).filter(o => o.status === 'Processing' && o.g2bulkOrderId);
+            if (pending.length === 0) return;
+            g2bulkAutoPollRunning = true;
+            try {
+                for (const o of pending) {
+                    await checkG2BulkOrderStatus(o.id, o.g2bulkOrderId, true);
+                    await new Promise(r => setTimeout(r, 600)); // stagger calls, don't hammer G2Bulk's API
+                }
+            } finally {
+                g2bulkAutoPollRunning = false;
+            }
+        }
+        setInterval(autoPollG2BulkOrders, 25000);
 
         async function pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft) {
             if (triesLeft <= 0) return;
