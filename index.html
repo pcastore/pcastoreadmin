@@ -1072,9 +1072,19 @@
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Pending') {
                     let startLabel = 'Start Processing';
+                    const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId;
                     if (data.g2bulkGameCode && data.g2bulkCatalogueName) startLabel = 'Auto-Fulfill via G2Bulk';
                     else if (data.jcplaysProductId) startLabel = 'Auto-Fulfill via JCPlays';
+                    // Auto-linked orders get a manual fallback button too, so if the
+                    // API call fails (bad credentials, insufficient balance, JCPlays/
+                    // G2Bulk downtime, etc.) the admin isn't stuck retrying the same
+                    // API — they can drop straight into the normal manual flow
+                    // (Processing -> Mark Success/Fail) instead.
+                    const manualFallbackBtn = isAutoLinked
+                        ? `<button class="btn btn-outline" onclick="fulfillManually('${orderId}', this)" title="Skip the API and process this order by hand instead">Fulfill Manually</button>`
+                        : '';
                     actionButtons = `<button class="btn btn-primary" onclick="startProcessing('${orderId}', this)">${startLabel}</button>
+                                      ${manualFallbackBtn}
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else {
                     const doneLabel = data.status === 'Success' ? 'Order Completed' : 'Order Failed';
@@ -1141,6 +1151,27 @@
                 btnElement.disabled = false;
             }
         }
+
+        // Fallback for G2Bulk/JCPlays-linked Pending orders: skips the auto-fulfill
+        // API entirely and moves the order straight to Processing, same as a plain
+        // manual order. Use this when the API is down, out of balance, or otherwise
+        // failing — it does NOT call G2Bulk/JCPlays or charge anything, so it's
+        // always safe to click. From Processing, use the normal Mark Success/Mark
+        // Fail buttons once the top-up has been done by hand.
+        async function fulfillManually(orderId, btnElement) {
+            btnElement.innerText = "Updating...";
+            btnElement.disabled = true;
+            try {
+                await updateDoc(doc(db, "orders", orderId), { status: "Processing" });
+                window.showToast("Moved to manual processing — use Mark Success once done.", 'success');
+            } catch (error) {
+                console.error("Manual fulfill error:", error);
+                window.showToast("Failed to update order! Check Rules.", 'fail');
+                btnElement.innerText = "Fulfill Manually";
+                btnElement.disabled = false;
+            }
+        }
+        window.fulfillManually = fulfillManually;
 
         // ---------- G2Bulk auto-fulfillment ----------
 
@@ -3284,6 +3315,33 @@
             listenJCPlays();
             listenUsers();
             listenTierSettings();
+            startAdminHeartbeat();
+        }
+
+        // ---------- Admin presence heartbeat ----------
+        // Writes a server timestamp to settings/presence every 60s while an admin
+        // is signed in and this tab is open, plus immediately whenever the tab
+        // regains focus (covers the case where the device was asleep/backgrounded
+        // and setInterval was throttled or paused). The storefront (index.html)
+        // reads this timestamp and shows "Admin Online" if it's recent, "Admin
+        // Offline" otherwise - there's no explicit sign-out write, so closing the
+        // tab or losing connection naturally ages into Offline within a few
+        // minutes once heartbeats stop arriving.
+        let adminHeartbeatInterval = null;
+        async function sendAdminHeartbeat() {
+            try {
+                await setDoc(doc(db, "settings", "presence"), { lastActive: serverTimestamp() }, { merge: true });
+            } catch (error) {
+                console.error("Admin heartbeat failed:", error);
+            }
+        }
+        function startAdminHeartbeat() {
+            if (adminHeartbeatInterval) return;
+            sendAdminHeartbeat();
+            adminHeartbeatInterval = setInterval(sendAdminHeartbeat, 60000);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) sendAdminHeartbeat();
+            });
         }
     </script>
 </body>
