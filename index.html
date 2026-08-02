@@ -1533,10 +1533,9 @@
         async function placeG2BulkOrder(orderId, order, btnElement) {
             if (!G2BULK_SETTINGS.apiKey) {
                 window.showToast('Add your G2Bulk API key first (Dashboard → G2Bulk API Key).', 'fail');
-                return;
+                return 'error';
             }
-            btnElement.innerText = "Placing order...";
-            btnElement.disabled = true;
+            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
 
             // Reuse the same idempotency key on a retry (order already carries one
             // from a prior failed attempt) so G2Bulk can't charge twice for it.
@@ -1581,9 +1580,8 @@
                 // reused on retry, so it's safe to let the admin click again.
                 console.error("G2Bulk place order error:", error);
                 window.showToast('G2Bulk order failed: ' + error.message, 'fail');
-                btnElement.innerText = "Start Processing";
-                btnElement.disabled = false;
-                return;
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
             }
 
             // G2Bulk has accepted the order at this point. Saving locally from
@@ -1603,14 +1601,16 @@
                 if (g2bulkOrderId) {
                     pollG2BulkOrder(orderId, g2bulkOrderId, 5); // ~5 tries, 4s apart = 20s
                 }
+                return 'processing';
             } catch (error) {
                 console.error("G2Bulk order accepted but saving the result failed:", error);
                 window.showInfoDialog(
                     'Order Accepted, But Not Saved',
                     `G2Bulk accepted this order${g2bulkOrderId ? ' (order_id: ' + g2bulkOrderId + ')' : ''}, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order — refresh the page instead; if it's still stuck, check the order_id directly on G2Bulk's dashboard before doing anything else.`
                 );
-                btnElement.innerText = "Refresh Page";
+                if (btnElement) btnElement.innerText = "Refresh Page";
                 // Left disabled on purpose - see note above.
+                return 'accepted_unsaved';
             }
         }
 
@@ -1634,9 +1634,11 @@
                 if (status === 'COMPLETED') {
                     await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), g2bulkStatus: status });
                     window.showToast('G2Bulk order completed ✓', 'success');
+                    editTelegramOrderMessage(orderId, 'Success');
                 } else if (status === 'FAILED' || status === 'REFUNDED') {
                     await updateDoc(doc(db, "orders", orderId), { status: "Fail", g2bulkStatus: status });
                     if (!silent) window.showToast('G2Bulk order failed/refunded.', 'fail');
+                    editTelegramOrderMessage(orderId, 'Fail');
                 } else {
                     await updateDoc(doc(db, "orders", orderId), { g2bulkStatus: status || 'PROCESSING' });
                     if (!silent) window.showToast('Still processing on G2Bulk (' + (status || 'PROCESSING') + ')...');
@@ -3222,7 +3224,9 @@
         async function editTelegramOrderMessage(orderId, status) {
             const order = ORDERS[orderId];
             if (!order || !order.telegramMessageId || !order.telegramChatId || !TELEGRAM_SETTINGS.botToken) return;
-            const statusLine = status === 'Success' ? '✅ <b>CONFIRMED</b>' : '❌ <b>REJECTED</b>';
+            const statusLine = status === 'Success' ? '✅ <b>CONFIRMED</b>'
+                : status === 'Processing' ? '⏳ <b>SENT TO G2BULK/JCPLAYS — PROCESSING</b>'
+                : '❌ <b>REJECTED</b>';
             const base = { chat_id: order.telegramChatId, message_id: order.telegramMessageId };
             try {
                 await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/editMessageReplyMarkup`, {
@@ -3252,11 +3256,40 @@
         }
 
         async function telegramResolveOrder(orderId, status, cb) {
-            if (!ORDERS[orderId]) { await answerTelegramCallback(cb.id, 'Order not found in app.'); return; }
-            if (ORDERS[orderId].status === 'Success' || ORDERS[orderId].status === 'Fail') {
-                await answerTelegramCallback(cb.id, `Already ${ORDERS[orderId].status}.`);
+            const order = ORDERS[orderId];
+            if (!order) { await answerTelegramCallback(cb.id, 'Order not found in app.'); return; }
+            if (order.status === 'Success' || order.status === 'Fail') {
+                await answerTelegramCallback(cb.id, `Already ${order.status}.`);
                 return;
             }
+
+            // Confirm on an order linked to G2Bulk/JCPlays must actually place the
+            // order with them - previously this just wrote status:"Success" onto
+            // the Firestore doc without ever calling the provider, so the order
+            // looked "confirmed" here while still sitting Pending in the admin
+            // panel and nothing was ever delivered to the customer.
+            if (status === 'Success') {
+                const isG2BulkLinked = !!(order.g2bulkGameCode && order.g2bulkCatalogueName);
+                const isJCPlaysLinked = !!order.jcplaysProductId;
+                if (isG2BulkLinked || isJCPlaysLinked) {
+                    await answerTelegramCallback(cb.id, `Confirmed — placing with ${isG2BulkLinked ? 'G2Bulk' : 'JCPlays'}...`);
+                    const result = isG2BulkLinked
+                        ? await placeG2BulkOrder(orderId, order, null)
+                        : await placeJCPlaysOrder(orderId, order, null);
+                    // 'success' = JCPlays completed it immediately; 'processing' = G2Bulk
+                    // accepted it and is finishing async; 'error'/'accepted_unsaved' means
+                    // it needs attention in the admin panel (bad key, no balance, etc.)
+                    const telegramStatus = result === 'success' ? 'Success' : result === 'processing' ? 'Processing' : null;
+                    if (telegramStatus) {
+                        await editTelegramOrderMessage(orderId, telegramStatus);
+                        window.showToast('Order routed to auto-fulfillment via Telegram', 'success');
+                    } else {
+                        window.showToast('Auto-fulfillment failed after Telegram confirm — check the order in the admin panel.', 'fail');
+                    }
+                    return;
+                }
+            }
+
             try {
                 await updateDoc(doc(db, "orders", orderId), {
                     status,
@@ -4157,22 +4190,19 @@
         async function placeJCPlaysOrder(orderId, order, btnElement) {
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
                 window.showToast('Add your JCPlays credentials first (Dashboard → JCPlays → Settings).', 'fail');
-                btnElement.innerText = "Start Processing";
-                btnElement.disabled = false;
-                return;
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
             }
             if (!order.jcplaysProduct || !order.jcplaysProductId) {
                 window.showInfoDialog(
                     'JCPlays Not Fully Linked',
                     'This order is missing its JCPlays Product Code or Product ID. Open the game in the game editor, fill in "JCPlays Product Code" and the package\'s JCPlays Product ID, save, and have the customer reorder — or fulfill this one manually.'
                 );
-                btnElement.innerText = "Start Processing";
-                btnElement.disabled = false;
-                return;
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
             }
 
-            btnElement.innerText = "Placing order...";
-            btnElement.disabled = true;
+            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
 
             let data;
             try {
@@ -4187,9 +4217,8 @@
                 // error) - nothing was charged, so it's safe to let the admin retry.
                 console.error("JCPlays place order error:", error);
                 window.showToast('JCPlays order failed: ' + error.message, 'fail');
-                btnElement.innerText = "Start Processing";
-                btnElement.disabled = false;
-                return;
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
             }
 
             if (data.status !== 200) {
@@ -4199,9 +4228,8 @@
                     'JCPlays Order Failed',
                     `JCPlays rejected the order (status ${data.status}): ${data.message || 'unknown error'}. The order stays Pending — fix the issue (e.g. balance, player ID) and try again, or fulfill manually.`
                 );
-                btnElement.innerText = "Start Processing";
-                btnElement.disabled = false;
-                return;
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
             }
 
             // JCPlays confirmed the top-up and charged the balance. From this
@@ -4217,14 +4245,16 @@
                     jcplaysOrderId: data.order_id || null
                 });
                 window.showToast('JCPlays order placed — top-up completed ✓', 'success');
+                return 'success';
             } catch (error) {
                 console.error("JCPlays order succeeded but saving the result failed:", error);
                 window.showInfoDialog(
                     'Top-up Completed, But Not Saved',
                     `JCPlays confirmed this top-up (order_id: ${data.order_id || 'n/a'}) and your balance was charged, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order (it would charge a second time) — refresh the page and mark it Success manually instead.`
                 );
-                btnElement.innerText = "Refresh Page";
+                if (btnElement) btnElement.innerText = "Refresh Page";
                 // Left disabled on purpose - see note above.
+                return 'accepted_unsaved';
             }
         }
         window.placeJCPlaysOrder = placeJCPlaysOrder;
