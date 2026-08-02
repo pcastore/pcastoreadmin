@@ -663,7 +663,14 @@
 
         <!-- ORDERS PAGE (Firebase Connected) -->
         <div id="order-list" class="page-section">
-            <h2 class="title-header">Active Orders <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button></h2>
+            <h2 class="title-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <span>Active Orders</span>
+                <span style="display:flex;gap:6px;">
+                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="cleanAllCompletedOrders()" title="Hide all Success/Fail orders from this list">Clean Completed</button>
+                    <button class="btn btn-outline" id="toggle-cleaned-btn" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="toggleShowCleanedOrders(); this.innerText = showCleanedOrders ? 'Show Active' : 'Show Cleaned';">Show Cleaned</button>
+                    <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button>
+                </span>
+            </h2>
             <!-- Firebase Container -->
             <div id="orders-container">
                 <p class="empty-msg">Loading orders...</p>
@@ -1028,17 +1035,33 @@
                         <svg class="ui-icon" id="ud-avatar-icon" style="width:28px;height:28px;"><use href="#icon-users"></use></svg>
                     </div>
                     <div>
-                        <div id="ud-name" style="font-size:17px;font-weight:700;color:#050505;">Guest</div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <div id="ud-name" style="font-size:17px;font-weight:700;color:#050505;">Guest</div>
+                            <span id="ud-tier-badge"></span>
+                        </div>
                         <div id="ud-guestid" style="font-size:12px;color:#9C9EA1;">-</div>
                     </div>
                 </div>
 
                 <div class="details-grid">
                     <div class="details-grid-item"><span>Phone</span><b id="ud-phone">N/A</b></div>
+                    <div class="details-grid-item"><span>Join Date</span><b id="ud-join-date">N/A</b></div>
                     <div class="details-grid-item"><span>Total Orders</span><b id="ud-order-count">0</b></div>
                     <div class="details-grid-item"><span>Total Spent</span><b id="ud-total-spent">0 MMK</b></div>
                     <div class="details-grid-item"><span>Last Seen</span><b id="ud-last-seen">N/A</b></div>
+                    <div class="details-grid-item"><span>Favorite Game</span><b id="ud-fav-game">N/A</b></div>
                 </div>
+
+                <div class="details-grid" style="grid-template-columns:repeat(4,1fr);margin-top:8px;">
+                    <div class="details-grid-item" style="padding:8px;"><span>Pending</span><b id="ud-count-pending">0</b></div>
+                    <div class="details-grid-item" style="padding:8px;"><span>Processing</span><b id="ud-count-processing">0</b></div>
+                    <div class="details-grid-item" style="padding:8px;"><span>Success</span><b id="ud-count-success">0</b></div>
+                    <div class="details-grid-item" style="padding:8px;"><span>Fail</span><b id="ud-count-fail">0</b></div>
+                </div>
+
+                <h3 class="detail-section-title" style="margin-top:16px;">Admin Note</h3>
+                <textarea id="ud-admin-note" placeholder="Private note about this customer (only visible here)..." rows="2" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+                <button class="btn btn-outline" style="margin-top:8px;padding:7px 14px;font-size:12px;" onclick="saveUserAdminNote()">Save Note</button>
 
                 <h3 class="detail-section-title" style="margin-top:18px;">Order History</h3>
                 <div id="ud-orders-container">
@@ -1150,7 +1173,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -1250,6 +1273,53 @@
         const expandedOrders = new Set();
         let ORDERS = {}; // { orderId: {...data, id} } - kept in sync for the Users tab
 
+        // "Clean" only sets an adminCleared flag on the order doc — it never deletes
+        // anything, so the customer's own Order History in the Store app (which reads
+        // this same "orders" collection filtered by their userId) is untouched. It just
+        // hides the order from this admin list by default to cut down on clutter.
+        let showCleanedOrders = false;
+        function toggleShowCleanedOrders() {
+            showCleanedOrders = !showCleanedOrders;
+            renderOrdersList();
+        }
+        window.toggleShowCleanedOrders = toggleShowCleanedOrders;
+
+        async function cleanOrder(orderId) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), { adminCleared: true, adminClearedAt: serverTimestamp() });
+                window.showToast('Order cleaned from list ✓');
+            } catch (error) {
+                console.error('Clean order error:', error);
+                window.showToast('Failed to clean order.', 'fail');
+            }
+        }
+        window.cleanOrder = cleanOrder;
+
+        async function restoreOrder(orderId) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), { adminCleared: false, adminClearedAt: null });
+                window.showToast('Order restored ✓');
+            } catch (error) {
+                console.error('Restore order error:', error);
+                window.showToast('Failed to restore order.', 'fail');
+            }
+        }
+        window.restoreOrder = restoreOrder;
+
+        async function cleanAllCompletedOrders() {
+            const targets = Object.values(ORDERS).filter(o => !o.adminCleared && (o.status === 'Success' || o.status === 'Fail'));
+            if (targets.length === 0) { window.showToast('Nothing to clean.'); return; }
+            if (!confirm(`Clean ${targets.length} completed order(s) from this list? They'll stay in the customer's own Order History.`)) return;
+            try {
+                await Promise.all(targets.map(o => updateDoc(doc(db, "orders", o.id), { adminCleared: true, adminClearedAt: serverTimestamp() })));
+                window.showToast(`${targets.length} order(s) cleaned ✓`);
+            } catch (error) {
+                console.error('Clean all error:', error);
+                window.showToast('Failed to clean some orders.', 'fail');
+            }
+        }
+        window.cleanAllCompletedOrders = cleanAllCompletedOrders;
+
         function toggleOrderCard(orderId) {
             if (expandedOrders.has(orderId)) expandedOrders.delete(orderId); else expandedOrders.add(orderId);
             const body = document.getElementById('body-' + orderId);
@@ -1293,12 +1363,19 @@
         // called from listenGames() to fill in thumbnails once game images arrive.
         function renderOrdersList() {
             const allOrders = Object.values(ORDERS);
+            const cleanedCount = allOrders.filter(o => o.adminCleared).length;
+            const visibleOrders = allOrders.filter(o => !!o.adminCleared === showCleanedOrders);
+
             if (allOrders.length === 0) {
                 ordersContainer.innerHTML = '<p class="empty-msg">No orders found.</p>';
                 return;
             }
+            if (visibleOrders.length === 0) {
+                ordersContainer.innerHTML = `<p class="empty-msg">${showCleanedOrders ? 'No cleaned orders.' : 'No active orders — all clean! 🎉'}</p>`;
+                return;
+            }
 
-            const sorted = allOrders.slice().sort((a, b) => {
+            const sorted = visibleOrders.slice().sort((a, b) => {
                 const ta = a.timestamp ? a.timestamp.toMillis() : 0;
                 const tb = b.timestamp ? b.timestamp.toMillis() : 0;
                 return tb - ta;
@@ -1348,7 +1425,10 @@
                     const recheckBtn = (data.status === 'Fail' && data.g2bulkOrderId)
                         ? `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})" title="Re-check in case G2Bulk actually finished it after we marked this Fail">Recheck G2Bulk Status</button>`
                         : '';
-                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>${recheckBtn}`;
+                    const cleanBtn = data.adminCleared
+                        ? `<button class="btn btn-outline" onclick="restoreOrder('${orderId}')" title="Bring this back into the active list">↺ Restore</button>`
+                        : `<button class="btn btn-outline" onclick="cleanOrder('${orderId}')" title="Hide from this list — stays in the customer's Order History">🧹 Clean</button>`;
+                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>${recheckBtn}${cleanBtn}`;
                 }
 
                 const durationLine = (data.status === 'Success' && data.confirmedAt && data.timestamp)
@@ -2601,6 +2681,20 @@
             const totalSpent = userOrders.filter(o => o.status === 'Success').reduce((sum, o) => sum + (Number(o.price) || 0), 0);
             document.getElementById('ud-total-spent').innerText = fmtMoney(totalSpent);
 
+            // Status breakdown chips
+            const counts = { Pending: 0, Processing: 0, Success: 0, Fail: 0 };
+            userOrders.forEach(o => { if (counts[o.status] !== undefined) counts[o.status]++; });
+            document.getElementById('ud-count-pending').innerText = counts.Pending;
+            document.getElementById('ud-count-processing').innerText = counts.Processing;
+            document.getElementById('ud-count-success').innerText = counts.Success;
+            document.getElementById('ud-count-fail').innerText = counts.Fail;
+
+            // Favorite game = most frequently ordered
+            const gameFreq = {};
+            userOrders.forEach(o => { if (o.game) gameFreq[o.game] = (gameFreq[o.game] || 0) + 1; });
+            const favGame = Object.keys(gameFreq).sort((a, b) => gameFreq[b] - gameFreq[a])[0];
+            document.getElementById('ud-fav-game').innerText = favGame ? `${favGame} (${gameFreq[favGame]}x)` : 'N/A';
+
             if (userOrders.length === 0) {
                 container.innerHTML = '<p class="empty-msg">No orders yet.</p>';
                 return;
@@ -2614,7 +2708,7 @@
                     <div class="admin-card" style="padding:12px;">
                         <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;">
                             <span class="ac-id">${o.game} (${o.itemAmount})</span>
-                            <span class="badge ${badgeClass}">${o.status}</span>
+                            <span class="badge ${badgeClass}">${o.status}${o.adminCleared ? ' · cleaned' : ''}</span>
                         </div>
                         <p style="font-size:13px;color:#65676B;">${fmtMoney(o.price)} &middot; ${o.paymentMethod || 'N/A'}</p>
                         <p style="font-size:12px;color:#9C9EA1;margin-top:4px;">${dateStr}</p>
@@ -2633,6 +2727,13 @@
             document.getElementById('ud-guestid').innerText = 'ID: ' + (u.guestId || userId);
             document.getElementById('ud-phone').innerText = u.phone || 'N/A';
             document.getElementById('ud-last-seen').innerText = u.lastSeen ? u.lastSeen.toDate().toLocaleString() : 'N/A';
+            document.getElementById('ud-join-date').innerText = u.createdAt ? u.createdAt.toDate().toLocaleDateString() : 'N/A';
+            document.getElementById('ud-admin-note').value = u.adminNote || '';
+
+            const userOrdersForTier = Object.values(ORDERS).filter(o => o.userId === userId && o.status === 'Success');
+            const spend = userOrdersForTier.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            const tier = tierForSpendAdmin(spend);
+            document.getElementById('ud-tier-badge').innerHTML = adminTierBadgeHTML(tier);
 
             const avatarImg = document.getElementById('ud-avatar-img');
             const avatarIcon = document.getElementById('ud-avatar-icon');
@@ -2656,6 +2757,19 @@
             renderUserOrders(userId);
             document.getElementById('user-details-modal-overlay').classList.add('show');
         }
+
+        async function saveUserAdminNote() {
+            if (!currentUserDetailsId) return;
+            const note = document.getElementById('ud-admin-note').value.trim();
+            try {
+                await updateDoc(doc(db, "users", currentUserDetailsId), { adminNote: note });
+                window.showToast('Note saved ✓');
+            } catch (error) {
+                console.error('Save admin note error:', error);
+                window.showToast('Failed to save note.', 'fail');
+            }
+        }
+        window.saveUserAdminNote = saveUserAdminNote;
 
         function closeUserDetails() {
             document.getElementById('user-details-modal-overlay').classList.remove('show');
@@ -3045,18 +3159,30 @@
         // escapeHtml() is already defined further down (used for provider game names).
 
         function buildTelegramOrderText(orderId, order) {
-            const lines = [
-                `🛒 <b>New Order</b>`,
-                `🎮 Game: <b>${escapeHtml(order.game)}</b>${order.serverRegion ? ' (' + escapeHtml(order.serverRegion) + ')' : ''}`,
-                `📦 Package: <b>${escapeHtml(order.itemAmount)}</b>`,
-                `💰 Price: <b>${Number(order.price || 0).toLocaleString()} MMK</b>`,
-                `🆔 Player ID: <code>${escapeHtml(order.playerId || 'N/A')}</code>`,
-                order.serverId ? `🌐 Server ID: <code>${escapeHtml(order.serverId)}</code>` : null,
-                `💳 Paid via: ${escapeHtml(order.paymentMethod || 'N/A')}`,
-                `👤 Customer: ${escapeHtml(order.userName || 'Guest')}${order.userPhone ? ' · ' + escapeHtml(order.userPhone) : ''}`,
-                `🔖 Order ID: <code>${escapeHtml(orderId)}</code>`
+            // Aligned monospace grid inside a <pre> block so it renders as a tidy
+            // card in Telegram (HTML parse_mode only supports a limited tag set —
+            // pre/code is the closest thing to a real table).
+            const rows = [
+                ['Game', escapeHtml(order.game) + (order.serverRegion ? ' (' + escapeHtml(order.serverRegion) + ')' : '')],
+                ['Package', escapeHtml(order.itemAmount)],
+                ['Price', Number(order.price || 0).toLocaleString() + ' MMK'],
+                ['Player ID', escapeHtml(order.playerId || 'N/A')],
+                order.serverId ? ['Server ID', escapeHtml(order.serverId)] : null,
+                ['Payment', escapeHtml(order.paymentMethod || 'N/A')],
+                ['Customer', escapeHtml(order.userName || 'Guest') + (order.userPhone ? ' · ' + escapeHtml(order.userPhone) : '')]
             ].filter(Boolean);
-            return lines.join('\n');
+
+            const labelWidth = Math.max(...rows.map(r => r[0].length));
+            const gridLines = rows.map(([label, value], i) => {
+                const connector = i === 0 ? '┌' : (i === rows.length - 1 ? '└' : '├');
+                return `${connector} ${label.padEnd(labelWidth, ' ')}  ${value}`;
+            });
+
+            return [
+                `🛒 <b>New Order</b>`,
+                `<pre>${gridLines.join('\n')}</pre>`,
+                `🔖 Order ID: <code>${escapeHtml(orderId)}</code>`
+            ].join('\n');
         }
 
         async function sendOrderToTelegram(orderId, order) {
@@ -4272,6 +4398,90 @@
         window.deleteGame = deleteGame;
         window.deleteCurrentGame = deleteCurrentGame;
 
+        // ---------- 7-Day Order Archive → Telegram ----------
+        // Best-effort, browser-side scheduler: once a day, during the midnight hour
+        // (00:00–00:59, local time of whoever has the admin panel open), it looks for
+        // orders that are 7+ days old (including ones already "Cleaned" from the
+        // active list above) and haven't been archive-sent yet, and posts them to the
+        // Telegram bot in order (oldest first) as a backup digest. Nothing is deleted —
+        // orders just get an archiveSentAt stamp so they aren't re-sent tomorrow.
+        //
+        // IMPORTANT CAVEAT: this only runs while this admin panel tab is open in a
+        // browser during the midnight hour. It cannot fire while the tab is closed.
+        // For a guaranteed exact-midnight run regardless of whether anyone has the
+        // panel open, this check needs to live in a Cloudflare Worker Cron Trigger
+        // instead (the same way pca-telegram-bot already runs independently of this
+        // panel for webhook button presses) — ask if you'd like that built too.
+        let archiveCheckIntervalStarted = false;
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function localDateStr(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+
+        async function checkOrderArchiveSchedule() {
+            if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
+            const now = new Date();
+            if (now.getHours() !== 0) return; // only act during the 00:00–00:59 window
+            const todayStr = localDateStr(now);
+
+            let alreadyRanToday = false;
+            try {
+                const snap = await getDoc(doc(db, "settings", "orderArchive"));
+                alreadyRanToday = snap.exists() && snap.data().lastRunDate === todayStr;
+            } catch (error) {
+                console.error('Archive schedule check error:', error);
+                return;
+            }
+            if (alreadyRanToday) return;
+
+            const cutoffMs = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+            const targets = Object.values(ORDERS)
+                .filter(o => o.timestamp && o.timestamp.toMillis() <= cutoffMs && !o.archiveSentAt)
+                .sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+
+            if (targets.length > 0) {
+                const CHUNK = 8; // keep each Telegram message well under the 4096 char limit
+                for (let i = 0; i < targets.length; i += CHUNK) {
+                    const chunk = targets.slice(i, i + CHUNK);
+                    const rows = chunk.map((o, idx) => {
+                        const dateStr = o.timestamp.toDate().toLocaleDateString();
+                        const line = `${i + idx + 1}. ${escapeHtml(o.game)} (${escapeHtml(o.itemAmount)}) — ${Number(o.price || 0).toLocaleString()} MMK — ${o.status}${o.adminCleared ? ' · cleaned' : ''} — ${dateStr}`;
+                        return line;
+                    });
+                    const text = [
+                        `📦 <b>7-Day Order Archive</b> (${todayStr})`,
+                        `<pre>${rows.join('\n')}</pre>`
+                    ].join('\n');
+                    try {
+                        await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ chat_id: TELEGRAM_SETTINGS.chatId, text, parse_mode: 'HTML' })
+                        });
+                    } catch (error) {
+                        console.error('Archive send error:', error);
+                    }
+                }
+                try {
+                    await Promise.all(targets.map(o => updateDoc(doc(db, "orders", o.id), { archiveSentAt: serverTimestamp() })));
+                } catch (error) {
+                    console.error('Archive stamp error:', error);
+                }
+            }
+
+            try {
+                await setDoc(doc(db, "settings", "orderArchive"), { lastRunDate: todayStr }, { merge: true });
+            } catch (error) {
+                console.error('Archive schedule save error:', error);
+            }
+        }
+
+        function startOrderArchiveScheduler() {
+            if (archiveCheckIntervalStarted) return;
+            archiveCheckIntervalStarted = true;
+            checkOrderArchiveSchedule(); // catch up immediately in case it's already past midnight
+            setInterval(checkOrderArchiveSchedule, 2 * 60 * 1000); // re-check every 2 minutes
+        }
+
         // Start live order tracking and load real dashboard numbers, but only
         // once an authenticated admin has actually signed in (see the auth
         // gate above) — nothing here runs against Firestore before that.
@@ -4290,6 +4500,7 @@
             listenUsers();
             listenTierSettings();
             startAdminHeartbeat();
+            startOrderArchiveScheduler();
         }
 
         // ---------- Admin presence heartbeat ----------
