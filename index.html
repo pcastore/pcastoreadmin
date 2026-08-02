@@ -265,6 +265,14 @@
         .pkg-price-field label { display: block; font-size: 10px; font-weight: 700; color: #9C9EA1; text-transform: uppercase; margin-bottom: 3px; }
         .pkg-profit-badge { flex-shrink: 0; min-width: 52px; text-align: center; padding: 8px 6px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #F0F2F5; color: #65676B; }
         .pkg-profit-badge.positive { background: #E3F9E9; color: #31A24C; }
+        .pkg-row-media { display: flex; gap: 8px; align-items: center; }
+        .pkg-img-preview { flex-shrink: 0; width: 44px; height: 44px; border-radius: 8px; border: 1px dashed #BCC0C4; background: #F7F8FA; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
+        .pkg-img-preview.uploading { opacity: 0.5; }
+        .pkg-img-preview .pkg-img-tag { width: 100%; height: 100%; object-fit: contain; }
+        .pkg-img-preview .pkg-img-placeholder { font-size: 9px; color: #9C9EA1; text-align: center; line-height: 1.3; }
+        .pkg-media-right { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+        .pkg-type { flex: 1; min-width: 0; padding: 7px 6px; border: 1px solid #E4E6EB; border-radius: 6px; font-size: 12px; color: #65676B; background: #fff; }
+        .pkg-img-remove { flex-shrink: 0; font-size: 11px; color: #FA3E3E; cursor: pointer; white-space: nowrap; }
         .pkg-profit-badge.negative { background: #FDE8E8; color: #C0392B; }
     </style>
 </head>
@@ -690,6 +698,10 @@
                 <label>Game Name</label>
                 <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
 
+                <label>Server / Region <span style="font-weight:400;color:#9C9EA1;">(optional)</span></label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">If this game has multiple servers (e.g. Malaysia Server, Singapore Server), give each upload the SAME Game Name above and a different Server name here. The Store will group them under one card and let customers pick a server. Leave blank for games with only one server.</p>
+                <input type="text" id="edit-game-server-name" placeholder="e.g. Malaysia Server (leave blank if only one server)">
+
                 <label>Game Category</label>
                 <input type="hidden" id="edit-game-category" value="">
                 <div class="category-chip-select" id="game-category-select"></div>
@@ -780,6 +792,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
+                <button class="btn btn-outline" id="duplicate-game-btn" style="display:none;" onclick="duplicateGameAsNewServer()" title="Keeps the Game Name, Image, Category and toggles, but clears the Server name, the G2Bulk/JCPlays link, and all packages so this server's own Import stays completely separate">+ New Server</button>
                 <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
             </div>
         </div>
@@ -1249,7 +1262,7 @@
                         <div class="oc-top" onclick="toggleOrderCard('${orderId}')">
                             <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" onerror="this.style.display='none'">` : ''}</div>
                             <div class="oc-info">
-                                <span class="oc-game-name">${data.game}</span>
+                                <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:#1877F2;">(${data.serverRegion})</span>` : ''}</span>
                                 <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
                             </div>
                             <div class="oc-status">
@@ -1258,9 +1271,12 @@
                             </div>
                         </div>
                         <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid #F0F2F5;">
+                            <p><b>Customer:</b> ${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}" style="color:#1877F2;">${data.userPhone}</a>` : ''}</p>
                             <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
                             ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
+                            ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
                             <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
+                            ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:#1877F2;">View on Map</a></p>` : ''}
                             ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
                             <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
                             ${durationLine}
@@ -1609,7 +1625,13 @@
 
         function renderAdminGamesList() {
             const container = document.getElementById('admin-games-container');
-            const ids = Object.keys(GAMES);
+            // Sort by name (then server name) so games uploaded as multiple server
+            // variants (same Game Name, different Server name) sit next to each
+            // other in the list instead of being scattered.
+            const ids = Object.keys(GAMES).sort((a, b) => {
+                const ga = GAMES[a], gb = GAMES[b];
+                return ga.name.localeCompare(gb.name) || (ga.serverName || '').localeCompare(gb.serverName || '');
+            });
             if (ids.length === 0) {
                 container.innerHTML = '<p class="empty-msg">No games yet. Tap + Add to create one.</p>';
                 return;
@@ -1621,6 +1643,7 @@
                         <div class="ac-header">
                             <span class="ac-id">${g.name}</span>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+                                ${g.serverName ? `<span class="badge" style="background:#DBEAFE;color:#1E40AF;">🌐 ${g.serverName}</span>` : ''}
                                 ${categoryBadgeHtml(g.category)}
                                 ${g.popular ? `<span class="badge" style="background:#FFF3CD;color:#856404;">★ Popular</span>` : ''}
                                 ${g.serverIdRequired === false ? `<span class="badge" style="background:#E4E6EB;color:#65676B;">No Server ID</span>` : ''}
@@ -1685,7 +1708,7 @@
             reader.readAsDataURL(file);
         }
 
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '') {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency') {
             const list = document.getElementById('edit-packages-list');
             const row = document.createElement('div');
             row.className = 'package-row';
@@ -1698,6 +1721,20 @@
                     <div class="pkg-row-top">
                         <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
                         <div onclick="removePackageRow(this)" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 6px;flex-shrink:0;">&times;</div>
+                    </div>
+                    <div class="pkg-row-media">
+                        <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
+                            <img class="pkg-img-tag" src="${image}" style="${image ? '' : 'display:none;'}">
+                            <span class="pkg-img-placeholder" style="${image ? 'display:none;' : ''}">+ Image</span>
+                        </div>
+                        <input type="file" accept="image/*" class="pkg-img-file" style="display:none;" onchange="handlePackageImageSelect(this)">
+                        <div class="pkg-media-right">
+                            <select class="pkg-type" title="How this package's card looks in the Store grid">
+                                <option value="currency" ${type !== 'package' ? 'selected' : ''}>Currency (grid card)</option>
+                                <option value="package" ${type === 'package' ? 'selected' : ''}>Package (wide banner)</option>
+                            </select>
+                            <div class="pkg-img-remove" onclick="removePackageImage(this)" style="${image ? '' : 'display:none;'}">Remove img</div>
+                        </div>
                     </div>
                     <div class="pkg-row-pricing">
                         <div class="pkg-price-field">
@@ -1719,6 +1756,71 @@
             renumberPackageRows();
             updatePackageProfit(row.querySelector('.pkg-price'));
         }
+
+        // Uploads a package's card image to ImgBB the moment it's picked, showing
+        // an instant local preview while the real upload happens in the
+        // background. The final hosted URL lands in the preview box's
+        // data-url attribute, which saveGame() reads when building `packages`.
+        async function handlePackageImageSelect(inputEl) {
+            const file = inputEl.files[0];
+            if (!file) return;
+            const row = inputEl.closest('.package-row');
+            const wrap = row.querySelector('.pkg-img-preview');
+            const imgTag = wrap.querySelector('.pkg-img-tag');
+            const placeholder = wrap.querySelector('.pkg-img-placeholder');
+            const removeLink = row.querySelector('.pkg-img-remove');
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                imgTag.src = ev.target.result;
+                imgTag.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+
+            wrap.classList.add('uploading');
+            try {
+                const url = await uploadPackageImageToImgBB(file);
+                wrap.dataset.url = url;
+                imgTag.src = url;
+                removeLink.style.display = 'block';
+            } catch (error) {
+                console.error('Package image upload failed:', error);
+                window.showToast(error.message || 'Image upload failed', 'fail');
+                wrap.dataset.url = '';
+                imgTag.style.display = 'none';
+                placeholder.style.display = 'block';
+            } finally {
+                wrap.classList.remove('uploading');
+                inputEl.value = '';
+            }
+        }
+        window.handlePackageImageSelect = handlePackageImageSelect;
+
+        // Same ImgBB upload as uploadImageToImgBB(), but without a fixed status
+        // element ID — package rows are created dynamically so there's no single
+        // #id to write status text into.
+        async function uploadPackageImageToImgBB(file) {
+            if (!IMGBB_API_KEY || IMGBB_API_KEY === "YOUR_IMGBB_API_KEY") {
+                throw new Error("Add your free ImgBB API key first (see IMGBB_API_KEY at the top of the Firebase script). Get one at https://api.imgbb.com/");
+            }
+            const form = new FormData();
+            form.append('image', file);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: form });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error?.message || 'Upload failed');
+            return data.data.url;
+        }
+
+        function removePackageImage(linkEl) {
+            const row = linkEl.closest('.package-row');
+            const wrap = row.querySelector('.pkg-img-preview');
+            wrap.dataset.url = '';
+            wrap.querySelector('.pkg-img-tag').style.display = 'none';
+            wrap.querySelector('.pkg-img-placeholder').style.display = 'block';
+            linkEl.style.display = 'none';
+        }
+        window.removePackageImage = removePackageImage;
 
         // Recomputes and redraws the profit-% badge for one package row whenever
         // its Cost or Price field changes. Cost is never sent to the Store (only
@@ -1859,6 +1961,7 @@
                 const g = GAMES[gameId];
                 document.getElementById('game-editor-title').innerText = 'Edit Game';
                 document.getElementById('edit-game-name').value = g.name;
+                document.getElementById('edit-game-server-name').value = g.serverName || '';
                 document.getElementById('edit-game-category').value = g.category || '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-popular').checked = !!g.popular;
@@ -1882,14 +1985,16 @@
                     bannerChangeBadge.style.display = 'none';
                 }
 
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || ''));
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency'));
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
                 deleteBtn.style.display = 'block';
+                document.getElementById('duplicate-game-btn').style.display = 'block';
             } else {
                 document.getElementById('game-editor-title').innerText = 'Add New Game';
                 document.getElementById('edit-game-name').value = '';
+                document.getElementById('edit-game-server-name').value = '';
                 document.getElementById('edit-game-category').value = '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-popular').checked = false;
@@ -1909,6 +2014,7 @@
 
                 addPackageRow();
                 deleteBtn.style.display = 'none';
+                document.getElementById('duplicate-game-btn').style.display = 'none';
             }
             refreshPickerButton('g2bulk');
             refreshPickerButton('jcplays');
@@ -1967,6 +2073,7 @@
             const gameId = document.getElementById('edit-game-id').value;
             const name = document.getElementById('edit-game-name').value.trim();
             if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
+            const serverName = document.getElementById('edit-game-server-name').value.trim();
 
             const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
             const jcplaysProduct = document.getElementById('edit-game-jcplays-code').value.trim();
@@ -1979,7 +2086,9 @@
                 cost: Number(row.querySelector('.pkg-cost').value) || 0,
                 price: Number(row.querySelector('.pkg-price').value) || 0,
                 g2bulk: row.querySelector('.pkg-g2bulk').value.trim(),
-                jcplays: row.querySelector('.pkg-jcplays').value.trim()
+                jcplays: row.querySelector('.pkg-jcplays').value.trim(),
+                image: row.querySelector('.pkg-img-preview').dataset.url || '',
+                type: row.querySelector('.pkg-type').value || 'currency'
             })).filter(p => p.amount && p.price > 0);
 
             if (packages.length === 0) { window.showToast('Add at least one valid package', 'fail'); return; }
@@ -2009,7 +2118,7 @@
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
-                const data = { name, image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', category: category || '', popular, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', category: category || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -3724,7 +3833,34 @@
         window.previewGameImage = previewGameImage;
         window.previewGameBanner = previewGameBanner;
         window.addPackageRow = addPackageRow;
+        // Quick way to add another server for a game that's already set up.
+        // Keeps the shared basics (Game Name, Image, Banner, Category, Popular,
+        // Requires Server ID) since those are usually identical across servers,
+        // but wipes everything server-specific: the Server name field, the
+        // G2Bulk/JCPlays provider link, and the whole package list. That way
+        // each server always gets its own fresh Import — packages from one
+        // server can never leak into another's list.
+        function duplicateGameAsNewServer() {
+            document.getElementById('edit-game-id').value = '';
+            document.getElementById('edit-game-server-name').value = '';
+            document.getElementById('edit-packages-list').innerHTML = '';
+            document.getElementById('edit-game-g2bulk-code').value = '';
+            document.getElementById('edit-game-jcplays-code').value = '';
+            document.getElementById('jcplays-denom-status').innerText = '';
+            document.getElementById('game-editor-title').innerText = 'Add New Game';
+            document.getElementById('delete-game-btn').style.display = 'none';
+            document.getElementById('duplicate-game-btn').style.display = 'none';
+            addPackageRow();
+            refreshPickerButton('g2bulk');
+            refreshPickerButton('jcplays');
+            onG2BulkGameChange();
+            document.getElementById('edit-game-server-name').focus();
+            window.showToast('Now name this server and import its own packages');
+        }
+        window.duplicateGameAsNewServer = duplicateGameAsNewServer;
         window.saveGame = saveGame;
+
+
         window.deleteGame = deleteGame;
         window.deleteCurrentGame = deleteCurrentGame;
 
