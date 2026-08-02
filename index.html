@@ -123,8 +123,10 @@
         .nav-item.active .ui-icon { stroke: #1877F2; }
         
         /* Utility */
-        #toast { position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150%); background: #333; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; z-index: 1000;}
-        #toast.show { transform: translate(-50%, 0); }
+        #toast { position: fixed; top: 14px; left: 14px; right: 14px; max-width: 480px; margin: 0 auto; background: #0F2419; border: 1px solid rgba(74,222,128,0.35); color: #4ADE80; padding: 14px 16px; border-radius: 14px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; z-index: 1000; transform: translateY(-150%); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+        #toast.show { transform: translateY(0); }
+        #toast .toast-icon-circle { width: 26px; height: 26px; border-radius: 50%; background: #22C55E; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        #toast .toast-icon-circle svg { width: 15px; height: 15px; }
         .empty-msg { text-align: center; color: #65676B; font-size: 14px; padding: 20px 0; }
         .highlight-id { font-weight: bold; color: #1877F2; font-size: 15px; }
 
@@ -372,9 +374,10 @@
         <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></symbol>
         <symbol id="icon-feather" viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></symbol>
         <symbol id="icon-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></symbol>
+        <symbol id="icon-telegram" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></symbol>
     </svg>
 
-    <div id="toast"><svg class="ui-icon" id="toast-icon" style="color: #4ADE80; width:18px;"><use id="toast-icon-use" href="#icon-check"></use></svg> <span id="toast-msg">Action Completed!</span></div>
+    <div id="toast"><span class="toast-icon-circle" id="toast-icon-circle"><svg class="ui-icon" id="toast-icon" style="color:#fff;"><use id="toast-icon-use" href="#icon-check"></use></svg></span> <span id="toast-msg">Action Completed!</span></div>
 
     <!-- Reusable Delete / Warning / Information dialog (replaces browser confirm()/alert()) -->
     <div class="dialog-overlay" id="action-dialog-overlay" onclick="if(event.target===this) window.closeActionDialog()">
@@ -572,6 +575,15 @@
         <div id="api-docs" class="page-section">
             <h2 class="title-header">API &amp; Integrations</h2>
             <p style="font-size:12.5px;color:#65676B;margin-top:-8px;margin-bottom:14px;">Keys and credentials that power auto-fulfillment, image uploads, and balance checks across the app.</p>
+
+            <div class="api-doc-card">
+                <div class="api-doc-icon" style="background:#29A9EA;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-telegram"></use></svg></div>
+                <div class="api-doc-info">
+                    <span class="api-doc-title">Telegram Order Bot</span>
+                    <span class="api-doc-desc">Sends every new order to your Telegram with full details and Confirm/Reject buttons — no need to open this admin panel.</span>
+                </div>
+                <button class="btn btn-outline api-doc-btn" onclick="openTelegramBotModal()">Settings</button>
+            </div>
 
             <div class="api-doc-card">
                 <div class="api-doc-icon" style="background:#7C3AED;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-zap"></use></svg></div>
@@ -921,6 +933,38 @@
         </div>
     </div>
 
+    <!-- Telegram Bot Settings Modal: Bot Token + Chat ID, plus a live enable toggle -->
+    <div class="modal-overlay" id="telegram-modal-overlay" onclick="if(event.target===this) closeTelegramBotModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Telegram Order Bot</h3>
+                <div class="modal-close" onclick="closeTelegramBotModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px;color:#65676B;">Message <a href="https://t.me/BotFather" target="_blank" style="color:#1877F2;">@BotFather</a> on Telegram to create a bot and get its token. Then message your new bot once and use <a href="https://t.me/userinfobot" target="_blank" style="color:#1877F2;">@userinfobot</a> (or check the bot's getUpdates response) to find your Chat ID.</p>
+
+                <label>Bot Token</label>
+                <input type="password" id="tg-bot-token" placeholder="123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+
+                <label>Chat ID</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Your personal chat ID, or a group/channel ID where orders should be posted.</p>
+                <input type="text" id="tg-chat-id" placeholder="e.g. 123456789 or -100123456789" autocomplete="off">
+
+                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+                    <input type="checkbox" id="tg-enabled" style="width:auto;">
+                    <span>Enabled — send new orders to Telegram automatically</span>
+                </label>
+                <p id="tg-status" style="font-size:12px;color:#65676B;display:none;margin-top:8px;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="test-tg-btn" onclick="sendTestTelegramMessage()">Send Test Message</button>
+                <button class="btn btn-primary" id="save-tg-btn" onclick="saveTelegramBotSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- User Details Modal: profile grid + that user's order history -->
     <div class="modal-overlay" id="user-details-modal-overlay" onclick="if(event.target===this) closeUserDetails()">
         <div class="modal-box">
@@ -976,13 +1020,15 @@
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const styles = {
-                success: { icon: '#icon-check', color: '#4ADE80' },
-                fail: { icon: '#icon-close', color: '#FA3E3E' },
-                cancel: { icon: '#icon-info', color: '#E4E6EB' }
+                success: { icon: '#icon-check', circleBg: '#22C55E', textColor: '#4ADE80', border: 'rgba(74,222,128,0.35)' },
+                fail: { icon: '#icon-close', circleBg: '#EF4444', textColor: '#FCA5A5', border: 'rgba(239,68,68,0.35)' },
+                cancel: { icon: '#icon-info', circleBg: '#9CA3AF', textColor: '#E4E6EB', border: 'rgba(228,230,235,0.25)' }
             };
             const s = styles[type] || styles.success;
             document.getElementById('toast-icon-use').setAttribute('href', s.icon);
-            document.getElementById('toast-icon').style.color = s.color;
+            document.getElementById('toast-icon-circle').style.background = s.circleBg;
+            toast.style.borderColor = s.border;
+            toast.style.color = s.textColor;
             document.getElementById('toast-msg').innerText = message;
             toast.classList.add('show');
             setTimeout(() => { toast.classList.remove('show'); }, 3000);
@@ -1184,6 +1230,22 @@
                 if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
                 if (Object.keys(USERS).length) renderAdminUsersList();
                 renderOrdersList();
+
+                // Send genuinely new Pending orders to Telegram. The very first
+                // snapshot (app just opened) reports every existing order as
+                // "added" too - skip that whole batch so turning this feature on
+                // doesn't blast every old order to Telegram at once.
+                if (!telegramInitialOrdersSnapshotDone) {
+                    telegramInitialOrdersSnapshotDone = true;
+                } else if (TELEGRAM_SETTINGS.enabled && TELEGRAM_SETTINGS.botToken && TELEGRAM_SETTINGS.chatId) {
+                    querySnapshot.docChanges().forEach((change) => {
+                        if (change.type !== 'added') return;
+                        const data = change.doc.data();
+                        if (data.status === 'Pending' && !data.telegramMessageId) {
+                            sendOrderToTelegram(change.doc.id, data);
+                        }
+                    });
+                }
             }, (error) => {
                 console.error("Data Fetch Error: ", error);
                 ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
@@ -1529,6 +1591,7 @@
                     ...(note ? { statusNote: note } : {})
                 });
                 window.showToast("Order marked as Success!", 'success');
+                editTelegramOrderMessage(orderId, 'Success');
                 // No manual DOM removal needed - the live listener re-renders the
                 // list automatically now that this order no longer matches the query.
             } catch (error) {
@@ -1561,6 +1624,7 @@
                     ...(note ? { statusNote: note } : {})
                 });
                 window.showToast("Order marked as Fail.", 'fail');
+                editTelegramOrderMessage(orderId, 'Fail');
             } catch (error) {
                 console.error("Update Error: ", error);
                 window.showToast("Failed to update order! Check Rules.", 'fail');
@@ -2885,6 +2949,248 @@
         }
         window.saveG2BulkKey = saveG2BulkKey;
 
+        // ---------- Telegram Order Bot ----------
+        // Sends every new Pending order to Telegram (full details + Confirm/Reject
+        // inline buttons) and long-polls getUpdates for the button presses, since
+        // there's no server to receive a webhook on (same browser-based-only
+        // constraint as the rest of this app - see pca-store notes on the
+        // Cloudflare Workers plan for a future always-on version).
+        let TELEGRAM_SETTINGS = { botToken: '', chatId: '', enabled: false };
+        let telegramListenerAttached = false;
+        let telegramInitialOrdersSnapshotDone = false;
+        let telegramPollingStarted = false;
+        let telegramPollingBusy = false;
+
+        // escapeHtml() is already defined further down (used for provider game names).
+
+        function buildTelegramOrderText(orderId, order) {
+            const lines = [
+                `🛒 <b>New Order</b>`,
+                `🎮 Game: <b>${escapeHtml(order.game)}</b>${order.serverRegion ? ' (' + escapeHtml(order.serverRegion) + ')' : ''}`,
+                `📦 Package: <b>${escapeHtml(order.itemAmount)}</b>`,
+                `💰 Price: <b>${Number(order.price || 0).toLocaleString()} MMK</b>`,
+                `🆔 Player ID: <code>${escapeHtml(order.playerId || 'N/A')}</code>`,
+                order.serverId ? `🌐 Server ID: <code>${escapeHtml(order.serverId)}</code>` : null,
+                `💳 Paid via: ${escapeHtml(order.paymentMethod || 'N/A')}`,
+                `👤 Customer: ${escapeHtml(order.userName || 'Guest')}${order.userPhone ? ' · ' + escapeHtml(order.userPhone) : ''}`,
+                `🔖 Order ID: <code>${escapeHtml(orderId)}</code>`
+            ].filter(Boolean);
+            return lines.join('\n');
+        }
+
+        async function sendOrderToTelegram(orderId, order) {
+            if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
+            const text = buildTelegramOrderText(orderId, order);
+            const reply_markup = { inline_keyboard: [[
+                { text: '✅ Confirm', callback_data: 'confirm:' + orderId },
+                { text: '❌ Reject', callback_data: 'reject:' + orderId }
+            ]] };
+            try {
+                const usePhoto = !!order.receiptUrl;
+                const endpoint = usePhoto ? 'sendPhoto' : 'sendMessage';
+                const body = usePhoto
+                    ? { chat_id: TELEGRAM_SETTINGS.chatId, photo: order.receiptUrl, caption: text, parse_mode: 'HTML', reply_markup }
+                    : { chat_id: TELEGRAM_SETTINGS.chatId, text, parse_mode: 'HTML', reply_markup };
+                const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/${endpoint}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    await updateDoc(doc(db, "orders", orderId), {
+                        telegramMessageId: data.result.message_id,
+                        telegramChatId: data.result.chat.id
+                    });
+                } else {
+                    console.error('Telegram send failed:', data);
+                }
+            } catch (error) {
+                console.error('sendOrderToTelegram error:', error);
+            }
+        }
+
+        // Removes the Confirm/Reject buttons and appends the resolved status onto
+        // the original message/caption - called both when a Telegram button is
+        // pressed AND when the admin resolves the order from inside this panel,
+        // so the Telegram message never goes stale either way.
+        async function editTelegramOrderMessage(orderId, status) {
+            const order = ORDERS[orderId];
+            if (!order || !order.telegramMessageId || !order.telegramChatId || !TELEGRAM_SETTINGS.botToken) return;
+            const statusLine = status === 'Success' ? '✅ <b>CONFIRMED</b>' : '❌ <b>REJECTED</b>';
+            const base = { chat_id: order.telegramChatId, message_id: order.telegramMessageId };
+            try {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/editMessageReplyMarkup`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...base, reply_markup: { inline_keyboard: [] } })
+                });
+                const text = buildTelegramOrderText(orderId, order) + '\n\n' + statusLine;
+                const endpoint = order.receiptUrl ? 'editMessageCaption' : 'editMessageText';
+                const field = order.receiptUrl ? 'caption' : 'text';
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/${endpoint}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...base, [field]: text, parse_mode: 'HTML' })
+                });
+            } catch (error) {
+                console.error('editTelegramOrderMessage error:', error);
+            }
+        }
+
+        async function answerTelegramCallback(callbackQueryId, text) {
+            if (!TELEGRAM_SETTINGS.botToken) return;
+            try {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/answerCallbackQuery`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callback_query_id: callbackQueryId, text })
+                });
+            } catch (error) { /* non-critical - button just keeps its loading spinner briefly */ }
+        }
+
+        async function telegramResolveOrder(orderId, status, cb) {
+            if (!ORDERS[orderId]) { await answerTelegramCallback(cb.id, 'Order not found in app.'); return; }
+            if (ORDERS[orderId].status === 'Success' || ORDERS[orderId].status === 'Fail') {
+                await answerTelegramCallback(cb.id, `Already ${ORDERS[orderId].status}.`);
+                return;
+            }
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status,
+                    ...(status === 'Success' ? { confirmedAt: serverTimestamp() } : {}),
+                    statusNote: 'Updated via Telegram'
+                });
+                await answerTelegramCallback(cb.id, status === 'Success' ? '✅ Marked as Success' : '❌ Marked as Rejected');
+                await editTelegramOrderMessage(orderId, status);
+                window.showToast(`Order ${status === 'Success' ? 'confirmed' : 'rejected'} via Telegram`, status === 'Success' ? 'success' : 'fail');
+            } catch (error) {
+                console.error('telegramResolveOrder error:', error);
+                await answerTelegramCallback(cb.id, 'Failed to update - please use the app instead.');
+            }
+        }
+
+        async function handleTelegramCallbackQuery(cb) {
+            const raw = cb.data || '';
+            const sep = raw.indexOf(':');
+            if (sep === -1) { await answerTelegramCallback(cb.id, 'Unknown action.'); return; }
+            const action = raw.slice(0, sep);
+            const orderId = raw.slice(sep + 1);
+            if (action === 'confirm') await telegramResolveOrder(orderId, 'Success', cb);
+            else if (action === 'reject') await telegramResolveOrder(orderId, 'Fail', cb);
+            else await answerTelegramCallback(cb.id, 'Unknown action.');
+        }
+
+        async function pollTelegramUpdates() {
+            if (telegramPollingBusy || !TELEGRAM_SETTINGS.botToken) { setTimeout(pollTelegramUpdates, 4000); return; }
+            telegramPollingBusy = true;
+            try {
+                const offset = Number(localStorage.getItem('tg_update_offset') || '0');
+                const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/getUpdates?timeout=25&offset=${offset}`);
+                const data = await res.json();
+                if (data.ok && data.result.length) {
+                    for (const update of data.result) {
+                        localStorage.setItem('tg_update_offset', String(update.update_id + 1));
+                        if (update.callback_query) await handleTelegramCallbackQuery(update.callback_query);
+                    }
+                }
+            } catch (error) {
+                console.error('pollTelegramUpdates error:', error);
+            } finally {
+                telegramPollingBusy = false;
+                setTimeout(pollTelegramUpdates, 2000);
+            }
+        }
+
+        function startTelegramPollingOnce() {
+            if (telegramPollingStarted) return;
+            telegramPollingStarted = true;
+            pollTelegramUpdates();
+        }
+
+        function listenTelegramBot() {
+            if (telegramListenerAttached) return;
+            telegramListenerAttached = true;
+            onSnapshot(doc(db, "settings", "telegramBot"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('tg-bot-token').value = data.botToken || '';
+                document.getElementById('tg-chat-id').value = data.chatId || '';
+                document.getElementById('tg-enabled').checked = !!data.enabled;
+                TELEGRAM_SETTINGS = { botToken: (data.botToken || '').trim(), chatId: (data.chatId || '').trim(), enabled: !!data.enabled };
+                if (TELEGRAM_SETTINGS.enabled && TELEGRAM_SETTINGS.botToken) startTelegramPollingOnce();
+            }, (error) => {
+                console.error('Telegram settings listener error:', error);
+            });
+        }
+
+        function openTelegramBotModal() {
+            document.getElementById('tg-status').style.display = 'none';
+            document.getElementById('telegram-modal-overlay').classList.add('show');
+        }
+        window.openTelegramBotModal = openTelegramBotModal;
+
+        function closeTelegramBotModal() {
+            document.getElementById('telegram-modal-overlay').classList.remove('show');
+        }
+        window.closeTelegramBotModal = closeTelegramBotModal;
+
+        async function saveTelegramBotSettings() {
+            const botToken = document.getElementById('tg-bot-token').value.trim();
+            const chatId = document.getElementById('tg-chat-id').value.trim();
+            const enabled = document.getElementById('tg-enabled').checked;
+            const btn = document.getElementById('save-tg-btn');
+            const originalText = btn.innerText;
+
+            if (enabled && (!botToken || !chatId)) {
+                window.showToast('Add both Bot Token and Chat ID before enabling.', 'fail');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                await setDoc(doc(db, "settings", "telegramBot"), { botToken, chatId, enabled }, { merge: true });
+                window.showToast('Telegram Bot settings saved!', 'success');
+                if (enabled && botToken) startTelegramPollingOnce();
+            } catch (error) {
+                console.error('Save Telegram settings error:', error);
+                window.showToast('Failed to save Telegram settings.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveTelegramBotSettings = saveTelegramBotSettings;
+
+        async function sendTestTelegramMessage() {
+            const botToken = document.getElementById('tg-bot-token').value.trim();
+            const chatId = document.getElementById('tg-chat-id').value.trim();
+            const statusEl = document.getElementById('tg-status');
+            statusEl.style.display = 'block';
+
+            if (!botToken || !chatId) {
+                statusEl.style.color = '#FA3E3E';
+                statusEl.innerText = 'Enter Bot Token and Chat ID first.';
+                return;
+            }
+
+            statusEl.style.color = '#65676B';
+            statusEl.innerText = 'Sending...';
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: '✅ PCA Store admin panel connected — this chat will receive new orders.' })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    statusEl.style.color = '#22C55E';
+                    statusEl.innerText = 'Sent! Check your Telegram.';
+                } else {
+                    statusEl.style.color = '#FA3E3E';
+                    statusEl.innerText = data.description || 'Failed to send.';
+                }
+            } catch (error) {
+                statusEl.style.color = '#FA3E3E';
+                statusEl.innerText = 'Could not reach Telegram.';
+            }
+        }
+        window.sendTestTelegramMessage = sendTestTelegramMessage;
+
         // ---------- G2Bulk wallet balance (SMM panel style: key in body, action=balance) ----------
         // Deliberately uses the SMM panel endpoint (POST /api/v2, key+action in body)
         // rather than the main API's /v1/getMe, per how this was set up.
@@ -3878,6 +4184,7 @@
             listenBranding();
             listenG2Bulk();
             listenJCPlays();
+            listenTelegramBot();
             listenUsers();
             listenTierSettings();
             startAdminHeartbeat();
