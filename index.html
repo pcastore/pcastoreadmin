@@ -3956,6 +3956,17 @@
         // `settings` defaults to the saved JCPLAYS_SETTINGS but can be overridden
         // (e.g. by verifyJCPlaysKey, which checks the values currently in the
         // form before they're saved).
+        // PHP's http_build_query() encodes like encodeURIComponent but additionally
+        // turns spaces into '+' and percent-encodes ! * ' ( ) too (RFC1738/urlencode),
+        // which encodeURIComponent alone leaves untouched. Must match this exactly or
+        // the signature won't match what jcplays computes server-side (e.g. an email's
+        // '@' has to become '%40' in the string that gets signed).
+        function phpUrlEncode(value) {
+            return encodeURIComponent(String(value))
+                .replace(/%20/g, '+')
+                .replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+        }
+
         function jcplaysBuildSignedParams(extraParams, settings) {
             const s = settings || JCPLAYS_SETTINGS;
             const params = Object.assign({
@@ -3965,13 +3976,12 @@
                 time: Math.floor(Date.now() / 1000)
             }, extraParams);
 
-            // NOTE: JCPlays' own "live example" in their docs shows the string-to-sign
-            // built from RAW (non-URL-encoded) key=value pairs (e.g. email keeps its
-            // literal '@'), not encodeURIComponent'd ones — so we must not encode here,
-            // even though the actual POST body sent by jcplaysRequest() is still
-            // form-encoded via URLSearchParams as normal.
+            // Per JCPlays' docs: sort by key, build a PHP http_build_query()-style
+            // (URL-encoded) key=value string, append '&' + raw M_KEY, then double-md5.
+            // The actual POST body sent by jcplaysRequest() is still form-encoded via
+            // URLSearchParams as normal — this only affects the string that gets signed.
             const sortedKeys = Object.keys(params).sort();
-            const queryStr = sortedKeys.map(k => `${k}=${params[k]}`).join('&');
+            const queryStr = sortedKeys.map(k => `${phpUrlEncode(k)}=${phpUrlEncode(params[k])}`).join('&');
             const sign = md5(md5(queryStr + '&' + s.mKey));
             params.sign = sign;
             return params;
