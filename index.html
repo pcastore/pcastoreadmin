@@ -892,6 +892,14 @@
                 <label>USD → MMK Rate</label>
                 <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">G2Bulk prices are in USD. This rate is used to pre-fill MMK prices when you tap "Import from G2Bulk" — you can still edit each price by hand afterward.</p>
                 <input type="number" id="g2bulk-usd-rate" placeholder="e.g. 4500" step="1">
+
+                <label>Webhook URL <span style="font-weight:400;color:#9C9EA1;">(optional)</span></label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Your Cloudflare Worker URL. When set, orders auto-complete the instant G2Bulk confirms them — no need to keep this admin panel open. Leave blank to fall back to tab-based polling.</p>
+                <input type="text" id="g2bulk-webhook-url" placeholder="https://your-worker.workers.dev/g2bulk-webhook" autocomplete="off">
+
+                <label>Webhook Secret</label>
+                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Must match the WEBHOOK_SECRET you set on the Worker. Sent as a query param so outsiders can't spoof completions.</p>
+                <input type="password" id="g2bulk-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
@@ -1321,6 +1329,12 @@
         // g2bulkOrderId saved - the "Check Status" button lets the admin re-check
         // any time (a browser tab left open can't be relied on for long background
         // polling on a phone).
+        //
+        // If G2BULK_SETTINGS.webhookUrl is configured, G2Bulk also pushes the
+        // COMPLETED/FAILED result straight to that Cloudflare Worker the moment it
+        // happens, which updates Firestore server-side - so the order flips to
+        // Success/Fail even if nobody has this admin panel open at all. The polling
+        // below still runs as a harmless backup for whoever does have it open.
         async function placeG2BulkOrder(orderId, order, btnElement) {
             if (!G2BULK_SETTINGS.apiKey) {
                 window.showToast('Add your G2Bulk API key first (Dashboard → G2Bulk API Key).', 'fail');
@@ -1340,6 +1354,15 @@
                 }
             }
 
+            // If a webhook is configured, G2Bulk pushes COMPLETED/FAILED to it the
+            // instant the order finishes — no need to keep this admin tab open. The
+            // orderId is round-tripped through `remark`, which G2Bulk echoes back
+            // verbatim in the callback payload, so the Worker can map it straight
+            // back to this Firestore doc without an extra lookup.
+            const callbackUrl = G2BULK_SETTINGS.webhookUrl
+                ? `${G2BULK_SETTINGS.webhookUrl}?secret=${encodeURIComponent(G2BULK_SETTINGS.webhookSecret)}`
+                : undefined;
+
             let data;
             try {
                 const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(order.g2bulkGameCode)}/order`, {
@@ -1349,7 +1372,8 @@
                         catalogue_name: order.g2bulkCatalogueName,
                         player_id: order.playerId,
                         server_id: order.serverId || undefined,
-                        remark: `PCA Store order ${orderId}`
+                        remark: `PCA Store order ${orderId}`,
+                        callback_url: callbackUrl
                     })
                 });
                 data = await res.json();
@@ -1430,13 +1454,17 @@
         }
         window.checkG2BulkOrderStatus = checkG2BulkOrderStatus;
 
-        // ---------- Background auto-sync for orders sent to G2Bulk ----------
+        // ---------- Background auto-sync for orders sent to G2Bulk (fallback) ----------
         // Every ~25s (while this admin panel tab is open), quietly re-checks every
         // order that's still "Processing" and has a g2bulkOrderId against G2Bulk's
         // API. The moment G2Bulk reports COMPLETED, the order flips to Success here
         // — and since the Store app listens to the same Firestore doc in real time,
         // it shows Success there too, automatically, with no Telegram bot integration
         // needed (we already talk to G2Bulk directly through their REST API).
+        //
+        // With a webhook configured (see placeG2BulkOrder above), this loop is just
+        // a safety net — it'll also catch anything the webhook missed (e.g. a single
+        // failed callback retry) whenever the admin panel happens to be open.
         let g2bulkAutoPollRunning = false;
         async function autoPollG2BulkOrders() {
             if (g2bulkAutoPollRunning || !G2BULK_SETTINGS.apiKey) return;
@@ -2678,7 +2706,7 @@
         let g2bulkListenerAttached = false;
         // Module-wide cache of the current key/rate so order auto-fulfillment
         // doesn't need to re-read Firestore on every click.
-        let G2BULK_SETTINGS = { apiKey: '', usdRate: 4500 };
+        let G2BULK_SETTINGS = { apiKey: '', usdRate: 4500, webhookUrl: '', webhookSecret: '' };
         // Cache of GET /v1/games so the game editor dropdown doesn't re-fetch every open.
         let G2BULK_GAMES_LIST = null;
 
@@ -2701,7 +2729,14 @@
                 const data = docSnap.exists() ? docSnap.data() : {};
                 document.getElementById('g2bulk-api-key').value = data.apiKey || '';
                 document.getElementById('g2bulk-usd-rate').value = data.usdRate || 4500;
-                G2BULK_SETTINGS = { apiKey: data.apiKey || '', usdRate: Number(data.usdRate) || 4500 };
+                document.getElementById('g2bulk-webhook-url').value = data.webhookUrl || '';
+                document.getElementById('g2bulk-webhook-secret').value = data.webhookSecret || '';
+                G2BULK_SETTINGS = {
+                    apiKey: data.apiKey || '',
+                    usdRate: Number(data.usdRate) || 4500,
+                    webhookUrl: (data.webhookUrl || '').trim(),
+                    webhookSecret: (data.webhookSecret || '').trim()
+                };
                 if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             }, (error) => {
                 console.error("G2Bulk settings listener error:", error);
@@ -2711,13 +2746,25 @@
         async function saveG2BulkKey() {
             const apiKey = document.getElementById('g2bulk-api-key').value.trim();
             const usdRate = Number(document.getElementById('g2bulk-usd-rate').value) || 4500;
+            const webhookUrl = document.getElementById('g2bulk-webhook-url').value.trim();
+            const webhookSecret = document.getElementById('g2bulk-webhook-secret').value.trim();
             const btn = document.getElementById('save-g2bulk-btn');
             const originalText = btn.innerText;
+
+            if (webhookUrl && !/^https:\/\//i.test(webhookUrl)) {
+                window.showToast('Webhook URL must start with https://', 'fail');
+                return;
+            }
+            if (webhookUrl && !webhookSecret) {
+                window.showToast('Set a Webhook Secret too — required whenever a Webhook URL is set.', 'fail');
+                return;
+            }
+
             btn.disabled = true;
             btn.innerText = 'Saving...';
 
             try {
-                await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate }, { merge: true });
+                await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret }, { merge: true });
                 window.showToast('G2Bulk key saved!', 'success');
             } catch (error) {
                 console.error("Save G2Bulk key error:", error);
