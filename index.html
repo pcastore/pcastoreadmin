@@ -3893,6 +3893,14 @@
         let jcplaysListenerAttached = false;
         let JCPLAYS_SETTINGS = { baseUrl: 'https://jcplays.com/smilecoin/api', uid: '', email: '', mKey: '' };
 
+        // JCPlays' API sends no CORS headers, so a direct browser fetch() to
+        // jcplays.com always fails with a NetworkError - this is the standalone
+        // pca-telegram-bot Cloudflare Worker's dedicated /jcplays-proxy route
+        // (server-side, no CORS restriction), used ONLY for JCPlays calls made
+        // from this admin panel. Kept fully separate from G2Bulk - G2Bulk's API
+        // already supports CORS so it's still called directly, unchanged.
+        const JCPLAYS_PROXY_URL = 'https://raspy-salad-b6ba.linpyaesone130.workers.dev/jcplays-proxy';
+
         // ---------- MD5 (pure JS, no external dependency) ----------
         // Small self-contained MD5 implementation, used only to replicate
         // JCPlays' documented signature formula (sign = md5(md5(str))).
@@ -3972,23 +3980,39 @@
         // Low-level helper: signs + POSTs to a JCPlays endpoint and returns the
         // parsed JSON body. Throws if credentials are missing or the response
         // isn't valid JSON (e.g. an HTML error page).
+        // Goes through the Worker's /jcplays-proxy route (see JCPLAYS_PROXY_URL
+        // above) instead of calling jcplays.com directly - a direct browser call
+        // always fails with "NetworkError when attempting to fetch resource"
+        // because jcplays.com's API doesn't send CORS headers. The Worker signs
+        // nothing extra on top of what's sent here; it just forwards uid/email/
+        // mKey/extraParams to jcplays.com server-side (no CORS there) and relays
+        // the JSON straight back. G2Bulk calls are untouched by this - still a
+        // direct browser fetch, since G2Bulk's API does support CORS.
         async function jcplaysRequest(endpointPath, extraParams, settings) {
             const s = settings || JCPLAYS_SETTINGS;
             if (!s.uid || !s.email || !s.mKey) {
                 throw new Error('Add your JCPlays UID, Email and M_KEY first (Dashboard → JCPlays → Settings).');
             }
-            const params = jcplaysBuildSignedParams(extraParams, s);
-            const body = new URLSearchParams(params).toString();
-            const res = await fetch(`${(s.baseUrl || 'https://jcplays.com/smilecoin/api').replace(/\/$/, '')}/${endpointPath}`, {
+            const res = await fetch(JCPLAYS_PROXY_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    endpointPath,
+                    extraParams,
+                    uid: s.uid,
+                    email: s.email,
+                    mKey: s.mKey,
+                    baseUrl: s.baseUrl || 'https://jcplays.com/smilecoin/api'
+                })
             });
+            let data;
             try {
-                return await res.json();
+                data = await res.json();
             } catch (e) {
-                throw new Error(`JCPlays returned a non-JSON response (HTTP ${res.status}).`);
+                throw new Error(`JCPlays proxy returned a non-JSON response (HTTP ${res.status}).`);
             }
+            if (data && data.error) throw new Error(data.error);
+            return data;
         }
 
         function openJCPlaysModal() {
