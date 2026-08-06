@@ -600,6 +600,35 @@
                 </div>
             </div>
 
+            <div class="dash-section-label">Wallet Balances</div>
+
+            <div class="admin-card" id="dash-wallet-card" style="margin-top:0;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <svg class="ui-icon" style="width:17px;height:17px;color:#1877F2;"><use href="#icon-wallet"></use></svg>
+                        </div>
+                        <div>
+                            <span style="font-size:13px;font-weight:700;display:block;">G2Bulk Wallet</span>
+                            <span style="font-size:17px;font-weight:700;color:#1877F2;" id="dash-g2bulk-balance-display">—</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="height:1px;background:#F0F2F5;"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <svg class="ui-icon" style="width:17px;height:17px;color:#1877F2;"><use href="#icon-wallet"></use></svg>
+                        </div>
+                        <div>
+                            <span style="font-size:13px;font-weight:700;display:block;">JCPlays Balance</span>
+                            <span style="font-size:17px;font-weight:700;color:#1877F2;" id="dash-jcplays-balance-display">—</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-outline" style="margin-top:2px;" id="dash-wallet-refresh-btn" onclick="refreshDashboardWallets()">Refresh Balances</button>
+            </div>
+
             <div class="dash-section-label">Settings</div>
 
             <div class="admin-card" style="margin-top:0;">
@@ -1878,6 +1907,11 @@
             } catch (error) {
                 console.error("Dashboard stats error: ", error);
             }
+
+            // Wallet balances load independently so a G2Bulk/JCPlays hiccup
+            // never blocks the order stats above from showing.
+            if (window.refreshG2BulkBalance) refreshG2BulkBalance();
+            if (window.refreshJCPlaysBalance) refreshJCPlaysBalance();
         }
 
         // ---------- Manage Games ----------
@@ -1904,6 +1938,11 @@
         }
         let editingImageFile = null;
         let editingBannerImageFile = null;
+        // Set when a G2Bulk game link auto-fills the Game Image from G2Bulk's own
+        // cover image (already hosted, so saveGame() uses this URL directly
+        // instead of re-uploading to ImgBB). Cleared the moment the admin picks
+        // their own file, so a manual upload always wins.
+        let editingImageRemoteUrl = null;
         let editingPaymentImageFile = null;
 
         function renderAdminGamesList() {
@@ -1964,6 +2003,7 @@
             const file = e.target.files[0];
             if (!file) return;
             editingImageFile = file;
+            editingImageRemoteUrl = null;
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const img = document.getElementById('edit-game-preview');
@@ -2245,6 +2285,7 @@
         function openGameEditor(gameId = null) {
             editingImageFile = null;
             editingBannerImageFile = null;
+            editingImageRemoteUrl = null;
             document.getElementById('edit-game-id').value = gameId || '';
             document.getElementById('edit-packages-list').innerHTML = '';
             document.getElementById('edit-game-file').value = '';
@@ -2408,6 +2449,8 @@
 
                 if (editingImageFile) {
                     imageUrl = await uploadImageToImgBB(editingImageFile, 'upload-status');
+                } else if (editingImageRemoteUrl) {
+                    imageUrl = editingImageRemoteUrl;
                 }
 
                 if (!imageUrl) {
@@ -3533,18 +3576,20 @@
         // Deliberately uses the SMM panel endpoint (POST /api/v2, key+action in body)
         // rather than the main API's /v1/getMe, per how this was set up.
         async function refreshG2BulkBalance() {
-            const displayEl = document.getElementById('g2bulk-balance-display');
+            // Mirrors the balance onto every display el that exists on the page
+            // right now (the G2Bulk tab's own display, plus the Dashboard's
+            // wallet card) - either one may be absent depending on which page
+            // is active, so both lookups are optional.
+            const displayEls = [document.getElementById('g2bulk-balance-display'), document.getElementById('dash-g2bulk-balance-display')].filter(Boolean);
             const btn = document.getElementById('g2bulk-balance-refresh-btn');
+            if (displayEls.length === 0) return;
             if (!G2BULK_SETTINGS.apiKey) {
-                displayEl.innerText = 'No key set';
-                displayEl.style.color = '#9C9EA1';
+                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = '#9C9EA1'; });
                 return;
             }
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = '...';
-            displayEl.innerText = 'Loading...';
-            displayEl.style.color = '#9C9EA1';
+            const originalText = btn ? btn.innerText : '';
+            if (btn) { btn.disabled = true; btn.innerText = '...'; }
+            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = '#9C9EA1'; });
 
             try {
                 const res = await fetch('https://api.g2bulk.com/api/v2', {
@@ -3555,15 +3600,13 @@
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
 
-                displayEl.innerText = `${Number(data.balance).toFixed(2)} ${data.currency || 'USD'}`;
-                displayEl.style.color = '#1877F2';
+                const text = `${Number(data.balance).toFixed(2)} ${data.currency || 'USD'}`;
+                displayEls.forEach(el => { el.innerText = text; el.style.color = '#1877F2'; });
             } catch (error) {
                 console.error("G2Bulk balance error:", error);
-                displayEl.innerText = 'Error: ' + error.message;
-                displayEl.style.color = '#C0392B';
+                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = '#C0392B'; });
             } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
+                if (btn) { btn.disabled = false; btn.innerText = originalText; }
             }
         }
         window.refreshG2BulkBalance = refreshG2BulkBalance;
@@ -3852,6 +3895,23 @@
             const nameInput = document.getElementById('edit-game-name');
             if (code && !nameInput.value.trim()) nameInput.value = name;
 
+            // Linking a G2Bulk game also pulls in its cover image as the Game
+            // Image — the same "fill it in for you" treatment as the name field
+            // above — but only when no image has been set yet, so an admin's own
+            // uploaded photo is never overwritten.
+            if (gamePickerProvider === 'g2bulk' && code) {
+                const match = gamePickerItems.find(g => g.code === code);
+                const preview = document.getElementById('edit-game-preview');
+                if (match && match.image && preview.style.display !== 'block') {
+                    editingImageFile = null;
+                    editingImageRemoteUrl = match.image;
+                    preview.src = match.image;
+                    preview.style.display = 'block';
+                    document.getElementById('game-img-update-box').classList.add('has-image');
+                    document.getElementById('game-img-update-change').style.display = 'flex';
+                }
+            }
+
             refreshPickerButton(gamePickerProvider);
             if (gamePickerProvider === 'g2bulk') onG2BulkGameChange();
             closeGamePicker();
@@ -3885,13 +3945,38 @@
                 if (!data.success) throw new Error(data.message || 'Import failed');
 
                 const rate = G2BULK_SETTINGS.usdRate || 4500;
-                document.getElementById('edit-packages-list').innerHTML = '';
-                (data.catalogues || []).forEach(c => {
-                    const cost = Math.round(c.amount * rate);
-                    addPackageRow(c.name, cost, cost, c.name);
+                const catalogues = data.catalogues || [];
+
+                // Re-import safe: match each incoming item to an existing row by its
+                // G2Bulk catalogue name and only refresh that row's Cost. Price,
+                // Image, and the row's position are left exactly as the admin set
+                // them. A catalogue name with no matching row is brand new, so it
+                // gets appended as a new row (Cost = Price, same as first import).
+                const rowByG2BulkName = new Map();
+                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
+                    const key = row.querySelector('.pkg-g2bulk').value.trim();
+                    if (key) rowByG2BulkName.set(key, row);
                 });
+
+                let updatedCount = 0, addedCount = 0;
+                catalogues.forEach(c => {
+                    const cost = Math.round(c.amount * rate);
+                    const existingRow = rowByG2BulkName.get(c.name);
+                    if (existingRow) {
+                        const costInput = existingRow.querySelector('.pkg-cost');
+                        costInput.value = cost;
+                        updatePackageProfit(costInput);
+                        updatedCount++;
+                    } else {
+                        addPackageRow(c.name, cost, cost, c.name);
+                        addedCount++;
+                    }
+                });
+
                 statusEl.style.color = '#1877F2';
-                statusEl.innerText = `Imported ${(data.catalogues || []).length} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                statusEl.innerText = updatedCount
+                    ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
+                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
                 window.showToast('Catalogue imported ✓', 'success');
             } catch (error) {
                 console.error("Import G2Bulk catalogue error:", error);
@@ -4206,33 +4291,45 @@
 
         // ---------- JCPlays balance ----------
         async function refreshJCPlaysBalance() {
-            const displayEl = document.getElementById('jcplays-balance-display');
+            // Mirrors the balance onto every display el that exists right now
+            // (the JCPlays tab's own display, plus the Dashboard's wallet card).
+            const displayEls = [document.getElementById('jcplays-balance-display'), document.getElementById('dash-jcplays-balance-display')].filter(Boolean);
             const btn = document.getElementById('jcplays-balance-refresh-btn');
-            if (!displayEl) return;
+            if (displayEls.length === 0) return;
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
-                displayEl.innerText = 'No credentials set';
-                displayEl.style.color = '#9C9EA1';
+                displayEls.forEach(el => { el.innerText = 'No credentials set'; el.style.color = '#9C9EA1'; });
                 return;
             }
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
-            displayEl.innerText = 'Loading...';
-            displayEl.style.color = '#9C9EA1';
+            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = '#9C9EA1'; });
 
             try {
                 const data = await jcplaysRequest('querypoints', {});
                 if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
-                displayEl.innerText = `${Number(data.smile_points).toLocaleString()} pts`;
-                displayEl.style.color = '#1877F2';
+                const text = `${Number(data.smile_points).toLocaleString()} pts`;
+                displayEls.forEach(el => { el.innerText = text; el.style.color = '#1877F2'; });
             } catch (error) {
                 console.error("JCPlays balance error:", error);
-                displayEl.innerText = 'Error: ' + error.message;
-                displayEl.style.color = '#C0392B';
+                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = '#C0392B'; });
             } finally {
                 if (btn) { btn.disabled = false; btn.innerText = originalText; }
             }
         }
         window.refreshJCPlaysBalance = refreshJCPlaysBalance;
+
+        // ---------- Dashboard wallet card refresh (both G2Bulk + JCPlays) ----------
+        async function refreshDashboardWallets() {
+            const btn = document.getElementById('dash-wallet-refresh-btn');
+            const originalText = btn ? btn.innerText : '';
+            if (btn) { btn.disabled = true; btn.innerText = 'Refreshing...'; }
+            try {
+                await Promise.all([refreshG2BulkBalance(), refreshJCPlaysBalance()]);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = originalText; }
+            }
+        }
+        window.refreshDashboardWallets = refreshDashboardWallets;
 
         // ---------- JCPlays denomination lookup (helper for the game editor) ----------
         // Looks up the public product code currently typed into the game
@@ -4273,13 +4370,38 @@
                     return;
                 }
                 const rate = G2BULK_SETTINGS.usdRate || 4500;
-                document.getElementById('edit-packages-list').innerHTML = '';
+
+                // Re-import safe (same fix as G2Bulk's import above): match each
+                // incoming denomination to an existing row by its JCPlays Product
+                // ID and only refresh that row's Cost. Price, Image, and the row's
+                // position are left exactly as the admin set them, and a server's
+                // own package list is never wiped out from under it. A Product ID
+                // with no matching row is brand new, so it's appended.
+                const rowByJcplaysId = new Map();
+                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
+                    const key = row.querySelector('.pkg-jcplays').value.trim();
+                    if (key) rowByJcplaysId.set(key, row);
+                });
+
+                let updatedCount = 0, addedCount = 0;
                 rows.forEach(r => {
                     const cost = Math.round(Number(r.price) * rate);
-                    addPackageRow(r.spu, cost, cost, '', String(r.id));
+                    const existingRow = rowByJcplaysId.get(String(r.id));
+                    if (existingRow) {
+                        const costInput = existingRow.querySelector('.pkg-cost');
+                        costInput.value = cost;
+                        updatePackageProfit(costInput);
+                        updatedCount++;
+                    } else {
+                        addPackageRow(r.spu, cost, cost, '', String(r.id));
+                        addedCount++;
+                    }
                 });
+
                 statusEl.style.color = '#1877F2';
-                statusEl.innerText = `Imported ${rows.length} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                statusEl.innerText = updatedCount
+                    ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
+                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
                 window.showToast('JCPlays denominations imported ✓', 'success');
             } catch (error) {
                 console.error("JCPlays productlist error:", error);
