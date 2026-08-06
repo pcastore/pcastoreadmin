@@ -159,8 +159,44 @@
         
         /* Login gate — covers the whole admin panel until an authenticated
            admin signs in. Nothing behind it loads/queries Firestore before that. */
-        #login-screen { position: fixed; inset: 0; background: var(--bg-subtle); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        #login-screen {
+            position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px;
+            background: radial-gradient(120% 100% at 50% 0%, #14172A 0%, #05060B 55%, #000 100%);
+            overflow: hidden;
+        }
         #login-screen.hidden { display: none; }
+
+        /* Ambient "atom" animation on the login screen's black backdrop —
+           a glowing nucleus with 4 electrons orbiting it on tilted elliptical
+           paths, purely decorative and sits behind the login card. */
+        .atom-loader { position: absolute; top: 50%; left: 50%; width: 260px; height: 260px; transform: translate(-50%,-50%); z-index: 0; pointer-events: none; opacity: 0.9; }
+        .atom-core {
+            position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; margin: -8px;
+            border-radius: 50%; background: radial-gradient(circle at 32% 28%, #fff, var(--accent, #1877F2) 65%);
+            box-shadow: 0 0 22px 6px rgba(24,119,242,0.55), 0 0 50px 14px rgba(24,119,242,0.25);
+            animation: atom-core-pulse 2.4s ease-in-out infinite;
+        }
+        .atom-orbit { position: absolute; inset: 0; }
+        .atom-orbit:nth-child(2) { transform: rotate(0deg); }
+        .atom-orbit:nth-child(3) { transform: rotate(45deg); }
+        .atom-orbit:nth-child(4) { transform: rotate(90deg); }
+        .atom-orbit:nth-child(5) { transform: rotate(135deg); }
+        .atom-orbit-ring { position: absolute; inset: 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 50%; transform: scaleY(0.4); }
+        .atom-electron-spin { position: absolute; inset: 0; transform: scaleY(0.4); animation: atom-spin linear infinite; }
+        .atom-orbit:nth-child(2) .atom-electron-spin { animation-duration: 3.2s; }
+        .atom-orbit:nth-child(3) .atom-electron-spin { animation-duration: 4s; animation-direction: reverse; }
+        .atom-orbit:nth-child(4) .atom-electron-spin { animation-duration: 2.6s; }
+        .atom-orbit:nth-child(5) .atom-electron-spin { animation-duration: 4.6s; animation-direction: reverse; }
+        .atom-electron {
+            position: absolute; top: 0; left: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
+            border-radius: 50%; background: #fff;
+            box-shadow: 0 0 10px 3px rgba(76,154,255,0.85), 0 0 18px 6px rgba(76,154,255,0.35);
+        }
+        @keyframes atom-spin { from { transform: scaleY(0.4) rotate(0deg); } to { transform: scaleY(0.4) rotate(360deg); } }
+        @keyframes atom-core-pulse { 0%, 100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.18); } }
+        @media (prefers-reduced-motion: reduce) {
+            .atom-electron-spin, .atom-core { animation: none; }
+        }
         .login-box { background: var(--surface); width: 100%; max-width: 360px; border-radius: 26px; padding: 28px 24px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); border: 1px solid var(--border-glass); }
         .login-box .logo-icon { background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
         .login-box h2 { text-align: center; font-size: 19px; font-weight: 700; margin-bottom: 4px; }
@@ -560,7 +596,15 @@
          Steps: password -> (verify email if needed) -> TOTP enroll (first time)
          or TOTP challenge (already enrolled) -> app unlocks. -->
     <div id="login-screen">
-        <div class="login-box">
+        <!-- Ambient atom animation on the black backdrop (decorative only) -->
+        <div class="atom-loader" aria-hidden="true">
+            <div class="atom-core"></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+        </div>
+        <div class="login-box" style="position:relative;z-index:1;">
             <div class="logo-icon">
                 <svg class="ui-icon" style="width:22px;height:22px;stroke:#fff;"><use href="#icon-shield"></use></svg>
             </div>
