@@ -312,6 +312,83 @@
         .pkg-type-opt:active { transform: scale(0.96); }
         .pkg-img-remove { flex-shrink: 0; font-size: 11px; color: #FA3E3E; cursor: pointer; white-space: nowrap; }
         .pkg-profit-badge.negative { background: #FDE8E8; color: #C0392B; }
+
+        /* ===================== Desktop Mode =====================
+           Above ~900px this panel stops behaving like a stretched-out
+           mobile page: sidebar gets labels next to the icons, content
+           is capped to a readable width and centered, and the card
+           lists that used to stack one-per-row become a proper
+           multi-column grid. */
+        @media (min-width: 900px) {
+            .header { padding: 12px 32px; }
+            body { overflow-x: hidden; }
+
+            /* Sidebar — icon + label side by side, left-aligned, wider */
+            .side-nav { width: 208px; padding: 10px 0; }
+            .nav-item {
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 13px;
+                padding: 12px 22px;
+                font-size: 13.5px;
+                text-align: left;
+                border-right: none;
+                border-left: 3px solid transparent;
+            }
+            .nav-item.active { border-left-color: #1877F2; border-right-color: transparent; }
+            .nav-item .ui-icon { width: 20px; height: 20px; flex-shrink: 0; }
+            .nav-item:hover:not(.active) { background: #F7F8FA; }
+
+            /* Content column — capped width, centered, more breathing room */
+            .content-area { padding: 26px 36px; max-width: 1180px; margin: 0 auto; }
+            .title-header { font-size: 20px; }
+
+            /* Dashboard: 4 stat chips across instead of 2, wider deck padding */
+            .dash-deck { padding: 26px 28px 22px; }
+            .dash-deck-value { font-size: 36px; }
+            .stats-row { grid-template-columns: repeat(4, 1fr); }
+            .stat-chip.span-2 { grid-column: span 1; }
+
+            /* Card lists (games / orders / payments / users / notify / ticker):
+               single stacked column -> responsive grid of cards */
+            #admin-games-container,
+            #orders-container,
+            #admin-payment-container,
+            #admin-users-container,
+            #notif-history-container,
+            #ticker-list-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+                gap: 14px;
+                align-items: start;
+            }
+            #admin-games-container .admin-card,
+            #orders-container .admin-card,
+            #admin-payment-container .admin-card,
+            #admin-users-container .admin-card,
+            #notif-history-container .admin-card,
+            #ticker-list-container .admin-card {
+                margin-bottom: 0;
+            }
+
+            /* Settings / detail cards that are meant to stay full-width */
+            #dashboard .admin-card, #tier-list .admin-card, #api-docs .admin-card {
+                max-width: none;
+            }
+
+            /* Modals — centered dialog on desktop instead of a bottom sheet */
+            .modal-overlay { align-items: center; }
+            .modal-box { max-width: 560px; border-radius: 16px; max-height: 85vh; }
+
+            /* Wider grids for pickers and detail chips */
+            .game-picker-grid { grid-template-columns: repeat(5, 1fr); }
+            .details-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (min-width: 1300px) {
+            .content-area { max-width: 1320px; }
+            .game-picker-grid { grid-template-columns: repeat(6, 1fr); }
+        }
     </style>
 </head>
 <body>
