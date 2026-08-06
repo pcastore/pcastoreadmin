@@ -7,37 +7,184 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #F0F2F5; color: #1C1E21; }
+
+        /* ============================================================
+           THEME ENGINE — CSS variables driven by [data-theme] on <html>.
+           Every surface class below (cards, header, nav, buttons, modals,
+           badges, inputs...) reads from these tokens, so switching the
+           attribute re-skins the entire panel instantly. Liquid-glass
+           look = translucent surfaces + backdrop-filter blur + a soft
+           gradient "mesh" behind everything for the glass to refract.
+           ============================================================ */
+        :root, html[data-theme="light"] {
+            --bg-app: #EEF1F8;
+            --mesh-1: rgba(120,170,255,0.35);
+            --mesh-2: rgba(199,150,255,0.28);
+            --mesh-3: rgba(120,230,210,0.22);
+            --surface: rgba(255,255,255,0.62);
+            --surface-strong: rgba(255,255,255,0.8);
+            --bg-subtle: rgba(255,255,255,0.38);
+            --bg-subtle-2: rgba(255,255,255,0.5);
+            --fill-soft: rgba(30,41,59,0.08);
+            --border-glass: rgba(255,255,255,0.55);
+            --text-primary: #1C1E21;
+            --text-strong: #050505;
+            --text-secondary: #55585E;
+            --text-muted: #8A8D93;
+            --accent: #1877F2;
+            --accent-rgb: 24,119,242;
+            --accent-soft: rgba(24,119,242,0.14);
+            --danger: #FA3E3E;
+            --danger-strong: #C0392B;
+            --danger-soft: rgba(250,62,62,0.13);
+            --border-dashed: rgba(30,41,59,0.28);
+            --shadow-soft: 0 8px 30px -8px rgba(30,41,59,0.18);
+            --glass-blur: 22px;
+            --icon-fg: #ffffff;
+            --scheme: light;
+        }
+        html[data-theme="dark-blue"] {
+            --bg-app: #050813;
+            --mesh-1: rgba(37,99,235,0.45);
+            --mesh-2: rgba(124,58,237,0.32);
+            --mesh-3: rgba(14,165,233,0.24);
+            --surface: rgba(23,32,58,0.58);
+            --surface-strong: rgba(28,38,68,0.75);
+            --bg-subtle: rgba(255,255,255,0.05);
+            --bg-subtle-2: rgba(255,255,255,0.07);
+            --fill-soft: rgba(255,255,255,0.09);
+            --border-glass: rgba(255,255,255,0.14);
+            --text-primary: #E7ECFA;
+            --text-strong: #FFFFFF;
+            --text-secondary: rgba(231,236,250,0.62);
+            --text-muted: rgba(231,236,250,0.4);
+            --accent: #4C9AFF;
+            --accent-rgb: 76,154,255;
+            --accent-soft: rgba(76,154,255,0.18);
+            --danger: #FF6B6B;
+            --danger-strong: #FFB3B3;
+            --danger-soft: rgba(255,107,107,0.16);
+            --border-dashed: rgba(255,255,255,0.26);
+            --shadow-soft: 0 14px 40px -10px rgba(0,0,10,0.6);
+            --glass-blur: 24px;
+            --icon-fg: #ffffff;
+            --scheme: dark;
+        }
+        html[data-theme="midnight-purple"] {
+            --bg-app: #0B0715;
+            --mesh-1: rgba(168,85,247,0.4);
+            --mesh-2: rgba(236,72,153,0.24);
+            --mesh-3: rgba(99,102,241,0.3);
+            --surface: rgba(35,24,56,0.58);
+            --surface-strong: rgba(42,29,68,0.75);
+            --bg-subtle: rgba(255,255,255,0.05);
+            --bg-subtle-2: rgba(255,255,255,0.07);
+            --fill-soft: rgba(255,255,255,0.09);
+            --border-glass: rgba(255,255,255,0.14);
+            --text-primary: #F1E9FB;
+            --text-strong: #FFFFFF;
+            --text-secondary: rgba(241,233,251,0.62);
+            --text-muted: rgba(241,233,251,0.4);
+            --accent: #C084FC;
+            --accent-rgb: 192,132,252;
+            --accent-soft: rgba(192,132,252,0.2);
+            --danger: #FF6B6B;
+            --danger-strong: #FFB3B3;
+            --danger-soft: rgba(255,107,107,0.16);
+            --border-dashed: rgba(255,255,255,0.26);
+            --shadow-soft: 0 14px 40px -10px rgba(10,0,20,0.6);
+            --glass-blur: 24px;
+            --icon-fg: #ffffff;
+            --scheme: dark;
+        }
+        html[data-theme="ocean"] {
+            --bg-app: #041016;
+            --mesh-1: rgba(20,184,166,0.4);
+            --mesh-2: rgba(56,189,248,0.3);
+            --mesh-3: rgba(34,211,238,0.22);
+            --surface: rgba(9,38,48,0.58);
+            --surface-strong: rgba(12,46,58,0.75);
+            --bg-subtle: rgba(255,255,255,0.05);
+            --bg-subtle-2: rgba(255,255,255,0.07);
+            --fill-soft: rgba(255,255,255,0.09);
+            --border-glass: rgba(255,255,255,0.14);
+            --text-primary: #E4F7F7;
+            --text-strong: #FFFFFF;
+            --text-secondary: rgba(228,247,247,0.62);
+            --text-muted: rgba(228,247,247,0.4);
+            --accent: #2DD4BF;
+            --accent-rgb: 45,212,191;
+            --accent-soft: rgba(45,212,191,0.18);
+            --danger: #FF6B6B;
+            --danger-strong: #FFB3B3;
+            --danger-soft: rgba(255,107,107,0.16);
+            --border-dashed: rgba(255,255,255,0.26);
+            --shadow-soft: 0 14px 40px -10px rgba(0,10,10,0.6);
+            --glass-blur: 24px;
+            --icon-fg: #ffffff;
+            --scheme: dark;
+        }
+
+        html, body { min-height: 100%; }
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            position: relative;
+            transition: background-color 0.35s ease, color 0.35s ease;
+        }
+        /* Fixed gradient "mesh" the glass surfaces refract against */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: -1;
+            background:
+                radial-gradient(38% 30% at 12% 8%, var(--mesh-1) 0%, transparent 70%),
+                radial-gradient(42% 34% at 88% 18%, var(--mesh-2) 0%, transparent 72%),
+                radial-gradient(46% 38% at 30% 92%, var(--mesh-3) 0%, transparent 70%),
+                var(--bg-app);
+            transition: background 0.4s ease;
+        }
+        ::selection { background: var(--accent-soft); color: var(--accent); }
+
+        /* Generic glass-panel helper: translucent fill + blur + a bright
+           inset edge to sell the "liquid glass" reflection. */
+        .glass, .admin-card, .api-doc-card, .tier-row, .modal-box, .dialog-box,
+        .login-box, .header, .side-nav, .btn, .badge, .tx-row, #toast,
+        .details-grid-item, .stat-chip, .picker-btn, .package-row, .img-update-box,
+        .modal-body input, .login-box input, .game-picker-search-wrap input,
+        .tier-row-input-wrap input {
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+            backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+        }
         .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         
         /* Login gate — covers the whole admin panel until an authenticated
            admin signs in. Nothing behind it loads/queries Firestore before that. */
-        #login-screen { position: fixed; inset: 0; background: #F0F2F5; z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        #login-screen { position: fixed; inset: 0; background: var(--bg-subtle); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px; }
         #login-screen.hidden { display: none; }
-        .login-box { background: #ffffff; width: 100%; max-width: 360px; border-radius: 16px; padding: 28px 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid #E4E6EB; }
-        .login-box .logo-icon { background: #1877F2; color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .login-box { background: var(--surface); width: 100%; max-width: 360px; border-radius: 26px; padding: 28px 24px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); border: 1px solid var(--border-glass); }
+        .login-box .logo-icon { background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
         .login-box h2 { text-align: center; font-size: 19px; font-weight: 700; margin-bottom: 4px; }
-        .login-box p.sub { text-align: center; font-size: 13px; color: #65676B; margin-bottom: 20px; }
-        .login-box label { font-size: 13px; font-weight: 600; color: #65676B; display: block; margin-bottom: 6px; }
-        .login-box input { width: 100%; padding: 11px 12px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
-        .login-box input:focus { outline: none; border-color: #1877F2; }
-        .login-box button { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: #1877F2; color: #fff; cursor: pointer; }
+        .login-box p.sub { text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+        .login-box label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px; }
+        .login-box input { width: 100%; padding: 11px 12px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; margin-bottom: 14px; }
+        .login-box input:focus { outline: none; border-color: var(--accent); }
+        .login-box button { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: var(--accent); color: #fff; cursor: pointer; }
         .login-box button:disabled { opacity: 0.6; }
-        #login-error { color: #C0392B; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
-        .login-msg-error { color: #C0392B; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
-        .login-msg-info { font-size: 13px; color: #1C1E21; text-align: center; margin-bottom: 16px; line-height: 1.5; }
-        .login-msg-hint { font-size: 12px; color: #65676B; text-align: center; margin: -6px 0 14px; }
-        .login-secondary-btn { background: #E4E6EB !important; color: #1C1E21 !important; margin-top: 8px; }
-        .mfa-secret-box { background: #F8F9FA; border: 1px dashed #BCC0C4; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
-        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #1877F2; }
-        #resend-verify-btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: #1877F2; color: #fff; cursor: pointer; margin-bottom: 8px; }
+        #login-error { color: var(--danger-strong); font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        .login-msg-error { color: var(--danger-strong); font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        .login-msg-info { font-size: 13px; color: var(--text-primary); text-align: center; margin-bottom: 16px; line-height: 1.5; }
+        .login-msg-hint { font-size: 12px; color: var(--text-secondary); text-align: center; margin: -6px 0 14px; }
+        .login-secondary-btn { background: var(--fill-soft) !important; color: var(--text-primary) !important; margin-top: 8px; }
+        .mfa-secret-box { background: var(--bg-subtle-2); border: 1px dashed var(--border-dashed); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
+        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--accent); }
+        #resend-verify-btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: var(--accent); color: #fff; cursor: pointer; margin-bottom: 8px; }
 
         /* Header */
-        .header { background-color: #ffffff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-bottom: 2px solid #1877F2;}
-        .logo { color: #1C1E21; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .logo-icon { background: #1877F2; color: white; padding: 4px; border-radius: 6px; display: flex; width: 26px; height: 26px; }
+        .header { background-color: var(--surface); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 var(--border-glass), 0 8px 24px -12px rgba(0,0,0,0.25); border-bottom: 1px solid var(--fill-soft); }
+        .logo { color: var(--text-primary); font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .logo-icon { background: var(--accent); color: white; padding: 4px; border-radius: 6px; display: flex; width: 26px; height: 26px; }
         .logo-icon.has-custom-logo { padding: 0; background: transparent; overflow: hidden; }
-        .header-icon { background: #E4E6EB; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .header-icon { background: var(--fill-soft); width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         
         /* App Layout (sidebar + content) */
         .app-layout { display: flex; align-items: flex-start; }
@@ -47,7 +194,7 @@
         .page-section { display: none; animation: fadeIn 0.3s ease-in-out; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .title-header { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E4E6EB; padding-bottom: 10px;}
+        .title-header { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fill-soft); padding-bottom: 10px;}
         
         /* ================= Dashboard Overview Deck (redesign) =================
            A single dark glass "deck" holding the today's-sales meter and the
@@ -84,7 +231,7 @@
         .day-track-label { position: relative; z-index: 1; font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: -12px; margin-bottom: 14px; }
 
         .stats-row { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .stat-chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid var(--chip-color, #8B5CF6); border-radius: 12px; padding: 10px 12px; transition: transform 0.15s ease, background 0.15s ease; }
+        .stat-chip { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid var(--chip-color, #8B5CF6); border-radius: 14px; padding: 10px 12px; transition: transform 0.15s ease, background 0.15s ease; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
         .stat-chip:active { transform: scale(0.97); background: rgba(255,255,255,0.08); }
         .stat-chip-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         .stat-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chip-color, #8B5CF6); flex-shrink: 0; }
@@ -96,137 +243,139 @@
             .live-dot { animation: none; }
         }
 
-        .dash-section-label { font-size: 12px; font-weight: 700; color: #9C9EA1; text-transform: uppercase; letter-spacing: 0.4px; margin: 16px 0 8px; }
+        .dash-section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 16px 0 8px; }
 
 
         /* Admin Cards */
-        .admin-card { background: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #E4E6EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .admin-card { background: var(--surface); border-radius: 18px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border-glass); box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
 
         /* API tab: one row per credential (icon + name/description + action) */
-        .api-doc-card { display: flex; align-items: center; gap: 12px; background: #ffffff; border: 1px solid #E4E6EB; border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .api-doc-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 13px 14px; margin-bottom: 10px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
         .api-doc-icon { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
         .api-doc-icon svg { width: 18px; height: 18px; }
         .api-doc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-        .api-doc-title { font-size: 14px; font-weight: 700; color: #050505; }
-        .api-doc-desc { font-size: 11.5px; color: #65676B; line-height: 1.4; }
+        .api-doc-title { font-size: 14px; font-weight: 700; color: var(--text-strong); }
+        .api-doc-desc { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; }
         .api-doc-btn { flex: unset !important; padding: 8px 14px !important; white-space: nowrap; }
-        .api-doc-static-key { font-family: monospace; font-size: 12.5px; color: #9C9EA1; background: #F0F2F5; padding: 6px 10px; border-radius: 8px; cursor: pointer; user-select: none; white-space: nowrap; }
+        .api-doc-static-key { font-family: monospace; font-size: 12.5px; color: var(--text-muted); background: var(--bg-subtle); padding: 6px 10px; border-radius: 8px; cursor: pointer; user-select: none; white-space: nowrap; }
 
         /* Transaction / ledger history rows (G2Bulk Transactions, etc.) */
-        .tx-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #F0F2F5; }
+        .tx-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--bg-subtle); }
         .tx-row:last-child { border-bottom: none; }
         .tx-row-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
         .tx-row-icon svg { width: 16px; height: 16px; }
         .tx-row-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-        .tx-row-title { font-size: 13px; font-weight: 700; color: #050505; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .tx-row-sub { font-size: 11px; color: #9C9EA1; }
+        .tx-row-title { font-size: 13px; font-weight: 700; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tx-row-sub { font-size: 11px; color: var(--text-muted); }
         .tx-row-amount { font-size: 14px; font-weight: 700; flex-shrink: 0; }
-        .ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #F0F2F5; }
-        .ac-id { font-size: 13px; font-weight: 700; color: #65676B; }
-        .ac-body p { font-size: 14px; margin-bottom: 6px; color: #1C1E21; }
+        .ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--bg-subtle); }
+        .ac-id { font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+        .ac-body p { font-size: 14px; margin-bottom: 6px; color: var(--text-primary); }
         .ac-footer { margin-top: 12px; display: flex; gap: 8px; }
 
         /* Order Card: game thumbnail + tidy title/meta layout */
         .oc-top { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .oc-thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: #F0F2F5; border: 1px solid #E4E6EB; flex-shrink: 0; }
+        .oc-thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: var(--bg-subtle); border: 1px solid var(--fill-soft); flex-shrink: 0; }
         .oc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .oc-info { flex: 1; min-width: 0; }
-        .oc-game-name { display: block; font-size: 15px; font-weight: 700; color: #050505; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .oc-meta { font-size: 12.5px; color: #65676B; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .oc-meta b { color: #1C1E21; font-weight: 600; }
+        .oc-game-name { display: block; font-size: 15px; font-weight: 700; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oc-meta { font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oc-meta b { color: var(--text-primary); font-weight: 600; }
         .oc-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
         
         /* Badges & Buttons */
         .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
         .badge-pending { background: #FFF3CD; color: #856404; }
-        .badge-processing { background: #E4E6EB; color: #405DE6; }
-        .badge-success { background: #E7F3FF; color: #1877F2; }
-        .badge-danger { background: #FDE8E8; color: #C0392B; }
-        .btn { padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; text-align: center; flex: 1; }
-        .btn-primary { background-color: #1877F2; color: white; }
-        .btn-danger { background-color: #FA3E3E; color: white; }
-        .btn-outline { background-color: #E4E6EB; color: #1C1E21; }
+        .badge-processing { background: var(--fill-soft); color: #405DE6; }
+        .badge-success { background: var(--accent-soft); color: var(--accent); }
+        .badge-danger { background: var(--danger-soft); color: var(--danger-strong); }
+        .btn { padding: 9px 12px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid transparent; text-align: center; flex: 1; transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background-color: var(--accent); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(var(--accent-rgb),0.65), inset 0 1px 0 rgba(255,255,255,0.35); }
+        .btn-primary:active { filter: brightness(0.94); }
+        .btn-danger { background-color: var(--danger); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(250,62,62,0.55), inset 0 1px 0 rgba(255,255,255,0.35); }
+        .btn-outline { background-color: var(--fill-soft); color: var(--text-primary); border-color: var(--border-glass); box-shadow: inset 0 1px 0 var(--border-glass); }
         
         /* Side Nav (was a bottom nav; now a left sidebar) */
-        .side-nav { width: 70px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #E4E6EB; display: flex; flex-direction: column; position: sticky; top: 61px; height: calc(100vh - 61px); overflow-y: auto; z-index: 90; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: #65676B; cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; }
-        .nav-item.active { color: #1877F2; background: #E7F3FF; border-right-color: #1877F2; }
-        .nav-item.active .ui-icon { stroke: #1877F2; }
+        .side-nav { width: 70px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border-glass); display: flex; flex-direction: column; position: sticky; top: 61px; height: calc(100vh - 61px); overflow-y: auto; z-index: 90; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; transition: background 0.15s ease, color 0.15s ease; }
+        .nav-item.active { color: var(--accent); background: var(--accent-soft); border-right-color: var(--accent); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb),0.15); }
+        .nav-item.active .ui-icon { stroke: var(--accent); }
         
         /* Utility */
-        #toast { position: fixed; top: 14px; left: 14px; right: 14px; max-width: 480px; margin: 0 auto; background: #0F2419; border: 1px solid rgba(74,222,128,0.35); color: #4ADE80; padding: 14px 16px; border-radius: 14px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; z-index: 1000; transform: translateY(-150%); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+        #toast { position: fixed; top: 14px; left: 14px; right: 14px; max-width: 480px; margin: 0 auto; background: rgba(15,36,25,0.75); -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%); border: 1px solid rgba(74,222,128,0.35); color: #4ADE80; padding: 14px 16px; border-radius: 18px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; z-index: 1000; transform: translateY(-150%); box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08); }
         #toast.show { transform: translateY(0); }
         #toast .toast-icon-circle { width: 26px; height: 26px; border-radius: 50%; background: #22C55E; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         #toast .toast-icon-circle svg { width: 15px; height: 15px; }
-        .empty-msg { text-align: center; color: #65676B; font-size: 14px; padding: 20px 0; }
-        .highlight-id { font-weight: bold; color: #1877F2; font-size: 15px; }
+        .empty-msg { text-align: center; color: var(--text-secondary); font-size: 14px; padding: 20px 0; }
+        .highlight-id { font-weight: bold; color: var(--accent); font-size: 15px; }
 
         /* Tier Limits page */
-        .tier-row { display: flex; align-items: center; gap: 12px; background: #ffffff; border: 1px solid #E4E6EB; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .tier-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
         .tier-row-badge { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 20px; flex-shrink: 0; width: 118px; justify-content: center; }
         .tier-row-badge svg { width: 14px; height: 14px; }
         .tier-row-input-wrap { flex: 1; min-width: 0; position: relative; }
-        .tier-row-input-wrap input { width: 100%; padding: 9px 52px 9px 12px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; font-weight: 600; color: #050505; }
-        .tier-row-input-wrap input:disabled { background: #F8F9FA; color: #9C9EA1; }
-        .tier-row-input-wrap input:focus { outline: none; border-color: #1877F2; }
-        .tier-row-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #9C9EA1; font-weight: 600; pointer-events: none; }
+        .tier-row-input-wrap input { width: 100%; padding: 9px 52px 9px 12px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--text-strong); }
+        .tier-row-input-wrap input:disabled { background: var(--bg-subtle-2); color: var(--text-muted); }
+        .tier-row-input-wrap input:focus { outline: none; border-color: var(--accent); }
+        .tier-row-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); font-weight: 600; pointer-events: none; }
 
         /* Users list & details */
         .user-card { display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .user-card:active { background: #F8FBFF; }
-        .user-avatar { width: 46px; height: 46px; border-radius: 50%; background: #E7F3FF; color: #1877F2; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .user-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .user-card-info { flex: 1; min-width: 0; }
-        .user-card-info h5 { font-size: 15px; font-weight: 700; color: #050505; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .user-card-info p { font-size: 12px; color: #65676B; }
+        .user-card-info h5 { font-size: 15px; font-weight: 700; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-card-info p { font-size: 12px; color: var(--text-secondary); }
         .tier-mini-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; padding: 2px 8px 2px 6px; border-radius: 10px; margin-top: 4px; }
         .tier-mini-badge svg { width: 10px; height: 10px; }
-        .detail-section-title { font-size: 14px; font-weight: 700; color: #050505; margin-bottom: 8px; }
+        .detail-section-title { font-size: 14px; font-weight: 700; color: var(--text-strong); margin-bottom: 8px; }
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-        .details-grid-item { background: #F8F9FA; border: 1px solid #E4E6EB; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
-        .details-grid-item span { font-size: 11px; color: #9C9EA1; font-weight: 600; text-transform: uppercase; }
-        .details-grid-item b { font-size: 14px; color: #050505; font-weight: 700; }
+        .details-grid-item { background: var(--bg-subtle-2); border: 1px solid var(--fill-soft); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .details-grid-item span { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .details-grid-item b { font-size: 14px; color: var(--text-strong); font-weight: 700; }
 
         /* Game Editor Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
         .modal-overlay.show { opacity: 1; pointer-events: auto; }
-        .modal-box { background: #ffffff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 88vh; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.25s ease; }
+        .modal-box { background: var(--surface-strong); width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 20px; max-height: 88vh; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.25s ease; border: 1px solid var(--border-glass); border-bottom: none; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
         .modal-overlay.show .modal-box { transform: translateY(0); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #E4E6EB; margin-bottom: 14px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--fill-soft); margin-bottom: 14px; }
         .modal-header h3 { font-size: 17px; font-weight: 700; }
-        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #E4E6EB; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: var(--fill-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border: 1px solid var(--border-glass); }
         .modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .modal-body label { font-size: 13px; font-weight: 600; color: #65676B; }
-        .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid #E4E6EB; border-radius: 8px; font-size: 14px; }
+        .modal-body label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+        .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; }
         .modal-footer { padding-top: 16px; display: flex; gap: 8px; }
 
         /* Custom "Image Update" upload control (replaces default Browse/Choose file input) */
         .img-update-input { display: none; }
-        .img-update-box { position: relative; border: 2px dashed #BCC0C4; border-radius: 12px; background: #F8F9FA; padding: 18px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: 0.15s; text-align: center; }
-        .img-update-box:active { background: #E7F3FF; border-color: #1877F2; }
-        .img-update-box.has-image { padding: 0; border-style: solid; border-color: #1877F2; overflow: hidden; }
+        .img-update-box { position: relative; border: 2px dashed var(--border-dashed); border-radius: 12px; background: var(--bg-subtle-2); padding: 18px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: 0.15s; text-align: center; }
+        .img-update-box:active { background: var(--accent-soft); border-color: var(--accent); }
+        .img-update-box.has-image { padding: 0; border-style: solid; border-color: var(--accent); overflow: hidden; }
         .img-update-box.has-image .img-update-icon,
         .img-update-box.has-image .img-update-label,
         .img-update-box.has-image .img-update-hint { display: none; }
-        .img-update-icon { width: 40px; height: 40px; border-radius: 50%; background: #E7F3FF; color: #1877F2; display: flex; align-items: center; justify-content: center; }
-        .img-update-label { font-size: 13px; font-weight: 600; color: #050505; }
-        .img-update-hint { font-size: 11px; color: #9C9EA1; }
-        .img-update-box img { width: 100%; max-height: 220px; object-fit: contain; background: #F0F2F5; display: block; }
+        .img-update-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+        .img-update-label { font-size: 13px; font-weight: 600; color: var(--text-strong); }
+        .img-update-hint { font-size: 11px; color: var(--text-muted); }
+        .img-update-box img { width: 100%; max-height: 220px; object-fit: contain; background: var(--bg-subtle); display: block; }
         .img-update-change { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
         .img-update-change svg { width: 13px; height: 13px; }
 
         /* Custom Delete / Warning / Information dialog (replaces browser confirm()/alert()) */
         .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; padding: 24px; }
         .dialog-overlay.show { opacity: 1; pointer-events: auto; }
-        .dialog-box { background: #ffffff; width: 100%; max-width: 340px; border-radius: 16px; padding: 24px 20px 18px; text-align: center; transform: scale(0.92); transition: transform 0.2s ease; }
+        .dialog-box { background: var(--surface-strong); width: 100%; max-width: 340px; border-radius: 24px; padding: 24px 20px 18px; text-align: center; transform: scale(0.92); transition: transform 0.2s ease; border: 1px solid var(--border-glass); box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
         .dialog-overlay.show .dialog-box { transform: scale(1); }
         .dialog-icon { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
-        .dialog-icon.type-delete { background: #FDE8E8; color: #C0392B; }
+        .dialog-icon.type-delete { background: var(--danger-soft); color: var(--danger-strong); }
         .dialog-icon.type-warning { background: #FFF3CD; color: #B8860B; }
-        .dialog-icon.type-info { background: #E7F3FF; color: #1877F2; }
+        .dialog-icon.type-info { background: var(--accent-soft); color: var(--accent); }
         .dialog-icon.type-success { background: #E3F9E9; color: #31A24C; }
-        .dialog-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #050505; }
-        .dialog-message { font-size: 14px; color: #65676B; line-height: 1.45; margin-bottom: 20px; white-space: pre-line; }
+        .dialog-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: var(--text-strong); }
+        .dialog-message { font-size: 14px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 20px; white-space: pre-line; }
         .dialog-actions { display: flex; gap: 8px; }
         .dialog-actions .btn { flex: 1; }
 
@@ -235,12 +384,12 @@
         .category-chip-select { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px; }
         .category-chip-select .cat-chip {
             display: flex; align-items: center; gap: 6px; padding: 8px 13px 8px 10px; border-radius: 18px;
-            background: #F7F8FA; border: 1.5px solid #E4E6EB; color: #65676B; font-size: 12.5px; font-weight: 700;
+            background: #F7F8FA; border: 1.5px solid var(--fill-soft); color: var(--text-secondary); font-size: 12.5px; font-weight: 700;
             cursor: pointer; user-select: none; transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
         }
         .category-chip-select .cat-chip svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.75; transition: opacity 0.15s ease; }
         .category-chip-select .cat-chip:active { transform: scale(0.95); }
-        .category-chip-select .cat-chip.active { color: #fff; border-color: transparent; background: var(--cat-color, #1877F2); box-shadow: 0 4px 12px -2px var(--cat-color, #1877F2); }
+        .category-chip-select .cat-chip.active { color: #fff; border-color: transparent; background: var(--cat-color, var(--accent)); box-shadow: 0 4px 12px -2px var(--cat-color, var(--accent)); }
         .category-chip-select .cat-chip.active svg { opacity: 1; }
         /* Small category badge shown on admin game cards / store game cards */
         .cat-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; font-size: 10.5px; font-weight: 700; color: #fff; }
@@ -248,70 +397,70 @@
 
         /* Game picker: a button that opens a searchable grid-of-images modal,
            used for both linking a G2Bulk game and a JCPlays game. */
-        .picker-btn { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #E4E6EB; border-radius: 10px; background: #fff; cursor: pointer; transition: border-color 0.15s ease; }
-        .picker-btn:hover { border-color: #1877F2; }
-        .picker-btn-thumb { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; overflow: hidden; background: #F0F2F5; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+        .picker-btn { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--fill-soft); border-radius: 10px; background: #fff; cursor: pointer; transition: border-color 0.15s ease; }
+        .picker-btn:hover { border-color: var(--accent); }
+        .picker-btn-thumb { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; overflow: hidden; background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
         .picker-btn-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .picker-btn-label { flex: 1; font-size: 13px; color: #050505; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .picker-btn-label.muted { color: #9C9EA1; }
-        .picker-btn-chevron { width: 16px; height: 16px; color: #9C9EA1; flex-shrink: 0; }
+        .picker-btn-label { flex: 1; font-size: 13px; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .picker-btn-label.muted { color: var(--text-muted); }
+        .picker-btn-chevron { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; }
 
         .game-picker-search-wrap { position: relative; margin-bottom: 12px; flex-shrink: 0; }
-        .game-picker-search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #9C9EA1; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .game-picker-search-wrap input { width: 100%; padding: 10px 12px 10px 34px; border: 1px solid #E4E6EB; border-radius: 10px; font-size: 14px; background: #F7F8FA; box-sizing: border-box; }
-        .game-picker-search-wrap input:focus { outline: none; border-color: #1877F2; background: #fff; }
+        .game-picker-search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .game-picker-search-wrap input { width: 100%; padding: 10px 12px 10px 34px; border: 1px solid var(--border-glass); border-radius: 12px; font-size: 14px; background: var(--bg-subtle-2); color: var(--text-primary); box-sizing: border-box; }
+        .game-picker-search-wrap input:focus { outline: none; border-color: var(--accent); background: #fff; }
 
         .game-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 6px; }
-        .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid #E4E6EB; border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
+        .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid var(--fill-soft); border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
         .game-picker-card:active { transform: scale(0.96); }
-        .game-picker-card.selected { border-color: #1877F2; background: #F0F6FF; }
-        .game-picker-card span { font-size: 11.5px; font-weight: 600; color: #050505; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .game-picker-thumb { width: 54px; height: 54px; border-radius: 14px; overflow: hidden; background: #F0F2F5; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: #fff; }
+        .game-picker-card.selected { border-color: var(--accent); background: #F0F6FF; }
+        .game-picker-card span { font-size: 11.5px; font-weight: 600; color: var(--text-strong); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .game-picker-thumb { width: 54px; height: 54px; border-radius: 14px; overflow: hidden; background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: #fff; }
         .game-picker-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .game-picker-card.unlink-card .game-picker-thumb { background: #F0F2F5; color: #9C9EA1; }
-        .game-picker-empty-msg, .game-picker-loading { grid-column: 1 / -1; text-align: center; font-size: 12.5px; color: #9C9EA1; padding: 28px 0; }
+        .game-picker-card.unlink-card .game-picker-thumb { background: var(--bg-subtle); color: var(--text-muted); }
+        .game-picker-empty-msg, .game-picker-loading { grid-column: 1 / -1; text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 28px 0; }
 
         /* Toggle switches (Mark as Popular / Requires Server ID) */
         .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
-        .switch-label { font-size: 14px; font-weight: 600; color: #1C1E21; display: block; }
-        .switch-hint { font-size: 11px; color: #9C9EA1; margin-top: 2px; }
+        .switch-label { font-size: 14px; font-weight: 600; color: var(--text-primary); display: block; }
+        .switch-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
         .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; inset: 0; background: #E4E6EB; border-radius: 24px; cursor: pointer; transition: 0.2s; }
+        .toggle-slider { position: absolute; inset: 0; background: var(--fill-soft); border-radius: 24px; cursor: pointer; transition: 0.2s; }
         .toggle-slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: 0.2s; }
-        .toggle-switch input:checked + .toggle-slider { background: #1877F2; }
+        .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
         .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
 
         /* Package (currency grid) — drag-to-reorder card list */
         #edit-packages-list { display: flex; flex-direction: column; gap: 8px; position: relative; }
-        .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid #E4E6EB; border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
-        .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: #1877F2; position: relative; z-index: 5; }
-        .package-row.drag-over { border-color: #1877F2; }
-        .pkg-drag-handle { flex-shrink: 0; width: 34px; display: flex; align-items: center; justify-content: center; background: #F0F2F5; color: #9C9EA1; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
-        .pkg-drag-handle:active { cursor: grabbing; background: #E4E6EB; color: #1877F2; }
+        .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
+        .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
+        .package-row.drag-over { border-color: var(--accent); }
+        .pkg-drag-handle { flex-shrink: 0; width: 34px; display: flex; align-items: center; justify-content: center; background: var(--bg-subtle); color: var(--text-muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+        .pkg-drag-handle:active { cursor: grabbing; background: var(--fill-soft); color: var(--accent); }
         .pkg-drag-handle svg { width: 16px; height: 16px; pointer-events: none; }
-        .pkg-order-num { flex-shrink: 0; width: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #9C9EA1; background: #F7F8FA; }
+        .pkg-order-num { flex-shrink: 0; width: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text-muted); background: #F7F8FA; }
         .pkg-row-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
         .pkg-row-top { display: flex; gap: 6px; align-items: center; }
         .pkg-row-pricing { display: flex; gap: 6px; align-items: flex-end; }
         .pkg-price-field { flex: 1; min-width: 0; }
-        .pkg-price-field label { display: block; font-size: 10px; font-weight: 700; color: #9C9EA1; text-transform: uppercase; margin-bottom: 3px; }
-        .pkg-profit-badge { flex-shrink: 0; min-width: 52px; text-align: center; padding: 8px 6px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #F0F2F5; color: #65676B; }
+        .pkg-price-field label { display: block; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 3px; }
+        .pkg-profit-badge { flex-shrink: 0; min-width: 52px; text-align: center; padding: 8px 6px; border-radius: 6px; font-size: 12px; font-weight: 700; background: var(--bg-subtle); color: var(--text-secondary); }
         .pkg-profit-badge.positive { background: #E3F9E9; color: #31A24C; }
         .pkg-row-media { display: flex; gap: 8px; align-items: center; }
-        .pkg-img-preview { flex-shrink: 0; width: 44px; height: 44px; border-radius: 8px; border: 1px dashed #BCC0C4; background: #F7F8FA; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
+        .pkg-img-preview { flex-shrink: 0; width: 44px; height: 44px; border-radius: 8px; border: 1px dashed var(--border-dashed); background: #F7F8FA; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
         .pkg-img-preview.uploading { opacity: 0.5; }
         .pkg-img-preview .pkg-img-tag { width: 100%; height: 100%; object-fit: contain; }
-        .pkg-img-preview .pkg-img-placeholder { font-size: 9px; color: #9C9EA1; text-align: center; line-height: 1.3; }
+        .pkg-img-preview .pkg-img-placeholder { font-size: 9px; color: var(--text-muted); text-align: center; line-height: 1.3; }
         .pkg-media-right { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
-        .pkg-type-toggle { flex: 1; min-width: 0; display: flex; background: #F0F2F5; border-radius: 8px; padding: 3px; gap: 3px; }
-        .pkg-type-opt { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 4px; border: none; background: transparent; border-radius: 6px; font-size: 11px; font-weight: 600; color: #65676B; cursor: pointer; transition: 0.15s ease; white-space: nowrap; }
+        .pkg-type-toggle { flex: 1; min-width: 0; display: flex; background: var(--bg-subtle); border-radius: 8px; padding: 3px; gap: 3px; }
+        .pkg-type-opt { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 4px; border: none; background: transparent; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: 0.15s ease; white-space: nowrap; }
         .pkg-type-opt svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.75; }
-        .pkg-type-opt.active { background: #fff; color: #1877F2; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .pkg-type-opt.active { background: #fff; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
         .pkg-type-opt.active svg { opacity: 1; }
         .pkg-type-opt:active { transform: scale(0.96); }
-        .pkg-img-remove { flex-shrink: 0; font-size: 11px; color: #FA3E3E; cursor: pointer; white-space: nowrap; }
-        .pkg-profit-badge.negative { background: #FDE8E8; color: #C0392B; }
+        .pkg-img-remove { flex-shrink: 0; font-size: 11px; color: var(--danger); cursor: pointer; white-space: nowrap; }
+        .pkg-profit-badge.negative { background: var(--danger-soft); color: var(--danger-strong); }
 
         /* ===================== Desktop Mode =====================
            Above ~900px this panel stops behaving like a stretched-out
@@ -335,7 +484,7 @@
                 border-right: none;
                 border-left: 3px solid transparent;
             }
-            .nav-item.active { border-left-color: #1877F2; border-right-color: transparent; }
+            .nav-item.active { border-left-color: var(--accent); border-right-color: transparent; }
             .nav-item .ui-icon { width: 20px; height: 20px; flex-shrink: 0; }
             .nav-item:hover:not(.active) { background: #F7F8FA; }
 
@@ -390,6 +539,20 @@
             .game-picker-grid { grid-template-columns: repeat(6, 1fr); }
         }
     </style>
+    <script>
+        // Applied synchronously (before first paint) to avoid a flash of the
+        // wrong theme. The full picker UI/logic lives further down in the
+        // main <script> block, but the attribute itself must be set here.
+        (function () {
+            try {
+                var saved = localStorage.getItem('pca-admin-theme');
+                var t = saved || 'light';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
 </head>
 <body>
 
@@ -488,6 +651,8 @@
         <symbol id="icon-feather" viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></symbol>
         <symbol id="icon-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></symbol>
         <symbol id="icon-telegram" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></symbol>
+        <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.3c2.6 0 4.7-2.1 4.7-4.7C22 5.9 17.5 2 12 2z"></path><circle cx="7" cy="10.5" r="1.4"></circle><circle cx="12" cy="7.5" r="1.4"></circle><circle cx="16.5" cy="10.5" r="1.4"></circle><circle cx="9.5" cy="15.5" r="1.4"></circle></symbol>
     </svg>
 
     <div id="toast"><span class="toast-icon-circle" id="toast-icon-circle"><svg class="ui-icon" id="toast-icon" style="color:#fff;"><use id="toast-icon-use" href="#icon-check"></use></svg></span> <span id="toast-msg">Action Completed!</span></div>
@@ -502,7 +667,7 @@
                  with showNote:true (used by Mark Success / Mark Fail on orders so the
                  admin can record why, visible to the customer in their order detail). -->
             <div id="action-dialog-note-wrap" style="display:none;margin-top:2px;">
-                <textarea id="action-dialog-note" rows="3" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
+                <textarea id="action-dialog-note" rows="3" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
             </div>
             <div class="dialog-actions">
                 <button class="btn btn-outline" id="action-dialog-cancel" onclick="window.closeActionDialog()">Cancel</button>
@@ -519,8 +684,25 @@
             </div>
             PCA Store
         </div>
-        <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div class="header-icon" id="theme-toggle-btn" title="Theme" onclick="openThemeSheet()"><svg class="ui-icon" id="theme-toggle-icon" style="width:20px;"><use href="#icon-palette"></use></svg></div>
+            <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
+        </div>
     </header>
+
+    <!-- Theme picker sheet -->
+    <div class="modal-overlay" id="theme-sheet-overlay" onclick="if(event.target===this) closeThemeSheet()">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>Appearance</h3>
+                <div class="modal-close" onclick="closeThemeSheet()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12.5px;color:var(--text-secondary);margin:-4px 0 4px;">Liquid glass appearance for this admin panel. Applies instantly and is remembered on this device.</p>
+                <div id="theme-swatch-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
+            </div>
+        </div>
+    </div>
 
     <div class="app-layout">
     <!-- Side Navigation -->
@@ -606,23 +788,23 @@
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <div style="width:34px;height:34px;border-radius:9px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                            <svg class="ui-icon" style="width:17px;height:17px;color:#1877F2;"><use href="#icon-wallet"></use></svg>
+                            <svg class="ui-icon" style="width:17px;height:17px;color:var(--accent);"><use href="#icon-wallet"></use></svg>
                         </div>
                         <div>
                             <span style="font-size:13px;font-weight:700;display:block;">G2Bulk Wallet</span>
-                            <span style="font-size:17px;font-weight:700;color:#1877F2;" id="dash-g2bulk-balance-display">—</span>
+                            <span style="font-size:17px;font-weight:700;color:var(--accent);" id="dash-g2bulk-balance-display">—</span>
                         </div>
                     </div>
                 </div>
-                <div style="height:1px;background:#F0F2F5;"></div>
+                <div style="height:1px;background:var(--bg-subtle);"></div>
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <div style="width:34px;height:34px;border-radius:9px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                            <svg class="ui-icon" style="width:17px;height:17px;color:#1877F2;"><use href="#icon-wallet"></use></svg>
+                            <svg class="ui-icon" style="width:17px;height:17px;color:var(--accent);"><use href="#icon-wallet"></use></svg>
                         </div>
                         <div>
                             <span style="font-size:13px;font-weight:700;display:block;">JCPlays Balance</span>
-                            <span style="font-size:17px;font-weight:700;color:#1877F2;" id="dash-jcplays-balance-display">—</span>
+                            <span style="font-size:17px;font-weight:700;color:var(--accent);" id="dash-jcplays-balance-display">—</span>
                         </div>
                     </div>
                 </div>
@@ -634,16 +816,16 @@
             <div class="admin-card" style="margin-top:0;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSocialLinks()">
                     <span style="font-size:15px;font-weight:700;">Social Links</span>
-                    <svg class="ui-icon" id="social-links-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                    <svg class="ui-icon" id="social-links-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="social-links-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">These appear as tappable icons on the Store app's Profile page.</p>
-                    <label style="font-size:13px;font-weight:600;color:#65676B;">Facebook URL</label>
-                    <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <label style="font-size:13px;font-weight:600;color:#65676B;">Telegram URL</label>
-                    <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <label style="font-size:13px;font-weight:600;color:#65676B;">TikTok URL</label>
-                    <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">These appear as tappable icons on the Store app's Profile page.</p>
+                    <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">Facebook URL</label>
+                    <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">Telegram URL</label>
+                    <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">TikTok URL</label>
+                    <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                     <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
                 </div>
             </div>
@@ -651,10 +833,10 @@
             <div class="admin-card" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBrandingSettings()">
                     <span style="font-size:15px;font-weight:700;">Store Logo</span>
-                    <svg class="ui-icon" id="branding-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                    <svg class="ui-icon" id="branding-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="branding-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Shown next to "PCA Store" in the header here and in the Store app.</p>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Shown next to "PCA Store" in the header here and in the Store app.</p>
                     <label class="img-update-box" id="logo-img-update-box" for="edit-logo-file">
                         <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                         <span class="img-update-label">Image Update</span>
@@ -665,7 +847,7 @@
                         </span>
                     </label>
                     <input type="file" id="edit-logo-file" class="img-update-input" accept="image/*" onchange="previewLogoImage(event)">
-                    <p id="logo-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+                    <p id="logo-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
                     <button class="btn btn-primary" id="save-logo-btn" style="margin-top:10px;" onclick="saveLogo()">Save Logo</button>
                 </div>
             </div>
@@ -679,13 +861,13 @@
             <div class="admin-card" style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                     <span style="font-size:15px;font-weight:700;display:block;">JCPlays Balance</span>
-                    <span style="font-size:20px;font-weight:700;color:#1877F2;" id="jcplays-balance-display">—</span>
+                    <span style="font-size:20px;font-weight:700;color:var(--accent);" id="jcplays-balance-display">—</span>
                 </div>
                 <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" id="jcplays-balance-refresh-btn" onclick="refreshJCPlaysBalance()">Refresh</button>
             </div>
 
             <div class="admin-card" style="margin-top:14px;">
-                <span style="font-size:13px;color:#65676B;background:#F0F2F5;padding:8px 10px;border-radius:8px;display:block;">
+                <span style="font-size:13px;color:var(--text-secondary);background:var(--bg-subtle);padding:8px 10px;border-radius:8px;display:block;">
                     Games linked with a JCPlays Product Code (in the game editor) and packages linked with a JCPlays Product ID will auto-fulfill from the Orders page, the same way G2Bulk-linked ones do. API credentials are managed from the <b>API</b> tab.
                 </span>
             </div>
@@ -698,7 +880,7 @@
             <div class="admin-card" style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                     <span style="font-size:15px;font-weight:700;display:block;">G2Bulk Wallet Balance</span>
-                    <span style="font-size:20px;font-weight:700;color:#1877F2;" id="g2bulk-balance-display">—</span>
+                    <span style="font-size:20px;font-weight:700;color:var(--accent);" id="g2bulk-balance-display">—</span>
                 </div>
                 <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" id="g2bulk-balance-refresh-btn" onclick="refreshG2BulkBalance()">Refresh</button>
             </div>
@@ -706,10 +888,10 @@
             <div class="admin-card" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleG2BulkTransactions()">
                     <span style="font-size:15px;font-weight:700;">G2Bulk Transactions</span>
-                    <svg class="ui-icon" id="g2bulk-tx-chevron" style="width:18px;height:18px;color:#65676B;transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                    <svg class="ui-icon" id="g2bulk-tx-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="g2bulk-tx-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:#65676B;margin-bottom:10px;">Every charge and top-up on your G2Bulk wallet, straight from their ledger — use this to reconcile against your own sales. API key is managed from the <b>API</b> tab.</p>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Every charge and top-up on your G2Bulk wallet, straight from their ledger — use this to reconcile against your own sales. API key is managed from the <b>API</b> tab.</p>
                     <button class="btn btn-outline" id="g2bulk-tx-refresh-btn" onclick="loadG2BulkTransactions()" style="margin-bottom:10px;">Load / Refresh</button>
                     <div id="g2bulk-tx-list"></div>
                 </div>
@@ -719,7 +901,7 @@
         <!-- API TAB: every third-party key/credential the app uses, in one place -->
         <div id="api-docs" class="page-section">
             <h2 class="title-header">API &amp; Integrations</h2>
-            <p style="font-size:12.5px;color:#65676B;margin-top:-8px;margin-bottom:14px;">Keys and credentials that power auto-fulfillment, image uploads, and balance checks across the app.</p>
+            <p style="font-size:12.5px;color:var(--text-secondary);margin-top:-8px;margin-bottom:14px;">Keys and credentials that power auto-fulfillment, image uploads, and balance checks across the app.</p>
 
             <div class="api-doc-card">
                 <div class="api-doc-icon" style="background:#29A9EA;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-telegram"></use></svg></div>
@@ -756,7 +938,7 @@
                 </div>
                 <span class="api-doc-static-key" id="imgbb-key-display" onclick="toggleImgBBKeyReveal()">••••••••</span>
             </div>
-            <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">This one's hardcoded in the app's source (not stored in Firestore) — to rotate it, replace the <code>IMGBB_API_KEY</code> constant near the top of the file and re-upload.</p>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">This one's hardcoded in the app's source (not stored in Firestore) — to rotate it, replace the <code>IMGBB_API_KEY</code> constant near the top of the file and re-upload.</p>
         </div>
 
         <!-- GAMES PAGE (Live Firestore Data) -->
@@ -787,10 +969,10 @@
         <div id="notify-list" class="page-section">
             <h2 class="title-header">Send Notification</h2>
             <div class="admin-card">
-                <label style="font-size:13px;font-weight:600;color:#65676B;">Title</label>
-                <input type="text" id="notif-title" placeholder="e.g. Server Maintenance" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                <label style="font-size:13px;font-weight:600;color:#65676B;">Message</label>
-                <textarea id="notif-message" placeholder="Write the announcement..." rows="3" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;font-family:inherit;resize:vertical;"></textarea>
+                <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">Title</label>
+                <input type="text" id="notif-title" placeholder="e.g. Server Maintenance" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">Message</label>
+                <textarea id="notif-message" placeholder="Write the announcement..." rows="3" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;font-family:inherit;resize:vertical;"></textarea>
                 <button class="btn btn-primary" id="send-notif-btn" onclick="sendNotification()">Send to All Users</button>
             </div>
             <h2 class="title-header" style="margin-top:20px;">Sent History</h2>
@@ -804,10 +986,10 @@
         <div id="ticker-list" class="page-section">
             <h2 class="title-header">Store Ticker</h2>
             <div class="admin-card">
-                <label style="font-size:13px;font-weight:600;color:#65676B;">New message</label>
-                <input type="text" id="ticker-text" placeholder="e.g. Shop open daily 9AM - 9PM" maxlength="120" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">New message</label>
+                <input type="text" id="ticker-text" placeholder="e.g. Shop open daily 9AM - 9PM" maxlength="120" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <button class="btn btn-primary" id="add-ticker-btn" onclick="addAnnouncement()">Add to Ticker</button>
-                <p style="font-size:12px;color:#65676B;margin-top:10px;">Shows in the Store app's scrolling ticker at the top, mixed in with real top-up activity. Stays until you delete it — it doesn't expire on its own.</p>
+                <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Shows in the Store app's scrolling ticker at the top, mixed in with real top-up activity. Stays until you delete it — it doesn't expire on its own.</p>
             </div>
             <h2 class="title-header" style="margin-top:20px;">Current Messages</h2>
             <div id="ticker-list-container">
@@ -835,7 +1017,7 @@
              threshold (MMK) each VIP rank requires. Read live by Store.html. -->
         <div id="tier-list" class="page-section">
             <h2 class="title-header">VIP Tier Limits</h2>
-            <p style="font-size:12.5px;color:#65676B;margin:-8px 0 14px;line-height:1.5;">
+            <p style="font-size:12.5px;color:var(--text-secondary);margin:-8px 0 14px;line-height:1.5;">
                 Set the minimum lifetime top-up spend (MMK) a customer needs to reach each rank. Changes apply instantly in the Store app. Bronze is always the starting rank at 0 MMK.
             </p>
             <div id="tier-limits-container">
@@ -862,8 +1044,8 @@
                 <label>Game Name</label>
                 <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
 
-                <label>Server / Region <span style="font-weight:400;color:#9C9EA1;">(optional)</span></label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">If this game has multiple servers (e.g. Malaysia Server, Singapore Server), give each upload the SAME Game Name above and a different Server name here. The Store will group them under one card and let customers pick a server. Leave blank for games with only one server.</p>
+                <label>Server / Region <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">If this game has multiple servers (e.g. Malaysia Server, Singapore Server), give each upload the SAME Game Name above and a different Server name here. The Store will group them under one card and let customers pick a server. Leave blank for games with only one server.</p>
                 <input type="text" id="edit-game-server-name" placeholder="e.g. Malaysia Server (leave blank if only one server)">
 
                 <label>Game Category</label>
@@ -893,7 +1075,7 @@
                 </div>
 
                 <label>Game Image</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Photo auto-crops to a square — center the character/logo for the best fit.</p>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Photo auto-crops to a square — center the character/logo for the best fit.</p>
                 <label class="img-update-box" id="game-img-update-box" for="edit-game-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Image Update</span>
@@ -904,10 +1086,10 @@
                     </span>
                 </label>
                 <input type="file" id="edit-game-file" class="img-update-input" accept="image/*" onchange="previewGameImage(event)">
-                <p id="upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+                <p id="upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
 
                 <label>Banner Image</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Wide photo shown at the top of the game's page. Leave empty to reuse the Game Image above.</p>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Wide photo shown at the top of the game's page. Leave empty to reuse the Game Image above.</p>
                 <label class="img-update-box" id="game-banner-update-box" for="edit-game-banner-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Banner Update</span>
@@ -918,10 +1100,10 @@
                     </span>
                 </label>
                 <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
-                <p id="banner-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+                <p id="banner-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
 
-                <div style="margin:4px 0 2px;padding:12px;background:#F7F8FA;border-radius:12px;border:1px solid #E4E6EB;">
-                    <p style="font-size:11px;font-weight:700;color:#65676B;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional) — link ONE provider, then Import to fill packages</p>
+                <div style="margin:4px 0 2px;padding:12px;background:#F7F8FA;border-radius:12px;border:1px solid var(--fill-soft);">
+                    <p style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional) — link ONE provider, then Import to fill packages</p>
 
                     <label style="margin-top:0;">G2Bulk Game</label>
                     <input type="hidden" id="edit-game-g2bulk-code" value="">
@@ -930,10 +1112,10 @@
                         <span class="picker-btn-label muted" id="g2bulk-picker-display">-- Not linked (manual fulfillment) --</span>
                         <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
                     </div>
-                    <p id="g2bulk-import-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;"></p>
+                    <p id="g2bulk-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;"></p>
 
                     <label>JCPlays Game</label>
-                    <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Pick from the list, or type a custom Product Code if a game isn't listed yet.</p>
+                    <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Pick from the list, or type a custom Product Code if a game isn't listed yet.</p>
                     <div class="picker-btn" id="jcplays-picker-btn" onclick="openGamePicker('jcplays')">
                         <div class="picker-btn-thumb" id="jcplays-picker-thumb"></div>
                         <span class="picker-btn-label muted" id="jcplays-picker-display">-- Not linked (manual fulfillment) --</span>
@@ -943,11 +1125,11 @@
                         <input type="text" id="edit-game-jcplays-code" placeholder="or type a custom product code" style="flex:1;" oninput="onJCPlaysCodeTyped()">
                         <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
                     </div>
-                    <p id="jcplays-denom-status" style="font-size:11px;color:#9C9EA1;margin-top:-4px;white-space:pre-wrap;"></p>
+                    <p id="jcplays-denom-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
                 </div>
 
                 <label>Top-up Packages</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Cost = your wholesale price (Store never shows this). Price = what the customer pays. The badge on the right shows your profit %.</p>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Cost = your wholesale price (Store never shows this). Price = what the customer pays. The badge on the right shows your profit %.</p>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
                 <div style="display:flex;gap:8px;">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
@@ -1009,7 +1191,7 @@
                     </span>
                 </label>
                 <input type="file" id="edit-payment-file" class="img-update-input" accept="image/*" onchange="previewPaymentImage(event)">
-                <p id="payment-upload-status" style="font-size:12px;color:#65676B;display:none;"></p>
+                <p id="payment-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
@@ -1028,7 +1210,7 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via jcplays.com. These credentials can spend your jcplays balance — keep them private, they are not shown anywhere in the Store app.</p>
+                <p style="font-size:12px;color:var(--text-secondary);">Used to auto-fulfill top-ups via jcplays.com. These credentials can spend your jcplays balance — keep them private, they are not shown anywhere in the Store app.</p>
 
                 <label>Base URL</label>
                 <input type="text" id="jcplays-base-url" placeholder="https://jcplays.com/smilecoin/api">
@@ -1041,7 +1223,7 @@
 
                 <label>M_KEY (API Key)</label>
                 <input type="password" id="jcplays-mkey" placeholder="your_m_key_here" autocomplete="off">
-                <p id="jcplays-status" style="font-size:12px;color:#65676B;display:none;margin-top:4px;"></p>
+                <p id="jcplays-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-jcplays-btn" onclick="verifyJCPlaysKey()">Verify Key</button>
@@ -1060,22 +1242,22 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12px;color:#65676B;">Used to auto-fulfill top-ups via G2Bulk. This key can spend your G2Bulk wallet balance — keep it private, it is not shown anywhere in the Store app.</p>
+                <p style="font-size:12px;color:var(--text-secondary);">Used to auto-fulfill top-ups via G2Bulk. This key can spend your G2Bulk wallet balance — keep it private, it is not shown anywhere in the Store app.</p>
                 <label>API Key</label>
                 <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" autocomplete="off">
-                <p id="g2bulk-status" style="font-size:12px;color:#65676B;display:none;margin-top:4px;"></p>
+                <p id="g2bulk-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
                 <div id="g2bulk-result-grid" style="display:none;"></div>
 
                 <label>USD → MMK Rate</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">G2Bulk prices are in USD. This rate is used to pre-fill MMK prices when you tap "Import from G2Bulk" — you can still edit each price by hand afterward.</p>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">G2Bulk prices are in USD. This rate is used to pre-fill MMK prices when you tap "Import from G2Bulk" — you can still edit each price by hand afterward.</p>
                 <input type="number" id="g2bulk-usd-rate" placeholder="e.g. 4500" step="1">
 
-                <label>Webhook URL <span style="font-weight:400;color:#9C9EA1;">(optional)</span></label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Your Cloudflare Worker URL. When set, orders auto-complete the instant G2Bulk confirms them — no need to keep this admin panel open. Leave blank to fall back to tab-based polling.</p>
+                <label>Webhook URL <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Your Cloudflare Worker URL. When set, orders auto-complete the instant G2Bulk confirms them — no need to keep this admin panel open. Leave blank to fall back to tab-based polling.</p>
                 <input type="text" id="g2bulk-webhook-url" placeholder="https://your-worker.workers.dev/g2bulk-webhook" autocomplete="off">
 
                 <label>Webhook Secret</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Must match the WEBHOOK_SECRET you set on the Worker. Sent as a query param so outsiders can't spoof completions.</p>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Must match the WEBHOOK_SECRET you set on the Worker. Sent as a query param so outsiders can't spoof completions.</p>
                 <input type="password" id="g2bulk-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
             </div>
             <div class="modal-footer">
@@ -1095,28 +1277,28 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12px;color:#65676B;">Message <a href="https://t.me/BotFather" target="_blank" style="color:#1877F2;">@BotFather</a> on Telegram to create a bot and get its token. Then message your new bot once and use <a href="https://t.me/userinfobot" target="_blank" style="color:#1877F2;">@userinfobot</a> (or check the bot's getUpdates response) to find your Chat ID.</p>
+                <p style="font-size:12px;color:var(--text-secondary);">Message <a href="https://t.me/BotFather" target="_blank" style="color:var(--accent);">@BotFather</a> on Telegram to create a bot and get its token. Then message your new bot once and use <a href="https://t.me/userinfobot" target="_blank" style="color:var(--accent);">@userinfobot</a> (or check the bot's getUpdates response) to find your Chat ID.</p>
 
                 <label>Bot Token</label>
                 <input type="password" id="tg-bot-token" placeholder="123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
 
                 <label>Chat ID</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Your personal chat ID, or a group/channel ID where orders should be posted.</p>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Your personal chat ID, or a group/channel ID where orders should be posted.</p>
                 <input type="text" id="tg-chat-id" placeholder="e.g. 123456789 or -100123456789" autocomplete="off">
 
-                <label style="margin-top:14px;">Webhook URL <span style="font-weight:400;color:#9C9EA1;">(pca-telegram-bot Worker)</span></label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">The Cloudflare Worker URL you registered with Telegram's setWebhook — kept here for reference so it's not only in the Cloudflare dashboard.</p>
+                <label style="margin-top:14px;">Webhook URL <span style="font-weight:400;color:var(--text-muted);">(pca-telegram-bot Worker)</span></label>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">The Cloudflare Worker URL you registered with Telegram's setWebhook — kept here for reference so it's not only in the Cloudflare dashboard.</p>
                 <input type="text" id="tg-webhook-url" placeholder="https://your-worker.workers.dev/telegram-webhook" autocomplete="off">
 
                 <label>Webhook Secret</label>
-                <p style="font-size:11px;color:#9C9EA1;margin-top:-6px;">Must match the secret_token set on the Worker's Telegram webhook, so outsiders can't spoof button presses.</p>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Must match the secret_token set on the Worker's Telegram webhook, so outsiders can't spoof button presses.</p>
                 <input type="password" id="tg-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
 
                 <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
                     <input type="checkbox" id="tg-enabled" style="width:auto;">
                     <span>Enabled — send new orders to Telegram automatically</span>
                 </label>
-                <p id="tg-status" style="font-size:12px;color:#65676B;display:none;margin-top:8px;"></p>
+                <p id="tg-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:8px;"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="test-tg-btn" onclick="sendTestTelegramMessage()">Send Test Message</button>
@@ -1142,10 +1324,10 @@
                     </div>
                     <div>
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <div id="ud-name" style="font-size:17px;font-weight:700;color:#050505;">Guest</div>
+                            <div id="ud-name" style="font-size:17px;font-weight:700;color:var(--text-strong);">Guest</div>
                             <span id="ud-tier-badge"></span>
                         </div>
-                        <div id="ud-guestid" style="font-size:12px;color:#9C9EA1;">-</div>
+                        <div id="ud-guestid" style="font-size:12px;color:var(--text-muted);">-</div>
                     </div>
                 </div>
 
@@ -1166,7 +1348,7 @@
                 </div>
 
                 <h3 class="detail-section-title" style="margin-top:16px;">Admin Note</h3>
-                <textarea id="ud-admin-note" placeholder="Private note about this customer (only visible here)..." rows="2" style="width:100%;padding:10px;border:1px solid #E4E6EB;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+                <textarea id="ud-admin-note" placeholder="Private note about this customer (only visible here)..." rows="2" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
                 <button class="btn btn-outline" style="margin-top:8px;padding:7px 14px;font-size:12px;" onclick="saveUserAdminNote()">Save Note</button>
 
                 <h3 class="detail-section-title" style="margin-top:18px;">Order History</h3>
@@ -1183,6 +1365,57 @@
 
     <!-- Vanilla JS -->
     <script>
+        // ---------- Theme switcher (Liquid Glass) ----------
+        const ADMIN_THEMES = [
+            { id: 'light',           label: 'Light Glass',   sub: 'Bright & airy',    icon: 'icon-moon', swatch: ['#EEF1F8', '#1877F2', '#ffffff'] },
+            { id: 'dark-blue',       label: 'Dark Blue',     sub: 'Deep navy glass',  icon: 'icon-moon', swatch: ['#050813', '#4C9AFF', '#17203A'] },
+            { id: 'midnight-purple', label: 'Midnight',      sub: 'Violet glass',     icon: 'icon-moon', swatch: ['#0B0715', '#C084FC', '#231838'] },
+            { id: 'ocean',           label: 'Ocean',         sub: 'Teal glass',       icon: 'icon-moon', swatch: ['#041016', '#2DD4BF', '#092630'] },
+        ];
+
+        function getCurrentTheme() {
+            return document.documentElement.getAttribute('data-theme') || 'light';
+        }
+
+        function applyTheme(themeId, persist = true) {
+            document.documentElement.setAttribute('data-theme', themeId);
+            if (persist) {
+                try { localStorage.setItem('pca-admin-theme', themeId); } catch (e) {}
+            }
+            renderThemeSwatches();
+        }
+
+        function renderThemeSwatches() {
+            const grid = document.getElementById('theme-swatch-grid');
+            if (!grid) return;
+            const current = getCurrentTheme();
+            grid.innerHTML = ADMIN_THEMES.map(t => `
+                <div onclick="applyTheme('${t.id}')" style="cursor:pointer;border-radius:16px;padding:12px;border:1.5px solid ${t.id === current ? 'var(--accent)' : 'var(--border-glass)'};background:${t.id === current ? 'var(--accent-soft)' : 'var(--bg-subtle-2)'};display:flex;flex-direction:column;gap:8px;transition:0.15s;">
+                    <div style="display:flex;gap:4px;">
+                        <div style="width:20px;height:20px;border-radius:6px;background:${t.swatch[0]};border:1px solid rgba(127,127,127,0.25);"></div>
+                        <div style="width:20px;height:20px;border-radius:6px;background:${t.swatch[1]};"></div>
+                        <div style="width:20px;height:20px;border-radius:6px;background:${t.swatch[2]};border:1px solid rgba(127,127,127,0.25);"></div>
+                    </div>
+                    <div>
+                        <div style="font-size:13.5px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:5px;">${t.label} ${t.id === current ? '<svg class="ui-icon" style="width:13px;height:13px;stroke:var(--accent);"><use href="#icon-check"></use></svg>' : ''}</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${t.sub}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openThemeSheet() {
+            renderThemeSwatches();
+            document.getElementById('theme-sheet-overlay').classList.add('show');
+        }
+        function closeThemeSheet() {
+            document.getElementById('theme-sheet-overlay').classList.remove('show');
+        }
+        window.applyTheme = applyTheme;
+        window.openThemeSheet = openThemeSheet;
+        window.closeThemeSheet = closeThemeSheet;
+        document.addEventListener('DOMContentLoaded', renderThemeSwatches);
+
         function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
@@ -1198,7 +1431,7 @@
             const styles = {
                 success: { icon: '#icon-check', circleBg: '#22C55E', textColor: '#4ADE80', border: 'rgba(74,222,128,0.35)' },
                 fail: { icon: '#icon-close', circleBg: '#EF4444', textColor: '#FCA5A5', border: 'rgba(239,68,68,0.35)' },
-                cancel: { icon: '#icon-info', circleBg: '#9CA3AF', textColor: '#E4E6EB', border: 'rgba(228,230,235,0.25)' }
+                cancel: { icon: '#icon-info', circleBg: '#9CA3AF', textColor: 'var(--fill-soft)', border: 'rgba(228,230,235,0.25)' }
             };
             const s = styles[type] || styles.success;
             document.getElementById('toast-icon-use').setAttribute('href', s.icon);
@@ -1534,11 +1767,11 @@
                     const cleanBtn = data.adminCleared
                         ? `<button class="btn btn-outline" onclick="restoreOrder('${orderId}')" title="Bring this back into the active list">↺ Restore</button>`
                         : `<button class="btn btn-outline" onclick="cleanOrder('${orderId}')" title="Hide from this list — stays in the customer's Order History">🧹 Clean</button>`;
-                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#65676B;">${doneLabel}</span>${recheckBtn}${cleanBtn}`;
+                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--text-secondary);">${doneLabel}</span>${recheckBtn}${cleanBtn}`;
                 }
 
                 const durationLine = (data.status === 'Success' && data.confirmedAt && data.timestamp)
-                    ? `<p style="color:#65676B; font-size:12px;">Confirmed in: <b style="color:#1877F2;">${formatDuration(data.confirmedAt.toMillis() - data.timestamp.toMillis())}</b></p>`
+                    ? `<p style="color:var(--text-secondary); font-size:12px;">Confirmed in: <b style="color:var(--accent);">${formatDuration(data.confirmedAt.toMillis() - data.timestamp.toMillis())}</b></p>`
                     : '';
 
                 const isOpen = expandedOrders.has(orderId);
@@ -1547,23 +1780,23 @@
                         <div class="oc-top" onclick="toggleOrderCard('${orderId}')">
                             <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" onerror="this.style.display='none'">` : ''}</div>
                             <div class="oc-info">
-                                <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:#1877F2;">(${data.serverRegion})</span>` : ''}</span>
+                                <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
                                 <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
                             </div>
                             <div class="oc-status">
                                 <span class="badge ${badgeClass}">${data.status}</span>
-                                <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:#9C9EA1;transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
+                                <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
-                        <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid #F0F2F5;">
-                            <p><b>Customer:</b> ${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}" style="color:#1877F2;">${data.userPhone}</a>` : ''}</p>
+                        <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid var(--bg-subtle);">
+                            <p><b>Customer:</b> ${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}" style="color:var(--accent);">${data.userPhone}</a>` : ''}</p>
                             <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
                             ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
                             ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
                             <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
-                            ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:#1877F2;">View on Map</a></p>` : ''}
-                            ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:#1877F2;">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#F0F2F5;margin-top:6px;">` : ''}
-                            <p style="color:#65676B; font-size:12px;">Ordered: ${dateStr}</p>
+                            ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);">View on Map</a></p>` : ''}
+                            ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                            <p style="color:var(--text-secondary); font-size:12px;">Ordered: ${dateStr}</p>
                             ${durationLine}
                         </div>
                         <div class="ac-footer" id="footer-${orderId}" style="display:${isOpen ? 'flex' : 'none'};">
@@ -1968,12 +2201,12 @@
                                 ${g.serverName ? `<span class="badge" style="background:#DBEAFE;color:#1E40AF;">🌐 ${g.serverName}</span>` : ''}
                                 ${categoryBadgeHtml(g.category)}
                                 ${g.popular ? `<span class="badge" style="background:#FFF3CD;color:#856404;">★ Popular</span>` : ''}
-                                ${g.serverIdRequired === false ? `<span class="badge" style="background:#E4E6EB;color:#65676B;">No Server ID</span>` : ''}
-                                <span class="badge" style="background:#E4E6EB;color:#1C1E21;">${(g.packages || []).length} packages</span>
+                                ${g.serverIdRequired === false ? `<span class="badge" style="background:var(--fill-soft);color:var(--text-secondary);">No Server ID</span>` : ''}
+                                <span class="badge" style="background:var(--fill-soft);color:var(--text-primary);">${(g.packages || []).length} packages</span>
                             </div>
                         </div>
                         <div class="ac-body" style="display:flex;gap:12px;align-items:center;">
-                            <div style="width:104px;height:104px;flex-shrink:0;border-radius:10px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;">
+                            <div style="width:104px;height:104px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);">
                                 <img src="${g.image}" style="width:100%;height:100%;object-fit:cover;display:block;">
                             </div>
                         </div>
@@ -2053,8 +2286,8 @@
                 <span class="pkg-order-num">1</span>
                 <div class="pkg-row-fields">
                     <div class="pkg-row-top">
-                        <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
-                        <div onclick="removePackageRow(this)" style="cursor:pointer;color:#FA3E3E;font-size:18px;padding:4px 6px;flex-shrink:0;">&times;</div>
+                        <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                        <div onclick="removePackageRow(this)" style="cursor:pointer;color:var(--danger);font-size:18px;padding:4px 6px;flex-shrink:0;">&times;</div>
                     </div>
                     <div class="pkg-row-media">
                         <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
@@ -2083,16 +2316,16 @@
                     <div class="pkg-row-pricing">
                         <div class="pkg-price-field">
                             <label>Cost (မသိမ်း — Store မှာ မပြပါ)</label>
-                            <input type="number" class="pkg-cost" placeholder="0" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                            <input type="number" class="pkg-cost" placeholder="0" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
                         </div>
                         <div class="pkg-price-field">
                             <label>Price (Store မှာ ပြမည်)</label>
-                            <input type="number" class="pkg-price" placeholder="0" value="${price}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid #E4E6EB;border-radius:6px;font-size:13px;">
+                            <input type="number" class="pkg-price" placeholder="0" value="${price}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
                         </div>
                         <div class="pkg-profit-badge" title="Profit margin = (Price − Cost) / Cost">--</div>
                     </div>
-                    <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
-                    <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID (leave blank = manual order)" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid #E4E6EB;border-radius:6px;font-size:12px;color:#65676B;">
+                    <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);">
+                    <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID (leave blank = manual order)" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);">
                 </div>
             `;
             list.appendChild(row);
@@ -2579,7 +2812,7 @@
                             </div>
                             <div class="ac-body">
                                 <p>${data.message}</p>
-                                <p style="color:#65676B; font-size:12px;">Sent: ${dateStr}</p>
+                                <p style="color:var(--text-secondary); font-size:12px;">Sent: ${dateStr}</p>
                             </div>
                             <div class="ac-footer">
                                 <button class="btn btn-danger" onclick="deleteNotification('${docSnap.id}')">Delete</button>
@@ -2706,7 +2939,7 @@
                     <div class="admin-card">
                         <div class="ac-header"><span class="ac-id">${p.name}</span></div>
                         <div class="ac-body" style="display:flex;gap:10px;align-items:center;">
-                            ${p.image ? `<div style="width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:hidden;background:#F0F2F5;border:1px solid #E4E6EB;"><img src="${p.image}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>` : ''}
+                            ${p.image ? `<div style="width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);"><img src="${p.image}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>` : ''}
                             <div>
                                 <p><b>Number:</b> ${p.number}</p>
                                 <p><b>Account Name:</b> ${p.accountName}</p>
@@ -2772,7 +3005,7 @@
                             <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'}</p>
                             ${adminTierBadgeHTML(tier)}
                         </div>
-                        <svg class="ui-icon" style="width:18px;height:18px;color:#BCC0C4;flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
+                        <svg class="ui-icon" style="width:18px;height:18px;color:var(--border-dashed);flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
                     </div>
                 `;
             }).join('');
@@ -2832,8 +3065,8 @@
                             <span class="ac-id">${o.game} (${o.itemAmount})</span>
                             <span class="badge ${badgeClass}">${o.status}${o.adminCleared ? ' · cleaned' : ''}</span>
                         </div>
-                        <p style="font-size:13px;color:#65676B;">${fmtMoney(o.price)} &middot; ${o.paymentMethod || 'N/A'}</p>
-                        <p style="font-size:12px;color:#9C9EA1;margin-top:4px;">${dateStr}</p>
+                        <p style="font-size:13px;color:var(--text-secondary);">${fmtMoney(o.price)} &middot; ${o.paymentMethod || 'N/A'}</p>
+                        <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">${dateStr}</p>
                     </div>
                 `;
             }).join('');
@@ -3545,12 +3778,12 @@
             statusEl.style.display = 'block';
 
             if (!botToken || !chatId) {
-                statusEl.style.color = '#FA3E3E';
+                statusEl.style.color = 'var(--danger)';
                 statusEl.innerText = 'Enter Bot Token and Chat ID first.';
                 return;
             }
 
-            statusEl.style.color = '#65676B';
+            statusEl.style.color = 'var(--text-secondary)';
             statusEl.innerText = 'Sending...';
             try {
                 const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -3562,11 +3795,11 @@
                     statusEl.style.color = '#22C55E';
                     statusEl.innerText = 'Sent! Check your Telegram.';
                 } else {
-                    statusEl.style.color = '#FA3E3E';
+                    statusEl.style.color = 'var(--danger)';
                     statusEl.innerText = data.description || 'Failed to send.';
                 }
             } catch (error) {
-                statusEl.style.color = '#FA3E3E';
+                statusEl.style.color = 'var(--danger)';
                 statusEl.innerText = 'Could not reach Telegram.';
             }
         }
@@ -3584,12 +3817,12 @@
             const btn = document.getElementById('g2bulk-balance-refresh-btn');
             if (displayEls.length === 0) return;
             if (!G2BULK_SETTINGS.apiKey) {
-                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = '#9C9EA1'; });
+                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = 'var(--text-muted)'; });
                 return;
             }
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
-            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = '#9C9EA1'; });
+            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
 
             try {
                 const res = await fetch('https://api.g2bulk.com/api/v2', {
@@ -3601,10 +3834,10 @@
                 if (data.error) throw new Error(data.error);
 
                 const text = `${Number(data.balance).toFixed(2)} ${data.currency || 'USD'}`;
-                displayEls.forEach(el => { el.innerText = text; el.style.color = '#1877F2'; });
+                displayEls.forEach(el => { el.innerText = text; el.style.color = 'var(--accent)'; });
             } catch (error) {
                 console.error("G2Bulk balance error:", error);
-                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = '#C0392B'; });
+                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = 'var(--danger-strong)'; });
             } finally {
                 if (btn) { btn.disabled = false; btn.innerText = originalText; }
             }
@@ -3654,14 +3887,14 @@
                     const dateStr = t.created_at ? new Date(t.created_at).toLocaleString() : '';
                     return `
                         <div class="tx-row">
-                            <div class="tx-row-icon" style="background:${isCharge ? '#FDE8E8' : '#E7F6EC'};">
-                                <svg class="ui-icon" style="stroke:${isCharge ? '#C0392B' : '#1E8E4F'};"><use href="#${isCharge ? 'icon-trending-up' : 'icon-dollar'}"></use></svg>
+                            <div class="tx-row-icon" style="background:${isCharge ? 'var(--danger-soft)' : '#E7F6EC'};">
+                                <svg class="ui-icon" style="stroke:${isCharge ? 'var(--danger-strong)' : '#1E8E4F'};"><use href="#${isCharge ? 'icon-trending-up' : 'icon-dollar'}"></use></svg>
                             </div>
                             <div class="tx-row-info">
                                 <span class="tx-row-title">${t.description || (isCharge ? 'Charge' : 'Balance added')}</span>
                                 <span class="tx-row-sub">${dateStr}${dateStr ? ' · ' : ''}Balance after: ${t.balance_after}</span>
                             </div>
-                            <span class="tx-row-amount" style="color:${isCharge ? '#C0392B' : '#1E8E4F'};">${isCharge ? '-' : '+'}${t.amount}</span>
+                            <span class="tx-row-amount" style="color:${isCharge ? 'var(--danger-strong)' : '#1E8E4F'};">${isCharge ? '-' : '+'}${t.amount}</span>
                         </div>
                     `;
                 }).join('');
@@ -3701,7 +3934,7 @@
 
         function renderGameCategorySelect() {
             const current = document.getElementById('edit-game-category').value;
-            const noneChip = `<div class="cat-chip${current === '' ? ' active' : ''}" data-cat="" style="--cat-color:#65676B;">
+            const noneChip = `<div class="cat-chip${current === '' ? ' active' : ''}" data-cat="" style="--cat-color:var(--text-secondary);">
                 <svg class="ui-icon"><use href="#icon-grid"></use></svg>None
             </div>`;
             document.getElementById('game-category-select').innerHTML = noneChip + GAME_CATEGORIES.map(c => `
@@ -3771,7 +4004,7 @@
 
         // Deterministic accent color per game name, used behind its initials
         // whenever no cover image is available (e.g. most JCPlays entries).
-        const PICKER_COLORS = ['#1877F2', '#8E44AD', '#E67E22', '#16A085', '#C0392B', '#2C3E50', '#D35400', '#2980B9'];
+        const PICKER_COLORS = ['var(--accent)', '#8E44AD', '#E67E22', '#16A085', 'var(--danger-strong)', '#2C3E50', '#D35400', '#2980B9'];
         function pickerColorFor(name) {
             let hash = 0;
             for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
@@ -3800,12 +4033,12 @@
             if (!code) {
                 displayEl.innerText = '-- Not linked (manual fulfillment) --';
                 displayEl.classList.add('muted');
-                thumbEl.style.background = '#F0F2F5';
+                thumbEl.style.background = 'var(--bg-subtle)';
                 thumbEl.innerHTML = '';
             } else if (match) {
                 displayEl.innerText = match.name;
                 displayEl.classList.remove('muted');
-                thumbEl.style.background = match.image ? '#F0F2F5' : pickerColorFor(match.name);
+                thumbEl.style.background = match.image ? 'var(--bg-subtle)' : pickerColorFor(match.name);
                 thumbEl.innerHTML = pickerThumbHtml(match) || escapeHtml(pickerInitials(match.name));
             } else {
                 // A code we don't have metadata for (e.g. hand-typed JCPlays code)
@@ -3973,14 +4206,14 @@
                     }
                 });
 
-                statusEl.style.color = '#1877F2';
+                statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
                 window.showToast('Catalogue imported ✓', 'success');
             } catch (error) {
                 console.error("Import G2Bulk catalogue error:", error);
-                statusEl.style.color = '#C0392B';
+                statusEl.style.color = 'var(--danger-strong)';
                 statusEl.innerText = 'Import failed: ' + error.message;
                 window.showToast('Failed to import catalogue.', 'fail');
             } finally {
@@ -4019,7 +4252,7 @@
                 const data = await res.json();
                 if (res.ok && data && data.success !== false) {
                     statusEl.innerText = 'Key valid ✓';
-                    statusEl.style.color = '#1877F2';
+                    statusEl.style.color = 'var(--accent)';
                     gridEl.className = 'details-grid';
                     gridEl.innerHTML = `
                         <div class="details-grid-item"><span>Balance</span><b>${data.balance ?? '-'}</b></div>
@@ -4029,13 +4262,13 @@
                     gridEl.style.display = 'grid';
                     window.showToast('G2Bulk key verified!', 'success');
                 } else {
-                    statusEl.style.color = '#C0392B';
+                    statusEl.style.color = 'var(--danger-strong)';
                     statusEl.innerText = 'Key check failed: ' + (data.message || data.error || JSON.stringify(data));
                     window.showToast('Key check failed.', 'fail');
                 }
             } catch (error) {
                 console.error("G2Bulk verify error:", error);
-                statusEl.style.color = '#C0392B';
+                statusEl.style.color = 'var(--danger-strong)';
                 statusEl.innerText = 'Could not reach G2Bulk - likely blocked by CORS. See the chat for what this means.';
                 window.showToast('Could not verify key.', 'fail');
             } finally {
@@ -4263,7 +4496,7 @@
             btn.disabled = true;
             btn.innerText = 'Checking...';
             statusEl.style.display = 'block';
-            statusEl.style.color = '#65676B';
+            statusEl.style.color = 'var(--text-secondary)';
             statusEl.innerText = 'Checking credentials against JCPlays...';
 
             try {
@@ -4273,13 +4506,13 @@
                     statusEl.innerText = `Connected ✓ — jcnew balance: ${data.smile_points}`;
                     window.showToast('JCPlays credentials verified!', 'success');
                 } else {
-                    statusEl.style.color = '#C0392B';
+                    statusEl.style.color = 'var(--danger-strong)';
                     statusEl.innerText = `JCPlays rejected the request (status ${data.status}): ${data.message || 'unknown error'}`;
                     window.showToast('JCPlays credentials rejected — check UID/Email/M_KEY.', 'fail');
                 }
             } catch (error) {
                 console.error("JCPlays verify error:", error);
-                statusEl.style.color = '#C0392B';
+                statusEl.style.color = 'var(--danger-strong)';
                 statusEl.innerText = 'Could not reach JCPlays: ' + error.message;
                 window.showToast('Could not reach JCPlays.', 'fail');
             } finally {
@@ -4297,21 +4530,21 @@
             const btn = document.getElementById('jcplays-balance-refresh-btn');
             if (displayEls.length === 0) return;
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
-                displayEls.forEach(el => { el.innerText = 'No credentials set'; el.style.color = '#9C9EA1'; });
+                displayEls.forEach(el => { el.innerText = 'No credentials set'; el.style.color = 'var(--text-muted)'; });
                 return;
             }
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
-            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = '#9C9EA1'; });
+            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
 
             try {
                 const data = await jcplaysRequest('querypoints', {});
                 if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
                 const text = `${Number(data.smile_points).toLocaleString()} pts`;
-                displayEls.forEach(el => { el.innerText = text; el.style.color = '#1877F2'; });
+                displayEls.forEach(el => { el.innerText = text; el.style.color = 'var(--accent)'; });
             } catch (error) {
                 console.error("JCPlays balance error:", error);
-                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = '#C0392B'; });
+                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = 'var(--danger-strong)'; });
             } finally {
                 if (btn) { btn.disabled = false; btn.innerText = originalText; }
             }
@@ -4346,26 +4579,26 @@
             const statusEl = document.getElementById('jcplays-denom-status');
             const btn = document.getElementById('jcplays-import-btn');
             if (!product) {
-                statusEl.style.color = '#C0392B';
+                statusEl.style.color = 'var(--danger-strong)';
                 statusEl.innerText = 'Enter a JCPlays Product Code first (e.g. mobilelegends).';
                 return;
             }
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
-                statusEl.style.color = '#C0392B';
+                statusEl.style.color = 'var(--danger-strong)';
                 statusEl.innerText = 'Add your JCPlays credentials first (Dashboard → JCPlays → Settings).';
                 return;
             }
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Importing...';
-            statusEl.style.color = '#65676B';
+            statusEl.style.color = 'var(--text-secondary)';
             statusEl.innerText = 'Loading denominations...';
             try {
                 const data = await jcplaysRequest('productlist', { product });
                 if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
                 const rows = (data.data && data.data.product) || [];
                 if (rows.length === 0) {
-                    statusEl.style.color = '#C0392B';
+                    statusEl.style.color = 'var(--danger-strong)';
                     statusEl.innerText = 'No denominations returned for this product code.';
                     return;
                 }
@@ -4398,14 +4631,14 @@
                     }
                 });
 
-                statusEl.style.color = '#1877F2';
+                statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
                 window.showToast('JCPlays denominations imported ✓', 'success');
             } catch (error) {
                 console.error("JCPlays productlist error:", error);
-                statusEl.style.color = '#C0392B';
+                statusEl.style.color = 'var(--danger-strong)';
                 statusEl.innerText = 'Error: ' + error.message;
             } finally {
                 btn.disabled = false;
