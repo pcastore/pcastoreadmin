@@ -330,7 +330,7 @@
         
         /* Badges & Buttons */
         .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
-        .badge-pending { background: #FFF3CD; color: #856404; }
+        .badge-pending { background: #D4F5DD; color: #1B7A3D; }
         .badge-processing { background: var(--fill-soft); color: #405DE6; }
         .badge-success { background: var(--accent-soft); color: var(--accent); }
         .badge-danger { background: var(--danger-soft); color: var(--danger-strong); }
@@ -459,6 +459,13 @@
         .game-picker-search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .game-picker-search-wrap input { width: 100%; padding: 10px 12px 10px 34px; border: 1px solid var(--border-glass); border-radius: 12px; font-size: 14px; background: var(--bg-subtle-2); color: var(--text-primary); box-sizing: border-box; }
         .game-picker-search-wrap input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+        /* Reusable search bar for admin list pages (Games, Orders, Wallet Top Ups, Users) */
+        .admin-search-wrap { position: relative; margin-bottom: 14px; }
+        .admin-search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--text-muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+        .admin-search-wrap input { width: 100%; padding: 12px 14px 12px 38px; border: 1px solid var(--border-glass); border-radius: 12px; font-size: 14.5px; background: var(--surface); color: var(--text-primary); box-sizing: border-box; }
+        .admin-search-wrap input:focus { outline: none; border-color: var(--accent); }
+        .admin-search-wrap input::placeholder { color: var(--text-muted); }
 
         .game-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 6px; }
         .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid var(--fill-soft); border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
@@ -1005,6 +1012,10 @@
         <!-- GAMES PAGE (Live Firestore Data) -->
         <div id="game-list" class="page-section">
             <h2 class="title-header">Game List <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button></h2>
+            <div class="admin-search-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="game-search" placeholder="Search games by name or server..." autocomplete="off" oninput="renderAdminGamesList()">
+            </div>
             <div id="admin-games-container">
                 <p class="empty-msg">Loading games...</p>
             </div>
@@ -1020,6 +1031,10 @@
                     <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button>
                 </span>
             </h2>
+            <div class="admin-search-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="order-search" placeholder="Search by game, customer, phone, player ID, order ID..." autocomplete="off" oninput="renderOrdersList()">
+            </div>
             <!-- Firebase Container -->
             <div id="orders-container">
                 <p class="empty-msg">Loading orders...</p>
@@ -1113,6 +1128,10 @@
         <!-- USERS PAGE (Firebase Connected) -->
         <div id="user-list" class="page-section">
             <h2 class="title-header">Manage Users</h2>
+            <div class="admin-search-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="user-search" placeholder="Search users by name, ID, or phone..." autocomplete="off" oninput="renderAdminUsersList()">
+            </div>
             <div id="admin-users-container">
                 <p class="empty-msg">Loading users...</p>
             </div>
@@ -1445,6 +1464,13 @@
                     <div class="details-grid-item"><span>Total Spent</span><b id="ud-total-spent">0 MMK</b></div>
                     <div class="details-grid-item"><span>Last Seen</span><b id="ud-last-seen">N/A</b></div>
                     <div class="details-grid-item"><span>Favorite Game</span><b id="ud-fav-game">N/A</b></div>
+                    <div class="details-grid-item" style="grid-column:1/-1;"><span>Wallet Balance</span><b id="ud-wallet-balance" style="color:var(--accent);font-size:16px;">0 MMK</b></div>
+                </div>
+
+                <h3 class="detail-section-title" style="margin-top:16px;">Deduct From Wallet</h3>
+                <div style="display:flex;gap:8px;">
+                    <input type="number" id="ud-deduct-amount" placeholder="Amount (MMK)" inputmode="numeric" style="flex:1;padding:12px 14px;border:1.5px solid var(--border-dashed);border-radius:10px;font-size:15px;background:var(--surface);color:var(--text-primary);">
+                    <button class="btn btn-outline" style="flex:0 0 auto;padding:10px 16px;" onclick="deductCurrentUserWallet()">Deduct</button>
                 </div>
 
                 <div class="details-grid" style="grid-template-columns:repeat(4,1fr);margin-top:8px;">
@@ -1805,15 +1831,38 @@
             });
         }
 
+        // Firestore onSnapshot can fire several times in quick succession (initial
+        // load, then a burst of individual doc changes). Rebuilding the entire
+        // orders list (innerHTML + every thumbnail image) on each one is what was
+        // causing the Orders page to stutter/freeze - so we coalesce any renders
+        // requested within the same animation frame into a single actual render.
+        let ordersRenderScheduled = false;
+        function renderOrdersList() {
+            if (ordersRenderScheduled) return;
+            ordersRenderScheduled = true;
+            requestAnimationFrame(() => {
+                ordersRenderScheduled = false;
+                renderOrdersListImpl();
+            });
+        }
+
         // Renders from the ORDERS cache rather than a live snapshot, so it can also be
         // called from listenGames() to fill in thumbnails once game images arrive.
-        function renderOrdersList() {
-            const allOrders = Object.values(ORDERS);
+        function renderOrdersListImpl() {
+            const searchTerm = (document.getElementById('order-search')?.value || '').trim().toLowerCase();
+            const allOrders = Object.values(ORDERS).filter(o => {
+                if (!searchTerm) return true;
+                return (o.game || '').toLowerCase().includes(searchTerm)
+                    || (o.userName || '').toLowerCase().includes(searchTerm)
+                    || (o.userPhone || '').toLowerCase().includes(searchTerm)
+                    || (o.playerId || '').toLowerCase().includes(searchTerm)
+                    || (o.id || '').toLowerCase().includes(searchTerm);
+            });
             const cleanedCount = allOrders.filter(o => o.adminCleared).length;
             const visibleOrders = allOrders.filter(o => !!o.adminCleared === showCleanedOrders);
 
             if (allOrders.length === 0) {
-                ordersContainer.innerHTML = '<p class="empty-msg">No orders found.</p>';
+                ordersContainer.innerHTML = `<p class="empty-msg">${searchTerm ? 'No orders match your search.' : 'No orders found.'}</p>`;
                 return;
             }
             if (visibleOrders.length === 0) {
@@ -1885,7 +1934,7 @@
                 return `
                     <div class="admin-card" id="card-${orderId}">
                         <div class="oc-top" onclick="toggleOrderCard('${orderId}')">
-                            <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" onerror="this.style.display='none'">` : ''}</div>
+                            <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
                             <div class="oc-info">
                                 <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
                                 <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
@@ -2249,11 +2298,19 @@
         function renderTopupsList() {
             const container = document.getElementById('topups-container');
             if (!container) return;
+            const searchTerm = (document.getElementById('topup-search')?.value || '').trim().toLowerCase();
             const all = Object.values(WALLET_TOPUPS);
-            const visible = all.filter(t => t.status === currentTopupTab);
+            const visible = all.filter(t => {
+                if (t.status !== currentTopupTab) return false;
+                if (!searchTerm) return true;
+                return (t.userName || '').toLowerCase().includes(searchTerm)
+                    || (t.userId || '').toLowerCase().includes(searchTerm)
+                    || (t.userPhone || '').toLowerCase().includes(searchTerm)
+                    || String(t.amount || '').includes(searchTerm);
+            });
 
             if (visible.length === 0) {
-                container.innerHTML = `<p class="empty-msg">No ${currentTopupTab.toLowerCase()} top ups.</p>`;
+                container.innerHTML = `<p class="empty-msg">${searchTerm ? `No matching ${currentTopupTab.toLowerCase()} top ups.` : `No ${currentTopupTab.toLowerCase()} top ups.`}</p>`;
                 return;
             }
 
@@ -2650,17 +2707,36 @@
         let editingImageRemoteUrl = null;
         let editingPaymentImageFile = null;
 
+        // Same rAF-coalescing trick as renderOrdersList: the games listener can
+        // fire repeatedly in a burst (e.g. on first load), and rebuilding every
+        // game card + thumbnail each time was making the Game List page stutter.
+        let gamesRenderScheduled = false;
         function renderAdminGamesList() {
+            if (gamesRenderScheduled) return;
+            gamesRenderScheduled = true;
+            requestAnimationFrame(() => {
+                gamesRenderScheduled = false;
+                renderAdminGamesListImpl();
+            });
+        }
+        function renderAdminGamesListImpl() {
             const container = document.getElementById('admin-games-container');
+            const searchTerm = (document.getElementById('game-search')?.value || '').trim().toLowerCase();
             // Sort by name (then server name) so games uploaded as multiple server
             // variants (same Game Name, different Server name) sit next to each
             // other in the list instead of being scattered.
-            const ids = Object.keys(GAMES).sort((a, b) => {
+            const ids = Object.keys(GAMES).filter(id => {
+                if (!searchTerm) return true;
+                const g = GAMES[id];
+                return (g.name || '').toLowerCase().includes(searchTerm) || (g.serverName || '').toLowerCase().includes(searchTerm);
+            }).sort((a, b) => {
                 const ga = GAMES[a], gb = GAMES[b];
                 return ga.name.localeCompare(gb.name) || (ga.serverName || '').localeCompare(gb.serverName || '');
             });
             if (ids.length === 0) {
-                container.innerHTML = '<p class="empty-msg">No games yet. Tap + Add to create one.</p>';
+                container.innerHTML = searchTerm
+                    ? '<p class="empty-msg">No games match your search.</p>'
+                    : '<p class="empty-msg">No games yet. Tap + Add to create one.</p>';
                 return;
             }
             container.innerHTML = ids.map(id => {
@@ -2679,7 +2755,7 @@
                         </div>
                         <div class="ac-body" style="display:flex;gap:12px;align-items:center;">
                             <div style="width:104px;height:104px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);">
-                                <img src="${g.image}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                                <img src="${g.image}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;">
                             </div>
                         </div>
                         <div class="ac-footer">
@@ -3447,11 +3523,36 @@
 
         function fmtMoney(n) { return Number(n || 0).toLocaleString() + ' MMK'; }
 
+        // Debounced the same way as Orders/Games: the Users list can also get
+        // re-rendered from the orders/games listeners (to refresh order counts),
+        // so coalescing avoids rebuilding every user card multiple times a second.
+        let usersRenderScheduled = false;
         function renderAdminUsersList() {
+            if (usersRenderScheduled) return;
+            usersRenderScheduled = true;
+            requestAnimationFrame(() => {
+                usersRenderScheduled = false;
+                renderAdminUsersListImpl();
+            });
+        }
+        function renderAdminUsersListImpl() {
             const container = document.getElementById('admin-users-container');
-            const ids = Object.keys(USERS);
+            const searchTerm = (document.getElementById('user-search')?.value || '').trim().toLowerCase();
+            let ids = Object.keys(USERS);
+            if (searchTerm) {
+                ids = ids.filter(id => {
+                    const u = USERS[id];
+                    const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
+                    return displayName.toLowerCase().includes(searchTerm)
+                        || (u.guestId || '').toLowerCase().includes(searchTerm)
+                        || (u.phone || '').toLowerCase().includes(searchTerm)
+                        || id.toLowerCase().includes(searchTerm);
+                });
+            }
             if (ids.length === 0) {
-                container.innerHTML = '<p class="empty-msg">No users yet. They\'ll appear here once someone opens the Store app.</p>';
+                container.innerHTML = searchTerm
+                    ? '<p class="empty-msg">No users match your search.</p>'
+                    : '<p class="empty-msg">No users yet. They\'ll appear here once someone opens the Store app.</p>';
                 return;
             }
             // Most recently active first.
@@ -3470,11 +3571,11 @@
                 return `
                     <div class="admin-card user-card" onclick="openUserDetails('${id}')">
                         <div class="user-avatar">
-                            ${u.photo ? `<img src="${u.photo}">` : `<svg class="ui-icon" style="width:22px;height:22px;"><use href="#icon-users"></use></svg>`}
+                            ${u.photo ? `<img src="${u.photo}" loading="lazy" decoding="async">` : `<svg class="ui-icon" style="width:22px;height:22px;"><use href="#icon-users"></use></svg>`}
                         </div>
                         <div class="user-card-info">
                             <h5>${displayName} ${u.banned ? '<span class="badge badge-danger" style="margin-left:4px;">Banned</span>' : ''}</h5>
-                            <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'}</p>
+                            <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'} &middot; ${fmtMoney(u.walletBalance || 0)}</p>
                             ${adminTierBadgeHTML(tier)}
                         </div>
                         <svg class="ui-icon" style="width:18px;height:18px;color:var(--border-dashed);flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
@@ -3491,6 +3592,9 @@
                 snap.forEach(docSnap => { newUsers[docSnap.id] = docSnap.data(); });
                 USERS = newUsers;
                 renderAdminUsersList();
+                if (currentUserDetailsId && USERS[currentUserDetailsId]) {
+                    document.getElementById('ud-wallet-balance').innerText = fmtMoney(USERS[currentUserDetailsId].walletBalance || 0);
+                }
             }, (error) => {
                 console.error("Users listener error:", error);
                 document.getElementById('admin-users-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load users.</p>';
@@ -3556,6 +3660,8 @@
             document.getElementById('ud-last-seen').innerText = u.lastSeen ? u.lastSeen.toDate().toLocaleString() : 'N/A';
             document.getElementById('ud-join-date').innerText = u.createdAt ? u.createdAt.toDate().toLocaleDateString() : 'N/A';
             document.getElementById('ud-admin-note').value = u.adminNote || '';
+            document.getElementById('ud-wallet-balance').innerText = fmtMoney(u.walletBalance || 0);
+            document.getElementById('ud-deduct-amount').value = '';
 
             const userOrdersForTier = Object.values(ORDERS).filter(o => o.userId === userId && o.status === 'Success');
             const spend = userOrdersForTier.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
@@ -3631,6 +3737,54 @@
             });
         }
         window.toggleBanCurrentUser = toggleBanCurrentUser;
+
+        // Manually removes an amount from a customer's wallet (e.g. correcting
+        // a mistaken credit, or an off-app adjustment). Runs as a transaction so
+        // the balance read/check and write happen atomically, and refuses to
+        // take the balance below 0.
+        async function deductCurrentUserWallet() {
+            if (!currentUserDetailsId) return;
+            const userId = currentUserDetailsId;
+            const input = document.getElementById('ud-deduct-amount');
+            const amount = Number(input.value);
+            if (!amount || amount <= 0) {
+                window.showToast('Enter a valid amount to deduct.', 'fail');
+                return;
+            }
+            const u = USERS[userId];
+            const currentBalance = Number((u && u.walletBalance) || 0);
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Deduct from wallet?',
+                message: `This will remove ${fmtMoney(amount)} from the user's wallet (current balance: ${fmtMoney(currentBalance)}).`,
+                confirmText: 'Deduct',
+                showNote: true,
+                notePlaceholder: 'Reason (optional, for your records)',
+                onConfirm: async (note) => {
+                    const userRef = doc(db, "users", userId);
+                    try {
+                        await runTransaction(db, async (tx) => {
+                            const snap = await tx.get(userRef);
+                            const balance = Number((snap.exists() && snap.data().walletBalance) || 0);
+                            if (balance < amount) {
+                                throw new Error('INSUFFICIENT_BALANCE');
+                            }
+                            tx.set(userRef, { walletBalance: increment(-amount) }, { merge: true });
+                        });
+                        input.value = '';
+                        window.showToast(`Deducted ${fmtMoney(amount)} ✓`, 'success');
+                    } catch (error) {
+                        console.error('Deduct wallet error:', error);
+                        if (error.message === 'INSUFFICIENT_BALANCE') {
+                            window.showToast("User doesn't have enough balance.", 'fail');
+                        } else {
+                            window.showToast('Failed to deduct balance.', 'fail');
+                        }
+                    }
+                }
+            });
+        }
+        window.deductCurrentUserWallet = deductCurrentUserWallet;
 
         // Deletes the customer's profile doc (name/phone/photo/ban status).
         // Their past orders stay in the Orders tab for your records - this
