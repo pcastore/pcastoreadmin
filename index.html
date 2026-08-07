@@ -334,6 +334,11 @@
         .badge-processing { background: var(--fill-soft); color: #405DE6; }
         .badge-success { background: var(--accent-soft); color: var(--accent); }
         .badge-danger { background: var(--danger-soft); color: var(--danger-strong); }
+
+        /* Segmented status tabs (Wallet Top Ups page) */
+        .pkg-type-tabs { display: flex; gap: 4px; background: var(--fill-soft); border-radius: 14px; padding: 4px; }
+        .pkg-type-tab { flex: 1; padding: 9px 4px; border: none; background: transparent; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text-secondary); cursor: pointer; transition: 0.15s; }
+        .pkg-type-tab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-soft); }
         .btn { padding: 9px 12px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid transparent; text-align: center; flex: 1; transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease; }
         .btn:active { transform: scale(0.97); }
         .btn-primary { background-color: var(--accent); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(var(--accent-rgb),0.65), inset 0 1px 0 rgba(255,255,255,0.35); }
@@ -778,6 +783,9 @@
         <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
             <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
         </div>
+        <div class="nav-item" id="btn-topup-list" onclick="showPage('topup-list')">
+            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Top Up
+        </div>
         <div class="nav-item" id="btn-notify-list" onclick="showPage('notify-list')">
             <svg class="ui-icon"><use href="#icon-bell"></use></svg> Notify
         </div>
@@ -1015,6 +1023,50 @@
             <!-- Firebase Container -->
             <div id="orders-container">
                 <p class="empty-msg">Loading orders...</p>
+            </div>
+        </div>
+
+        <!-- WALLET TOP UP PAGE (Firebase Connected) -->
+        <div id="topup-list" class="page-section">
+            <h2 class="title-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <span>Wallet Top Ups</span>
+                <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openManualTopupModal()">+ Top Up by UID</button>
+            </h2>
+
+            <div class="pkg-type-tabs" id="topup-status-tabs" style="margin-bottom:14px;">
+                <button type="button" class="pkg-type-tab active" data-status="Pending" onclick="switchTopupTab('Pending')">Pending</button>
+                <button type="button" class="pkg-type-tab" data-status="Processing" onclick="switchTopupTab('Processing')">Processing</button>
+                <button type="button" class="pkg-type-tab" data-status="Completed" onclick="switchTopupTab('Completed')">Completed</button>
+                <button type="button" class="pkg-type-tab" data-status="Rejected" onclick="switchTopupTab('Rejected')">Rejected</button>
+            </div>
+
+            <div id="topups-container">
+                <p class="empty-msg">Loading top up requests...</p>
+            </div>
+        </div>
+
+        <!-- Manual Top Up by UID Modal -->
+        <div class="modal-overlay" id="manual-topup-overlay" onclick="if(event.target===this) closeManualTopupModal()">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Top Up by UID</h3>
+                    <div class="modal-close" onclick="closeManualTopupModal()">
+                        <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <label>Customer UID</label>
+                    <p style="font-size:11px;color:var(--text-secondary);margin:-4px 0 6px;">The guest ID shown on the customer's Profile page (e.g. Guest-1234), or their Users tab entry.</p>
+                    <input type="text" id="manual-topup-uid" placeholder="e.g. Guest-1234" style="width:100%;margin-bottom:12px;" autocomplete="off">
+
+                    <label>Amount (MMK)</label>
+                    <input type="number" id="manual-topup-amount" placeholder="Enter amount" style="width:100%;margin-bottom:12px;" inputmode="numeric">
+
+                    <label>Note (optional)</label>
+                    <input type="text" id="manual-topup-note" placeholder="e.g. Bonus, refund, manual adjustment" style="width:100%;">
+
+                    <button type="button" class="btn btn-primary" id="manual-topup-submit-btn" style="margin-top:18px;" onclick="submitManualTopup(this)">Top Up</button>
+                </div>
             </div>
         </div>
 
@@ -1567,7 +1619,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -2143,6 +2195,371 @@
                 window.showToast("Failed to update order! Check Rules.", 'fail');
                 btnElement.innerText = "Mark Fail";
                 btnElement.disabled = false;
+            }
+        }
+
+        // ============================================================
+        // ---------- WALLET TOP UPS ----------
+        // Customer-submitted requests land in "walletTopups" as Pending. Admin
+        // can move Pending -> Processing (optional "we're reviewing this")
+        // and then Confirm (-> Completed, credits users/{uid}.walletBalance by
+        // the exact amount via a transaction) or Reject (-> Rejected, no
+        // credit). A separate "Top Up by UID" form lets the admin credit a
+        // wallet directly (e.g. bonuses/refunds) without a customer request.
+        // ============================================================
+        let topupsListenerAttached = false;
+        let WALLET_TOPUPS = {}; // { id: {...data, id} }
+        let currentTopupTab = 'Pending';
+        const topupsContainer = document.getElementById('topups-container');
+
+        function switchTopupTab(status) {
+            currentTopupTab = status;
+            document.querySelectorAll('#topup-status-tabs .pkg-type-tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.status === status);
+            });
+            renderTopupsList();
+        }
+        window.switchTopupTab = switchTopupTab;
+
+        function fetchWalletTopups() {
+            if (topupsListenerAttached) return;
+            topupsListenerAttached = true;
+
+            const q = query(collection(db, "walletTopups"));
+            onSnapshot(q, (querySnapshot) => {
+                const items = {};
+                querySnapshot.forEach(docSnap => { items[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
+                WALLET_TOPUPS = items;
+                renderTopupsList();
+
+                // New Pending requests that haven't been sent to Telegram yet get
+                // sent now. This fires whenever this admin panel is open and
+                // listening - for delivery even while the panel is closed, add the
+                // same walletTopups check to your pca-telegram-bot Cloudflare
+                // Worker's cron (same way it already handles "orders").
+                Object.values(items).forEach(t => {
+                    if (t.status === 'Pending' && !t.telegramMessageId) sendWalletTopupToTelegram(t.id, t);
+                });
+            }, (error) => {
+                console.error("Wallet topups fetch error:", error);
+                if (topupsContainer) topupsContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
+            });
+        }
+
+        function renderTopupsList() {
+            const container = document.getElementById('topups-container');
+            if (!container) return;
+            const all = Object.values(WALLET_TOPUPS);
+            const visible = all.filter(t => t.status === currentTopupTab);
+
+            if (visible.length === 0) {
+                container.innerHTML = `<p class="empty-msg">No ${currentTopupTab.toLowerCase()} top ups.</p>`;
+                return;
+            }
+
+            const sorted = visible.slice().sort((a, b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0));
+            const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Completed: 'badge-success', Rejected: 'badge-danger' };
+
+            container.innerHTML = sorted.map((t) => {
+                const dateStr = t.timestamp ? t.timestamp.toDate().toLocaleString() : 'Just now';
+                const badgeClass = badgeClassByStatus[t.status] || 'badge-pending';
+
+                let actionButtons;
+                if (t.status === 'Pending') {
+                    actionButtons = `<button class="btn btn-outline" onclick="setTopupProcessing('${t.id}', this)">Start Review</button>
+                                      <button class="btn btn-primary" onclick="confirmTopup('${t.id}', this)">Confirm</button>
+                                      <button class="btn btn-danger" onclick="rejectTopup('${t.id}', this)">Reject</button>`;
+                } else if (t.status === 'Processing') {
+                    actionButtons = `<button class="btn btn-primary" onclick="confirmTopup('${t.id}', this)">Confirm</button>
+                                      <button class="btn btn-danger" onclick="rejectTopup('${t.id}', this)">Reject</button>`;
+                } else {
+                    const doneLabel = t.status === 'Completed' ? 'Wallet Credited' : 'Rejected';
+                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--text-secondary);">${doneLabel}</span>`;
+                }
+
+                return `
+                    <div class="admin-card" id="topup-card-${t.id}">
+                        <div class="oc-top">
+                            <div class="oc-thumb" style="background:var(--accent-soft);display:flex;align-items:center;justify-content:center;"><svg class="ui-icon" style="width:18px;height:18px;color:var(--accent);"><use href="#icon-wallet"></use></svg></div>
+                            <div class="oc-info">
+                                <span class="oc-game-name">+${Number(t.amount || 0).toLocaleString()} MMK</span>
+                                <p class="oc-meta">${t.userName || t.userId || 'Guest'} &middot; ${t.paymentMethod || 'N/A'}</p>
+                            </div>
+                            <div class="oc-status">
+                                <span class="badge ${badgeClass}">${t.status}</span>
+                            </div>
+                        </div>
+                        <div class="ac-body" style="display:block;padding-top:10px;margin-top:10px;border-top:1px solid var(--bg-subtle);">
+                            <p><b>UID:</b> <span class="highlight-id">${t.userId || 'N/A'}</span></p>
+                            ${t.userPhone ? `<p><b>Phone:</b> <a href="tel:${t.userPhone}" style="color:var(--accent);">${t.userPhone}</a></p>` : ''}
+                            <p><b>Payment:</b> ${t.paymentMethod || 'N/A'}</p>
+                            ${t.receiptUrl ? `<p><b>Receipt:</b> <a href="${t.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${t.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                            <p style="color:var(--text-secondary); font-size:12px;">Requested: ${dateStr}</p>
+                            ${t.statusNote ? `<p style="color:var(--text-secondary); font-size:12px;">Note: ${t.statusNote}</p>` : ''}
+                        </div>
+                        <div class="ac-footer" style="display:flex;">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function setTopupProcessing(id, btnElement) {
+            btnElement.innerText = "Updating...";
+            btnElement.disabled = true;
+            try {
+                await updateDoc(doc(db, "walletTopups", id), { status: "Processing" });
+                window.showToast("Moved to Processing.", 'success');
+                editTelegramWalletTopupMessage(id, 'Processing');
+            } catch (error) {
+                console.error("setTopupProcessing error:", error);
+                window.showToast("Failed to update! Check Rules.", 'fail');
+                btnElement.innerText = "Start Review";
+                btnElement.disabled = false;
+            }
+        }
+        window.setTopupProcessing = setTopupProcessing;
+
+        // Credits the wallet and marks Completed inside a single transaction, so
+        // a double-click (or a Telegram button press racing an in-panel click)
+        // can never credit the same request twice. The transaction re-reads the
+        // request's current status and bails out if it's already resolved.
+        async function creditWalletTopup(id, note) {
+            const topupRef = doc(db, "walletTopups", id);
+            let creditedAmount = 0;
+            let creditedUserId = null;
+            await runTransaction(db, async (tx) => {
+                const snap = await tx.get(topupRef);
+                if (!snap.exists()) throw new Error('Top up request not found.');
+                const data = snap.data();
+                if (data.status === 'Completed' || data.status === 'Rejected') {
+                    throw new Error(`Already ${data.status}.`);
+                }
+                const amount = Number(data.amount || 0);
+                const userId = data.userId;
+                if (!userId) throw new Error('Top up request has no UID.');
+                const userRef = doc(db, "users", userId);
+                tx.set(userRef, { walletBalance: increment(amount) }, { merge: true });
+                tx.update(topupRef, {
+                    status: 'Completed',
+                    confirmedAt: serverTimestamp(),
+                    ...(note ? { statusNote: note } : {})
+                });
+                creditedAmount = amount;
+                creditedUserId = userId;
+            });
+            return { creditedAmount, creditedUserId };
+        }
+
+        function confirmTopup(id, btnElement) {
+            window.showActionDialog({
+                type: 'success',
+                title: 'Confirm this top up?',
+                message: 'The exact amount will be credited to the customer\'s wallet immediately.',
+                confirmText: 'Confirm & Credit',
+                showNote: true,
+                notePlaceholder: 'Note (optional)',
+                onConfirm: (note) => doConfirmTopup(id, btnElement, note)
+            });
+        }
+        window.confirmTopup = confirmTopup;
+
+        async function doConfirmTopup(id, btnElement, note) {
+            if (btnElement) { btnElement.innerText = "Crediting..."; btnElement.disabled = true; }
+            try {
+                const { creditedAmount } = await creditWalletTopup(id, note);
+                window.showToast(`Wallet credited ${creditedAmount.toLocaleString()} MMK ✓`, 'success');
+                editTelegramWalletTopupMessage(id, 'Completed');
+            } catch (error) {
+                console.error("doConfirmTopup error:", error);
+                window.showToast(error.message || "Failed to credit wallet.", 'fail');
+                if (btnElement) { btnElement.innerText = "Confirm"; btnElement.disabled = false; }
+            }
+        }
+
+        function rejectTopup(id, btnElement) {
+            window.showActionDialog({
+                type: 'warning',
+                title: 'Reject this top up?',
+                message: 'No amount will be credited. The customer will see this request as rejected.',
+                confirmText: 'Reject',
+                showNote: true,
+                notePlaceholder: 'Reason (optional) — e.g. "Receipt does not match amount"',
+                onConfirm: (note) => doRejectTopup(id, btnElement, note)
+            });
+        }
+        window.rejectTopup = rejectTopup;
+
+        async function doRejectTopup(id, btnElement, note) {
+            if (btnElement) { btnElement.innerText = "Updating..."; btnElement.disabled = true; }
+            try {
+                await updateDoc(doc(db, "walletTopups", id), {
+                    status: "Rejected",
+                    ...(note ? { statusNote: note } : {})
+                });
+                window.showToast("Top up rejected.", 'fail');
+                editTelegramWalletTopupMessage(id, 'Rejected');
+            } catch (error) {
+                console.error("doRejectTopup error:", error);
+                window.showToast("Failed to update! Check Rules.", 'fail');
+                if (btnElement) { btnElement.innerText = "Reject"; btnElement.disabled = false; }
+            }
+        }
+
+        // ---------- Top Up by UID (manual, admin-initiated) ----------
+        function openManualTopupModal() {
+            document.getElementById('manual-topup-uid').value = '';
+            document.getElementById('manual-topup-amount').value = '';
+            document.getElementById('manual-topup-note').value = '';
+            document.getElementById('manual-topup-overlay').classList.add('show');
+        }
+        window.openManualTopupModal = openManualTopupModal;
+
+        function closeManualTopupModal() {
+            document.getElementById('manual-topup-overlay').classList.remove('show');
+        }
+        window.closeManualTopupModal = closeManualTopupModal;
+
+        async function submitManualTopup(btnElement) {
+            const uid = document.getElementById('manual-topup-uid').value.trim();
+            const amount = Number(document.getElementById('manual-topup-amount').value);
+            const note = document.getElementById('manual-topup-note').value.trim();
+
+            if (!uid) { window.showToast('Enter the customer UID.', 'fail'); return; }
+            if (!amount || amount <= 0) { window.showToast('Enter a valid amount.', 'fail'); return; }
+
+            const originalText = btnElement.innerText;
+            btnElement.disabled = true;
+            btnElement.innerText = 'Crediting...';
+
+            try {
+                const userRef = doc(db, "users", uid);
+                const userSnap = await getDoc(userRef);
+                const userName = userSnap.exists() ? (userSnap.data().name || uid) : uid;
+
+                await setDoc(userRef, { walletBalance: increment(amount) }, { merge: true });
+                await addDoc(collection(db, "walletTopups"), {
+                    amount,
+                    paymentMethod: 'Admin Top Up',
+                    status: 'Completed',
+                    source: 'admin',
+                    userId: uid,
+                    userName,
+                    timestamp: serverTimestamp(),
+                    confirmedAt: serverTimestamp(),
+                    ...(note ? { statusNote: note } : {})
+                });
+                window.showToast(`Credited ${amount.toLocaleString()} MMK to ${uid} ✓`, 'success');
+                closeManualTopupModal();
+            } catch (error) {
+                console.error('submitManualTopup error:', error);
+                window.showToast(error.message || 'Failed to top up.', 'fail');
+            } finally {
+                btnElement.disabled = false;
+                btnElement.innerText = originalText;
+            }
+        }
+        window.submitManualTopup = submitManualTopup;
+
+        // ---------- Telegram (Wallet Top Ups) — mirrors the Order bot pattern ----------
+        function buildTelegramWalletTopupText(topupId, t) {
+            const rows = [
+                ['Amount', Number(t.amount || 0).toLocaleString() + ' MMK'],
+                ['Payment', escapeHtml(t.paymentMethod || 'N/A')],
+                ['Customer', escapeHtml(t.userName || 'Guest')],
+                ['UID', escapeHtml(t.userId || 'N/A')],
+                t.userPhone ? ['Phone', escapeHtml(t.userPhone)] : null
+            ].filter(Boolean);
+            const labelWidth = Math.max(...rows.map(r => r[0].length));
+            const gridLines = rows.map(([label, value], i) => {
+                const connector = i === 0 ? '┌' : (i === rows.length - 1 ? '└' : '├');
+                return `${connector} ${label.padEnd(labelWidth, ' ')}  ${value}`;
+            });
+            return [
+                `💳 <b>New Wallet Top Up</b>`,
+                `<pre>${gridLines.join('\n')}</pre>`,
+                `🔖 Top Up ID: <code>${escapeHtml(topupId)}</code>`
+            ].join('\n');
+        }
+
+        async function sendWalletTopupToTelegram(topupId, t) {
+            if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
+            const text = buildTelegramWalletTopupText(topupId, t);
+            const reply_markup = { inline_keyboard: [[
+                { text: '✅ Confirm', callback_data: 'wtopup_confirm:' + topupId },
+                { text: '❌ Reject', callback_data: 'wtopup_reject:' + topupId }
+            ]] };
+            try {
+                const usePhoto = !!t.receiptUrl;
+                const endpoint = usePhoto ? 'sendPhoto' : 'sendMessage';
+                const body = usePhoto
+                    ? { chat_id: TELEGRAM_SETTINGS.chatId, photo: t.receiptUrl, caption: text, parse_mode: 'HTML', reply_markup }
+                    : { chat_id: TELEGRAM_SETTINGS.chatId, text, parse_mode: 'HTML', reply_markup };
+                const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/${endpoint}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    await updateDoc(doc(db, "walletTopups", topupId), {
+                        telegramMessageId: data.result.message_id,
+                        telegramChatId: data.result.chat.id
+                    });
+                } else {
+                    console.error('Telegram send failed (wallet topup):', data);
+                }
+            } catch (error) {
+                console.error('sendWalletTopupToTelegram error:', error);
+            }
+        }
+
+        async function editTelegramWalletTopupMessage(topupId, status) {
+            const t = WALLET_TOPUPS[topupId];
+            if (!t || !t.telegramMessageId || !t.telegramChatId || !TELEGRAM_SETTINGS.botToken) return;
+            const statusLine = status === 'Completed' ? '✅ <b>CONFIRMED — WALLET CREDITED</b>'
+                : status === 'Processing' ? '⏳ <b>UNDER REVIEW</b>'
+                : '❌ <b>REJECTED</b>';
+            const base = { chat_id: t.telegramChatId, message_id: t.telegramMessageId };
+            try {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/editMessageReplyMarkup`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...base, reply_markup: status === 'Processing' ? { inline_keyboard: [[
+                        { text: '✅ Confirm', callback_data: 'wtopup_confirm:' + topupId },
+                        { text: '❌ Reject', callback_data: 'wtopup_reject:' + topupId }
+                    ]] } : { inline_keyboard: [] } })
+                });
+                const text = buildTelegramWalletTopupText(topupId, t) + '\n\n' + statusLine;
+                const endpoint = t.receiptUrl ? 'editMessageCaption' : 'editMessageText';
+                const field = t.receiptUrl ? 'caption' : 'text';
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/${endpoint}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...base, [field]: text, parse_mode: 'HTML' })
+                });
+            } catch (error) {
+                console.error('editTelegramWalletTopupMessage error:', error);
+            }
+        }
+
+        async function telegramResolveWalletTopup(topupId, status, cb) {
+            const t = WALLET_TOPUPS[topupId];
+            if (!t) { await answerTelegramCallback(cb.id, 'Top up not found in app.'); return; }
+            if (t.status === 'Completed' || t.status === 'Rejected') {
+                await answerTelegramCallback(cb.id, `Already ${t.status}.`);
+                return;
+            }
+            try {
+                if (status === 'Completed') {
+                    const { creditedAmount } = await creditWalletTopup(topupId, 'Updated via Telegram');
+                    await answerTelegramCallback(cb.id, `✅ Credited ${creditedAmount.toLocaleString()} MMK`);
+                } else {
+                    await updateDoc(doc(db, "walletTopups", topupId), { status: 'Rejected', statusNote: 'Updated via Telegram' });
+                    await answerTelegramCallback(cb.id, '❌ Marked as Rejected');
+                }
+                await editTelegramWalletTopupMessage(topupId, status);
+                window.showToast(`Top up ${status === 'Completed' ? 'confirmed & credited' : 'rejected'} via Telegram`, status === 'Completed' ? 'success' : 'fail');
+            } catch (error) {
+                console.error('telegramResolveWalletTopup error:', error);
+                await answerTelegramCallback(cb.id, 'Failed to update - please use the app instead.');
             }
         }
 
@@ -3718,9 +4135,11 @@
             const sep = raw.indexOf(':');
             if (sep === -1) { await answerTelegramCallback(cb.id, 'Unknown action.'); return; }
             const action = raw.slice(0, sep);
-            const orderId = raw.slice(sep + 1);
-            if (action === 'confirm') await telegramResolveOrder(orderId, 'Success', cb);
-            else if (action === 'reject') await telegramResolveOrder(orderId, 'Fail', cb);
+            const targetId = raw.slice(sep + 1);
+            if (action === 'confirm') await telegramResolveOrder(targetId, 'Success', cb);
+            else if (action === 'reject') await telegramResolveOrder(targetId, 'Fail', cb);
+            else if (action === 'wtopup_confirm') await telegramResolveWalletTopup(targetId, 'Completed', cb);
+            else if (action === 'wtopup_reject') await telegramResolveWalletTopup(targetId, 'Rejected', cb);
             else await answerTelegramCallback(cb.id, 'Unknown action.');
         }
 
@@ -5170,6 +5589,7 @@
         function startAdminApp() {
             loadDashboardStats();
             fetchOrders();
+            fetchWalletTopups();
             listenGames();
             listenNotifications();
             listenAnnouncementsAdmin();
