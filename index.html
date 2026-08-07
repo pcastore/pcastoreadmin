@@ -39,7 +39,7 @@
             --danger-soft: rgba(250,62,62,0.13);
             --border-dashed: rgba(30,41,59,0.28);
             --shadow-soft: 0 8px 30px -8px rgba(30,41,59,0.18);
-            --glass-blur: 22px;
+            --glass-blur: 14px;
             --icon-fg: #ffffff;
             --scheme: light;
         }
@@ -66,7 +66,7 @@
             --danger-soft: rgba(255,107,107,0.16);
             --border-dashed: rgba(255,255,255,0.26);
             --shadow-soft: 0 14px 40px -10px rgba(0,0,10,0.6);
-            --glass-blur: 24px;
+            --glass-blur: 16px;
             --icon-fg: #ffffff;
             --scheme: dark;
         }
@@ -93,7 +93,7 @@
             --danger-soft: rgba(255,107,107,0.16);
             --border-dashed: rgba(255,255,255,0.26);
             --shadow-soft: 0 14px 40px -10px rgba(10,0,20,0.6);
-            --glass-blur: 24px;
+            --glass-blur: 16px;
             --icon-fg: #ffffff;
             --scheme: dark;
         }
@@ -120,7 +120,7 @@
             --danger-soft: rgba(255,107,107,0.16);
             --border-dashed: rgba(255,255,255,0.26);
             --shadow-soft: 0 14px 40px -10px rgba(0,10,10,0.6);
-            --glass-blur: 24px;
+            --glass-blur: 16px;
             --icon-fg: #ffffff;
             --scheme: dark;
         }
@@ -146,14 +146,23 @@
         ::selection { background: var(--accent-soft); color: var(--accent); }
 
         /* Generic glass-panel helper: translucent fill + blur + a bright
-           inset edge to sell the "liquid glass" reflection. */
-        .glass, .admin-card, .api-doc-card, .tier-row, .modal-box, .dialog-box,
-        .login-box, .header, .side-nav, .btn, .badge, .tx-row, #toast,
+           inset edge to sell the "liquid glass" reflection.
+           IMPORTANT (perf): only chrome that sits once on screen (header,
+           side-nav, modals, login, toast) gets the real blur. Small,
+           frequently-repeated elements (buttons, badges, order/table rows,
+           chips, inputs) keep their translucent background but NOT the
+           blur — each blurred layer has to be recomposited by the GPU on
+           every scroll frame, so blurring dozens of rows/buttons at once
+           is what was causing the scroll/tap stutter. */
+        .glass, .modal-box, .dialog-box, .login-box, .header, .side-nav, #toast {
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+            backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+        }
+        .admin-card, .api-doc-card, .tier-row, .btn, .badge, .tx-row,
         .details-grid-item, .stat-chip, .picker-btn, .package-row, .img-update-box,
         .modal-body input, .login-box input, .game-picker-search-wrap input,
         .tier-row-input-wrap input {
-            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
-            backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+            background: var(--surface);
         }
         .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         
@@ -1342,10 +1351,12 @@
                     <input type="checkbox" id="tg-enabled" style="width:auto;">
                     <span>Enabled — send new orders to Telegram automatically</span>
                 </label>
+                <p style="font-size:12px;color:var(--text-secondary);margin-top:14px;">A text-only summary of the day's orders (counts, total sales, full list — no receipt images) is also sent automatically at midnight once a Bot Token + Chat ID are saved above.</p>
                 <p id="tg-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:8px;"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="test-tg-btn" onclick="sendTestTelegramMessage()">Send Test Message</button>
+                <button class="btn btn-outline" id="test-daily-summary-btn" onclick="sendDailySummaryNow()">Send Today's Summary Now</button>
                 <button class="btn btn-primary" id="save-tg-btn" onclick="saveTelegramBotSettings()">Save</button>
             </div>
         </div>
@@ -5022,6 +5033,137 @@
             setInterval(checkOrderArchiveSchedule, 2 * 60 * 1000); // re-check every 2 minutes
         }
 
+        // ---------- Daily Order Summary (midnight digest) ----------
+        // At the top of each new day (00:00 local time), sends a text-only
+        // summary of ALL orders placed during the day that just ended:
+        // counts by status, total sales, then the full itemised list.
+        // Text only — always sendMessage, never sendPhoto, so no receipt
+        // images go out. Uses the exact same catch-up pattern as the 7-Day
+        // Archive above (same caveat applies: only fires while this admin
+        // tab is open during the midnight hour, with a catch-up check on
+        // load so a missed midnight still gets sent next time the panel is
+        // opened — ask if you'd like this moved into the pca-telegram-bot
+        // Cloudflare Worker cron for a guaranteed exact-midnight send even
+        // with the panel closed).
+        let dailySummaryCheckIntervalStarted = false;
+
+        function addDaysLocal(d, days) { const r = new Date(d); r.setDate(r.getDate() + days); return r; }
+
+        async function sendDailySummaryToTelegram(dayStr, dayOrders) {
+            const bySuccess = dayOrders.filter(o => o.status === 'Success');
+            const byFail = dayOrders.filter(o => o.status === 'Fail');
+            const byPending = dayOrders.filter(o => o.status === 'Pending');
+            const byProcessing = dayOrders.filter(o => o.status === 'Processing');
+            const totalSales = bySuccess.reduce((sum, o) => sum + Number(o.price || 0), 0);
+
+            const statsRows = [
+                ['Total Orders', String(dayOrders.length)],
+                ['✅ Success', String(bySuccess.length)],
+                ['⏳ Processing', String(byProcessing.length)],
+                ['🕓 Pending', String(byPending.length)],
+                ['❌ Fail', String(byFail.length)],
+                ['💰 Total Sales', totalSales.toLocaleString() + ' MMK']
+            ];
+            const labelWidth = Math.max(...statsRows.map(r => r[0].length));
+            const statsLines = statsRows.map(([label, value]) => `${label.padEnd(labelWidth, ' ')}  ${value}`);
+            const headerText = [
+                `📊 <b>Daily Order Summary</b> — ${dayStr}`,
+                `<pre>${statsLines.join('\n')}</pre>`
+            ].join('\n');
+
+            try {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/sendMessage`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: TELEGRAM_SETTINGS.chatId, text: headerText, parse_mode: 'HTML' })
+                });
+            } catch (error) {
+                console.error('Daily summary header send error:', error);
+            }
+
+            if (dayOrders.length === 0) return;
+
+            const sorted = dayOrders.slice().sort((a, b) => (a.timestamp ? a.timestamp.toMillis() : 0) - (b.timestamp ? b.timestamp.toMillis() : 0));
+            const CHUNK = 10; // keep each Telegram message well under the 4096 char limit
+            for (let i = 0; i < sorted.length; i += CHUNK) {
+                const chunk = sorted.slice(i, i + CHUNK);
+                const rows = chunk.map((o, idx) => {
+                    const timeStr = o.timestamp ? o.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                    return `${i + idx + 1}. ${timeStr} — ${escapeHtml(o.game)} (${escapeHtml(o.itemAmount)}) — ${Number(o.price || 0).toLocaleString()} MMK — ${o.status}`;
+                });
+                const text = `<pre>${rows.join('\n')}</pre>`;
+                try {
+                    await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/sendMessage`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: TELEGRAM_SETTINGS.chatId, text, parse_mode: 'HTML' })
+                    });
+                } catch (error) {
+                    console.error('Daily summary order list send error:', error);
+                }
+            }
+        }
+
+        async function checkDailySummarySchedule() {
+            if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
+            const now = new Date();
+            if (now.getHours() !== 0) return; // only act during the 00:00–00:59 window
+            const todayStr = localDateStr(now);
+
+            let alreadyRanToday = false;
+            try {
+                const snap = await getDoc(doc(db, "settings", "dailySummary"));
+                alreadyRanToday = snap.exists() && snap.data().lastRunDate === todayStr;
+            } catch (error) {
+                console.error('Daily summary schedule check error:', error);
+                return;
+            }
+            if (alreadyRanToday) return;
+
+            const yesterdayStr = localDateStr(addDaysLocal(now, -1));
+            const dayOrders = Object.values(ORDERS).filter(o => o.timestamp && localDateStr(o.timestamp.toDate()) === yesterdayStr);
+            await sendDailySummaryToTelegram(yesterdayStr, dayOrders);
+
+            try {
+                await setDoc(doc(db, "settings", "dailySummary"), { lastRunDate: todayStr }, { merge: true });
+            } catch (error) {
+                console.error('Daily summary schedule save error:', error);
+            }
+        }
+
+        function startDailySummaryScheduler() {
+            if (dailySummaryCheckIntervalStarted) return;
+            dailySummaryCheckIntervalStarted = true;
+            checkDailySummarySchedule(); // catch up immediately in case it's already past midnight
+            setInterval(checkDailySummarySchedule, 2 * 60 * 1000); // re-check every 2 minutes
+        }
+
+        // Manual preview button in the Telegram modal — sends today's orders
+        // so far right now, labeled distinctly, and does NOT touch the
+        // settings/dailySummary.lastRunDate guard (so the real midnight run
+        // for today still happens on schedule after this).
+        async function sendDailySummaryNow() {
+            if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) {
+                window.showToast('Add and save your Bot Token + Chat ID first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('test-daily-summary-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Sending...';
+            try {
+                const todayStr = localDateStr(new Date());
+                const dayOrders = Object.values(ORDERS).filter(o => o.timestamp && localDateStr(o.timestamp.toDate()) === todayStr);
+                await sendDailySummaryToTelegram(todayStr + ' (so far)', dayOrders);
+                window.showToast("Sent today's summary so far!", 'success');
+            } catch (error) {
+                console.error('sendDailySummaryNow error:', error);
+                window.showToast('Failed to send summary.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.sendDailySummaryNow = sendDailySummaryNow;
+
         // Start live order tracking and load real dashboard numbers, but only
         // once an authenticated admin has actually signed in (see the auth
         // gate above) — nothing here runs against Firestore before that.
@@ -5041,6 +5183,7 @@
             listenTierSettings();
             startAdminHeartbeat();
             startOrderArchiveScheduler();
+            startDailySummaryScheduler();
         }
 
         // ---------- Admin presence heartbeat ----------
