@@ -974,8 +974,8 @@
             <div class="api-doc-card">
                 <div class="api-doc-icon" style="background:#29A9EA;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-telegram"></use></svg></div>
                 <div class="api-doc-info">
-                    <span class="api-doc-title">Telegram Order Bot</span>
-                    <span class="api-doc-desc">Sends every new order to your Telegram with full details and Confirm/Reject buttons — no need to open this admin panel.</span>
+                    <span class="api-doc-title">Telegram Notifications Bot</span>
+                    <span class="api-doc-desc">Sends every new order and wallet top up to your Telegram with full details and Confirm/Reject buttons — no need to open this admin panel.</span>
                 </div>
                 <button class="btn btn-outline api-doc-btn" onclick="openTelegramBotModal()">Settings</button>
             </div>
@@ -1227,29 +1227,40 @@
                 <p id="banner-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
 
                 <div style="margin:4px 0 2px;padding:12px;background:#F7F8FA;border-radius:12px;border:1px solid var(--fill-soft);">
-                    <p style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional) — link ONE provider, then Import to fill packages</p>
+                    <p style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional)</p>
+                    <p style="font-size:11px;color:var(--text-muted);margin:-4px 0 10px;">Pick one provider for this game. Switching hides the other one, and Save only keeps the picked provider's links.</p>
 
-                    <label style="margin-top:0;">G2Bulk Game</label>
-                    <input type="hidden" id="edit-game-g2bulk-code" value="">
-                    <div class="picker-btn" id="g2bulk-picker-btn" onclick="openGamePicker('g2bulk')">
-                        <div class="picker-btn-thumb" id="g2bulk-picker-thumb"></div>
-                        <span class="picker-btn-label muted" id="g2bulk-picker-display">-- Not linked (manual fulfillment) --</span>
-                        <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                    <div class="pkg-type-tabs" id="fulfill-provider-tabs">
+                        <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
+                        <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
+                        <button type="button" class="pkg-type-tab" data-provider="jcplays" onclick="setFulfillProvider('jcplays')">JCPlays</button>
                     </div>
-                    <p id="g2bulk-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;"></p>
 
-                    <label>JCPlays Game</label>
-                    <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Pick from the list, or type a custom Product Code if a game isn't listed yet.</p>
-                    <div class="picker-btn" id="jcplays-picker-btn" onclick="openGamePicker('jcplays')">
-                        <div class="picker-btn-thumb" id="jcplays-picker-thumb"></div>
-                        <span class="picker-btn-label muted" id="jcplays-picker-display">-- Not linked (manual fulfillment) --</span>
-                        <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                    <div id="g2bulk-fulfill-section" style="display:none;margin-top:10px;">
+                        <label style="margin-top:0;">G2Bulk Game</label>
+                        <input type="hidden" id="edit-game-g2bulk-code" value="">
+                        <div class="picker-btn" id="g2bulk-picker-btn" onclick="openGamePicker('g2bulk')">
+                            <div class="picker-btn-thumb" id="g2bulk-picker-thumb"></div>
+                            <span class="picker-btn-label muted" id="g2bulk-picker-display">-- Not linked (manual fulfillment) --</span>
+                            <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                        </div>
+                        <p id="g2bulk-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;"></p>
                     </div>
-                    <div style="display:flex;gap:8px;margin-top:6px;">
-                        <input type="text" id="edit-game-jcplays-code" placeholder="or type a custom product code" style="flex:1;" oninput="onJCPlaysCodeTyped()">
-                        <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
+
+                    <div id="jcplays-fulfill-section" style="display:none;margin-top:10px;">
+                        <label style="margin-top:0;">JCPlays Game</label>
+                        <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Pick from the list, or type a custom Product Code if a game isn't listed yet.</p>
+                        <div class="picker-btn" id="jcplays-picker-btn" onclick="openGamePicker('jcplays')">
+                            <div class="picker-btn-thumb" id="jcplays-picker-thumb"></div>
+                            <span class="picker-btn-label muted" id="jcplays-picker-display">-- Not linked (manual fulfillment) --</span>
+                            <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:6px;">
+                            <input type="text" id="edit-game-jcplays-code" placeholder="or type a custom product code" style="flex:1;" oninput="onJCPlaysCodeTyped()">
+                            <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
+                        </div>
+                        <p id="jcplays-denom-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
                     </div>
-                    <p id="jcplays-denom-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
                 </div>
 
                 <label>Top-up Packages</label>
@@ -1395,7 +1406,7 @@
     <div class="modal-overlay" id="telegram-modal-overlay" onclick="if(event.target===this) closeTelegramBotModal()">
         <div class="modal-box">
             <div class="modal-header">
-                <h3>Telegram Order Bot</h3>
+                <h3>Telegram Notifications Bot</h3>
                 <div class="modal-close" onclick="closeTelegramBotModal()">
                     <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
                 </div>
@@ -1825,6 +1836,15 @@
                 // pca-telegram-bot Cloudflare Worker (cron check every minute), so
                 // orders get sent to Telegram even with this admin panel closed.
                 // Left disabled here to avoid the same order being sent twice.
+
+                // NOTE: Wallet-paid order auto-fulfillment (skipping "Start
+                // Processing") also moved server-side, into the same Telegram
+                // approval Worker's cron sweep - it now does this even with this
+                // admin panel fully closed. Intentionally NOT duplicated here:
+                // running it both here and in the Worker at the same moment
+                // could fire two G2Bulk/JCPlays placement calls for the same
+                // order before either saves its idempotency key, risking a
+                // double charge.
             }, (error) => {
                 console.error("Data Fetch Error: ", error);
                 ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
@@ -2699,6 +2719,11 @@
             return `${secs}s`;
         }
         let editingImageFile = null;
+        // Which auto-fulfillment provider is active in the game editor right
+        // now - 'manual' | 'g2bulk' | 'jcplays'. Only one at a time; Save
+        // blanks out the other provider's links so an order can never end up
+        // ambiguous about which API should fulfill it.
+        let currentFulfillProvider = 'manual';
         let editingBannerImageFile = null;
         // Set when a G2Bulk game link auto-fills the Game Image from G2Bulk's own
         // cover image (already hosted, so saveGame() uses this URL directly
@@ -2872,8 +2897,8 @@
                         </div>
                         <div class="pkg-profit-badge" title="Profit margin = (Price − Cost) / Cost">--</div>
                     </div>
-                    <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name (leave blank = manual order)" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);">
-                    <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID (leave blank = manual order)" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);">
+                    <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk' ? 'block' : 'none'};">
+                    <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'jcplays' ? 'block' : 'none'};">
                 </div>
             `;
             list.appendChild(row);
@@ -3111,6 +3136,8 @@
                     bannerChangeBadge.style.display = 'none';
                 }
 
+                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : 'manual');
+                setFulfillProvider(initialProvider);
                 (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency'));
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
@@ -3128,6 +3155,7 @@
                 document.getElementById('edit-game-g2bulk-code').value = '';
                 document.getElementById('edit-game-jcplays-code').value = '';
                 document.getElementById('jcplays-denom-status').innerText = '';
+                setFulfillProvider('manual');
                 preview.src = '';
                 preview.style.display = 'none';
                 updateBox.classList.remove('has-image');
@@ -3201,8 +3229,12 @@
             if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
             const serverName = document.getElementById('edit-game-server-name').value.trim();
 
-            const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
-            const jcplaysProduct = document.getElementById('edit-game-jcplays-code').value.trim();
+            // Only the currently selected provider's links are kept - the
+            // other one is force-blanked here even if a value is still
+            // sitting in its (hidden) input, so a saved game can never end
+            // up ambiguous about which API should fulfill its orders.
+            const g2bulkCode = currentFulfillProvider === 'g2bulk' ? document.getElementById('edit-game-g2bulk-code').value : '';
+            const jcplaysProduct = currentFulfillProvider === 'jcplays' ? document.getElementById('edit-game-jcplays-code').value.trim() : '';
             const category = document.getElementById('edit-game-category').value;
             const popular = document.getElementById('edit-game-popular').checked;
             const serverIdRequired = document.getElementById('edit-game-serverid').checked;
@@ -3211,8 +3243,8 @@
                 amount: row.querySelector('.pkg-amount').value.trim(),
                 cost: Number(row.querySelector('.pkg-cost').value) || 0,
                 price: Number(row.querySelector('.pkg-price').value) || 0,
-                g2bulk: row.querySelector('.pkg-g2bulk').value.trim(),
-                jcplays: row.querySelector('.pkg-jcplays').value.trim(),
+                g2bulk: currentFulfillProvider === 'g2bulk' ? row.querySelector('.pkg-g2bulk').value.trim() : '',
+                jcplays: currentFulfillProvider === 'jcplays' ? row.querySelector('.pkg-jcplays').value.trim() : '',
                 image: row.querySelector('.pkg-img-preview').dataset.url || '',
                 type: row.querySelector('.pkg-type').value || 'currency'
             })).filter(p => p.amount && p.price > 0);
@@ -3246,7 +3278,7 @@
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', category: category || '', popular, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', fulfillProvider: currentFulfillProvider, category: category || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -4593,6 +4625,22 @@
             div.textContent = str;
             return div.innerHTML;
         }
+
+        // Toggles which auto-fulfillment provider's fields are visible in the
+        // game editor - both at the game level (the two picker sections) and
+        // per-package (.pkg-g2bulk / .pkg-jcplays inputs on every row already
+        // in the list). Doesn't touch the actual input values here - those
+        // are only blanked for the non-selected provider at Save time, so
+        // just clicking between tabs to look around never loses anything.
+        function setFulfillProvider(provider) {
+            currentFulfillProvider = provider;
+            document.querySelectorAll('#fulfill-provider-tabs .pkg-type-tab').forEach(el => el.classList.toggle('active', el.dataset.provider === provider));
+            document.getElementById('g2bulk-fulfill-section').style.display = provider === 'g2bulk' ? 'block' : 'none';
+            document.getElementById('jcplays-fulfill-section').style.display = provider === 'jcplays' ? 'block' : 'none';
+            document.querySelectorAll('#edit-packages-list .pkg-g2bulk').forEach(el => el.style.display = provider === 'g2bulk' ? 'block' : 'none');
+            document.querySelectorAll('#edit-packages-list .pkg-jcplays').forEach(el => el.style.display = provider === 'jcplays' ? 'block' : 'none');
+        }
+        window.setFulfillProvider = setFulfillProvider;
 
         function onG2BulkGameChange() {
             const code = document.getElementById('edit-game-g2bulk-code').value;
