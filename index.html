@@ -853,6 +853,7 @@
             <div class="dash-section-label">Wallet Balances</div>
 
             <div class="admin-card" id="dash-wallet-card" style="margin-top:0;display:flex;flex-direction:column;gap:12px;">
+                <div id="dash-g2bulk-row">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <div style="width:34px;height:34px;border-radius:9px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -864,6 +865,8 @@
                         </div>
                     </div>
                 </div>
+                </div>
+                <div id="dash-jcplays-row">
                 <div style="height:1px;background:var(--bg-subtle);"></div>
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div style="display:flex;align-items:center;gap:10px;">
@@ -875,6 +878,7 @@
                             <span style="font-size:17px;font-weight:700;color:var(--accent);" id="dash-jcplays-balance-display">—</span>
                         </div>
                     </div>
+                </div>
                 </div>
                 <button class="btn btn-outline" style="margin-top:2px;" id="dash-wallet-refresh-btn" onclick="refreshDashboardWallets()">Refresh Balances</button>
             </div>
@@ -1053,6 +1057,11 @@
                 <button type="button" class="pkg-type-tab" data-status="Processing" onclick="switchTopupTab('Processing')">Processing</button>
                 <button type="button" class="pkg-type-tab" data-status="Completed" onclick="switchTopupTab('Completed')">Completed</button>
                 <button type="button" class="pkg-type-tab" data-status="Rejected" onclick="switchTopupTab('Rejected')">Rejected</button>
+            </div>
+
+            <div class="admin-search-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="topup-search" placeholder="Search by name, UID, phone, or amount..." autocomplete="off" oninput="renderTopupsList()">
             </div>
 
             <div id="topups-container">
@@ -1358,6 +1367,11 @@
 
                 <label>M_KEY (API Key)</label>
                 <input type="password" id="jcplays-mkey" placeholder="your_m_key_here" autocomplete="off">
+
+                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+                    <input type="checkbox" id="jcplays-enabled" style="width:auto;" checked>
+                    <span>Enabled — turn off to fully hide JCPlays (nav tab, wallet card, game-link picker) everywhere in the app</span>
+                </label>
                 <p id="jcplays-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
             </div>
             <div class="modal-footer">
@@ -1394,6 +1408,11 @@
                 <label>Webhook Secret</label>
                 <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Must match the WEBHOOK_SECRET you set on the Worker. Sent as a query param so outsiders can't spoof completions.</p>
                 <input type="password" id="g2bulk-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
+
+                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+                    <input type="checkbox" id="g2bulk-enabled" style="width:auto;" checked>
+                    <span>Enabled — turn off to fully hide G2Bulk (nav tab, wallet card, game-link picker) everywhere in the app</span>
+                </label>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
@@ -2046,6 +2065,11 @@
         // Success/Fail even if nobody has this admin panel open at all. The polling
         // below still runs as a harmless backup for whoever does have it open.
         async function placeG2BulkOrder(orderId, order, btnElement) {
+            if (!G2BULK_SETTINGS.enabled) {
+                window.showToast('G2Bulk is turned off (Dashboard → G2Bulk API Key → Settings). Fulfill this order manually or re-enable it.', 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
             if (!G2BULK_SETTINGS.apiKey) {
                 window.showToast('Add your G2Bulk API key first (Dashboard → G2Bulk API Key).', 'fail');
                 return 'error';
@@ -4087,7 +4111,37 @@
         let g2bulkListenerAttached = false;
         // Module-wide cache of the current key/rate so order auto-fulfillment
         // doesn't need to re-read Firestore on every click.
-        let G2BULK_SETTINGS = { apiKey: '', usdRate: 4500, webhookUrl: '', webhookSecret: '' };
+        let G2BULK_SETTINGS = { apiKey: '', usdRate: 4500, webhookUrl: '', webhookSecret: '', enabled: true };
+
+        // Shows/hides every place a provider ('g2bulk' | 'jcplays') appears in
+        // the admin UI when its own Settings modal's "Enabled" toggle is off:
+        // the side-nav tab, its dashboard wallet row, and its tab button in the
+        // Game Editor's Auto-Fulfillment picker. Disabled providers are also
+        // blocked at the order-placement layer (see placeG2BulkOrder /
+        // placeJCPlaysOrder) so a previously-linked game can't call a disabled API.
+        function applyProviderVisibility(provider, enabled) {
+            const navBtn = document.getElementById('btn-' + provider);
+            if (navBtn) navBtn.style.display = enabled ? '' : 'none';
+
+            const dashRow = document.getElementById('dash-' + provider + '-row');
+            if (dashRow) dashRow.style.display = enabled ? '' : 'none';
+
+            const fulfillTab = document.querySelector('#fulfill-provider-tabs [data-provider="' + provider + '"]');
+            if (fulfillTab) fulfillTab.style.display = enabled ? '' : 'none';
+
+            if (!enabled) {
+                // If the now-hidden provider's own page is currently open, bounce
+                // back to the dashboard so nothing dangling stays on screen.
+                const pageEl = document.getElementById(provider);
+                if (pageEl && pageEl.classList.contains('active')) showPage('dashboard');
+                // If the Game Editor's fulfillment tabs are set to the provider
+                // that just got disabled, drop back to Manual.
+                if (typeof currentFulfillProvider !== 'undefined' && currentFulfillProvider === provider && typeof setFulfillProvider === 'function') {
+                    setFulfillProvider('manual');
+                }
+            }
+        }
+        window.applyProviderVisibility = applyProviderVisibility;
         // Cache of GET /v1/games so the game editor dropdown doesn't re-fetch every open.
         let G2BULK_GAMES_LIST = null;
 
@@ -4112,12 +4166,18 @@
                 document.getElementById('g2bulk-usd-rate').value = data.usdRate || 4500;
                 document.getElementById('g2bulk-webhook-url').value = data.webhookUrl || '';
                 document.getElementById('g2bulk-webhook-secret').value = data.webhookSecret || '';
+                // Field may not exist yet on older saved docs — default to on so
+                // existing setups keep working exactly as before this toggle existed.
+                const g2bulkEnabled = data.enabled !== false;
+                document.getElementById('g2bulk-enabled').checked = g2bulkEnabled;
                 G2BULK_SETTINGS = {
                     apiKey: data.apiKey || '',
                     usdRate: Number(data.usdRate) || 4500,
                     webhookUrl: (data.webhookUrl || '').trim(),
-                    webhookSecret: (data.webhookSecret || '').trim()
+                    webhookSecret: (data.webhookSecret || '').trim(),
+                    enabled: g2bulkEnabled
                 };
+                applyProviderVisibility('g2bulk', g2bulkEnabled);
                 if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             }, (error) => {
                 console.error("G2Bulk settings listener error:", error);
@@ -4129,6 +4189,7 @@
             const usdRate = Number(document.getElementById('g2bulk-usd-rate').value) || 4500;
             const webhookUrl = document.getElementById('g2bulk-webhook-url').value.trim();
             const webhookSecret = document.getElementById('g2bulk-webhook-secret').value.trim();
+            const enabled = document.getElementById('g2bulk-enabled').checked;
             const btn = document.getElementById('save-g2bulk-btn');
             const originalText = btn.innerText;
 
@@ -4145,7 +4206,7 @@
             btn.innerText = 'Saving...';
 
             try {
-                await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret }, { merge: true });
+                await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret, enabled }, { merge: true });
                 window.showToast('G2Bulk key saved!', 'success');
             } catch (error) {
                 console.error("Save G2Bulk key error:", error);
@@ -4962,7 +5023,7 @@
         // verification, balance, product lookup, and order placement are all
         // wired up to the real endpoints.
         let jcplaysListenerAttached = false;
-        let JCPLAYS_SETTINGS = { baseUrl: 'https://jcplays.com/smilecoin/api', uid: '', email: '', mKey: '' };
+        let JCPLAYS_SETTINGS = { baseUrl: 'https://jcplays.com/smilecoin/api', uid: '', email: '', mKey: '', enabled: true };
 
         // JCPlays' API sends no CORS headers, so a direct browser fetch() to
         // jcplays.com always fails with a NetworkError - this is the standalone
@@ -5116,12 +5177,18 @@
                 document.getElementById('jcplays-uid').value = data.uid || '';
                 document.getElementById('jcplays-email').value = data.email || '';
                 document.getElementById('jcplays-mkey').value = data.mKey || '';
+                // Field may not exist yet on older saved docs — default to on so
+                // existing setups keep working exactly as before this toggle existed.
+                const jcplaysEnabled = data.enabled !== false;
+                document.getElementById('jcplays-enabled').checked = jcplaysEnabled;
                 JCPLAYS_SETTINGS = {
                     baseUrl: data.baseUrl || 'https://jcplays.com/smilecoin/api',
                     uid: data.uid || '',
                     email: data.email || '',
-                    mKey: data.mKey || ''
+                    mKey: data.mKey || '',
+                    enabled: jcplaysEnabled
                 };
+                applyProviderVisibility('jcplays', jcplaysEnabled);
                 if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
             }, (error) => {
                 console.error("JCPlays settings listener error:", error);
@@ -5133,13 +5200,14 @@
             const uid = document.getElementById('jcplays-uid').value.trim();
             const email = document.getElementById('jcplays-email').value.trim();
             const mKey = document.getElementById('jcplays-mkey').value.trim();
+            const enabled = document.getElementById('jcplays-enabled').checked;
             const btn = document.getElementById('save-jcplays-btn');
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Saving...';
 
             try {
-                await setDoc(doc(db, "settings", "jcplays"), { baseUrl, uid, email, mKey }, { merge: true });
+                await setDoc(doc(db, "settings", "jcplays"), { baseUrl, uid, email, mKey, enabled }, { merge: true });
                 window.showToast('JCPlays credentials saved!', 'success');
             } catch (error) {
                 console.error("Save JCPlays credentials error:", error);
@@ -5330,6 +5398,11 @@
         // endpoint is synchronous — a 200 means the top-up is already done,
         // there's no separate async status-check step like G2Bulk has.
         async function placeJCPlaysOrder(orderId, order, btnElement) {
+            if (!JCPLAYS_SETTINGS.enabled) {
+                window.showToast('JCPlays is turned off (Dashboard → JCPlays API Credentials → Settings). Fulfill this order manually or re-enable it.', 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
                 window.showToast('Add your JCPlays credentials first (Dashboard → JCPlays → Settings).', 'fail');
                 if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
