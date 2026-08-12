@@ -206,6 +206,13 @@
         @media (prefers-reduced-motion: reduce) {
             .atom-electron-spin, .atom-core { animation: none; }
         }
+        /* Extra ambient atoms scattered around the login card — smaller,
+           dimmer copies of the main one, placed in the open corners so
+           they stay clear of the card on both phone and desktop widths. */
+        .atom-loader--tl { top: 9%;  left: 8%;  width: 140px; height: 140px; opacity: 0.55; }
+        .atom-loader--tr { top: 15%; left: 92%; width: 120px; height: 120px; opacity: 0.45; }
+        .atom-loader--bl { top: 80%; left: 10%; width: 130px; height: 130px; opacity: 0.5;  }
+        .atom-loader--br { top: 87%; left: 90%; width: 150px; height: 150px; opacity: 0.55; }
         .login-box { background: var(--surface); width: 100%; max-width: 360px; border-radius: 26px; padding: 28px 24px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); border: 1px solid var(--border-glass); }
         .login-box .logo-icon { background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
         .login-box h2 { text-align: center; font-size: 19px; font-weight: 700; margin-bottom: 4px; }
@@ -673,6 +680,35 @@
             <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
             <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
         </div>
+        <!-- Extra scattered atoms in the open corners around the card -->
+        <div class="atom-loader atom-loader--tl" aria-hidden="true">
+            <div class="atom-core"></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+        </div>
+        <div class="atom-loader atom-loader--tr" aria-hidden="true">
+            <div class="atom-core"></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+        </div>
+        <div class="atom-loader atom-loader--bl" aria-hidden="true">
+            <div class="atom-core"></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+        </div>
+        <div class="atom-loader atom-loader--br" aria-hidden="true">
+            <div class="atom-core"></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
+        </div>
         <div class="login-box" style="position:relative;z-index:1;">
             <div class="logo-icon">
                 <svg class="ui-icon" style="width:22px;height:22px;stroke:#fff;"><use href="#icon-shield"></use></svg>
@@ -767,6 +803,8 @@
         <symbol id="icon-telegram" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></symbol>
         <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></symbol>
         <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.3c2.6 0 4.7-2.1 4.7-4.7C22 5.9 17.5 2 12 2z"></path><circle cx="7" cy="10.5" r="1.4"></circle><circle cx="12" cy="7.5" r="1.4"></circle><circle cx="16.5" cy="10.5" r="1.4"></circle><circle cx="9.5" cy="15.5" r="1.4"></circle></symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></symbol>
+        <symbol id="icon-sort" viewBox="0 0 24 24"><line x1="6" y1="4" x2="6" y2="20"></line><polyline points="3 7 6 4 9 7"></polyline><line x1="18" y1="20" x2="18" y2="4"></line><polyline points="15 17 18 20 21 17"></polyline></symbol>
     </svg>
 
     <div id="toast"><span class="toast-icon-circle" id="toast-icon-circle"><svg class="ui-icon" id="toast-icon" style="color:#fff;"><use id="toast-icon-use" href="#icon-check"></use></svg></span> <span id="toast-msg">Action Completed!</span></div>
@@ -1331,11 +1369,12 @@
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
-                    <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်">🔢 Sort</button>
+                    <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
-                    <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;">🔄 Check Prices</button>
-                    <button class="btn btn-outline" onclick="copyAllPackagesText()">📋 Copy All</button>
+                    <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
+                    <button class="btn btn-outline" onclick="copyAllPackagesText()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy All</button>
                 </div>
+                <button class="btn btn-primary" id="pkg-apply-all-cost-btn" onclick="applyAllCostUpdates()" style="display:none;width:100%;justify-content:center;gap:6px;background:#FF9500;"><svg class="ui-icon" style="width:14px;height:14px;stroke:#fff;"><use href="#icon-refresh"></use></svg> <span id="pkg-apply-all-cost-label">Update All Costs</span></button>
                 <p id="pkg-price-check-status" style="font-size:11px;color:var(--text-muted);margin:-4px 0 0;"></p>
             </div>
             <div class="modal-footer">
@@ -3349,6 +3388,7 @@
             onG2BulkGameChange();
             refreshCheckPricesBtn();
             document.getElementById('pkg-price-check-status').innerText = '';
+            document.getElementById('pkg-apply-all-cost-btn').style.display = 'none';
             // Fetch G2Bulk's games list in the background (cached after first
             // load) so the button already shows the right name/thumb even
             // before the admin opens the picker, instead of just the raw code.
@@ -5187,8 +5227,10 @@
                 u.style.display = 'none';
                 delete u.dataset.newCost;
             });
+            const allBtn = document.getElementById('pkg-apply-all-cost-btn');
+            if (allBtn) allBtn.style.display = 'none';
 
-            const originalText = btn ? btn.innerText : '';
+            const originalHTML = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerText = 'Checking...'; }
             if (statusEl) { statusEl.style.color = 'var(--text-secondary)'; statusEl.innerText = 'Checking live prices...'; }
 
@@ -5212,7 +5254,7 @@
                             changed++;
                             const u = row.querySelector('.pkg-cost-update-btn');
                             u.dataset.newCost = liveCost;
-                            u.innerText = `↻ Update Cost → ${liveCost.toLocaleString()} MMK`;
+                            u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
                             u.style.display = 'flex';
                         }
                     });
@@ -5232,7 +5274,7 @@
                             changed++;
                             const u = row.querySelector('.pkg-cost-update-btn');
                             u.dataset.newCost = liveCost;
-                            u.innerText = `↻ Update Cost → ${liveCost.toLocaleString()} MMK`;
+                            u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
                             u.style.display = 'flex';
                         }
                     });
@@ -5243,16 +5285,21 @@
                 if (statusEl) {
                     statusEl.style.color = changed ? '#FF9500' : 'var(--text-muted)';
                     statusEl.innerText = changed
-                        ? `${changed} package(s) have a new price — tap Update on each row you want to apply.`
-                        : 'All costs match the live API price ✓';
+                        ? `${changed} package(s) have a new price — tap Update on a row, or use Update All Costs below.`
+                        : 'All costs match the live API price';
                 }
-                if (!silent) window.showToast(changed ? `${changed} price change(s) found` : 'Prices are up to date ✓', changed ? 'success' : 'success');
+                if (allBtn) {
+                    const label = document.getElementById('pkg-apply-all-cost-label');
+                    if (changed && label) label.innerText = `Update All Costs (${changed})`;
+                    allBtn.style.display = changed ? 'flex' : 'none';
+                }
+                if (!silent) window.showToast(changed ? `${changed} price change(s) found` : 'Prices are up to date', 'success');
             } catch (error) {
                 console.error('Price check error:', error);
                 if (statusEl) { statusEl.style.color = 'var(--danger-strong)'; statusEl.innerText = 'Price check failed: ' + error.message; }
                 if (!silent) window.showToast('Price check failed.', 'fail');
             } finally {
-                if (btn) { btn.disabled = false; btn.innerText = originalText; }
+                if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
             }
         }
         window.checkLivePriceChanges = checkLivePriceChanges;
@@ -5268,9 +5315,26 @@
             updatePackageProfit(costInput);
             btn.style.display = 'none';
             delete btn.dataset.newCost;
-            window.showToast('Cost updated ✓', 'success');
+            window.showToast('Cost updated', 'success');
         }
         window.applyCostUpdate = applyCostUpdate;
+
+        // Applies every row's pending live-price update in one tap, instead
+        // of tapping "Update Cost" on each row one by one. Reuses
+        // applyCostUpdate per row so the profit badge stays in sync.
+        function applyAllCostUpdates() {
+            const buttons = Array.from(document.querySelectorAll('.pkg-cost-update-btn'))
+                .filter(u => u.dataset.newCost !== undefined && u.style.display !== 'none');
+            if (buttons.length === 0) return;
+            buttons.forEach(applyCostUpdate);
+
+            const allBtn = document.getElementById('pkg-apply-all-cost-btn');
+            if (allBtn) allBtn.style.display = 'none';
+            const statusEl = document.getElementById('pkg-price-check-status');
+            if (statusEl) { statusEl.style.color = 'var(--text-muted)'; statusEl.innerText = 'All costs updated.'; }
+            window.showToast(`${buttons.length} cost(s) updated`, 'success');
+        }
+        window.applyAllCostUpdates = applyAllCostUpdates;
 
         // Copies every package's Currency (amount) + Price as plain text,
         // one per line, deliberately leaving Cost out since that's wholesale
