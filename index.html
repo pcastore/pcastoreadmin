@@ -230,7 +230,13 @@
         .logo-icon { background: var(--accent); color: white; padding: 4px; border-radius: 6px; display: flex; width: 26px; height: 26px; }
         .logo-icon.has-custom-logo { padding: 0; background: transparent; overflow: hidden; }
         .header-icon { background: var(--fill-soft); width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-        
+
+        /* Header clock */
+        #header-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; padding: 4px 12px; border-radius: 10px; background: var(--fill-soft); border: 1px solid var(--border-glass); }
+        #header-clock-time { font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 700; font-size: 13.5px; color: var(--accent); letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
+        #header-clock-date { font-size: 8.5px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 1px; }
+        @media (max-width: 380px) { #header-clock-date { display: none; } #header-clock { padding: 4px 9px; } }
+
         /* App Layout (sidebar + content) */
         .app-layout { display: flex; align-items: flex-start; }
 
@@ -493,10 +499,15 @@
         .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
         .package-row.drag-over { border-color: var(--accent); }
-        .pkg-drag-handle { flex-shrink: 0; width: 34px; display: flex; align-items: center; justify-content: center; background: var(--bg-subtle); color: var(--text-muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+        .pkg-order-col { flex-shrink: 0; width: 34px; display: flex; flex-direction: column; align-items: stretch; }
+        .pkg-move-btn { border: none; background: #F7F8FA; color: var(--text-muted); padding: 6px 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .pkg-move-btn:active { background: var(--fill-soft); color: var(--accent); }
+        .pkg-move-btn:disabled { opacity: 0.25; cursor: default; }
+        .pkg-move-btn:disabled:active { background: #F7F8FA; color: var(--text-muted); }
+        .pkg-drag-handle { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 0; background: var(--bg-subtle); color: var(--text-muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
         .pkg-drag-handle:active { cursor: grabbing; background: var(--fill-soft); color: var(--accent); }
-        .pkg-drag-handle svg { width: 16px; height: 16px; pointer-events: none; }
-        .pkg-order-num { flex-shrink: 0; width: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text-muted); background: #F7F8FA; }
+        .pkg-drag-handle svg { width: 14px; height: 14px; pointer-events: none; }
+        .pkg-order-num { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
         .pkg-row-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
         .pkg-row-top { display: flex; gap: 6px; align-items: center; }
         .pkg-row-pricing { display: flex; gap: 6px; align-items: flex-end; }
@@ -518,6 +529,9 @@
         .pkg-type-opt:active { transform: scale(0.96); }
         .pkg-img-remove { flex-shrink: 0; font-size: 11px; color: var(--danger); cursor: pointer; white-space: nowrap; }
         .pkg-profit-badge.negative { background: var(--danger-soft); color: var(--danger-strong); }
+        .pkg-cost-update-btn { margin-top: 4px; width: 100%; border: none; border-radius: 6px; padding: 5px 6px; font-size: 11px; font-weight: 700; color: #fff; background: #FF9500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; animation: pkgUpdatePulse 1.4s ease-in-out infinite; }
+        .pkg-cost-update-btn:active { transform: scale(0.97); animation: none; }
+        @keyframes pkgUpdatePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,149,0,0.45); } 50% { box-shadow: 0 0 0 4px rgba(255,149,0,0); } }
 
         /* ===================== Desktop Mode =====================
            Above ~900px this panel stops behaving like a stretched-out
@@ -564,8 +578,8 @@
             #notif-history-container,
             #ticker-list-container {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-                gap: 14px;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 12px;
                 align-items: start;
             }
             #admin-games-container .admin-card,
@@ -636,8 +650,8 @@
                 <p class="sub">Sign in to manage orders, games &amp; G2Bulk</p>
                 <p id="login-error" class="login-msg-error"></p>
                 <form id="login-form" onsubmit="handleAdminLogin(); return false;">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" autocomplete="username" placeholder="admin@example.com">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" autocomplete="username" placeholder="username" autocapitalize="none" autocorrect="off">
                     <label for="login-password">Password</label>
                     <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
                     <button type="submit" id="login-btn">Sign In</button>
@@ -701,6 +715,7 @@
         <symbol id="icon-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></symbol>
         <symbol id="icon-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></symbol>
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
+        <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
         <symbol id="icon-grip" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.6"></circle><circle cx="15" cy="5" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="19" r="1.6"></circle><circle cx="15" cy="19" r="1.6"></circle></symbol>
         <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></symbol>
         <symbol id="icon-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></symbol>
@@ -748,6 +763,10 @@
                 <img id="header-logo-img" src="" alt="PCA Store" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
             </div>
             PCA Store
+        </div>
+        <div id="header-clock" title="Local time">
+            <span id="header-clock-time">--:--:--</span>
+            <span id="header-clock-date">--</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
             <div class="header-icon" id="theme-toggle-btn" title="Theme" onclick="openThemeSheet()"><svg class="ui-icon" id="theme-toggle-icon" style="width:20px;"><use href="#icon-palette"></use></svg></div>
@@ -1275,10 +1294,14 @@
                 <label>Top-up Packages</label>
                 <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Cost = your wholesale price (Store never shows this). Price = what the customer pays. The badge on the right shows your profit %.</p>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
+                    <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်">🔢 Sort</button>
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
+                    <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;">🔄 Check Prices</button>
+                    <button class="btn btn-outline" onclick="copyAllPackagesText()">📋 Copy All</button>
                 </div>
+                <p id="pkg-price-check-status" style="font-size:11px;color:var(--text-muted);margin:-4px 0 0;"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
@@ -1579,6 +1602,17 @@
         window.closeThemeSheet = closeThemeSheet;
         document.addEventListener('DOMContentLoaded', renderThemeSwatches);
 
+        // Live header clock
+        function updateHeaderClock() {
+            const now = new Date();
+            const timeEl = document.getElementById('header-clock-time');
+            const dateEl = document.getElementById('header-clock-date');
+            if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+        }
+        updateHeaderClock();
+        setInterval(updateHeaderClock, 1000);
+
         function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
@@ -1675,7 +1709,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -1719,24 +1753,39 @@
         let adminAppStarted = false;
 
         async function handleAdminLogin() {
-            const email = document.getElementById('login-email').value.trim();
+            const username = document.getElementById('login-username').value.trim().toLowerCase();
             const password = document.getElementById('login-password').value;
             const errEl = document.getElementById('login-error');
             const btn = document.getElementById('login-btn');
             errEl.style.display = 'none';
-            if (!email || !password) {
-                errEl.textContent = 'Enter both email and password.';
+            if (!username || !password) {
+                errEl.textContent = 'Enter both username and password.';
                 errEl.style.display = 'block';
                 return;
             }
             btn.disabled = true;
             btn.innerText = 'Signing in...';
             try {
+                // Firebase Auth itself only accepts email/password, so each
+                // admin's username is mapped to their real sign-in email via
+                // an "adminUsernames/{username}" doc ({ email: "..." }).
+                // This doc must be readable without being signed in yet
+                // (see the matching Firestore rule note), but it holds only
+                // the email address — never the password.
+                const usernameSnap = await getDoc(doc(db, "adminUsernames", username));
+                if (!usernameSnap.exists() || !usernameSnap.data().email) {
+                    errEl.textContent = 'Wrong username or password.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerText = 'Sign In';
+                    return;
+                }
+                const email = usernameSnap.data().email;
                 await signInWithEmailAndPassword(auth, email, password);
                 // onAuthStateChanged below takes it from here
             } catch (error) {
                 console.error('Admin login error:', error);
-                errEl.textContent = 'Wrong email or password. (' + (error.code || error.message || 'unknown error') + ')';
+                errEl.textContent = 'Wrong username or password. (' + (error.code || error.message || 'unknown error') + ')';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.innerText = 'Sign In';
@@ -2877,10 +2926,18 @@
             const row = document.createElement('div');
             row.className = 'package-row';
             row.innerHTML = `
-                <div class="pkg-drag-handle" title="ဆွဲပြီးနေရာပြောင်းရန်">
-                    <svg class="ui-icon"><use href="#icon-grip"></use></svg>
+                <div class="pkg-order-col">
+                    <button type="button" class="pkg-move-btn" onclick="movePackageRow(this,-1)" title="အပေါ်ရွှေ့ရန်">
+                        <svg class="ui-icon" style="width:13px;height:13px;transform:rotate(180deg);"><use href="#icon-chevron-down"></use></svg>
+                    </button>
+                    <div class="pkg-drag-handle" title="ဆွဲပြီးနေရာပြောင်းရန်">
+                        <svg class="ui-icon"><use href="#icon-grip"></use></svg>
+                        <span class="pkg-order-num">1</span>
+                    </div>
+                    <button type="button" class="pkg-move-btn" onclick="movePackageRow(this,1)" title="အောက်ရွှေ့ရန်">
+                        <svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-chevron-down"></use></svg>
+                    </button>
                 </div>
-                <span class="pkg-order-num">1</span>
                 <div class="pkg-row-fields">
                     <div class="pkg-row-top">
                         <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
@@ -2914,6 +2971,7 @@
                         <div class="pkg-price-field">
                             <label>Cost (မသိမ်း — Store မှာ မပြပါ)</label>
                             <input type="number" class="pkg-cost" placeholder="0" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                            <button type="button" class="pkg-cost-update-btn" style="display:none;" onclick="applyCostUpdate(this)"></button>
                         </div>
                         <div class="pkg-price-field">
                             <label>Price (Store မှာ ပြမည်)</label>
@@ -3104,11 +3162,68 @@
             });
         }
 
-        // Refreshes the "#1, #2, ..." order labels shown next to each package row.
+        // Auto-sorts all package rows by the leading number in their Currency
+        // name (e.g. "100 Diamonds" → 100, "50 Diamonds" → 50) ascending.
+        // Rows whose name has no leading number (e.g. "Weekly Pass") are
+        // grouped after the numeric ones and sorted alphabetically among
+        // themselves, so a mixed currency/subscription list still ends up tidy.
+        function sortPackageRows() {
+            const list = document.getElementById('edit-packages-list');
+            const rows = Array.from(list.querySelectorAll('.package-row'));
+            if (rows.length < 2) return;
+
+            const parseLeadingNumber = (text) => {
+                const match = text.trim().replace(/,/g, '').match(/^(\d+(?:\.\d+)?)/);
+                return match ? parseFloat(match[1]) : null;
+            };
+
+            const decorated = rows.map(row => {
+                const amount = row.querySelector('.pkg-amount').value;
+                return { row, amount, num: parseLeadingNumber(amount) };
+            });
+
+            decorated.sort((a, b) => {
+                if (a.num !== null && b.num !== null) return a.num - b.num;
+                if (a.num !== null) return -1; // numbered items first
+                if (b.num !== null) return 1;
+                return a.amount.trim().localeCompare(b.amount.trim(), undefined, { sensitivity: 'base' });
+            });
+
+            decorated.forEach(d => list.appendChild(d.row));
+            renumberPackageRows();
+            window.showToast('Packages sorted ✓', 'success');
+        }
+        window.sortPackageRows = sortPackageRows;
+
+        // One-tap reorder: swaps the row with its immediate neighbor. Simpler
+        // and more reliable than drag on a small phone screen (which fights
+        // with the modal's own vertical scroll), while the drag handle still
+        // works for anyone who prefers it.
+        function movePackageRow(btn, direction) {
+            const row = btn.closest('.package-row');
+            const sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
+            if (!sibling) return;
+            const list = row.parentNode;
+            if (direction < 0) {
+                list.insertBefore(row, sibling);
+            } else {
+                list.insertBefore(sibling, row);
+            }
+            renumberPackageRows();
+        }
+        window.movePackageRow = movePackageRow;
+
+        // Refreshes the "#1, #2, ..." order labels shown next to each package row,
+        // and disables the Up/Down buttons at the top/bottom edges of the list.
         function renumberPackageRows() {
-            document.querySelectorAll('#edit-packages-list .package-row').forEach((row, i) => {
+            const rows = document.querySelectorAll('#edit-packages-list .package-row');
+            const last = rows.length - 1;
+            rows.forEach((row, i) => {
                 const numEl = row.querySelector('.pkg-order-num');
                 if (numEl) numEl.innerText = i + 1;
+                const moveBtns = row.querySelectorAll('.pkg-move-btn');
+                if (moveBtns[0]) moveBtns[0].disabled = (i === 0);
+                if (moveBtns[1]) moveBtns[1].disabled = (i === last);
             });
         }
 
@@ -3197,11 +3312,19 @@
             refreshPickerButton('g2bulk');
             refreshPickerButton('jcplays');
             onG2BulkGameChange();
+            refreshCheckPricesBtn();
+            document.getElementById('pkg-price-check-status').innerText = '';
             // Fetch G2Bulk's games list in the background (cached after first
             // load) so the button already shows the right name/thumb even
             // before the admin opens the picker, instead of just the raw code.
             fetchG2BulkGamesList().then(() => refreshPickerButton('g2bulk')).catch(() => {});
             document.getElementById('game-editor-modal-overlay').classList.add('show');
+            // Silently check the live API for price changes on this already-
+            // linked game's packages, so an "Update" button appears on any
+            // row whose Cost is now stale — no auto-overwrite, admin decides.
+            if (gameId && GAMES[gameId] && (GAMES[gameId].g2bulkCode || GAMES[gameId].jcplaysProduct)) {
+                checkLivePriceChanges(true);
+            }
         }
 
         function closeGameEditor() {
@@ -3631,7 +3754,7 @@
                         </div>
                         <div class="user-card-info">
                             <h5>${displayName} ${u.banned ? '<span class="badge badge-danger" style="margin-left:4px;">Banned</span>' : ''}</h5>
-                            <p>ID: ${u.guestId || id} &middot; ${orderCount} order${orderCount === 1 ? '' : 's'} &middot; ${fmtMoney(u.walletBalance || 0)}</p>
+                            <p>ID: ${u.guestId || id} <svg class="ui-icon copy-id-btn" style="width:13px;height:13px;vertical-align:-2px;cursor:pointer;color:var(--text-secondary);" onclick="copyUserId(event, '${u.guestId || id}')"><use href="#icon-copy"></use></svg> &middot; ${orderCount} order${orderCount === 1 ? '' : 's'} &middot; ${fmtMoney(u.walletBalance || 0)}</p>
                             ${adminTierBadgeHTML(tier)}
                         </div>
                         <svg class="ui-icon" style="width:18px;height:18px;color:var(--border-dashed);flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
@@ -3639,6 +3762,19 @@
                 `;
             }).join('');
         }
+
+        // Copies a user's ID to the clipboard without triggering the card's
+        // own click handler (which would open the User Details modal).
+        function copyUserId(event, userId) {
+            event.stopPropagation();
+            navigator.clipboard.writeText(userId).then(() => {
+                window.showToast('User ID copied ✓');
+            }).catch((error) => {
+                console.error('Copy user ID error:', error);
+                window.showToast('Could not copy ID.', 'fail');
+            });
+        }
+        window.copyUserId = copyUserId;
 
         function listenUsers() {
             if (usersListenerAttached) return;
@@ -3842,21 +3978,43 @@
         }
         window.deductCurrentUserWallet = deductCurrentUserWallet;
 
-        // Deletes the customer's profile doc (name/phone/photo/ban status).
-        // Their past orders stay in the Orders tab for your records - this
-        // only removes the profile record itself, not their order history.
+        // Permanently deletes the customer: their profile doc, every order of
+        // theirs (orders.userId == uid), and every wallet top-up request of
+        // theirs (walletTopups.userId == uid). This is a full cascade delete -
+        // nothing tied to this uid is left behind, so re-logging in starts
+        // completely fresh with no old orders/top-ups/profile resurfacing.
+        // Note: this does NOT delete their Firebase Auth account (Admin SDK /
+        // a server is required for that), so the same email/phone can still
+        // sign in - it will just create a brand-new blank profile.
         function deleteCurrentUser() {
             if (!currentUserDetailsId) return;
             const userId = currentUserDetailsId;
             window.showActionDialog({
                 type: 'delete',
-                title: 'Delete this user?',
-                message: 'Their profile will be removed. Past orders stay in your Orders tab. This cannot be undone.',
+                title: 'Delete this user permanently?',
+                message: 'This removes their profile AND every order and wallet top-up record tied to them. Nothing will be left behind. This cannot be undone.',
                 confirmText: 'Delete',
                 onConfirm: async () => {
                     try {
-                        await deleteDoc(doc(db, "users", userId));
-                        window.showToast('User deleted', 'cancel');
+                        const [ordersSnap, topupsSnap] = await Promise.all([
+                            getDocs(query(collection(db, "orders"), where("userId", "==", userId))),
+                            getDocs(query(collection(db, "walletTopups"), where("userId", "==", userId)))
+                        ]);
+
+                        // Firestore batches cap at 500 writes - chunk just in case
+                        // a customer has an unusually large history.
+                        const allRefs = [
+                            ...ordersSnap.docs.map(d => d.ref),
+                            ...topupsSnap.docs.map(d => d.ref),
+                            doc(db, "users", userId)
+                        ];
+                        for (let i = 0; i < allRefs.length; i += 450) {
+                            const batch = writeBatch(db);
+                            allRefs.slice(i, i + 450).forEach(ref => batch.delete(ref));
+                            await batch.commit();
+                        }
+
+                        window.showToast('User permanently deleted', 'cancel');
                         closeUserDetails();
                     } catch (error) {
                         console.error("Delete user error:", error);
@@ -4700,14 +4858,29 @@
             document.getElementById('jcplays-fulfill-section').style.display = provider === 'jcplays' ? 'block' : 'none';
             document.querySelectorAll('#edit-packages-list .pkg-g2bulk').forEach(el => el.style.display = provider === 'g2bulk' ? 'block' : 'none');
             document.querySelectorAll('#edit-packages-list .pkg-jcplays').forEach(el => el.style.display = provider === 'jcplays' ? 'block' : 'none');
+            refreshCheckPricesBtn();
         }
         window.setFulfillProvider = setFulfillProvider;
 
         function onG2BulkGameChange() {
             const code = document.getElementById('edit-game-g2bulk-code').value;
             document.getElementById('g2bulk-import-btn').style.display = code ? 'block' : 'none';
+            refreshCheckPricesBtn();
         }
         window.onG2BulkGameChange = onG2BulkGameChange;
+
+        // Shows the "Check Prices" button only when the game is actually
+        // linked to a provider (has a G2Bulk code or JCPlays product code) -
+        // there's nothing to check against for manual-fulfillment games.
+        function refreshCheckPricesBtn() {
+            const btn = document.getElementById('pkg-check-prices-btn');
+            if (!btn) return;
+            const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value.trim();
+            const jcplaysCode = document.getElementById('edit-game-jcplays-code').value.trim();
+            const linked = (currentFulfillProvider === 'g2bulk' && g2bulkCode) || (currentFulfillProvider === 'jcplays' && jcplaysCode);
+            btn.style.display = linked ? 'inline-flex' : 'none';
+        }
+        window.refreshCheckPricesBtn = refreshCheckPricesBtn;
 
         // ---------- Shared Game Picker (grid with images + search) ----------
         // One modal, used for both "G2Bulk Game" and "JCPlays Game" — G2Bulk's
@@ -4893,6 +5066,7 @@
         // one from the grid.
         function onJCPlaysCodeTyped() {
             refreshPickerButton('jcplays');
+            refreshCheckPricesBtn();
         }
         window.onJCPlaysCodeTyped = onJCPlaysCodeTyped;
 
@@ -4959,6 +5133,153 @@
             }
         }
         window.importG2BulkCatalogue = importG2BulkCatalogue;
+
+        // ---------- Live price-change check (G2Bulk + JCPlays) ----------
+        // Unlike Import (which overwrites every matched row's Cost right
+        // away), this only *looks* — it compares each linked row's saved
+        // Cost against the provider's current live price and, wherever
+        // they differ, reveals a small "Update" button on that row showing
+        // the new value. Nothing is written until the admin taps it.
+        async function checkLivePriceChanges(silent = false) {
+            const statusEl = document.getElementById('pkg-price-check-status');
+            const btn = document.getElementById('pkg-check-prices-btn');
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            if (rows.length === 0) return;
+
+            // Clear any update buttons left over from a previous check.
+            rows.forEach(row => {
+                const u = row.querySelector('.pkg-cost-update-btn');
+                u.style.display = 'none';
+                delete u.dataset.newCost;
+            });
+
+            const originalText = btn ? btn.innerText : '';
+            if (btn) { btn.disabled = true; btn.innerText = 'Checking...'; }
+            if (statusEl) { statusEl.style.color = 'var(--text-secondary)'; statusEl.innerText = 'Checking live prices...'; }
+
+            try {
+                let changed = 0;
+                const rate = G2BULK_SETTINGS.usdRate || 4500;
+
+                if (currentFulfillProvider === 'g2bulk') {
+                    const code = document.getElementById('edit-game-g2bulk-code').value;
+                    if (!code) throw new Error('No G2Bulk game linked.');
+                    const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(code)}/catalogue`);
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.message || 'Check failed');
+                    const liveByName = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
+                    rows.forEach(row => {
+                        const key = row.querySelector('.pkg-g2bulk').value.trim();
+                        if (!key || !liveByName.has(key)) return;
+                        const liveCost = liveByName.get(key);
+                        const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
+                        if (liveCost !== currentCost) {
+                            changed++;
+                            const u = row.querySelector('.pkg-cost-update-btn');
+                            u.dataset.newCost = liveCost;
+                            u.innerText = `↻ Update Cost → ${liveCost.toLocaleString()} MMK`;
+                            u.style.display = 'flex';
+                        }
+                    });
+                } else if (currentFulfillProvider === 'jcplays') {
+                    const product = document.getElementById('edit-game-jcplays-code').value.trim();
+                    if (!product) throw new Error('No JCPlays product code linked.');
+                    if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) throw new Error('Add your JCPlays credentials first.');
+                    const data = await jcplaysRequest('productlist', { product });
+                    if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
+                    const liveById = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
+                    rows.forEach(row => {
+                        const key = row.querySelector('.pkg-jcplays').value.trim();
+                        if (!key || !liveById.has(key)) return;
+                        const liveCost = liveById.get(key);
+                        const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
+                        if (liveCost !== currentCost) {
+                            changed++;
+                            const u = row.querySelector('.pkg-cost-update-btn');
+                            u.dataset.newCost = liveCost;
+                            u.innerText = `↻ Update Cost → ${liveCost.toLocaleString()} MMK`;
+                            u.style.display = 'flex';
+                        }
+                    });
+                } else {
+                    return;
+                }
+
+                if (statusEl) {
+                    statusEl.style.color = changed ? '#FF9500' : 'var(--text-muted)';
+                    statusEl.innerText = changed
+                        ? `${changed} package(s) have a new price — tap Update on each row you want to apply.`
+                        : 'All costs match the live API price ✓';
+                }
+                if (!silent) window.showToast(changed ? `${changed} price change(s) found` : 'Prices are up to date ✓', changed ? 'success' : 'success');
+            } catch (error) {
+                console.error('Price check error:', error);
+                if (statusEl) { statusEl.style.color = 'var(--danger-strong)'; statusEl.innerText = 'Price check failed: ' + error.message; }
+                if (!silent) window.showToast('Price check failed.', 'fail');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = originalText; }
+            }
+        }
+        window.checkLivePriceChanges = checkLivePriceChanges;
+
+        // Applies one row's pending live-price update (set by checkLivePriceChanges)
+        // to its Cost field, refreshes the profit badge, and hides the button.
+        function applyCostUpdate(btn) {
+            const newCost = btn.dataset.newCost;
+            if (newCost === undefined) return;
+            const row = btn.closest('.package-row');
+            const costInput = row.querySelector('.pkg-cost');
+            costInput.value = newCost;
+            updatePackageProfit(costInput);
+            btn.style.display = 'none';
+            delete btn.dataset.newCost;
+            window.showToast('Cost updated ✓', 'success');
+        }
+        window.applyCostUpdate = applyCostUpdate;
+
+        // Copies every package's Currency (amount) + Price as plain text,
+        // one per line, deliberately leaving Cost out since that's wholesale
+        // and never meant to leave this panel. Handy for pasting a full
+        // price list into Telegram/Viber for customers or resellers.
+        function copyAllPackagesText() {
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            const lines = rows.map(row => {
+                const amount = row.querySelector('.pkg-amount').value.trim();
+                const price = Number(row.querySelector('.pkg-price').value) || 0;
+                return amount ? `${amount} - ${price.toLocaleString()} MMK` : null;
+            }).filter(Boolean);
+
+            if (lines.length === 0) { window.showToast('No packages to copy', 'fail'); return; }
+            const text = lines.join('\n');
+
+            const doCopy = () => window.showToast(`Copied ${lines.length} package(s) ✓`, 'success');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(doCopy).catch(() => fallbackCopyText(text, doCopy));
+            } else {
+                fallbackCopyText(text, doCopy);
+            }
+        }
+        window.copyAllPackagesText = copyAllPackagesText;
+
+        // Fallback for browsers/webviews that block navigator.clipboard
+        // (common in embedded mobile webviews without HTTPS focus).
+        function fallbackCopyText(text, onSuccess) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                onSuccess();
+            } catch (error) {
+                console.error('Fallback copy failed:', error);
+                window.showToast('Copy failed — please copy manually.', 'fail');
+            }
+        }
 
         // Calls G2Bulk's /v1/getMe directly from the browser to sanity-check the key.
         // Note: this may fail with a CORS/network error if G2Bulk doesn't allow
