@@ -231,6 +231,40 @@
         .logo-icon.has-custom-logo { padding: 0; background: transparent; overflow: hidden; }
         .header-icon { background: var(--fill-soft); width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
 
+        /* Blue flame indicator (next to logout) */
+        .header-flame-wrap { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+        .header-flame {
+            position: relative;
+            width: 15px; height: 20px;
+            background: radial-gradient(ellipse 70% 90% at 50% 75%, #eafcff 0%, #7fd9ff 22%, #2f9bff 46%, #1360e0 70%, rgba(19,96,224,0) 100%);
+            border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
+            filter: blur(0.4px);
+            box-shadow: 0 0 6px 1px rgba(60,150,255,0.55), 0 0 12px 3px rgba(50,130,255,0.28);
+            animation: flameFlicker 2.6s ease-in-out infinite;
+            transform-origin: 50% 100%;
+        }
+        .header-flame::after {
+            content: ''; position: absolute; left: 50%; bottom: 12%; width: 5px; height: 8px;
+            background: radial-gradient(ellipse 60% 90% at 50% 70%, #ffffff 0%, #cdf2ff 40%, rgba(205,242,255,0) 100%);
+            border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
+            transform: translateX(-50%);
+            animation: flameFlickerInner 2.6s ease-in-out infinite;
+        }
+        @keyframes flameFlicker {
+            0%   { transform: scaleY(1) scaleX(1) skewX(0deg); opacity: 0.92; }
+            18%  { transform: scaleY(1.06) scaleX(0.95) skewX(-1.5deg); opacity: 1; }
+            37%  { transform: scaleY(0.94) scaleX(1.04) skewX(1.5deg); opacity: 0.88; }
+            55%  { transform: scaleY(1.03) scaleX(0.97) skewX(-1deg); opacity: 0.97; }
+            73%  { transform: scaleY(0.97) scaleX(1.02) skewX(1deg); opacity: 0.9; }
+            100% { transform: scaleY(1) scaleX(1) skewX(0deg); opacity: 0.92; }
+        }
+        @keyframes flameFlickerInner {
+            0%   { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
+            30%  { transform: translateX(-52%) scaleY(1.1); opacity: 1; }
+            60%  { transform: translateX(-48%) scaleY(0.92); opacity: 0.8; }
+            100% { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
+        }
+
         /* Header clock */
         #header-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; padding: 4px 12px; border-radius: 10px; background: var(--fill-soft); border: 1px solid var(--border-glass); }
         #header-clock-time { font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 700; font-size: 13.5px; color: var(--accent); letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
@@ -770,6 +804,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
             <div class="header-icon" id="theme-toggle-btn" title="Theme" onclick="openThemeSheet()"><svg class="ui-icon" id="theme-toggle-icon" style="width:20px;"><use href="#icon-palette"></use></svg></div>
+            <div class="header-flame-wrap" title="Live"><div class="header-flame"></div></div>
             <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
         </div>
     </header>
