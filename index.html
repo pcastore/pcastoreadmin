@@ -1016,6 +1016,39 @@
                 </div>
             </div>
 
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleReceiptStyleSettings()">
+                    <span style="font-size:15px;font-weight:700;">Receipt Style</span>
+                    <svg class="ui-icon" id="receipt-style-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="receipt-style-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Controls the look of the PNG receipt customers download from Order History.</p>
+                    <div id="receipt-style-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                        <div class="receipt-style-option" data-style="minimal" onclick="selectReceiptStyle('minimal')" style="cursor:pointer;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:#FFFFFF;">
+                            <div style="height:64px;background:#FFFFFF;position:relative;padding:8px;">
+                                <div style="width:60%;height:8px;background:#111827;border-radius:2px;"></div>
+                                <div style="width:40%;height:5px;background:#D1D5DB;border-radius:2px;margin-top:5px;"></div>
+                                <div style="width:100%;height:2px;background:#111827;margin-top:8px;"></div>
+                            </div>
+                            <div style="padding:6px 8px;font-size:11.5px;font-weight:700;color:var(--text);text-align:center;background:var(--bg-subtle);">Minimal</div>
+                        </div>
+                        <div class="receipt-style-option" data-style="premium" onclick="selectReceiptStyle('premium')" style="cursor:pointer;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:#FDF8F2;">
+                            <div style="height:64px;background:linear-gradient(180deg,#3B0764 0%,#3B0764 55%,#F2B705 60%,#FDF8F2 65%);position:relative;">
+                                <div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);"></div>
+                            </div>
+                            <div style="padding:6px 8px;font-size:11.5px;font-weight:700;color:var(--text);text-align:center;background:var(--bg-subtle);">Premium</div>
+                        </div>
+                        <div class="receipt-style-option" data-style="dark" onclick="selectReceiptStyle('dark')" style="cursor:pointer;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:#0F1626;">
+                            <div style="height:64px;background:#0B0F1A;position:relative;border-bottom:2px solid #22D3EE;">
+                                <div style="width:18px;height:18px;border-radius:50%;border:2px solid #22D3EE;position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);"></div>
+                            </div>
+                            <div style="padding:6px 8px;font-size:11.5px;font-weight:700;color:#E5E7EB;text-align:center;background:#0F1626;">Dark</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="save-receipt-style-btn" style="margin-top:12px;" onclick="saveReceiptStyle()">Save Receipt Style</button>
+                </div>
+            </div>
+
         </div>
 
         <!-- JCPLAYS PAGE (SmileCoin-compatible reseller — same pattern as G2Bulk above) -->
@@ -4272,6 +4305,66 @@
             }
         }
 
+        // ---------- Receipt Style (settings/receipt, style: 'minimal'|'premium'|'dark') ----------
+        // Same doc pattern as branding/tiers/social above. store.html reads this
+        // doc once at receipt-download time and switches the Canvas palette/layout
+        // used in downloadOrderReceipt() to match. Defaults to 'premium' (the
+        // original violet+gold look) when no doc exists yet.
+        let receiptStyleListenerAttached = false;
+        let selectedReceiptStyle = 'premium';
+
+        function toggleReceiptStyleSettings() {
+            const body = document.getElementById('receipt-style-body');
+            const chevron = document.getElementById('receipt-style-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleReceiptStyleSettings = toggleReceiptStyleSettings;
+
+        function renderReceiptStyleSelection(style) {
+            selectedReceiptStyle = style;
+            document.querySelectorAll('.receipt-style-option').forEach(el => {
+                const active = el.dataset.style === style;
+                el.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+                el.style.boxShadow = active ? '0 0 0 1px var(--accent)' : 'none';
+            });
+        }
+
+        function selectReceiptStyle(style) {
+            renderReceiptStyleSelection(style);
+        }
+        window.selectReceiptStyle = selectReceiptStyle;
+
+        function listenReceiptStyle() {
+            if (receiptStyleListenerAttached) return;
+            receiptStyleListenerAttached = true;
+            onSnapshot(doc(db, "settings", "receipt"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                renderReceiptStyleSelection(data.style || 'premium');
+            }, (error) => {
+                console.error("Receipt style listener error:", error);
+            });
+        }
+
+        async function saveReceiptStyle() {
+            const btn = document.getElementById('save-receipt-style-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                await setDoc(doc(db, "settings", "receipt"), { style: selectedReceiptStyle }, { merge: true });
+                window.showToast('Receipt style updated!', 'success');
+            } catch (error) {
+                console.error("Save receipt style error:", error);
+                window.showToast('Failed to update receipt style.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveReceiptStyle = saveReceiptStyle;
+
         function toggleBrandingSettings() {
             const body = document.getElementById('branding-body');
             const chevron = document.getElementById('branding-chevron');
@@ -6291,6 +6384,7 @@
             listenPaymentMethods();
             listenSocialLinks();
             listenBranding();
+            listenReceiptStyle();
             listenG2Bulk();
             listenJCPlays();
             listenTelegramBot();
