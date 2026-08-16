@@ -2309,6 +2309,38 @@
             }
         }
 
+        // Marks an order Fail and, if it was paid straight from the customer's
+        // wallet, refunds it in the same Firestore transaction — so there's
+        // never a moment where the order reads "Fail" with the money still
+        // gone. Idempotent via the walletRefunded flag on the order doc.
+        async function markOrderFailedWithRefund(orderId, extraFields = {}) {
+            const orderRef = doc(db, "orders", orderId);
+            try {
+                await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(orderRef);
+                    if (!snap.exists()) return;
+                    const order = snap.data();
+                    if (order.status === 'Fail' && order.walletRefunded) return; // already handled
+
+                    const eligibleForRefund = order.paidFromWallet === true
+                        && !order.walletRefunded
+                        && order.userId
+                        && typeof order.price === 'number';
+
+                    if (eligibleForRefund) {
+                        const userRef = doc(db, "users", order.userId);
+                        tx.set(userRef, { walletBalance: increment(order.price) }, { merge: true });
+                        tx.update(orderRef, { ...extraFields, status: 'Fail', walletRefunded: true, refundedAt: serverTimestamp() });
+                    } else {
+                        tx.update(orderRef, { ...extraFields, status: 'Fail' });
+                    }
+                });
+            } catch (error) {
+                console.error("markOrderFailedWithRefund error:", error);
+            }
+        }
+        window.markOrderFailedWithRefund = markOrderFailedWithRefund;
+
         // Checks G2Bulk's order status once and applies it to the local order doc.
         // silent=true is used by the background auto-poller below, so it doesn't
         // pop a toast every ~25s for orders that are still just "processing".
@@ -2331,7 +2363,7 @@
                     window.showToast('G2Bulk order completed ✓', 'success');
                     editTelegramOrderMessage(orderId, 'Success');
                 } else if (status === 'FAILED' || status === 'REFUNDED') {
-                    await updateDoc(doc(db, "orders", orderId), { status: "Fail", g2bulkStatus: status });
+                    await markOrderFailedWithRefund(orderId, { g2bulkStatus: status });
                     if (!silent) window.showToast('G2Bulk order failed/refunded.', 'fail');
                     editTelegramOrderMessage(orderId, 'Fail');
                 } else {
@@ -2433,10 +2465,7 @@
             btnElement.disabled = true;
 
             try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "Fail",
-                    ...(note ? { statusNote: note } : {})
-                });
+                await markOrderFailedWithRefund(orderId, note ? { statusNote: note } : {});
                 window.showToast("Order marked as Fail.", 'fail');
                 editTelegramOrderMessage(orderId, 'Fail');
             } catch (error) {
