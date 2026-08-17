@@ -427,6 +427,32 @@
         .user-card-info p { font-size: 12px; color: var(--text-secondary); }
         .tier-mini-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; padding: 2px 8px 2px 6px; border-radius: 10px; margin-top: 4px; }
         .tier-mini-badge svg { width: 10px; height: 10px; }
+
+        /* Frames admin page */
+        .frame-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .frame-admin-card { background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 12px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); cursor: pointer; transition: transform 0.15s ease; }
+        .frame-admin-card:active { transform: scale(0.97); }
+        .frame-admin-card.inactive { opacity: 0.5; }
+        .frame-admin-thumb { width: 100%; aspect-ratio: 1; border-radius: 12px; background: repeating-conic-gradient(#00000014 0% 25%, transparent 0% 50%) 50% / 14px 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 8px; position: relative; }
+        .frame-admin-thumb img { max-width: 92%; max-height: 92%; object-fit: contain; }
+        .frame-admin-thumb.name-type { aspect-ratio: 2.4; }
+        .frame-admin-name { font-size: 13px; font-weight: 700; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .frame-admin-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .frame-admin-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+        .frame-admin-pill.rarity-common { background: rgba(148,163,184,0.18); color: #64748B; }
+        .frame-admin-pill.rarity-rare { background: rgba(59,130,246,0.16); color: #2563EB; }
+        .frame-admin-pill.rarity-epic { background: rgba(168,85,247,0.16); color: #9333EA; }
+        .frame-admin-pill.rarity-legendary { background: rgba(245,158,11,0.18); color: #B45309; }
+        .frame-admin-pill.rarity-mythic { background: rgba(236,72,153,0.18); color: #DB2777; }
+        .frame-admin-pill.event { background: var(--danger-soft); color: var(--danger-strong); }
+        .frame-admin-pill.inactive-pill { background: var(--fill-soft); color: var(--text-muted); }
+        .frame-grant-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-glass); }
+        .frame-grant-row:last-child { border-bottom: none; }
+        .frame-grant-thumb { width: 36px; height: 36px; border-radius: 8px; background: repeating-conic-gradient(#00000014 0% 25%, transparent 0% 50%) 50% / 10px 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .frame-grant-thumb img { max-width: 90%; max-height: 90%; object-fit: contain; }
+        .frame-grant-info { flex: 1; min-width: 0; }
+        .frame-grant-info b { font-size: 13px; display: block; }
+        .frame-grant-info span { font-size: 11px; color: var(--text-muted); }
         .detail-section-title { font-size: 14px; font-weight: 700; color: var(--text-strong); margin-bottom: 8px; }
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
         .details-grid-item { background: var(--bg-subtle-2); border: 1px solid var(--fill-soft); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -805,6 +831,8 @@
         <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.3c2.6 0 4.7-2.1 4.7-4.7C22 5.9 17.5 2 12 2z"></path><circle cx="7" cy="10.5" r="1.4"></circle><circle cx="12" cy="7.5" r="1.4"></circle><circle cx="16.5" cy="10.5" r="1.4"></circle><circle cx="9.5" cy="15.5" r="1.4"></circle></symbol>
         <symbol id="icon-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></symbol>
         <symbol id="icon-sort" viewBox="0 0 24 24"><line x1="6" y1="4" x2="6" y2="20"></line><polyline points="3 7 6 4 9 7"></polyline><line x1="18" y1="20" x2="18" y2="4"></line><polyline points="15 17 18 20 21 17"></polyline></symbol>
+        <symbol id="icon-frame" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="12" cy="12" r="4.2"></circle></symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol>
     </svg>
 
     <div id="toast"><span class="toast-icon-circle" id="toast-icon-circle"><svg class="ui-icon" id="toast-icon" style="color:#fff;"><use id="toast-icon-use" href="#icon-check"></use></svg></span> <span id="toast-msg">Action Completed!</span></div>
@@ -899,6 +927,9 @@
         </div>
         <div class="nav-item" id="btn-tier-list" onclick="showPage('tier-list')">
             <svg class="ui-icon"><use href="#icon-trophy"></use></svg> Tiers
+        </div>
+        <div class="nav-item" id="btn-frames" onclick="showPage('frames')">
+            <svg class="ui-icon"><use href="#icon-frame"></use></svg> Frames
         </div>
     </nav>
 
@@ -1284,6 +1315,21 @@
             <button class="btn btn-primary" id="save-tiers-btn" style="margin-top:6px;" onclick="saveTierSettings()">Save Tier Limits</button>
         </div>
 
+        <!-- CUSTOM FRAMES PAGE (Firebase Connected) — avatar/name frames that
+             customers unlock via a mission (spend / order count / games played)
+             or that are event-limited / manually granted from a user's profile.
+             Read live by Store.html's Frame Collection page. -->
+        <div id="frames" class="page-section">
+            <h2 class="title-header">Avatar &amp; Name Frames</h2>
+            <p style="font-size:12.5px;color:var(--text-secondary);margin:-8px 0 14px;line-height:1.5;">
+                Design frames customers unlock by completing a mission, or grant manually per-user from their profile (Users → tap a user → Frames). Event-limited frames only count progress while the event window is open, but stay owned forever once unlocked.
+            </p>
+            <button class="btn btn-primary" style="margin-bottom:14px;" onclick="openFrameModal()">+ New Frame</button>
+            <div id="frames-container" class="frame-admin-grid">
+                <p class="empty-msg">Loading frames...</p>
+            </div>
+        </div>
+
     </main>
     </div>
 
@@ -1414,6 +1460,100 @@
                 <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
                 <button class="btn btn-outline" id="duplicate-game-btn" style="display:none;" onclick="duplicateGameAsNewServer()" title="Keeps the Game Name, Image, Category and toggles, but clears the Server name, the G2Bulk/JCPlays link, and all packages so this server's own Import stays completely separate">+ New Server</button>
                 <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frame Editor Modal: add/edit an avatar or name frame, define its unlock
+         mission, and optionally make it event-limited. -->
+    <div class="modal-overlay" id="frame-modal-overlay" onclick="if(event.target===this) closeFrameModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="frame-modal-title">New Frame</h3>
+                <div class="modal-close" onclick="closeFrameModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-frame-id">
+
+                <label>Frame Name</label>
+                <input type="text" id="edit-frame-name" placeholder="e.g. Starlit Voyager">
+
+                <label>Frame Type</label>
+                <select id="edit-frame-type">
+                    <option value="avatar">Avatar Frame (ring around profile photo)</option>
+                    <option value="name">Name Frame (banner behind display name)</option>
+                </select>
+
+                <label>Rarity</label>
+                <select id="edit-frame-rarity">
+                    <option value="common">Common</option>
+                    <option value="rare">Rare</option>
+                    <option value="epic" selected>Epic</option>
+                    <option value="legendary">Legendary</option>
+                    <option value="mythic">Mythic</option>
+                </select>
+
+                <label>Frame Image</label>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Use a transparent PNG (ring/banner art). It's overlaid directly on the avatar or name — see the reference frame designs you have on hand.</p>
+                <label class="img-update-box" id="frame-img-update-box" for="edit-frame-file">
+                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-frame"></use></svg></div>
+                    <span class="img-update-label">Frame Image</span>
+                    <span class="img-update-hint">Tap to choose a frame image</span>
+                    <img id="edit-frame-preview" src="" alt="Preview" style="display:none;">
+                    <span class="img-update-change" id="frame-img-update-change" style="display:none;">
+                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                    </span>
+                </label>
+                <input type="file" id="edit-frame-file" class="img-update-input" accept="image/*" onchange="previewFrameImage(event)">
+                <p id="frame-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+
+                <label>Unlock Method</label>
+                <select id="edit-frame-unlock-type" onchange="onFrameUnlockTypeChange()">
+                    <option value="spend">Lifetime Spend reaches (MMK)</option>
+                    <option value="orders">Successful Orders reach (count)</option>
+                    <option value="games">Different Games Purchased reach (count)</option>
+                    <option value="manual">Manual Grant Only (admin awards it)</option>
+                </select>
+
+                <div id="frame-target-wrap">
+                    <label id="frame-target-label">Target (MMK)</label>
+                    <input type="number" id="edit-frame-target" placeholder="e.g. 500000" min="0">
+                </div>
+
+                <div class="switch-row">
+                    <div>
+                        <span class="switch-label">Event-Limited</span>
+                        <span class="switch-hint">Only unlockable while the event window below is open. Already-unlocked frames stay with the customer after it ends.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-frame-event" onchange="onFrameEventToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div id="frame-event-dates-wrap" style="display:none;">
+                    <label>Event Start</label>
+                    <input type="datetime-local" id="edit-frame-event-start">
+                    <label>Event End</label>
+                    <input type="datetime-local" id="edit-frame-event-end">
+                </div>
+
+                <div class="switch-row">
+                    <div>
+                        <span class="switch-label">Active</span>
+                        <span class="switch-hint">Turn off to hide this frame from the Store without deleting it</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-frame-active" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-frame-btn" style="display:none;" onclick="deleteCurrentFrame()">Delete</button>
+                <button class="btn btn-primary" id="save-frame-btn" onclick="saveFrame()">Save Frame</button>
             </div>
         </div>
     </div>
@@ -1648,6 +1788,12 @@
                 <div id="ud-orders-container">
                     <p class="empty-msg">No orders yet.</p>
                 </div>
+
+                <h3 class="detail-section-title" style="margin-top:18px;">Frames</h3>
+                <p style="font-size:11px;color:var(--text-muted);margin:-4px 0 6px;">Flip any switch to grant or revoke that frame for this customer — mission-based frames also unlock automatically once they qualify.</p>
+                <div id="ud-frames-container">
+                    <p class="empty-msg">Loading frames...</p>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="ud-ban-btn" onclick="toggleBanCurrentUser()">Ban User</button>
@@ -1816,7 +1962,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -4017,6 +4163,7 @@
             }
 
             renderUserOrders(userId);
+            renderUserFramesSection(userId, u.unlockedFrames || []);
             document.getElementById('user-details-modal-overlay').classList.add('show');
         }
 
@@ -4273,6 +4420,263 @@
             }
         }
         window.saveTierSettings = saveTierSettings;
+
+        // ---------- Custom Frames (avatar + name frames, mission unlocks) ----------
+        // Stored at frames/{frameId}. Each frame defines how it's unlocked:
+        //   spend/orders/games -> Store.html evaluates progress client-side against
+        //   the same lifetime order data the VIP tiers use, and auto-unlocks it for
+        //   the customer once the target is met (within the event window, if any).
+        //   manual -> only ever unlocked by an admin, from a user's profile below.
+        let FRAMES = {};
+        let framesListenerAttached = false;
+        let editingFrameImageFile = null;
+        let editingFrameImageRemoteUrl = null;
+
+        function listenFrames() {
+            if (framesListenerAttached) return;
+            framesListenerAttached = true;
+            onSnapshot(collection(db, "frames"), (snap) => {
+                FRAMES = {};
+                snap.forEach(d => { FRAMES[d.id] = { id: d.id, ...d.data() }; });
+                renderFramesGrid();
+            }, (error) => {
+                console.error("Frames listener error:", error);
+            });
+        }
+
+        function frameUnlockSummary(f) {
+            if (f.unlockType === 'spend') return `Spend ${Number(f.target || 0).toLocaleString()} MMK`;
+            if (f.unlockType === 'orders') return `${f.target || 0} successful orders`;
+            if (f.unlockType === 'games') return `${f.target || 0} different games`;
+            return 'Manual grant only';
+        }
+
+        function renderFramesGrid() {
+            const container = document.getElementById('frames-container');
+            if (!container) return;
+            const list = Object.values(FRAMES).sort((a, b) => (a.createdAtMs || 0) - (b.createdAtMs || 0));
+            if (list.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No frames yet — tap "+ New Frame" to design one.</p>';
+                return;
+            }
+            container.innerHTML = list.map(f => {
+                const now = Date.now();
+                const isEvent = !!f.eventLimited;
+                const eventEndMs = f.eventEnd ? new Date(f.eventEnd).getTime() : null;
+                const eventOver = isEvent && eventEndMs && now > eventEndMs;
+                return `
+                <div class="frame-admin-card ${f.active === false ? 'inactive' : ''}" onclick="openFrameModal('${f.id}')">
+                    <div class="frame-admin-thumb ${f.type === 'name' ? 'name-type' : ''}">
+                        ${f.imageUrl ? `<img src="${f.imageUrl}" alt="">` : '<svg class="ui-icon" style="width:24px;height:24px;opacity:0.3;"><use href="#icon-frame"></use></svg>'}
+                    </div>
+                    <div class="frame-admin-name">${escapeHtml(f.name || 'Untitled')}</div>
+                    <div class="frame-admin-meta">
+                        <span class="frame-admin-pill rarity-${f.rarity || 'common'}">${f.rarity || 'common'}</span>
+                        <span class="frame-admin-pill" style="background:var(--fill-soft);color:var(--text-secondary);">${f.type === 'name' ? 'Name' : 'Avatar'}</span>
+                        ${isEvent ? `<span class="frame-admin-pill event">${eventOver ? 'Event Ended' : 'Event'}</span>` : ''}
+                        ${f.active === false ? `<span class="frame-admin-pill inactive-pill">Hidden</span>` : ''}
+                    </div>
+                    <div class="frame-admin-meta">${frameUnlockSummary(f)}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function onFrameUnlockTypeChange() {
+            const type = document.getElementById('edit-frame-unlock-type').value;
+            const wrap = document.getElementById('frame-target-wrap');
+            const label = document.getElementById('frame-target-label');
+            if (type === 'manual') {
+                wrap.style.display = 'none';
+            } else {
+                wrap.style.display = 'block';
+                label.innerText = type === 'spend' ? 'Target (MMK)' : type === 'orders' ? 'Target (order count)' : 'Target (game count)';
+            }
+        }
+        window.onFrameUnlockTypeChange = onFrameUnlockTypeChange;
+
+        function onFrameEventToggle() {
+            document.getElementById('frame-event-dates-wrap').style.display =
+                document.getElementById('edit-frame-event').checked ? 'block' : 'none';
+        }
+        window.onFrameEventToggle = onFrameEventToggle;
+
+        function previewFrameImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingFrameImageFile = file;
+            editingFrameImageRemoteUrl = null;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-frame-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('frame-img-update-box').classList.add('has-image');
+                document.getElementById('frame-img-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+        window.previewFrameImage = previewFrameImage;
+
+        function toLocalDatetimeInputValue(ms) {
+            if (!ms) return '';
+            const d = new Date(ms);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        function openFrameModal(frameId) {
+            editingFrameImageFile = null;
+            editingFrameImageRemoteUrl = null;
+            document.getElementById('edit-frame-id').value = frameId || '';
+            document.getElementById('frame-modal-title').innerText = frameId ? 'Edit Frame' : 'New Frame';
+            document.getElementById('delete-frame-btn').style.display = frameId ? 'inline-flex' : 'none';
+
+            const preview = document.getElementById('edit-frame-preview');
+            preview.src = ''; preview.style.display = 'none';
+            document.getElementById('frame-img-update-box').classList.remove('has-image');
+            document.getElementById('frame-img-update-change').style.display = 'none';
+            document.getElementById('frame-upload-status').style.display = 'none';
+            document.getElementById('edit-frame-file').value = '';
+
+            const f = frameId ? FRAMES[frameId] : null;
+            document.getElementById('edit-frame-name').value = f ? (f.name || '') : '';
+            document.getElementById('edit-frame-type').value = f ? (f.type || 'avatar') : 'avatar';
+            document.getElementById('edit-frame-rarity').value = f ? (f.rarity || 'epic') : 'epic';
+            document.getElementById('edit-frame-unlock-type').value = f ? (f.unlockType || 'spend') : 'spend';
+            document.getElementById('edit-frame-target').value = f ? (f.target || '') : '';
+            document.getElementById('edit-frame-event').checked = f ? !!f.eventLimited : false;
+            document.getElementById('edit-frame-event-start').value = f && f.eventStart ? toLocalDatetimeInputValue(new Date(f.eventStart).getTime()) : '';
+            document.getElementById('edit-frame-event-end').value = f && f.eventEnd ? toLocalDatetimeInputValue(new Date(f.eventEnd).getTime()) : '';
+            document.getElementById('edit-frame-active').checked = f ? f.active !== false : true;
+
+            if (f && f.imageUrl) {
+                editingFrameImageRemoteUrl = f.imageUrl;
+                preview.src = f.imageUrl; preview.style.display = 'block';
+                document.getElementById('frame-img-update-box').classList.add('has-image');
+                document.getElementById('frame-img-update-change').style.display = 'flex';
+            }
+
+            onFrameUnlockTypeChange();
+            onFrameEventToggle();
+            document.getElementById('frame-modal-overlay').classList.add('show');
+        }
+        window.openFrameModal = openFrameModal;
+
+        function closeFrameModal() {
+            document.getElementById('frame-modal-overlay').classList.remove('show');
+        }
+        window.closeFrameModal = closeFrameModal;
+
+        async function saveFrame() {
+            const frameId = document.getElementById('edit-frame-id').value;
+            const name = document.getElementById('edit-frame-name').value.trim();
+            if (!name) { window.showToast('Please enter a frame name', 'fail'); return; }
+            const unlockType = document.getElementById('edit-frame-unlock-type').value;
+            const eventLimited = document.getElementById('edit-frame-event').checked;
+            const eventStartVal = document.getElementById('edit-frame-event-start').value;
+            const eventEndVal = document.getElementById('edit-frame-event-end').value;
+            if (eventLimited && (!eventStartVal || !eventEndVal)) {
+                window.showToast('Set both an event start and end date.', 'fail'); return;
+            }
+
+            const btn = document.getElementById('save-frame-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true; btn.innerText = 'Saving...';
+            try {
+                let imageUrl = editingFrameImageRemoteUrl || (frameId && FRAMES[frameId] ? FRAMES[frameId].imageUrl : '') || '';
+                if (editingFrameImageFile) {
+                    imageUrl = await uploadImageToImgBB(editingFrameImageFile, 'frame-upload-status');
+                }
+                if (!imageUrl) { window.showToast('Please add a frame image', 'fail'); btn.disabled = false; btn.innerText = originalText; return; }
+
+                const data = {
+                    name,
+                    type: document.getElementById('edit-frame-type').value,
+                    rarity: document.getElementById('edit-frame-rarity').value,
+                    imageUrl,
+                    unlockType,
+                    target: unlockType === 'manual' ? 0 : Number(document.getElementById('edit-frame-target').value) || 0,
+                    eventLimited,
+                    eventStart: eventLimited ? new Date(eventStartVal).toISOString() : null,
+                    eventEnd: eventLimited ? new Date(eventEndVal).toISOString() : null,
+                    active: document.getElementById('edit-frame-active').checked,
+                };
+                if (frameId) {
+                    await updateDoc(doc(db, "frames", frameId), data);
+                    window.showToast('Frame updated!', 'success');
+                } else {
+                    data.createdAtMs = Date.now();
+                    data.createdAt = serverTimestamp();
+                    await addDoc(collection(db, "frames"), data);
+                    window.showToast('Frame created!', 'success');
+                }
+                closeFrameModal();
+            } catch (error) {
+                console.error("Save frame error:", error);
+                window.showToast(error.message || 'Failed to save frame.', 'fail');
+            } finally {
+                btn.disabled = false; btn.innerText = originalText;
+            }
+        }
+        window.saveFrame = saveFrame;
+
+        async function deleteCurrentFrame() {
+            const frameId = document.getElementById('edit-frame-id').value;
+            if (!frameId) return;
+            if (!confirm('Delete this frame? Customers who already unlocked it will lose it.')) return;
+            try {
+                await deleteDoc(doc(db, "frames", frameId));
+                window.showToast('Frame deleted.', 'success');
+                closeFrameModal();
+            } catch (error) {
+                console.error("Delete frame error:", error);
+                window.showToast('Failed to delete frame.', 'fail');
+            }
+        }
+        window.deleteCurrentFrame = deleteCurrentFrame;
+
+        // ---------- Manual frame grants (per user) ----------
+        // Renders inside the User Details modal — see renderUserFramesSection(),
+        // called from wherever that modal populates ud-tier-badge etc.
+        async function toggleUserFrameGrant(userId, frameId, grant) {
+            try {
+                await updateDoc(doc(db, "users", userId), {
+                    unlockedFrames: grant ? arrayUnion(frameId) : arrayRemove(frameId)
+                });
+                window.showToast(grant ? 'Frame granted!' : 'Frame revoked.', 'success');
+            } catch (error) {
+                console.error("toggleUserFrameGrant error:", error);
+                window.showToast('Failed to update frame.', 'fail');
+            }
+        }
+        window.toggleUserFrameGrant = toggleUserFrameGrant;
+
+        function renderUserFramesSection(userId, userUnlockedFrames) {
+            const container = document.getElementById('ud-frames-container');
+            if (!container) return;
+            const unlocked = new Set(userUnlockedFrames || []);
+            const list = Object.values(FRAMES).sort((a, b) => (a.createdAtMs || 0) - (b.createdAtMs || 0));
+            if (list.length === 0) {
+                container.innerHTML = '<p class="empty-msg" style="padding:8px 0;">No frames created yet.</p>';
+                return;
+            }
+            container.innerHTML = list.map(f => {
+                const has = unlocked.has(f.id);
+                return `
+                <div class="frame-grant-row">
+                    <div class="frame-grant-thumb">${f.imageUrl ? `<img src="${f.imageUrl}" alt="">` : ''}</div>
+                    <div class="frame-grant-info">
+                        <b>${escapeHtml(f.name || 'Untitled')}</b>
+                        <span>${f.type === 'name' ? 'Name frame' : 'Avatar frame'} · ${f.unlockType === 'manual' ? 'Manual only' : frameUnlockSummary(f)}</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" ${has ? 'checked' : ''} onchange="toggleUserFrameGrant('${userId}','${f.id}', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>`;
+            }).join('');
+        }
+        window.renderUserFramesSection = renderUserFramesSection;
 
         // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
         let socialListenerAttached = false;
@@ -6419,6 +6823,7 @@
             listenTelegramBot();
             listenUsers();
             listenTierSettings();
+            listenFrames();
             startAdminHeartbeat();
             startOrderArchiveScheduler();
             startDailySummaryScheduler();
