@@ -458,6 +458,15 @@
         .empty-msg { text-align: center; color: var(--text-secondary); font-size: 14px; padding: 20px 0; }
         .highlight-id { font-weight: bold; color: var(--accent); font-size: 15px; }
 
+        /* Order detail: grid of small info cards instead of a stacked list */
+        .od-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 6px; }
+        .od-cell { background: var(--fill-soft); border: 1px solid var(--border-glass); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+        .od-cell.span-2 { grid-column: span 2; }
+        .od-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); margin-bottom: 2px; }
+        .od-value { font-size: 13.5px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+        .od-value.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--accent); }
+        .od-value a { color: var(--accent); }
+
         /* Tier Limits page */
         .tier-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
         .tier-row-badge { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 20px; flex-shrink: 0; width: 118px; justify-content: center; }
@@ -961,7 +970,7 @@
     <!-- Side Navigation -->
     <nav class="side-nav">
         <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
-            <svg class="ui-icon"><use href="#icon-pie"></use></svg> Dash
+            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> Dash
         </div>
         <div class="nav-item" id="btn-g2bulk" onclick="showPage('g2bulk')">
             <svg class="ui-icon"><use href="#icon-g2bulk"></use></svg> G2Bulk
@@ -2742,14 +2751,43 @@
                             </div>
                         </div>
                         <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid var(--bg-subtle);">
-                            <p><b>Customer:</b> ${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}" style="color:var(--accent);">${data.userPhone}</a>` : ''}</p>
-                            <p><b>In-Game ID:</b> <span class="highlight-id">${data.playerId || 'N/A'}</span></p>
-                            ${data.serverId ? `<p><b>Server ID:</b> <span class="highlight-id">${data.serverId}</span></p>` : ''}
+                            <div class="od-grid">
+                                <div class="od-cell span-2">
+                                    <div class="od-label">Customer</div>
+                                    <div class="od-value">${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}">${data.userPhone}</a>` : ''}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">In-Game Name</div>
+                                    <div class="od-value">${data.game || 'N/A'}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">ID</div>
+                                    <div class="od-value mono">${data.playerId || 'N/A'}</div>
+                                </div>
+                                ${data.serverId ? `<div class="od-cell">
+                                    <div class="od-label">Server ID</div>
+                                    <div class="od-value mono">${data.serverId}</div>
+                                </div>` : ''}
+                                <div class="od-cell">
+                                    <div class="od-label">Order ID</div>
+                                    <div class="od-value mono">${orderId}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">Transaction ID</div>
+                                    <div class="od-value mono">${data.transactionId || 'N/A'}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">Paid Via</div>
+                                    <div class="od-value">${data.paymentMethod || 'N/A'}</div>
+                                </div>
+                                <div class="od-cell span-2">
+                                    <div class="od-label">Date</div>
+                                    <div class="od-value">${dateStr}</div>
+                                </div>
+                            </div>
                             ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
-                            <p><b>Paid via:</b> ${data.paymentMethod || 'N/A'}</p>
                             ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);">View on Map</a></p>` : ''}
                             ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
-                            <p style="color:var(--text-secondary); font-size:12px;">Ordered: ${dateStr}</p>
                             ${durationLine}
                         </div>
                         <div class="ac-footer" id="footer-${orderId}" style="display:${isOpen ? 'flex' : 'none'};">
