@@ -735,7 +735,13 @@
             <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
             <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
         </div>
-        <div class="login-box" style="position:relative;z-index:1;">
+        <!-- Obscurity gate: only this tiny version label shows at first. Tap it
+             7 times (within 2s of each tap) to reveal the real login form below.
+             This is NOT the security boundary by itself — it just keeps the
+             admin entry point invisible to casual visitors. The real boundary
+             is Firebase Auth + the TOTP step + Firestore rules. -->
+        <div id="version-tap-label" onclick="handleVersionTap()" style="position:relative;z-index:1;color:rgba(255,255,255,0.35);font-size:12px;letter-spacing:0.5px;padding:14px 22px;user-select:none;">PCA Store Admin · v1.0.4</div>
+        <div class="login-box" id="login-box" style="position:relative;z-index:1;display:none;">
             <div class="logo-icon">
                 <svg class="ui-icon" style="width:22px;height:22px;stroke:#fff;"><use href="#icon-shield"></use></svg>
             </div>
@@ -2003,7 +2009,84 @@
         // that require request.auth != null on every admin-only collection —
         // this screen alone is just UX, the rules are what actually enforce it.
         let adminAppStarted = false;
+        let pendingUsername = null;
+        let pendingEnrollSecret = null;
 
+        // ---------- Version-tap obscurity gate ----------
+        // The login form is invisible by default — only the small version
+        // label shows. Tapping it 7 times within 2s of the last tap reveals
+        // the real sign-in form. This hides the fact that an admin login
+        // exists at all from casual visitors; it is NOT itself the security
+        // boundary (Firebase Auth + the TOTP step below are).
+        let versionTapCount = 0;
+        let versionTapTimer = null;
+        function handleVersionTap() {
+            versionTapCount++;
+            clearTimeout(versionTapTimer);
+            versionTapTimer = setTimeout(() => { versionTapCount = 0; }, 2000);
+            if (versionTapCount >= 7) {
+                versionTapCount = 0;
+                document.getElementById('version-tap-label').style.display = 'none';
+                document.getElementById('login-box').style.display = '';
+            }
+        }
+        window.handleVersionTap = handleVersionTap;
+
+        function resetGateLocked() {
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('version-tap-label').style.display = '';
+            document.getElementById('step-login').style.display = '';
+            document.getElementById('step-mfa-enroll').style.display = 'none';
+            document.getElementById('step-mfa-challenge').style.display = 'none';
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+
+        // ---------- TOTP (Google Authenticator compatible), pure Web Crypto ----------
+        const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        function randomBase32Secret(length = 16) {
+            const bytes = crypto.getRandomValues(new Uint8Array(length));
+            let bits = '', out = '';
+            for (const b of bytes) bits += b.toString(2).padStart(8, '0');
+            for (let i = 0; i + 5 <= bits.length; i += 5) out += BASE32_ALPHABET[parseInt(bits.substr(i, 5), 2)];
+            return out;
+        }
+        function base32ToBytes(base32) {
+            const clean = base32.replace(/=+$/, '').toUpperCase();
+            let bits = '';
+            for (const c of clean) {
+                const idx = BASE32_ALPHABET.indexOf(c);
+                if (idx === -1) continue;
+                bits += idx.toString(2).padStart(5, '0');
+            }
+            const bytes = [];
+            for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.substr(i, 8), 2));
+            return new Uint8Array(bytes);
+        }
+        async function hotp(secretBytes, counter) {
+            const counterBuf = new ArrayBuffer(8);
+            const view = new DataView(counterBuf);
+            view.setUint32(0, Math.floor(counter / 2 ** 32));
+            view.setUint32(4, counter % (2 ** 32));
+            const key = await crypto.subtle.importKey('raw', secretBytes, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+            const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, counterBuf));
+            const offset = sig[sig.length - 1] & 0x0f;
+            const code = ((sig[offset] & 0x7f) << 24) | ((sig[offset + 1] & 0xff) << 16) | ((sig[offset + 2] & 0xff) << 8) | (sig[offset + 3] & 0xff);
+            return (code % 1000000).toString().padStart(6, '0');
+        }
+        async function totpCode(secretBase32, forTimeMs = Date.now(), step = 30) {
+            const counter = Math.floor(forTimeMs / 1000 / step);
+            return hotp(base32ToBytes(secretBase32), counter);
+        }
+        async function verifyTotpCode(secretBase32, code, window = 1, step = 30) {
+            const now = Date.now();
+            for (let w = -window; w <= window; w++) {
+                if ((await totpCode(secretBase32, now + w * step * 1000, step)) === code) return true;
+            }
+            return false;
+        }
+
+        // ---------- Step 1: username + password ----------
         async function handleAdminLogin() {
             const username = document.getElementById('login-username').value.trim().toLowerCase();
             const password = document.getElementById('login-password').value;
@@ -2020,10 +2103,7 @@
             try {
                 // Firebase Auth itself only accepts email/password, so each
                 // admin's username is mapped to their real sign-in email via
-                // an "adminUsernames/{username}" doc ({ email: "..." }).
-                // This doc must be readable without being signed in yet
-                // (see the matching Firestore rule note), but it holds only
-                // the email address — never the password.
+                // an "adminUsernames/{username}" doc ({ email: "...", totpSecret: "..." }).
                 const usernameSnap = await getDoc(doc(db, "adminUsernames", username));
                 if (!usernameSnap.exists() || !usernameSnap.data().email) {
                     errEl.textContent = 'Wrong username or password.';
@@ -2032,9 +2112,10 @@
                     btn.innerText = 'Sign In';
                     return;
                 }
+                pendingUsername = username;
                 const email = usernameSnap.data().email;
                 await signInWithEmailAndPassword(auth, email, password);
-                // onAuthStateChanged below takes it from here
+                // onAuthStateChanged -> routeAfterAuth() takes it from here (TOTP step)
             } catch (error) {
                 console.error('Admin login error:', error);
                 errEl.textContent = 'Wrong username or password. (' + (error.code || error.message || 'unknown error') + ')';
@@ -2056,16 +2137,115 @@
         }
         window.handleAdminLogout = handleAdminLogout;
 
+        function backToLogin() {
+            signOut(auth).catch(() => {});
+            pendingUsername = null;
+            pendingEnrollSecret = null;
+            resetGateLocked();
+            document.getElementById('login-box').style.display = '';
+            document.getElementById('version-tap-label').style.display = 'none';
+        }
+        window.backToLogin = backToLogin;
+
+        function unlockAdminApp() {
+            sessionStorage.setItem('pca_mfa_ok', '1');
+            document.getElementById('login-screen').classList.add('hidden');
+            if (!adminAppStarted) { adminAppStarted = true; startAdminApp(); }
+        }
+
+        // ---------- Step 2/3: TOTP enroll (first time) or challenge (returning) ----------
+        async function routeAfterAuth(user) {
+            if (sessionStorage.getItem('pca_mfa_ok') === '1') { unlockAdminApp(); return; }
+
+            let totpSecret = null;
+            try {
+                const q = query(collection(db, "adminUsernames"), where("email", "==", user.email));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const d = snap.docs[0];
+                    pendingUsername = d.id;
+                    totpSecret = d.data().totpSecret || null;
+                }
+            } catch (e) { console.error('MFA lookup error:', e); }
+
+            document.getElementById('step-login').style.display = 'none';
+            if (totpSecret) {
+                document.getElementById('step-mfa-enroll').style.display = 'none';
+                document.getElementById('step-mfa-challenge').style.display = '';
+            } else {
+                pendingEnrollSecret = randomBase32Secret();
+                document.getElementById('mfa-secret-key').textContent = pendingEnrollSecret;
+                document.getElementById('mfa-account-name').textContent = pendingUsername || user.email || '—';
+                document.getElementById('step-mfa-challenge').style.display = 'none';
+                document.getElementById('step-mfa-enroll').style.display = '';
+            }
+        }
+
+        async function confirmMfaEnrollment() {
+            const code = document.getElementById('mfa-enroll-code').value.trim();
+            const errEl = document.getElementById('mfa-enroll-error');
+            const btn = document.getElementById('mfa-enroll-btn');
+            errEl.style.display = 'none';
+            if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
+            btn.disabled = true; btn.innerText = 'Verifying...';
+            try {
+                const ok = await verifyTotpCode(pendingEnrollSecret, code);
+                if (!ok) {
+                    errEl.textContent = 'Wrong code. Check your phone\'s clock and try again.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false; btn.innerText = 'Confirm & Enable';
+                    return;
+                }
+                await setDoc(doc(db, "adminUsernames", pendingUsername), { totpSecret: pendingEnrollSecret }, { merge: true });
+                unlockAdminApp();
+            } catch (e) {
+                console.error('MFA enroll error:', e);
+                errEl.textContent = 'Something went wrong. Try again.';
+                errEl.style.display = 'block';
+                btn.disabled = false; btn.innerText = 'Confirm & Enable';
+            }
+        }
+        window.confirmMfaEnrollment = confirmMfaEnrollment;
+
+        async function confirmMfaChallenge() {
+            const code = document.getElementById('mfa-challenge-code').value.trim();
+            const errEl = document.getElementById('mfa-challenge-error');
+            const btn = document.getElementById('mfa-challenge-btn');
+            errEl.style.display = 'none';
+            if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
+            btn.disabled = true; btn.innerText = 'Verifying...';
+            try {
+                const q = query(collection(db, "adminUsernames"), where("email", "==", auth.currentUser.email));
+                const snap = await getDocs(q);
+                const secret = !snap.empty ? snap.docs[0].data().totpSecret : null;
+                const ok = secret && await verifyTotpCode(secret, code);
+                if (!ok) {
+                    errEl.textContent = 'Wrong code.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false; btn.innerText = 'Verify & Sign In';
+                    return;
+                }
+                unlockAdminApp();
+            } catch (e) {
+                console.error('MFA challenge error:', e);
+                errEl.textContent = 'Something went wrong. Try again.';
+                errEl.style.display = 'block';
+                btn.disabled = false; btn.innerText = 'Verify & Sign In';
+            }
+        }
+        window.confirmMfaChallenge = confirmMfaChallenge;
+
         onAuthStateChanged(auth, (user) => {
             const loginScreen = document.getElementById('login-screen');
             const loginBtn = document.getElementById('login-btn');
             if (user) {
-                loginScreen.classList.add('hidden');
                 if (loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'Sign In'; }
-                if (!adminAppStarted) { adminAppStarted = true; startAdminApp(); }
+                routeAfterAuth(user);
             } else {
-                loginScreen.classList.remove('hidden');
                 adminAppStarted = false;
+                sessionStorage.removeItem('pca_mfa_ok');
+                loginScreen.classList.remove('hidden');
+                resetGateLocked();
             }
         });
 
