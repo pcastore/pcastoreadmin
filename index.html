@@ -1086,6 +1086,34 @@
                 </div>
             </div>
 
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAdminLoginSettings()">
+                    <span style="font-size:15px;font-weight:700;">Admin Login</span>
+                    <svg class="ui-icon" id="admin-login-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="admin-login-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Currently, this admin panel opens with no login. Turn this on to require a username + password (with 2FA) before anyone can open it.</p>
+                    <div class="switch-row">
+                        <div>
+                            <span class="switch-label">Require Login</span>
+                            <span class="switch-hint">When off, the panel opens directly with no password gate</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="admin-login-enabled-toggle" onchange="onAdminLoginToggle(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <p id="admin-login-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 4px;"></p>
+                    <hr style="border:none;border-top:1px solid var(--border-glass);margin:14px 0;">
+                    <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">Username</label>
+                    <input type="text" id="admin-login-username" placeholder="username" autocapitalize="none" autocorrect="off" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">New Password</label>
+                    <input type="password" id="admin-login-password" placeholder="At least 6 characters" autocomplete="new-password" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <p style="font-size:11.5px;color:var(--text-secondary);margin:-6px 0 12px;">Saving replaces any existing password for this username and resets its 2FA — you'll set up the authenticator app again on the next login.</p>
+                    <button class="btn btn-primary" id="save-admin-login-btn" onclick="saveAdminLoginCredentials()">Save Username &amp; Password</button>
+                </div>
+            </div>
+
         </div>
 
         <!-- JCPLAYS PAGE (SmileCoin-compatible reseller — same pattern as G2Bulk above) -->
@@ -1969,7 +1997,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA2mwdZ2tAoZ3_6HNl43fUSi9t_ZkRita4",
@@ -2011,6 +2039,91 @@
         let adminAppStarted = false;
         let pendingUsername = null;
         let pendingEnrollSecret = null;
+
+        // ---------- Require Login toggle (Dashboard → Settings → Admin Login) ----------
+        // Stored in settings/adminAuth { loginEnabled: boolean }. Missing doc = off,
+        // so the panel opens straight in with no gate until an admin turns this on.
+        let loginGateEnabled = false;
+        function renderAdminLoginStatus() {
+            const status = document.getElementById('admin-login-status');
+            const toggle = document.getElementById('admin-login-enabled-toggle');
+            if (toggle) toggle.checked = loginGateEnabled;
+            if (status) status.textContent = loginGateEnabled
+                ? 'Login is required to open this panel.'
+                : 'Login is currently OFF — the panel opens with no password.';
+        }
+        window.renderAdminLoginStatus = renderAdminLoginStatus;
+
+        async function initLoginGate() {
+            try {
+                const snap = await getDoc(doc(db, "settings", "adminAuth"));
+                loginGateEnabled = !!(snap.exists() && snap.data().loginEnabled);
+            } catch (e) {
+                console.error('Could not read admin login setting, defaulting to open:', e);
+                loginGateEnabled = false;
+            }
+            renderAdminLoginStatus();
+            if (!loginGateEnabled) {
+                // Skip the gate entirely. Still sign in anonymously in the background
+                // so Firestore rules requiring request.auth != null keep working.
+                document.getElementById('login-screen').classList.add('hidden');
+                try { await signInAnonymously(auth); } catch (e) { console.error('Anonymous sign-in failed:', e); }
+                if (!adminAppStarted) { adminAppStarted = true; startAdminApp(); }
+            }
+            // If enabled, do nothing — the default-visible login-screen and the
+            // onAuthStateChanged listener below handle the normal sign-in flow.
+        }
+        initLoginGate();
+
+        async function onAdminLoginToggle(checked) {
+            try {
+                await setDoc(doc(db, "settings", "adminAuth"), { loginEnabled: checked }, { merge: true });
+                loginGateEnabled = checked;
+                renderAdminLoginStatus();
+                window.showToast(checked ? 'Login required — takes effect next time the panel is opened.' : 'Login turned off — takes effect next time the panel is opened.', 'success');
+            } catch (e) {
+                console.error('Failed to save login toggle:', e);
+                document.getElementById('admin-login-enabled-toggle').checked = !checked;
+                window.showToast('Failed to save. Check your connection.', 'fail');
+            }
+        }
+        window.onAdminLoginToggle = onAdminLoginToggle;
+
+        // Sets/replaces the username + password used by the login gate above.
+        // Always creates a fresh Firebase Auth account behind the username (rather
+        // than trying to update a password we're not signed in to verify), so
+        // saving here also resets that username's 2FA — it re-enrolls next login.
+        async function saveAdminLoginCredentials() {
+            const usernameInput = document.getElementById('admin-login-username');
+            const passwordInput = document.getElementById('admin-login-password');
+            const username = usernameInput.value.trim().toLowerCase();
+            const password = passwordInput.value;
+            const btn = document.getElementById('save-admin-login-btn');
+            if (!username || !/^[a-z0-9_.]{3,}$/.test(username)) {
+                window.showToast('Username: at least 3 characters, letters/numbers/._ only.', 'fail');
+                return;
+            }
+            if (!password || password.length < 6) {
+                window.showToast('Password must be at least 6 characters.', 'fail');
+                return;
+            }
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                const email = `${username}.${Date.now()}@admin.pcastore.local`;
+                await createUserWithEmailAndPassword(auth, email, password);
+                await setDoc(doc(db, "adminUsernames", username), { email, totpSecret: null });
+                passwordInput.value = '';
+                window.showToast('Login credentials saved ✓', 'success');
+            } catch (e) {
+                console.error('Failed to save admin credentials:', e);
+                window.showToast('Failed to save: ' + (e.code || e.message || 'unknown error'), 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Save Username & Password';
+            }
+        }
+        window.saveAdminLoginCredentials = saveAdminLoginCredentials;
 
         // ---------- Version-tap obscurity gate ----------
         // The login form is invisible by default — only the small version
@@ -4933,6 +5046,15 @@
             chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
         }
         window.toggleReceiptStyleSettings = toggleReceiptStyleSettings;
+
+        function toggleAdminLoginSettings() {
+            const body = document.getElementById('admin-login-body');
+            const chevron = document.getElementById('admin-login-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleAdminLoginSettings = toggleAdminLoginSettings;
 
         function renderReceiptStyleSelection(style) {
             selectedReceiptStyle = style;
