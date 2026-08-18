@@ -2538,6 +2538,10 @@
         // stay visible regardless of status, newest first.
         let ordersListenerAttached = false;
         const expandedOrders = new Set();
+        // Separate expand/collapse tracking for the mini order-history cards shown
+        // inside the User Details modal (Users tab), so opening one there doesn't
+        // affect the same order's card on the main Orders page and vice versa.
+        const expandedUserOrders = new Set();
         let ORDERS = {}; // { orderId: {...data, id} } - kept in sync for the Users tab
 
         // "Clean" only sets an adminCleared flag on the order doc — it never deletes
@@ -2598,6 +2602,19 @@
             if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
         }
         window.toggleOrderCard = toggleOrderCard;
+
+        // Same expand/collapse behavior as toggleOrderCard, but scoped to the
+        // order-history cards inside the User Details modal (distinct element
+        // IDs so it doesn't clash with the main Orders page card for the same order).
+        function toggleUserOrderCard(orderId) {
+            if (expandedUserOrders.has(orderId)) expandedUserOrders.delete(orderId); else expandedUserOrders.add(orderId);
+            const body = document.getElementById('ud-oc-body-' + orderId);
+            const chevron = document.getElementById('ud-oc-chevron-' + orderId);
+            const isOpen = expandedUserOrders.has(orderId);
+            if (body) body.style.display = isOpen ? 'block' : 'none';
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        window.toggleUserOrderCard = toggleUserOrderCard;
 
         function fetchOrders() {
             if (ordersListenerAttached) {
@@ -2660,6 +2677,7 @@
                     || (o.userName || '').toLowerCase().includes(searchTerm)
                     || (o.userPhone || '').toLowerCase().includes(searchTerm)
                     || (o.playerId || '').toLowerCase().includes(searchTerm)
+                    || (o.inGameName || '').toLowerCase().includes(searchTerm)
                     || (o.id || '').toLowerCase().includes(searchTerm);
             });
             const cleanedCount = allOrders.filter(o => o.adminCleared).length;
@@ -2758,7 +2776,7 @@
                                 </div>
                                 <div class="od-cell">
                                     <div class="od-label">In-Game Name</div>
-                                    <div class="od-value">${data.game || 'N/A'}</div>
+                                    <div class="od-value">${data.inGameName || 'N/A'}</div>
                                 </div>
                                 <div class="od-cell">
                                     <div class="od-label">ID</div>
@@ -4695,16 +4713,55 @@
 
             const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
             container.innerHTML = userOrders.map(o => {
+                const orderId = o.id;
                 const dateStr = o.timestamp ? o.timestamp.toDate().toLocaleString() : 'Just now';
                 const badgeClass = badgeClassByStatus[o.status] || 'badge-pending';
+                const isOpen = expandedUserOrders.has(orderId);
                 return `
                     <div class="admin-card" style="padding:12px;">
-                        <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;">
+                        <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;cursor:pointer;" onclick="toggleUserOrderCard('${orderId}')">
                             <span class="ac-id">${o.game} (${o.itemAmount})</span>
-                            <span class="badge ${badgeClass}">${o.status}${o.adminCleared ? ' · cleaned' : ''}</span>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span class="badge ${badgeClass}">${o.status}${o.adminCleared ? ' · cleaned' : ''}</span>
+                                <svg class="ui-icon" id="ud-oc-chevron-${orderId}" style="width:15px;height:15px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
+                            </div>
                         </div>
                         <p style="font-size:13px;color:var(--text-secondary);">${fmtMoney(o.price)} &middot; ${o.paymentMethod || 'N/A'}</p>
                         <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">${dateStr}</p>
+                        <div id="ud-oc-body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid var(--bg-subtle);">
+                            <div class="od-grid">
+                                <div class="od-cell">
+                                    <div class="od-label">In-Game Name</div>
+                                    <div class="od-value">${o.inGameName || 'N/A'}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">Player ID</div>
+                                    <div class="od-value mono">${o.playerId || 'N/A'}</div>
+                                </div>
+                                ${o.serverId ? `<div class="od-cell">
+                                    <div class="od-label">Server ID</div>
+                                    <div class="od-value mono">${o.serverId}</div>
+                                </div>` : ''}
+                                <div class="od-cell">
+                                    <div class="od-label">Order ID</div>
+                                    <div class="od-value mono">${orderId}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">Transaction ID</div>
+                                    <div class="od-value mono">${o.transactionId || 'N/A'}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">Paid Via</div>
+                                    <div class="od-value">${o.paymentMethod || 'N/A'}</div>
+                                </div>
+                                <div class="od-cell span-2">
+                                    <div class="od-label">Date</div>
+                                    <div class="od-value">${dateStr}</div>
+                                </div>
+                            </div>
+                            ${o.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${o.serverRegion}</span></p>` : ''}
+                            ${o.receiptUrl ? `<p><b>Receipt:</b> <a href="${o.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${o.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                        </div>
                     </div>
                 `;
             }).join('');
