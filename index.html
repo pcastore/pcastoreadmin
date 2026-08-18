@@ -227,6 +227,8 @@
         .login-msg-info { font-size: 13px; color: var(--text-primary); text-align: center; margin-bottom: 16px; line-height: 1.5; }
         .login-msg-hint { font-size: 12px; color: var(--text-secondary); text-align: center; margin: -6px 0 14px; }
         .login-secondary-btn { background: var(--fill-soft) !important; color: var(--text-primary) !important; margin-top: 8px; }
+        .mfa-qr-box { background: #ffffff; border: 1px solid var(--border-glass); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; }
+        .mfa-qr-box svg { width: 180px; height: 180px; max-width: 100%; }
         .mfa-secret-box { background: var(--bg-subtle-2); border: 1px dashed var(--border-dashed); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
         .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--accent); }
         #resend-verify-btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: var(--accent); color: #fff; cursor: pointer; margin-bottom: 8px; }
@@ -840,7 +842,11 @@
             <!-- Step 3a: first-time TOTP enrollment -->
             <div id="step-mfa-enroll" style="display:none;">
                 <h2>Set Up Authenticator</h2>
-                <p class="sub">Scan or enter this key into Google Authenticator / Authy, then enter the 6-digit code it shows.</p>
+                <p class="sub">Scan the QR code with Google Authenticator / Authy, then enter the 6-digit code it shows.</p>
+                <div id="mfa-qr-box" class="mfa-qr-box">
+                    <div id="mfa-qr-code"></div>
+                </div>
+                <p class="login-msg-hint" style="margin:6px 0 8px;">Can't scan? Enter this key manually instead:</p>
                 <div class="mfa-secret-box">
                     <span id="mfa-secret-key">—</span>
                 </div>
@@ -2164,6 +2170,9 @@
         window.showInfoDialog = showInfoDialog;
     </script>
 
+    <!-- QR code generator (client-side, no network calls needed at runtime after load) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -2362,6 +2371,24 @@
             const counter = Math.floor(forTimeMs / 1000 / step);
             return hotp(base32ToBytes(secretBase32), counter);
         }
+        function renderMfaQrCode(secretBase32, accountName) {
+            const box = document.getElementById('mfa-qr-code');
+            if (!box) return;
+            box.innerHTML = '';
+            const issuer = 'PCA Store Admin';
+            const label = encodeURIComponent(`${issuer}:${accountName}`);
+            const otpauthUri = `otpauth://totp/${label}?secret=${secretBase32}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(otpauthUri);
+                qr.make();
+                box.innerHTML = qr.createSvgTag(4);
+            } catch (e) {
+                console.error('QR render error:', e);
+                document.getElementById('mfa-qr-box').style.display = 'none';
+            }
+        }
+
         async function verifyTotpCode(secretBase32, code, window = 1, step = 30) {
             const now = Date.now();
             for (let w = -window; w <= window; w++) {
@@ -2460,6 +2487,7 @@
                 pendingEnrollSecret = randomBase32Secret();
                 document.getElementById('mfa-secret-key').textContent = pendingEnrollSecret;
                 document.getElementById('mfa-account-name').textContent = pendingUsername || user.email || '—';
+                renderMfaQrCode(pendingEnrollSecret, pendingUsername || user.email || 'admin');
                 document.getElementById('step-mfa-challenge').style.display = 'none';
                 document.getElementById('step-mfa-enroll').style.display = '';
             }
