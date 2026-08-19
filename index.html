@@ -719,6 +719,28 @@
         .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
         .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
 
+        /* Package/Currency/Custom tabs — filters #edit-packages-list so the
+           two package "types" (and any admin-defined custom groups) never
+           show mixed together while editing. */
+        .pkg-tab-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .pkg-tab-btn {
+            display: flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 999px;
+            border: 1px solid var(--fill-soft); background: var(--surface); color: var(--text-secondary);
+            font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+        }
+        .pkg-tab-btn .pkg-tab-count { font-size: 10.5px; font-weight: 700; opacity: 0.7; }
+        .pkg-tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .pkg-tab-btn.active .pkg-tab-count { opacity: 0.85; }
+        .pkg-tab-btn .pkg-tab-remove { margin-left: 2px; opacity: 0.6; font-size: 13px; line-height: 1; }
+        .pkg-tab-btn .pkg-tab-remove:hover { opacity: 1; }
+        .pkg-tab-add-btn {
+            display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%;
+            border: 1.5px dashed var(--border-dashed); background: transparent; color: var(--text-muted);
+            font-size: 15px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+        }
+        .pkg-tab-add-btn:active { color: var(--accent); border-color: var(--accent); }
+        .pkg-tab-empty-msg { text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 18px 0; }
+
         /* Package (currency grid) — drag-to-reorder card list */
         #edit-packages-list { display: flex; flex-direction: column; gap: 8px; position: relative; }
         .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
@@ -1905,7 +1927,9 @@
 
                 <label>Top-up Packages</label>
                 <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Cost = your wholesale price (Store never shows this). Price = what the customer pays. The badge on the right shows your profit %.</p>
+                <div class="pkg-tab-bar" id="pkg-tab-bar"></div>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <p class="pkg-tab-empty-msg" id="pkg-tab-empty-msg" style="display:none;">No packages in this tab yet — tap "+ Add Package" to add one.</p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
                     <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
@@ -3960,6 +3984,15 @@
         let editingImageRemoteUrl = null;
         let editingPaymentImageFile = null;
 
+        // ---------- Package tab system (Package / Currency / custom) ----------
+        // Keeps the two package "types" — and any admin-defined custom groups —
+        // visually separated in the editor instead of one mixed flat list.
+        // 'package' and 'currency' are the two built-in tabs and stay in sync
+        // with each row's pkg-type-toggle (which governs its Store display).
+        // Custom tabs are purely an admin-side organizational grouping.
+        let currentPkgTab = 'package';
+        let customPkgTabs = []; // extra tab names beyond the 2 built-ins, for the currently-open game
+
         // Same rAF-coalescing trick as renderOrdersList: the games listener can
         // fire repeatedly in a burst (e.g. on first load), and rebuilding every
         // game card + thumbnail each time was making the Game List page stutter.
@@ -4068,18 +4101,128 @@
         // Segmented toggle for package type (replaces the old native <select>).
         // Keeps a hidden <select class="pkg-type"> in sync so saveGame()'s
         // existing row.querySelector('.pkg-type').value read still works unchanged.
+        // For rows sitting in one of the 2 built-in tabs (Package/Currency),
+        // flipping this toggle also moves the row into the matching tab, so
+        // "Package tab" and "Currency tab" always exactly mirror the type.
         function setPkgType(btn, value) {
             const toggle = btn.closest('.pkg-type-toggle');
             toggle.querySelectorAll('.pkg-type-opt').forEach(b => b.classList.toggle('active', b.dataset.value === value));
             const select = toggle.parentElement.querySelector('.pkg-type');
             select.value = value;
+            const row = btn.closest('.package-row');
+            if (row.dataset.tab === 'package' || row.dataset.tab === 'currency') {
+                row.dataset.tab = value;
+                applyPackageTabFilter();
+            }
         }
         window.setPkgType = setPkgType;
 
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency') {
+        // ---------- Package tab bar: render, switch, filter, add/remove ----------
+        function resetPackageTabs() {
+            customPkgTabs = [];
+            currentPkgTab = 'package';
+            renderPkgTabBar();
+        }
+
+        function pkgTabLabel(tabId) {
+            if (tabId === 'package') return 'Package';
+            if (tabId === 'currency') return 'Currency';
+            return tabId;
+        }
+
+        function renderPkgTabBar() {
+            const bar = document.getElementById('pkg-tab-bar');
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            const countFor = (tabId) => rows.filter(r => r.dataset.tab === tabId).length;
+            const allTabs = ['package', 'currency', ...customPkgTabs];
+            bar.innerHTML = allTabs.map(tabId => `
+                <button type="button" class="pkg-tab-btn ${tabId === currentPkgTab ? 'active' : ''}" data-tab="${tabId}" onclick="switchPackageTab('${tabId.replace(/'/g, "\\'")}')">
+                    ${escapeHtml(pkgTabLabel(tabId))} <span class="pkg-tab-count">${countFor(tabId)}</span>
+                    ${!['package', 'currency'].includes(tabId) ? `<span class="pkg-tab-remove" onclick="event.stopPropagation(); removeCustomPkgTab('${tabId.replace(/'/g, "\\'")}')" title="Remove tab">&times;</span>` : ''}
+                </button>
+            `).join('') + `<button type="button" class="pkg-tab-add-btn" onclick="addCustomPackageTab()" title="Add a custom tab">+</button>`;
+        }
+
+        function switchPackageTab(tabId) {
+            currentPkgTab = tabId;
+            renderPkgTabBar();
+            applyPackageTabFilter();
+        }
+        window.switchPackageTab = switchPackageTab;
+
+        function applyPackageTabFilter() {
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const match = row.dataset.tab === currentPkgTab;
+                row.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+            document.getElementById('pkg-tab-empty-msg').style.display = visibleCount === 0 ? 'block' : 'none';
+            renumberPackageRows();
+        }
+
+        // Opens the app's own input dialog (not window.prompt — that can be
+        // blocked or look out of place inside an embedded/mobile webview) so a
+        // new custom tab name can be typed in, validated against duplicates,
+        // then added to the tab bar and switched to.
+        function addCustomPackageTab() {
+            window.showActionDialog({
+                type: 'success',
+                title: 'New Package Tab',
+                message: 'Name this tab (e.g. "Weekly Pass", "Bundle", "VIP"):',
+                confirmText: 'Add Tab',
+                cancelText: 'Cancel',
+                showNote: true,
+                notePlaceholder: 'Tab name',
+                onConfirm: (note) => {
+                    const name = (note || '').trim();
+                    if (!name) { window.showToast('Enter a tab name.', 'fail'); return; }
+                    const allTabs = ['package', 'currency', ...customPkgTabs];
+                    if (allTabs.some(t => t.toLowerCase() === name.toLowerCase())) {
+                        window.showToast('A tab with that name already exists.', 'fail');
+                        return;
+                    }
+                    customPkgTabs.push(name);
+                    switchPackageTab(name);
+                    window.showToast(`"${name}" tab added ✓`, 'success');
+                }
+            });
+        }
+        window.addCustomPackageTab = addCustomPackageTab;
+
+        function removeCustomPkgTab(tabId) {
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            if (rows.some(r => r.dataset.tab === tabId)) {
+                window.showToast('Move or delete the packages in this tab first.', 'fail');
+                return;
+            }
+            customPkgTabs = customPkgTabs.filter(t => t !== tabId);
+            if (currentPkgTab === tabId) currentPkgTab = 'package';
+            renderPkgTabBar();
+            applyPackageTabFilter();
+        }
+        window.removeCustomPkgTab = removeCustomPkgTab;
+
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false) {
             const list = document.getElementById('edit-packages-list');
+            // Catalogue imports (autoDetectType=true) classify purely from the
+            // name: a leading number ("100 Diamonds") → Currency, a plain name
+            // ("Weekly Pass") → Package — and land straight in that built-in
+            // tab, regardless of which tab happens to be open right now.
+            if (autoDetectType) {
+                type = detectPkgTypeFromName(amount);
+                tab = type;
+            }
+            const resolvedTab = tab || currentPkgTab;
+            // A tab we haven't seen yet on this game (e.g. loaded from saved
+            // data) gets auto-registered as a custom tab so it shows in the bar.
+            if (!['package', 'currency'].includes(resolvedTab) && !customPkgTabs.includes(resolvedTab)) {
+                customPkgTabs.push(resolvedTab);
+            }
             const row = document.createElement('div');
             row.className = 'package-row';
+            row.dataset.tab = resolvedTab;
             row.innerHTML = `
                 <div class="pkg-order-col">
                     <button type="button" class="pkg-move-btn" onclick="movePackageRow(this,-1)" title="အပေါ်ရွှေ့ရန်">
@@ -4140,7 +4283,8 @@
             `;
             list.appendChild(row);
             makePackageRowDraggable(row);
-            renumberPackageRows();
+            renderPkgTabBar();
+            applyPackageTabFilter();
             updatePackageProfit(row.querySelector('.pkg-price'));
         }
 
@@ -4317,20 +4461,29 @@
             });
         }
 
-        // Auto-sorts all package rows by the leading number in their Currency
-        // name (e.g. "100 Diamonds" → 100, "50 Diamonds" → 50) ascending.
-        // Rows whose name has no leading number (e.g. "Weekly Pass") are
-        // grouped after the numeric ones and sorted alphabetically among
-        // themselves, so a mixed currency/subscription list still ends up tidy.
+        // Shared leading-number detector: "100 Diamonds" → 100, "50 UC" → 50,
+        // "Weekly Pass" → null. Used both to auto-sort package rows and to
+        // auto-pick a package's type/tab on import (see addPackageRow below).
+        function parseLeadingNumber(text) {
+            const match = String(text || '').trim().replace(/,/g, '').match(/^(\d+(?:\.\d+)?)/);
+            return match ? parseFloat(match[1]) : null;
+        }
+        // A name with a leading number ("100 Diamonds") reads as a currency
+        // top-up; a plain name ("Weekly Pass", "Starter Bundle") reads as a
+        // package. Used to auto-classify rows created by catalogue import.
+        function detectPkgTypeFromName(name) {
+            return parseLeadingNumber(name) !== null ? 'currency' : 'package';
+        }
+
+        // Auto-sorts the *current tab's* package rows by the leading number in
+        // their Currency name (e.g. "100 Diamonds" → 100, "50 Diamonds" → 50)
+        // ascending — rows in other tabs are left untouched. Rows whose name
+        // has no leading number (e.g. "Weekly Pass") are grouped after the
+        // numeric ones and sorted alphabetically among themselves.
         function sortPackageRows() {
             const list = document.getElementById('edit-packages-list');
-            const rows = Array.from(list.querySelectorAll('.package-row'));
+            const rows = Array.from(list.querySelectorAll('.package-row')).filter(r => r.dataset.tab === currentPkgTab);
             if (rows.length < 2) return;
-
-            const parseLeadingNumber = (text) => {
-                const match = text.trim().replace(/,/g, '').match(/^(\d+(?:\.\d+)?)/);
-                return match ? parseFloat(match[1]) : null;
-            };
 
             const decorated = rows.map(row => {
                 const amount = row.querySelector('.pkg-amount').value;
@@ -4354,9 +4507,15 @@
         // and more reliable than drag on a small phone screen (which fights
         // with the modal's own vertical scroll), while the drag handle still
         // works for anyone who prefers it.
+        // Moves a row up/down among its own tab's rows only — rows belonging
+        // to other (hidden) tabs are skipped over so tab order stays independent.
         function movePackageRow(btn, direction) {
             const row = btn.closest('.package-row');
-            const sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
+            const tab = row.dataset.tab;
+            let sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
+            while (sibling && sibling.dataset && sibling.dataset.tab !== tab) {
+                sibling = direction < 0 ? sibling.previousElementSibling : sibling.nextElementSibling;
+            }
             if (!sibling) return;
             const list = row.parentNode;
             if (direction < 0) {
@@ -4370,8 +4529,11 @@
 
         // Refreshes the "#1, #2, ..." order labels shown next to each package row,
         // and disables the Up/Down buttons at the top/bottom edges of the list.
+        // Only counts rows within the currently active tab, so numbering matches
+        // what the admin actually sees.
         function renumberPackageRows() {
-            const rows = document.querySelectorAll('#edit-packages-list .package-row');
+            const allRows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            const rows = allRows.filter(r => r.dataset.tab === currentPkgTab);
             const last = rows.length - 1;
             rows.forEach((row, i) => {
                 const numEl = row.querySelector('.pkg-order-num');
@@ -4388,6 +4550,7 @@
             editingImageRemoteUrl = null;
             document.getElementById('edit-game-id').value = gameId || '';
             document.getElementById('edit-packages-list').innerHTML = '';
+            resetPackageTabs();
             document.getElementById('edit-game-file').value = '';
             document.getElementById('edit-game-banner-file').value = '';
             document.getElementById('upload-status').style.display = 'none';
@@ -4432,7 +4595,8 @@
 
                 const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : 'manual');
                 setFulfillProvider(initialProvider);
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency'));
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency'));
+                switchPackageTab('package');
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
@@ -4549,7 +4713,8 @@
                 g2bulk: currentFulfillProvider === 'g2bulk' ? row.querySelector('.pkg-g2bulk').value.trim() : '',
                 jcplays: currentFulfillProvider === 'jcplays' ? row.querySelector('.pkg-jcplays').value.trim() : '',
                 image: row.querySelector('.pkg-img-preview').dataset.url || '',
-                type: row.querySelector('.pkg-type').value || 'currency'
+                type: row.querySelector('.pkg-type').value || 'currency',
+                tab: row.dataset.tab || row.querySelector('.pkg-type').value || 'currency'
             })).filter(p => p.amount && p.price > 0);
 
             if (packages.length === 0) { window.showToast('Add at least one valid package', 'fail'); return; }
@@ -6786,7 +6951,7 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(c.name, cost, cost, c.name);
+                        addPackageRow(c.name, cost, cost, c.name, '', '', 'currency', null, true);
                         addedCount++;
                     }
                 });
@@ -7389,7 +7554,7 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(r.spu, cost, cost, '', String(r.id));
+                        addPackageRow(r.spu, cost, cost, '', String(r.id), '', 'currency', null, true);
                         addedCount++;
                     }
                 });
@@ -7642,6 +7807,7 @@
             document.getElementById('edit-game-id').value = '';
             document.getElementById('edit-game-server-name').value = '';
             document.getElementById('edit-packages-list').innerHTML = '';
+            resetPackageTabs();
             document.getElementById('edit-game-g2bulk-code').value = '';
             document.getElementById('edit-game-jcplays-code').value = '';
             document.getElementById('jcplays-denom-status').innerText = '';
