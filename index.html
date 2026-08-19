@@ -810,6 +810,18 @@
         .pkg-drag-handle { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px 0; background: var(--bg-subtle); color: var(--text-muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
         .pkg-drag-handle:active { cursor: grabbing; background: var(--fill-soft); color: var(--accent); }
         .pkg-drag-handle svg { width: 11px; height: 11px; pointer-events: none; }
+
+        /* Reorder-games grid: small 2-column cards matching the Store's game
+           grid look, draggable by pointer (touch + mouse). */
+        .game-reorder-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .game-reorder-card { position: relative; background: var(--surface); border: 1px solid var(--fill-soft); border-radius: 14px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; transition: box-shadow 0.15s ease; }
+        .game-reorder-card:active { cursor: grabbing; }
+        .game-reorder-card.dragging { box-shadow: var(--shadow-soft); opacity: 0.92; }
+        .game-reorder-card.drag-over { outline: 2px solid var(--accent); outline-offset: -2px; }
+        .game-reorder-img-wrap { width: 100%; aspect-ratio: 1 / 1; background: var(--bg-subtle); pointer-events: none; }
+        .game-reorder-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .game-reorder-name { padding: 7px 8px; font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+        .game-reorder-num { position: absolute; top: 6px; left: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1; }
         .pkg-order-num { flex-shrink: 0; font-size: 9.5px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
         .pkg-row-fields { flex: 1; min-width: 0; }
         /* Package summary card — icon+label header row (with a small colour dot,
@@ -1590,13 +1602,37 @@
 
         <!-- GAMES PAGE (Live Firestore Data) -->
         <div id="game-list" class="page-section">
-            <h2 class="title-header">Game List <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button></h2>
+            <h2 class="title-header">Game List
+                <span style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameReorder()">↕ Reorder</button>
+                    <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button>
+                </span>
+            </h2>
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="game-search" placeholder="Search games by name or server..." autocomplete="off" oninput="renderAdminGamesList()">
             </div>
             <div id="admin-games-container">
                 <p class="empty-msg">Loading games...</p>
+            </div>
+        </div>
+
+        <!-- REORDER GAMES MODAL: drag-and-drop grid, same 2-column card look
+             as the Store's game grid, so what admin arranges here is exactly
+             what customers see. -->
+        <div class="modal-overlay" id="game-reorder-modal-overlay" onclick="if(event.target===this) closeGameReorder()">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Reorder Games</h3>
+                    <div class="modal-close" onclick="closeGameReorder()">
+                        <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:-4px 0 12px;">ဆွဲပြီး နေရာအလိုက် စီပေးပါ — Save လုပ်လိုက်ရင် Store မှာလည်း ဒီအစီအရီအတိုင်း ပေါ်ပါမယ်</p>
+                    <div id="game-reorder-grid" class="game-reorder-grid"></div>
+                    <button type="button" class="btn btn-primary" id="save-game-order-btn" style="margin-top:16px;" onclick="saveGameOrder()">Save Order</button>
+                </div>
             </div>
         </div>
 
@@ -4505,6 +4541,23 @@
             }).join('');
             initScrollReveal(container);
         }
+        // Sort key mirrors store.html: explicit `order` field wins (ascending),
+        // games without one yet fall to the end, alphabetically - so nothing
+        // reshuffles until an admin actually uses "Reorder".
+        function gameSortKey(a, b) {
+            const ga = GAMES[a], gb = GAMES[b];
+            const oa = typeof ga.order === 'number' ? ga.order : Infinity;
+            const ob = typeof gb.order === 'number' ? gb.order : Infinity;
+            if (oa !== ob) return oa - ob;
+            return (ga.name || '').localeCompare(gb.name || '') || (ga.serverName || '').localeCompare(gb.serverName || '');
+        }
+
+        // Was previously a bare top-level onSnapshot() call with no enclosing
+        // function - startAdminApp() calling listenGames() would have thrown
+        // (function didn't exist) and silently skipped every listener after
+        // it in that list. Wrapping it here fixes that without changing what
+        // it does.
+        function listenGames() {
             onSnapshot(collection(db, "games"), (snap) => {
                 const newGames = {};
                 snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
@@ -5509,6 +5562,164 @@
                 }
             });
         }
+
+        // ---------- Manual Game Order (drag-to-reorder grid) ----------
+        // Persists each game's position as an `order` field (0-based index).
+        // Store.html sorts its game grid by this same field (falling back to
+        // name for games that don't have one yet), so whatever order is
+        // saved here is exactly what customers see.
+        let reorderGameIds = [];
+
+        function openGameReorder() {
+            reorderGameIds = Object.keys(GAMES).sort(gameSortKey);
+            renderGameReorderGrid();
+            document.getElementById('game-reorder-modal-overlay').classList.add('show');
+        }
+        window.openGameReorder = openGameReorder;
+
+        function closeGameReorder() {
+            document.getElementById('game-reorder-modal-overlay').classList.remove('show');
+        }
+        window.closeGameReorder = closeGameReorder;
+
+        function renderGameReorderGrid() {
+            const grid = document.getElementById('game-reorder-grid');
+            if (reorderGameIds.length === 0) {
+                grid.innerHTML = '<p class="empty-msg">No games yet.</p>';
+                return;
+            }
+            grid.innerHTML = reorderGameIds.map((id, i) => {
+                const g = GAMES[id];
+                if (!g) return '';
+                const label = g.serverName ? `${g.name} · ${g.serverName}` : g.name;
+                return `
+                    <div class="game-reorder-card" data-id="${id}">
+                        <span class="game-reorder-num">${i + 1}</span>
+                        <div class="game-reorder-img-wrap">
+                            <img src="${g.image}" loading="lazy" decoding="async">
+                        </div>
+                        <div class="game-reorder-name">${escapeHtml(label)}</div>
+                    </div>
+                `;
+            }).join('');
+            Array.from(grid.querySelectorAll('.game-reorder-card')).forEach(makeGameCardDraggable);
+        }
+
+        // Pointer-based drag (touch + mouse), same technique as the package
+        // row drag handle - except the whole card is the handle, and since
+        // cards sit in a 2-column grid (not a single vertical list) the drop
+        // target is found with elementFromPoint instead of simple before/after.
+        function makeGameCardDraggable(card) {
+            card.addEventListener('pointerdown', (downEvent) => {
+                downEvent.preventDefault();
+                const grid = document.getElementById('game-reorder-grid');
+                const startRect = card.getBoundingClientRect();
+                const startX = downEvent.clientX, startY = downEvent.clientY;
+
+                card.classList.add('dragging');
+                card.style.position = 'fixed';
+                card.style.top = startRect.top + 'px';
+                card.style.left = startRect.left + 'px';
+                card.style.width = startRect.width + 'px';
+                card.style.zIndex = '999';
+                card.style.pointerEvents = 'none';
+                card.style.willChange = 'transform';
+
+                let currentOverCard = null;
+                let latestX = startX, latestY = startY;
+                let rafId = null;
+
+                function processFrame() {
+                    rafId = null;
+                    card.style.transform = `translate3d(${latestX - startX}px, ${latestY - startY}px, 0)`;
+                    const under = document.elementFromPoint(latestX, latestY);
+                    const target = under ? under.closest('.game-reorder-card') : null;
+                    if (currentOverCard && currentOverCard !== target) {
+                        currentOverCard.classList.remove('drag-over');
+                        currentOverCard = null;
+                    }
+                    if (target && target !== card) {
+                        target.classList.add('drag-over');
+                        currentOverCard = target;
+                        const cards = Array.from(grid.querySelectorAll('.game-reorder-card'));
+                        const fromIdx = cards.indexOf(card);
+                        const toIdx = cards.indexOf(target);
+                        if (fromIdx !== toIdx) {
+                            if (fromIdx < toIdx) grid.insertBefore(card, target.nextSibling);
+                            else grid.insertBefore(card, target);
+                        }
+                    }
+                }
+
+                function onMove(moveEvent) {
+                    latestX = moveEvent.clientX;
+                    latestY = moveEvent.clientY;
+                    if (rafId === null) rafId = requestAnimationFrame(processFrame);
+                }
+
+                function onUp() {
+                    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+                    if (currentOverCard) currentOverCard.classList.remove('drag-over');
+                    card.classList.remove('dragging');
+                    card.style.position = '';
+                    card.style.top = '';
+                    card.style.left = '';
+                    card.style.width = '';
+                    card.style.zIndex = '';
+                    card.style.pointerEvents = '';
+                    card.style.transform = '';
+                    card.style.willChange = '';
+                    renumberGameReorderCards();
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
+                }
+
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
+            });
+        }
+
+        function renumberGameReorderCards() {
+            const grid = document.getElementById('game-reorder-grid');
+            const cards = Array.from(grid.querySelectorAll('.game-reorder-card'));
+            reorderGameIds = cards.map(c => c.dataset.id);
+            cards.forEach((c, i) => {
+                const num = c.querySelector('.game-reorder-num');
+                if (num) num.innerText = i + 1;
+            });
+        }
+
+        // Writes the on-screen order as each game's `order` field in one
+        // batch - only touches docs whose order actually changed.
+        async function saveGameOrder() {
+            const btn = document.getElementById('save-game-order-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                const batch = writeBatch(db);
+                let changed = 0;
+                reorderGameIds.forEach((id, i) => {
+                    if (GAMES[id] && GAMES[id].order !== i) {
+                        batch.update(doc(db, "games", id), { order: i });
+                        changed++;
+                    }
+                });
+                if (changed > 0) {
+                    await batch.commit();
+                    logAdminActivity('Reordered games');
+                }
+                window.showToast('Game order saved ✓', 'success');
+                closeGameReorder();
+            } catch (error) {
+                console.error('saveGameOrder error:', error);
+                window.showToast('Failed to save order.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveGameOrder = saveGameOrder;
 
         function deleteCurrentGame() {
             const gameId = document.getElementById('edit-game-id').value;
