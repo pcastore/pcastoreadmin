@@ -175,6 +175,7 @@
             overflow: hidden;
         }
         #login-screen.hidden { display: none; }
+        @keyframes gateDotBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
 
         /* Static gradient-mesh backdrop — soft blurred colour blobs behind the
            login card, no motion, echoing the same mesh look used elsewhere
@@ -985,12 +986,29 @@
     <div id="login-screen">
         <!-- Static gradient-mesh backdrop (decorative only, no motion) -->
         <div class="login-mesh" aria-hidden="true"></div>
-        <!-- Obscurity gate: only this tiny version label shows at first. Tap it
-             7 times (within 2s of each tap) to reveal the real login form below.
-             This is NOT the security boundary by itself — it just keeps the
-             admin entry point invisible to casual visitors. The real boundary
-             is Firebase Auth + the TOTP step + Firestore rules. -->
-        <div id="version-tap-label" onclick="handleVersionTap()" style="position:relative;z-index:1;color:rgba(255,255,255,0.35);font-size:12px;letter-spacing:0.5px;padding:14px 22px;user-select:none;">PCA Store Admin · v1.0.4</div>
+        <!-- Obscurity gate v2: a decoy arrow (does nothing) sits next to a
+             tiny blinking red dot. The dot is the real trigger — tapping it
+             opens a small code prompt; entering the right code reveals the
+             login form below. This is NOT the security boundary by itself —
+             it just keeps the admin entry point invisible/unguessable to
+             casual visitors. The real boundary is Firebase Auth + the TOTP
+             step + Firestore rules. -->
+        <div id="gate-decoy-row" style="position:relative;z-index:1;display:flex;align-items:center;gap:10px;padding:14px 22px;user-select:none;">
+            <span aria-hidden="true" style="color:rgba(255,255,255,0.3);font-size:15px;line-height:1;cursor:default;">→</span>
+            <button type="button" id="gate-dot-btn" onclick="openGateCodeModal()" style="width:9px;height:9px;padding:0;border:none;border-radius:50%;background:#FF3B3B;box-shadow:0 0 6px 1px rgba(255,59,59,0.7);animation:gateDotBlink 2.2s ease-in-out infinite;cursor:pointer;"></button>
+        </div>
+        <!-- Code prompt: appears above the login-screen (higher z-index) when
+             the dot is tapped. Correct code hides this + the decoy row and
+             reveals login-box, same end state the old tap-counter used to
+             reach. -->
+        <div id="gate-code-overlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:24px;" onclick="if(event.target===this) closeGateCodeModal()">
+            <div style="background:rgba(13,17,32,0.92);border:1px solid rgba(120,170,255,0.16);border-radius:20px;padding:22px 20px;width:100%;max-width:280px;text-align:center;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 30px 70px -20px rgba(0,0,0,0.7);">
+                <p style="color:#F3F6FF;font-size:14px;font-weight:700;margin-bottom:14px;">Enter code</p>
+                <input type="text" inputmode="numeric" id="gate-code-input" maxlength="8" autocomplete="off" style="width:100%;text-align:center;letter-spacing:4px;font-size:18px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#F3F6FF;margin-bottom:12px;">
+                <p id="gate-code-error" style="display:none;color:#FF6B6B;font-size:12px;margin-bottom:10px;">Wrong code</p>
+                <button type="button" onclick="submitGateCode()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#4C6FFF;color:#fff;font-weight:700;font-size:14px;cursor:pointer;">Confirm</button>
+            </div>
+        </div>
         <div class="login-card" id="login-box" style="display:none;">
             <div class="login-card-left login-box">
                 <div class="logo-icon">
@@ -2725,29 +2743,51 @@
         }
         window.saveAdminLoginCredentials = saveAdminLoginCredentials;
 
-        // ---------- Version-tap obscurity gate ----------
-        // The login form is invisible by default — only the small version
-        // label shows. Tapping it 7 times within 2s of the last tap reveals
-        // the real sign-in form. This hides the fact that an admin login
-        // exists at all from casual visitors; it is NOT itself the security
-        // boundary (Firebase Auth + the TOTP step below are).
-        let versionTapCount = 0;
-        let versionTapTimer = null;
-        function handleVersionTap() {
-            versionTapCount++;
-            clearTimeout(versionTapTimer);
-            versionTapTimer = setTimeout(() => { versionTapCount = 0; }, 2000);
-            if (versionTapCount >= 7) {
-                versionTapCount = 0;
-                document.getElementById('version-tap-label').style.display = 'none';
+        // ---------- Blinking-dot obscurity gate ----------
+        // The login form is invisible by default. A decoy arrow (does
+        // nothing) sits next to a tiny blinking red dot; tapping the dot
+        // opens a small code prompt, and the right code reveals the real
+        // sign-in form. This hides the fact that an admin login exists at
+        // all from casual visitors; it is NOT itself the security boundary
+        // (Firebase Auth + the TOTP step below are). Change the code by
+        // editing GATE_CODE below.
+        const GATE_CODE = '28';
+        function openGateCodeModal() {
+            const overlay = document.getElementById('gate-code-overlay');
+            const input = document.getElementById('gate-code-input');
+            document.getElementById('gate-code-error').style.display = 'none';
+            input.value = '';
+            overlay.style.display = 'flex';
+            setTimeout(() => input.focus(), 50);
+        }
+        window.openGateCodeModal = openGateCodeModal;
+
+        function closeGateCodeModal() {
+            document.getElementById('gate-code-overlay').style.display = 'none';
+        }
+        window.closeGateCodeModal = closeGateCodeModal;
+
+        function submitGateCode() {
+            const input = document.getElementById('gate-code-input');
+            if (input.value.trim() === GATE_CODE) {
+                closeGateCodeModal();
+                document.getElementById('gate-decoy-row').style.display = 'none';
                 document.getElementById('login-box').style.display = '';
+            } else {
+                document.getElementById('gate-code-error').style.display = 'block';
+                input.value = '';
+                input.focus();
             }
         }
-        window.handleVersionTap = handleVersionTap;
+        window.submitGateCode = submitGateCode;
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('gate-code-input');
+            if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitGateCode(); });
+        });
 
         function resetGateLocked() {
             document.getElementById('login-box').style.display = 'none';
-            document.getElementById('version-tap-label').style.display = '';
+            document.getElementById('gate-decoy-row').style.display = 'flex';
             document.getElementById('step-login').style.display = '';
             document.getElementById('step-mfa-enroll').style.display = 'none';
             document.getElementById('step-mfa-challenge').style.display = 'none';
@@ -2918,8 +2958,10 @@
             pendingUsername = null;
             pendingEnrollSecret = null;
             resetGateLocked();
+            // Signing out returns straight to the login form (already past
+            // the gate this session) rather than re-hiding it behind the dot.
             document.getElementById('login-box').style.display = '';
-            document.getElementById('version-tap-label').style.display = 'none';
+            document.getElementById('gate-decoy-row').style.display = 'none';
         }
         window.backToLogin = backToLogin;
 
