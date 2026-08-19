@@ -213,23 +213,82 @@
         .atom-loader--tr { top: 15%; left: 92%; width: 120px; height: 120px; opacity: 0.45; }
         .atom-loader--bl { top: 80%; left: 10%; width: 130px; height: 130px; opacity: 0.5;  }
         .atom-loader--br { top: 87%; left: 90%; width: 150px; height: 150px; opacity: 0.55; }
-        .login-box { background: var(--surface); width: 100%; max-width: 360px; border-radius: 26px; padding: 28px 24px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); border: 1px solid var(--border-glass); }
-        .login-box .logo-icon { background: var(--accent); color: white; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
-        .login-box h2 { text-align: center; font-size: 19px; font-weight: 700; margin-bottom: 4px; }
-        .login-box p.sub { text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
-        .login-box label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px; }
-        .login-box input { width: 100%; padding: 11px 12px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; margin-bottom: 14px; }
-        .login-box input:focus { outline: none; border-color: var(--accent); }
-        .login-box button { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: var(--accent); color: #fff; cursor: pointer; }
-        .login-box button:disabled { opacity: 0.6; }
+        /* ---- Login card: split layout (form left, illustration right),
+           modeled on the reference mock. Always renders as a bright white
+           card regardless of admin theme, since it sits on the dark
+           atom-animation backdrop. Stacks to a single column on narrow
+           screens, hiding the illustration panel to save space. */
+        .login-card {
+            position: relative; z-index: 1; display: flex; width: 100%; max-width: 760px;
+            min-height: 480px; background: #fff; border-radius: 28px; overflow: hidden;
+            box-shadow: 0 40px 90px -24px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+        }
+        .login-card-left { flex: 1 1 50%; padding: 46px 42px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+        .login-card-right {
+            flex: 1 1 50%; background: linear-gradient(165deg, #F4F6FC 0%, #EDF1FB 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px 34px; position: relative; text-align: center;
+        }
+        @media (max-width: 760px) {
+            .login-card { flex-direction: column; max-width: 380px; min-height: 0; }
+            .login-card-right { display: none; }
+            .login-card-left { padding: 38px 26px; }
+        }
+        .login-box .logo-icon { background: var(--accent, #4C6FFF); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 0 18px; }
+        .login-box h2 { text-align: center; font-size: 25px; font-weight: 800; color: #14161A; margin-bottom: 6px; letter-spacing: -0.3px; }
+        .login-box p.sub { text-align: center; font-size: 13px; color: #8A8F98; margin-bottom: 24px; }
+        .login-box label { font-size: 12px; font-weight: 500; color: #9AA0A8; display: block; margin-bottom: 7px; }
+        .login-box .field-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+        .login-box .forgot-link { font-size: 12px; font-weight: 600; color: #4C6FFF; text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
+        .login-box .forgot-link:hover { text-decoration: underline; }
+        .login-box .field-wrap { position: relative; margin-bottom: 16px; }
+        .login-box input {
+            width: 100%; padding: 13px 14px; border: 1.5px solid transparent; background: #F3F5F9;
+            color: #14161A; border-radius: 11px; font-size: 14px; transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .login-box .field-wrap input { margin-bottom: 0; }
+        .login-box .field-wrap.has-toggle input { padding-right: 42px; }
+        .login-box input::placeholder { color: #B4B8C0; }
+        .login-box input:focus { outline: none; border-color: var(--accent, #4C6FFF); background: #fff; box-shadow: 0 0 0 3px rgba(76,111,255,0.10); }
+        .login-box .pw-toggle-btn {
+            position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px;
+            border: none; background: transparent; color: #9AA0A8; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 8px;
+        }
+        .login-box .pw-toggle-btn:hover { color: #4C6FFF; background: rgba(76,111,255,0.08); }
+        .login-box .pw-toggle-btn svg { width: 18px; height: 18px; }
+        .login-box .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .login-box .remember-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent, #4C6FFF); cursor: pointer; margin: 0; }
+        .login-box .remember-row label { font-size: 13px; color: #6B707A; margin: 0; cursor: pointer; }
+        .login-box button {
+            width: 100%; padding: 14px; border-radius: 11px; font-weight: 700; font-size: 15px; border: none;
+            background: var(--accent, #4C6FFF); color: #fff; cursor: pointer;
+            box-shadow: 0 10px 22px -8px rgba(76,111,255,0.55);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        .login-box button:active { transform: translateY(1px); }
+        .login-box button:disabled { opacity: 0.6; box-shadow: none; }
+        .login-box .login-footnote { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; font-size: 12px; color: #9AA0A8; }
+        .login-box .login-footnote svg { width: 13px; height: 13px; }
         #login-error { color: var(--danger-strong); font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
         .login-msg-error { color: var(--danger-strong); font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
-        .login-msg-info { font-size: 13px; color: var(--text-primary); text-align: center; margin-bottom: 16px; line-height: 1.5; }
-        .login-msg-hint { font-size: 12px; color: var(--text-secondary); text-align: center; margin: -6px 0 14px; }
-        .login-secondary-btn { background: var(--fill-soft) !important; color: var(--text-primary) !important; margin-top: 8px; }
-        .mfa-secret-box { background: var(--bg-subtle-2); border: 1px dashed var(--border-dashed); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
-        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--accent); }
-        #resend-verify-btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: var(--accent); color: #fff; cursor: pointer; margin-bottom: 8px; }
+        .login-msg-info { font-size: 13px; color: #14161A; text-align: center; margin-bottom: 16px; line-height: 1.5; }
+        .login-msg-hint { font-size: 12px; color: #8A8F98; text-align: center; margin: -6px 0 14px; }
+        .login-secondary-btn { background: #F3F5F9 !important; color: #14161A !important; margin-top: 8px; box-shadow: none !important; }
+        .mfa-secret-box { background: #F3F5F9; border: 1px dashed #D6DAE2; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
+        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--accent, #4C6FFF); }
+        #resend-verify-btn { width: 100%; padding: 14px; border-radius: 11px; font-weight: 700; font-size: 15px; border: none; background: var(--accent, #4C6FFF); color: #fff; cursor: pointer; margin-bottom: 8px; box-shadow: 0 10px 22px -8px rgba(76,111,255,0.55); }
+
+        /* ---- Right-panel illustration: a small original dashboard/coin
+           mockup (not a copy of any stock asset) echoing the reference's
+           "progress" visual language, themed to PCA Store's order flow. */
+        .login-illustration { width: 220px; height: 180px; position: relative; margin-bottom: 26px; }
+        .login-illustration svg { width: 100%; height: 100%; }
+        .login-card-right h3 { font-size: 17px; font-weight: 800; color: #14161A; margin-bottom: 8px; }
+        .login-card-right p { font-size: 12.5px; color: #9AA0A8; line-height: 1.6; max-width: 240px; }
+        .login-dots { display: flex; align-items: center; gap: 6px; margin-top: 22px; }
+        .login-dots span { display: block; height: 6px; width: 6px; border-radius: 999px; background: #D6DAE2; }
+        .login-dots span.active { width: 20px; background: var(--accent, #4C6FFF); }
 
         /* Header */
         .header { background-color: var(--surface); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 var(--border-glass), 0 8px 24px -12px rgba(0,0,0,0.25); border-bottom: 1px solid var(--fill-soft); }
@@ -847,65 +906,121 @@
              admin entry point invisible to casual visitors. The real boundary
              is Firebase Auth + the TOTP step + Firestore rules. -->
         <div id="version-tap-label" onclick="handleVersionTap()" style="position:relative;z-index:1;color:rgba(255,255,255,0.35);font-size:12px;letter-spacing:0.5px;padding:14px 22px;user-select:none;">PCA Store Admin · v1.0.4</div>
-        <div class="login-box" id="login-box" style="position:relative;z-index:1;display:none;">
-            <div class="logo-icon">
-                <svg class="ui-icon" style="width:22px;height:22px;stroke:#fff;"><use href="#icon-shield"></use></svg>
-            </div>
-
-            <!-- Step 1: email + password -->
-            <div id="step-login">
-                <h2>PCA Store Admin</h2>
-                <p class="sub">Sign in to manage orders, games &amp; G2Bulk</p>
-                <p id="login-error" class="login-msg-error"></p>
-                <form id="login-form" onsubmit="handleAdminLogin(); return false;">
-                    <label for="login-username">Username</label>
-                    <input type="text" id="login-username" autocomplete="username" placeholder="username" autocapitalize="none" autocorrect="off">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
-                    <button type="submit" id="login-btn">Sign In</button>
-                </form>
-            </div>
-
-            <!-- Step 2: verify email (required before TOTP can be set up) -->
-            <div id="step-verify-email" style="display:none;">
-                <h2>Verify Your Email</h2>
-                <p class="sub">Authenticator setup requires a verified email first.</p>
-                <p class="login-msg-info">We've sent a verification link to <b id="verify-email-address"></b>. Open it, then come back and sign in again.</p>
-                <p id="verify-email-error" class="login-msg-error"></p>
-                <button type="button" id="resend-verify-btn" onclick="resendVerificationEmail()">Resend Email</button>
-                <button type="button" class="login-secondary-btn" onclick="backToLogin()">Back to Sign In</button>
-            </div>
-
-            <!-- Step 3a: first-time TOTP enrollment -->
-            <div id="step-mfa-enroll" style="display:none;">
-                <h2>Set Up Authenticator</h2>
-                <p class="sub">Scan or enter this key into Google Authenticator / Authy, then enter the 6-digit code it shows.</p>
-                <div class="mfa-secret-box">
-                    <span id="mfa-secret-key">—</span>
+        <div class="login-card" id="login-box" style="display:none;">
+            <div class="login-card-left login-box">
+                <div class="logo-icon">
+                    <svg class="ui-icon" style="width:20px;height:20px;stroke:#fff;"><use href="#icon-shield"></use></svg>
                 </div>
-                <p class="login-msg-hint">Account name: <b id="mfa-account-name">—</b> · Issuer: PCA Store Admin</p>
-                <p id="mfa-enroll-error" class="login-msg-error"></p>
-                <label for="mfa-enroll-code">6-digit code</label>
-                <input type="text" id="mfa-enroll-code" inputmode="numeric" maxlength="6" placeholder="123456">
-                <button type="button" id="mfa-enroll-btn" onclick="confirmMfaEnrollment()">Confirm &amp; Enable</button>
-                <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
+
+                <!-- Step 1: email + password -->
+                <div id="step-login">
+                    <h2>Login</h2>
+                    <p class="sub">Sign in to manage orders, games &amp; G2Bulk</p>
+                    <p id="login-error" class="login-msg-error"></p>
+                    <form id="login-form" onsubmit="handleAdminLogin(); return false;">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" autocomplete="username" placeholder="Enter your username" autocapitalize="none" autocorrect="off" style="margin-bottom:16px;">
+                        <div class="field-row">
+                            <label for="login-password" style="margin-bottom:0;">Password</label>
+                            <button type="button" class="forgot-link" onclick="handleForgotPassword()">Forgot password?</button>
+                        </div>
+                        <div class="field-wrap has-toggle">
+                            <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
+                            <button type="button" class="pw-toggle-btn" onclick="toggleLoginPasswordVisibility('login-password', this)" tabindex="-1" aria-label="Show password">
+                                <svg class="ui-icon"><use href="#icon-eye"></use></svg>
+                            </button>
+                        </div>
+                        <div class="remember-row">
+                            <input type="checkbox" id="login-remember-me">
+                            <label for="login-remember-me">Remember me</label>
+                        </div>
+                        <button type="submit" id="login-btn">Login</button>
+                    </form>
+                </div>
+
+                <!-- Step 2: verify email (required before TOTP can be set up) -->
+                <div id="step-verify-email" style="display:none;">
+                    <h2>Verify Your Email</h2>
+                    <p class="sub">Authenticator setup requires a verified email first.</p>
+                    <p class="login-msg-info">We've sent a verification link to <b id="verify-email-address"></b>. Open it, then come back and sign in again.</p>
+                    <p id="verify-email-error" class="login-msg-error"></p>
+                    <button type="button" id="resend-verify-btn" onclick="resendVerificationEmail()">Resend Email</button>
+                    <button type="button" class="login-secondary-btn" onclick="backToLogin()">Back to Sign In</button>
+                </div>
+
+                <!-- Step 3a: first-time TOTP enrollment -->
+                <div id="step-mfa-enroll" style="display:none;">
+                    <h2>Set Up Authenticator</h2>
+                    <p class="sub">Scan or enter this key into Google Authenticator / Authy, then enter the 6-digit code it shows.</p>
+                    <div class="mfa-secret-box">
+                        <span id="mfa-secret-key">—</span>
+                    </div>
+                    <p class="login-msg-hint">Account name: <b id="mfa-account-name">—</b> · Issuer: PCA Store Admin</p>
+                    <p id="mfa-enroll-error" class="login-msg-error"></p>
+                    <label for="mfa-enroll-code">6-digit code</label>
+                    <input type="text" id="mfa-enroll-code" inputmode="numeric" maxlength="6" placeholder="123456" style="margin-bottom:16px;">
+                    <button type="button" id="mfa-enroll-btn" onclick="confirmMfaEnrollment()">Confirm &amp; Enable</button>
+                    <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
+                </div>
+
+                <!-- Step 3b: TOTP challenge on subsequent sign-ins -->
+                <div id="step-mfa-challenge" style="display:none;">
+                    <h2>Enter Authenticator Code</h2>
+                    <p class="sub">Open your authenticator app and enter the current 6-digit code.</p>
+                    <p id="mfa-challenge-error" class="login-msg-error"></p>
+                    <label for="mfa-challenge-code">6-digit code</label>
+                    <input type="text" id="mfa-challenge-code" inputmode="numeric" maxlength="6" placeholder="123456" style="margin-bottom:16px;">
+                    <button type="button" id="mfa-challenge-btn" onclick="confirmMfaChallenge()">Verify &amp; Sign In</button>
+                    <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
+                </div>
+
+                <p class="login-footnote">
+                    <svg class="ui-icon"><use href="#icon-lock"></use></svg>
+                    Secured with 2-step verification
+                </p>
             </div>
 
-            <!-- Step 3b: TOTP challenge on subsequent sign-ins -->
-            <div id="step-mfa-challenge" style="display:none;">
-                <h2>Enter Authenticator Code</h2>
-                <p class="sub">Open your authenticator app and enter the current 6-digit code.</p>
-                <p id="mfa-challenge-error" class="login-msg-error"></p>
-                <label for="mfa-challenge-code">6-digit code</label>
-                <input type="text" id="mfa-challenge-code" inputmode="numeric" maxlength="6" placeholder="123456">
-                <button type="button" id="mfa-challenge-btn" onclick="confirmMfaChallenge()">Verify &amp; Sign In</button>
-                <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
+            <!-- Right panel: decorative dashboard illustration, echoes the
+                 reference mock's "progress" visual but themed to order tracking. -->
+            <div class="login-card-right">
+                <div class="login-illustration" aria-hidden="true">
+                    <svg viewBox="0 0 220 180" fill="none">
+                        <rect x="18" y="14" width="150" height="104" rx="12" fill="#fff" stroke="#E3E7F1" stroke-width="1.5"/>
+                        <circle cx="34" cy="30" r="4" fill="#FF6B6B"/>
+                        <circle cx="46" cy="30" r="4" fill="#FFC24B"/>
+                        <circle cx="58" cy="30" r="4" fill="#4CD97B"/>
+                        <rect x="32" y="48" width="60" height="7" rx="3.5" fill="#EDF0F8"/>
+                        <rect x="32" y="60" width="40" height="6" rx="3" fill="#EDF0F8"/>
+                        <rect x="30" y="78" width="14" height="28" rx="3" fill="#C9D3FF"/>
+                        <rect x="49" y="66" width="14" height="40" rx="3" fill="#4C6FFF"/>
+                        <rect x="68" y="86" width="14" height="20" rx="3" fill="#C9D3FF"/>
+                        <rect x="105" y="46" width="50" height="50" rx="10" fill="#4C6FFF"/>
+                        <path d="M116 74l8 8 16-18" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <circle cx="185" cy="46" r="17" fill="#FFC24B"/>
+                        <text x="185" y="51" font-size="13" font-weight="800" fill="#B4790A" text-anchor="middle" font-family="Roboto, sans-serif">K</text>
+                        <circle cx="196" cy="72" r="10" fill="#FFDFA0"/>
+                        <rect x="14" y="130" width="192" height="40" rx="12" fill="#fff" stroke="#E3E7F1" stroke-width="1.5"/>
+                        <circle cx="34" cy="150" r="10" fill="#4C6FFF"/>
+                        <path d="M29 150l3.5 3.5L39 146" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <rect x="52" y="144" width="80" height="6" rx="3" fill="#EDF0F8"/>
+                        <rect x="52" y="154" width="52" height="5" rx="2.5" fill="#EDF0F8"/>
+                        <rect x="150" y="142" width="42" height="16" rx="8" fill="#E9EEFF"/>
+                        <text x="171" y="153" font-size="9" font-weight="700" fill="#4C6FFF" text-anchor="middle" font-family="Roboto, sans-serif">Done</text>
+                    </svg>
+                </div>
+                <h3>Track Every Order in Real Time</h3>
+                <p>Manage games, top-ups &amp; G2Bulk deliveries — all from one secured dashboard.</p>
+                <div class="login-dots">
+                    <span class="active"></span><span></span><span></span>
+                </div>
             </div>
         </div>
     </div>
 
     <svg style="display: none;">
         <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+        <symbol id="icon-eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a20.4 20.4 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></symbol>
         <symbol id="icon-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></symbol>
         <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
         <symbol id="icon-gamepad" viewBox="0 0 24 24"><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z" fill="#7C5CFC" stroke="none"></path><path d="M6.7 10.7v3.2M5.1 12.3h3.2" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="15.9" cy="11.1" r="1.05" fill="#ffffff" stroke="none"></circle><circle cx="18.3" cy="13.5" r="1.05" fill="#ffffff" stroke="none"></circle></symbol>
@@ -2261,7 +2376,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA2mwdZ2tAoZ3_6HNl43fUSi9t_ZkRita4",
@@ -2415,8 +2530,8 @@
             document.getElementById('step-login').style.display = '';
             document.getElementById('step-mfa-enroll').style.display = 'none';
             document.getElementById('step-mfa-challenge').style.display = 'none';
-            document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
+            applyRememberedUsername();
         }
 
         // ---------- TOTP (Google Authenticator compatible), pure Web Crypto ----------
@@ -2463,10 +2578,66 @@
             return false;
         }
 
+        // ---------- Login form UI helpers: password eye-toggle, remember-me,
+        // forgot-password ----------
+        function toggleLoginPasswordVisibility(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            const useEl = btnEl.querySelector('use');
+            if (input.type === 'password') {
+                input.type = 'text';
+                useEl.setAttribute('href', '#icon-eye-off');
+                btnEl.setAttribute('aria-label', 'Hide password');
+            } else {
+                input.type = 'password';
+                useEl.setAttribute('href', '#icon-eye');
+                btnEl.setAttribute('aria-label', 'Show password');
+            }
+        }
+        window.toggleLoginPasswordVisibility = toggleLoginPasswordVisibility;
+
+        const REMEMBER_USERNAME_KEY = 'pca_admin_remember_username';
+        function applyRememberedUsername() {
+            const userInput = document.getElementById('login-username');
+            const rememberBox = document.getElementById('login-remember-me');
+            try {
+                const saved = localStorage.getItem(REMEMBER_USERNAME_KEY);
+                if (saved) {
+                    userInput.value = saved;
+                    rememberBox.checked = true;
+                } else {
+                    userInput.value = '';
+                    rememberBox.checked = false;
+                }
+            } catch (e) {}
+        }
+        document.addEventListener('DOMContentLoaded', applyRememberedUsername);
+
+        async function handleForgotPassword() {
+            const username = document.getElementById('login-username').value.trim().toLowerCase();
+            if (!username) {
+                window.showToast('Enter your username first, then tap Forgot password.', 'fail');
+                return;
+            }
+            try {
+                const usernameSnap = await getDoc(doc(db, "adminUsernames", username));
+                if (!usernameSnap.exists() || !usernameSnap.data().email) {
+                    window.showToast('No account found for that username.', 'fail');
+                    return;
+                }
+                await sendPasswordResetEmail(auth, usernameSnap.data().email);
+                window.showToast('Password reset link sent to your email.', 'success');
+            } catch (error) {
+                console.error('Forgot password error:', error);
+                window.showToast('Could not send reset link. Try again later.', 'fail');
+            }
+        }
+        window.handleForgotPassword = handleForgotPassword;
+
         // ---------- Step 1: username + password ----------
         async function handleAdminLogin() {
             const username = document.getElementById('login-username').value.trim().toLowerCase();
             const password = document.getElementById('login-password').value;
+            const remember = document.getElementById('login-remember-me').checked;
             const errEl = document.getElementById('login-error');
             const btn = document.getElementById('login-btn');
             errEl.style.display = 'none';
@@ -2475,6 +2646,10 @@
                 errEl.style.display = 'block';
                 return;
             }
+            try {
+                if (remember) localStorage.setItem(REMEMBER_USERNAME_KEY, username);
+                else localStorage.removeItem(REMEMBER_USERNAME_KEY);
+            } catch (e) {}
             btn.disabled = true;
             btn.innerText = 'Signing in...';
             try {
@@ -2486,7 +2661,7 @@
                     errEl.textContent = 'Wrong username or password.';
                     errEl.style.display = 'block';
                     btn.disabled = false;
-                    btn.innerText = 'Sign In';
+                    btn.innerText = 'Login';
                     return;
                 }
                 pendingUsername = username;
@@ -2498,7 +2673,7 @@
                 errEl.textContent = 'Wrong username or password. (' + (error.code || error.message || 'unknown error') + ')';
                 errEl.style.display = 'block';
                 btn.disabled = false;
-                btn.innerText = 'Sign In';
+                btn.innerText = 'Login';
             }
         }
         window.handleAdminLogin = handleAdminLogin;
