@@ -332,11 +332,27 @@
             100% { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
         }
 
-        /* Header clock */
-        #header-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; padding: 4px 12px; border-radius: 10px; background: var(--fill-soft); border: 1px solid var(--border-glass); }
-        #header-clock-time { font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 700; font-size: 13.5px; color: var(--accent); letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
-        #header-clock-date { font-size: 8.5px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 1px; }
-        @media (max-width: 380px) { #header-clock-date { display: none; } #header-clock { padding: 4px 9px; } }
+        /* Header clock — compact split-flap ("flip clock") style, mirroring
+           the retro flip-clock reference: dark rounded frame, chrome axle
+           bar across the middle, cream flap cards with a crease line, bold
+           orange digits. Fixed hex colors here (not theme tokens) since the
+           flip-clock look is a deliberate, theme-independent accent piece —
+           like a little desk gadget bolted onto the header. */
+        #header-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 8px; border-radius: 10px; background: linear-gradient(180deg, #5c2f2f, #3f1f1f); border: 1.5px solid #FF6A3D; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.25); }
+        .flip-clock { display: flex; align-items: center; gap: 3px; position: relative; }
+        .flip-clock::before { content: ''; position: absolute; top: 42%; left: 3px; right: 3px; height: 3px; background: linear-gradient(180deg, #d8d8d8, #8a8a8a); border-radius: 2px; z-index: 2; pointer-events: none; }
+        .flip-flap { position: relative; width: 25px; height: 24px; border-radius: 4px; background: linear-gradient(180deg, #f7f3ea 0%, #e4ded0 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 3px rgba(0,0,0,0.35); }
+        .flip-flap::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(0,0,0,0.22); }
+        .flip-flap-digit { font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 800; font-size: 12.5px; color: #E8531F; line-height: 1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+        #header-clock-date { font-size: 8px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.4px; }
+        @media (max-width: 380px) { #header-clock-date { display: none; } #header-clock { padding: 3px 6px; } }
+
+        /* Connection status dot — small always-visible indicator next to the
+           clock. Green + "Online" normally; flips red + "Offline" together
+           with the #offline-banner strip (see updateConnectionStatus()). */
+        .conn-status { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; flex-shrink: 0; }
+        .conn-dot { width: 9px; height: 9px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 0 3px rgba(34,197,94,0.16); transition: background 0.25s ease, box-shadow 0.25s ease; }
+        .conn-dot.offline { background: #FF3B30; box-shadow: 0 0 0 3px rgba(255,59,48,0.16); }
 
         /* App Layout (sidebar + content) */
         .app-layout { display: flex; align-items: flex-start; }
@@ -497,17 +513,41 @@
         #orders-container .oc-game-name { font-size: 12.5px; }
         #orders-container .oc-meta { font-size: 10.5px; margin-top: 1px; }
         #orders-container .oc-status { gap: 4px; }
-        #orders-container .oc-status .badge { font-size: 10px; padding: 2px 8px; }
+        #orders-container .oc-status .badge { font-size: 10px; padding: 3px 9px 3px 6px; gap: 3px; }
+        #orders-container .oc-status .badge svg { width: 10px; height: 10px; }
+        #orders-container .oc-status .badge-spinner { width: 9px; height: 9px; border-width: 1.5px; }
         #orders-container .ac-body { padding-top: 8px !important; margin-top: 8px !important; }
         #orders-container .ac-footer { margin-top: 8px; gap: 6px; }
         #orders-container .ac-footer .btn { padding: 8px 10px; font-size: 12.5px; }
+
+        /* Bulk order selection (Pending orders only) + sticky action bar */
+        .order-select-box { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+        .order-select-box input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+        .order-bulk-bar {
+            display: none; align-items: center; justify-content: space-between; gap: 10px;
+            position: sticky; top: 6px; z-index: 5; margin-bottom: 12px; padding: 10px 12px;
+            background: var(--surface-strong); border: 1px solid var(--border-glass); border-radius: 14px;
+            box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+            backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+        }
+        .obb-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .obb-selectall { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .obb-selectall input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+        .obb-selectall span { font-size: 12.5px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+        .obb-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .obb-actions .btn { flex: unset; padding: 7px 12px; font-size: 12px; }
         
         /* Badges & Buttons */
-        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
+        .badge { padding: 5px 11px 5px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+        .badge svg { width: 13px; height: 13px; flex-shrink: 0; }
         .badge-pending { background: rgba(251,191,36,0.16); color: #B45309; }
         .badge-processing { background: rgba(56,189,248,0.16); color: #0369A1; }
         .badge-success { background: rgba(52,211,153,0.16); color: #047857; }
         .badge-danger { background: rgba(251,113,133,0.16); color: #BE123C; }
+        /* Dashed spinning ring for the "Processing" badge (mirrors an "in progress" loader) */
+        .badge-spinner { flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%; border: 1.8px dashed currentColor; animation: badge-spin 0.9s linear infinite; }
+        @keyframes badge-spin { to { transform: rotate(360deg); } }
 
         /* Segmented status tabs (Wallet Top Ups page) */
         .pkg-type-tabs { display: flex; gap: 4px; background: var(--fill-soft); border-radius: 14px; padding: 4px; }
@@ -527,10 +567,19 @@
         .nav-item.active .ui-icon { stroke: var(--accent); }
         
         /* Utility */
-        #toast { position: fixed; top: 14px; left: 14px; right: 14px; max-width: 480px; margin: 0 auto; background: rgba(15,36,25,0.75); -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%); border: 1px solid rgba(74,222,128,0.35); color: #4ADE80; padding: 14px 16px; border-radius: 18px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; z-index: 1000; transform: translateY(-150%); box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08); }
+        #toast { position: fixed; top: 14px; left: 14px; right: 14px; max-width: 480px; margin: 0 auto; background: #FFFFFF; border: 2px solid #00D65E; color: #00A843; padding: 14px 16px; border-radius: 14px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; z-index: 1000; transform: translateY(-150%); box-shadow: 0 10px 28px -8px rgba(20,30,25,0.28); }
         #toast.show { transform: translateY(0); }
-        #toast .toast-icon-circle { width: 26px; height: 26px; border-radius: 50%; background: #22C55E; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        #toast .toast-icon-circle svg { width: 15px; height: 15px; }
+        #toast .toast-icon-circle { width: 28px; height: 28px; border-radius: 50%; background: #00D65E; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        #toast .toast-icon-circle svg { width: 16px; height: 16px; }
+        #toast-msg { flex: 1; line-height: 1.35; }
+        #toast .toast-close { flex-shrink: 0; width: 18px; height: 18px; cursor: pointer; opacity: 0.9; color: inherit; padding: 10px; margin: -10px; box-sizing: content-box; }
+        #toast .toast-close:active { opacity: 0.6; }
+
+        /* Offline banner — sticky strip above the header, shown/hidden via JS
+           on the browser's online/offline events. Height-collapses to 0 when
+           hidden so it doesn't reserve dead space while online. */
+        #offline-banner { position: sticky; top: 0; z-index: 110; display: flex; align-items: center; justify-content: center; gap: 8px; overflow: hidden; max-height: 0; padding: 0 16px; background: #FFA800; color: #4A2900; font-size: 12.5px; font-weight: 700; text-align: center; transition: max-height 0.25s ease, padding 0.25s ease; }
+        #offline-banner.show { max-height: 44px; padding: 9px 16px; }
         .empty-msg { text-align: center; color: var(--text-secondary); font-size: 14px; padding: 20px 0; }
         .highlight-id { font-weight: bold; color: var(--accent); font-size: 15px; }
 
@@ -715,6 +764,15 @@
         .admin-search-wrap input:focus { outline: none; border-color: var(--accent); }
         .admin-search-wrap input::placeholder { color: var(--text-muted); }
 
+        /* Date range filter row — pairs with .admin-search-wrap on Orders/Top Ups */
+        .date-range-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .date-range-wrap input[type="date"] { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-glass); border-radius: 12px; font-size: 13.5px; background: var(--surface); color: var(--text-primary); box-sizing: border-box; color-scheme: var(--scheme); }
+        .date-range-wrap input[type="date"]:focus { outline: none; border-color: var(--accent); }
+        .date-range-wrap .drw-sep { color: var(--text-muted); font-size: 13px; flex-shrink: 0; }
+        .date-range-wrap .drw-clear { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); }
+        .date-range-wrap .drw-clear svg { width: 15px; height: 15px; }
+        .date-range-wrap .drw-clear:active { background: var(--fill-soft); }
+
         .game-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 6px; }
         .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid var(--fill-soft); border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
         .game-picker-card:active { transform: scale(0.96); }
@@ -773,20 +831,32 @@
         .pkg-drag-handle svg { width: 11px; height: 11px; pointer-events: none; }
         .pkg-order-num { flex-shrink: 0; font-size: 9.5px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
         .pkg-row-fields { flex: 1; min-width: 0; }
-        .pkg-summary { display: flex; align-items: center; gap: 7px; padding: 5px 8px; cursor: pointer; }
+        /* Package summary card — icon+label header row (with a small colour dot,
+           like a status/category indicator) over a big price number and a
+           profit-margin badge, echoing a compact "stat card" look rather than
+           a plain price/name line. */
+        .pkg-summary { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px; cursor: pointer; }
         .pkg-summary:active { background: var(--bg-subtle); }
-        .pkg-summary-thumb { flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; overflow: hidden; background: #F7F8FA; border: 1px solid var(--fill-soft); display: flex; align-items: center; justify-content: center; }
+        .pkg-summary-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .pkg-summary-label { display: flex; align-items: center; gap: 7px; min-width: 0; }
+        .pkg-summary-thumb { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; overflow: hidden; background: var(--accent-soft); border: 1px solid var(--fill-soft); display: flex; align-items: center; justify-content: center; }
         .pkg-summary-thumb img { width: 100%; height: 100%; object-fit: contain; }
-        .pkg-summary-thumb-placeholder { font-size: 11px; color: var(--text-muted); }
-        .pkg-summary-info { flex: 1; min-width: 0; }
-        .pkg-summary-name { font-size: 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
-        .pkg-summary-price { font-size: 10.5px; color: var(--text-secondary); margin-top: 1px; display: flex; align-items: center; gap: 5px; line-height: 1.3; }
-        .pkg-summary-profit { font-size: 9px; font-weight: 700; padding: 0px 5px; border-radius: 5px; background: var(--bg-subtle); color: var(--text-secondary); }
-        .pkg-summary-profit.positive { background: #E3F9E9; color: #31A24C; }
-        .pkg-summary-profit.negative { background: var(--danger-soft); color: var(--danger-strong); }
-        .pkg-summary-actions { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
-        .pkg-summary-edit-hint { font-size: 13px; color: var(--text-muted); }
-        .pkg-summary-remove { color: var(--danger); font-size: 16px; padding: 2px 3px; cursor: pointer; line-height: 1; }
+        .pkg-summary-thumb-placeholder { font-size: 10px; font-weight: 700; color: var(--accent); }
+        .pkg-summary-name { font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pkg-summary-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+        .pkg-summary-dot.pkg-dot-package { background: #A855F7; }
+        .pkg-summary-body { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .pkg-summary-value { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
+        .pkg-summary-price-text { font-size: 19px; font-weight: 800; color: var(--text-strong); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pkg-summary-price-unit { font-size: 10.5px; font-weight: 700; color: var(--text-muted); }
+        .pkg-summary-actions { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
+        .pkg-summary-profit { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 7px; background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--fill-soft); white-space: nowrap; }
+        .pkg-summary-profit svg { width: 10px; height: 10px; flex-shrink: 0; }
+        .pkg-summary-profit.positive { background: #E3F9E9; color: #1E9E4B; border-color: rgba(30,158,75,0.25); }
+        .pkg-summary-profit.negative { background: var(--danger-soft); color: var(--danger-strong); border-color: rgba(250,62,62,0.28); }
+        .pkg-summary-remove { color: var(--danger); font-size: 15px; padding: 2px 4px; cursor: pointer; line-height: 1; opacity: 0.65; }
+        .pkg-summary-remove:active { opacity: 1; }
+        #orders-container .pkg-summary-price-text { font-size: 17px; }
         .pkg-card-overlay { display: none; }
         .package-row.editing .pkg-card-overlay { display: flex; position: fixed; inset: 0; z-index: 300; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); padding: 16px; }
         .pkg-card { background: #fff; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
@@ -1129,7 +1199,7 @@
         <symbol id="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
     </svg>
 
-    <div id="toast"><span class="toast-icon-circle" id="toast-icon-circle"><svg class="ui-icon" id="toast-icon" style="color:#fff;"><use id="toast-icon-use" href="#icon-check"></use></svg></span> <span id="toast-msg">Action Completed!</span></div>
+    <div id="toast" role="status" aria-live="polite"><span class="toast-icon-circle" id="toast-icon-circle"><svg class="ui-icon" id="toast-icon" style="color:#fff;"><use id="toast-icon-use" href="#icon-check"></use></svg></span> <span id="toast-msg">Action Completed!</span><svg class="ui-icon toast-close" onclick="dismissToast()"><use href="#icon-close"></use></svg></div>
 
     <!-- Reusable Delete / Warning / Information dialog (replaces browser confirm()/alert()) -->
     <div class="dialog-overlay" id="action-dialog-overlay" onclick="if(event.target===this) window.closeActionDialog()">
@@ -1150,6 +1220,11 @@
         </div>
     </div>
 
+    <div id="offline-banner" role="status" aria-live="polite">
+        <svg class="ui-icon" style="width:15px;height:15px;flex-shrink:0;"><use href="#icon-plug"></use></svg>
+        <span>You're offline — changes won't save until you're back online.</span>
+    </div>
+
     <header class="header">
         <div class="logo">
             <div class="logo-icon" id="header-logo-icon">
@@ -1159,10 +1234,14 @@
             PCA Store
         </div>
         <div id="header-clock" title="Local time">
-            <span id="header-clock-time">--:--:--</span>
+            <div class="flip-clock">
+                <div class="flip-flap"><span class="flip-flap-digit" id="header-clock-hh">--</span></div>
+                <div class="flip-flap"><span class="flip-flap-digit" id="header-clock-mm">--</span></div>
+            </div>
             <span id="header-clock-date">--</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
+            <div class="conn-status" id="conn-status" title="Online"><span class="conn-dot" id="conn-dot"></span></div>
             <div class="header-icon" id="theme-toggle-btn" title="Theme" onclick="openThemeSheet()"><svg class="ui-icon" id="theme-toggle-icon" style="width:20px;"><use href="#icon-palette"></use></svg></div>
             <div class="header-flame-wrap" title="Live"><div class="header-flame"></div></div>
             <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
@@ -1584,6 +1663,30 @@
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="order-search" placeholder="Search by game, customer, phone, player ID, order ID..." autocomplete="off" oninput="renderOrdersList()">
             </div>
+            <div class="date-range-wrap">
+                <input type="date" id="order-date-from" onchange="renderOrdersList()" aria-label="From date">
+                <span class="drw-sep">–</span>
+                <input type="date" id="order-date-to" onchange="renderOrdersList()" aria-label="To date">
+                <button type="button" class="drw-clear" onclick="clearOrderDateRange()" title="Clear date filter" aria-label="Clear date filter">
+                    <svg class="ui-icon"><use href="#icon-close"></use></svg>
+                </button>
+            </div>
+
+            <!-- Bulk actions bar — appears once one or more Pending orders are checked -->
+            <div class="order-bulk-bar" id="order-bulk-bar">
+                <div class="obb-left">
+                    <label class="obb-selectall">
+                        <input type="checkbox" id="order-select-all" onchange="toggleSelectAllPending(this.checked)">
+                        <span id="order-bulk-count">0 selected</span>
+                    </label>
+                </div>
+                <div class="obb-actions">
+                    <button class="btn btn-primary" onclick="bulkConfirmSelected()">✓ Confirm</button>
+                    <button class="btn btn-danger" onclick="bulkRejectSelected()">✕ Reject</button>
+                    <button class="btn btn-outline" onclick="clearOrderSelection()">Clear</button>
+                </div>
+            </div>
+
             <!-- Firebase Container -->
             <div id="orders-container">
                 <p class="empty-msg">Loading orders...</p>
@@ -1607,6 +1710,14 @@
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="topup-search" placeholder="Search by name, UID, phone, or amount..." autocomplete="off" oninput="renderTopupsList()">
+            </div>
+            <div class="date-range-wrap">
+                <input type="date" id="topup-date-from" onchange="renderTopupsList()" aria-label="From date">
+                <span class="drw-sep">–</span>
+                <input type="date" id="topup-date-to" onchange="renderTopupsList()" aria-label="To date">
+                <button type="button" class="drw-clear" onclick="clearTopupDateRange()" title="Clear date filter" aria-label="Clear date filter">
+                    <svg class="ui-icon"><use href="#icon-close"></use></svg>
+                </button>
             </div>
 
             <div id="topups-container">
@@ -2338,13 +2449,31 @@
         // Live header clock
         function updateHeaderClock() {
             const now = new Date();
-            const timeEl = document.getElementById('header-clock-time');
+            const hhEl = document.getElementById('header-clock-hh');
+            const mmEl = document.getElementById('header-clock-mm');
             const dateEl = document.getElementById('header-clock-date');
-            if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (hhEl) hhEl.textContent = String(now.getHours()).padStart(2, '0');
+            if (mmEl) mmEl.textContent = String(now.getMinutes()).padStart(2, '0');
             if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
         }
         updateHeaderClock();
         setInterval(updateHeaderClock, 1000);
+
+        // Connection status — drives both the #offline-banner strip and the
+        // small always-visible dot next to the header clock, from the same
+        // navigator.onLine + online/offline events.
+        function updateConnectionStatus() {
+            const isOnline = navigator.onLine;
+            const banner = document.getElementById('offline-banner');
+            if (banner) banner.classList.toggle('show', !isOnline);
+            const dot = document.getElementById('conn-dot');
+            const status = document.getElementById('conn-status');
+            if (dot) dot.classList.toggle('offline', !isOnline);
+            if (status) status.title = isOnline ? 'Online' : 'Offline';
+        }
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        updateConnectionStatus();
 
         function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
@@ -2356,22 +2485,45 @@
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
         }
 
+        let toastQueue = [];
+        let toastBusy = false;
+        const TOAST_STYLES = {
+            success: { icon: '#icon-check',   circleBg: '#00D65E', textColor: '#00A843', border: '#00D65E', bg: '#DFFCE9' },
+            fail:    { icon: '#icon-close',    circleBg: '#FF1F1F', textColor: '#E60000', border: '#FF1F1F', bg: '#FFE0DE' },
+            warning: { icon: '#icon-warning',  circleBg: '#FF9500', textColor: '#C25400', border: '#FF9500', bg: '#FFEFD1' },
+            info:    { icon: '#icon-info',     circleBg: '#0A7BFF', textColor: '#0057D9', border: '#0A7BFF', bg: '#DCEBFF' },
+            cancel:  { icon: '#icon-info',     circleBg: '#0A7BFF', textColor: '#0057D9', border: '#0A7BFF', bg: '#DCEBFF' }
+        };
         function showToast(message, type = 'success') {
+            // Queue toasts instead of clobbering: if one is already showing,
+            // this one waits its turn so back-to-back calls (e.g. reject then
+            // confirm) don't overwrite each other before the user can read them.
+            toastQueue.push({ message, type });
+            processToastQueue();
+        }
+        function processToastQueue() {
+            if (toastBusy || toastQueue.length === 0) return;
+            toastBusy = true;
+            const { message, type } = toastQueue.shift();
             const toast = document.getElementById('toast');
-            const styles = {
-                success: { icon: '#icon-check', circleBg: '#22C55E', textColor: '#4ADE80', border: 'rgba(74,222,128,0.35)' },
-                fail: { icon: '#icon-close', circleBg: '#EF4444', textColor: '#FCA5A5', border: 'rgba(239,68,68,0.35)' },
-                cancel: { icon: '#icon-info', circleBg: '#9CA3AF', textColor: 'var(--fill-soft)', border: 'rgba(228,230,235,0.25)' }
-            };
-            const s = styles[type] || styles.success;
+            const s = TOAST_STYLES[type] || TOAST_STYLES.success;
             document.getElementById('toast-icon-use').setAttribute('href', s.icon);
             document.getElementById('toast-icon-circle').style.background = s.circleBg;
             toast.style.borderColor = s.border;
             toast.style.color = s.textColor;
+            toast.style.background = s.bg;
             document.getElementById('toast-msg').innerText = message;
             toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => { dismissToast(); }, 3000);
         }
+        function dismissToast() {
+            const toast = document.getElementById('toast');
+            clearTimeout(toast._hideTimer);
+            toast.classList.remove('show');
+            setTimeout(() => { toastBusy = false; processToastQueue(); }, 300);
+        }
+        window.dismissToast = dismissToast;
         // Reusable Delete / Warning / Information dialog — replaces window.confirm() / alert().
         // type: 'delete' (red, destructive) | 'warning' (amber, needs a decision) | 'info' (blue, OK-only notice)
         let actionDialogCallback = null;
@@ -2901,6 +3053,12 @@
         const expandedUserOrders = new Set();
         let ORDERS = {}; // { orderId: {...data, id} } - kept in sync for the Users tab
 
+        // ---------- Bulk order selection (Pending orders only) ----------
+        // Checkbox selections for the "Confirm Selected" / "Reject Selected" bar
+        // above the Orders list, so an admin can act on many Pending orders in
+        // one pass instead of tapping each one individually.
+        let selectedOrderIds = new Set();
+
         // "Clean" only sets an adminCleared flag on the order doc — it never deletes
         // anything, so the customer's own Order History in the Store app (which reads
         // this same "orders" collection filtered by their userId) is untouched. It just
@@ -2937,7 +3095,15 @@
         async function cleanAllCompletedOrders() {
             const targets = Object.values(ORDERS).filter(o => !o.adminCleared && (o.status === 'Success' || o.status === 'Fail'));
             if (targets.length === 0) { window.showToast('Nothing to clean.'); return; }
-            if (!confirm(`Clean ${targets.length} completed order(s) from this list? They'll stay in the customer's own Order History.`)) return;
+            window.showActionDialog({
+                type: 'warning',
+                title: 'Clean completed orders?',
+                message: `Clean ${targets.length} completed order(s) from this list? They'll stay in the customer's own Order History.`,
+                confirmText: 'Clean',
+                onConfirm: () => doCleanAllCompletedOrders(targets)
+            });
+        }
+        async function doCleanAllCompletedOrders(targets) {
             try {
                 await Promise.all(targets.map(o => updateDoc(doc(db, "orders", o.id), { adminCleared: true, adminClearedAt: serverTimestamp() })));
                 window.showToast(`${targets.length} order(s) cleaned ✓`);
@@ -3015,6 +3181,17 @@
         // causing the Orders page to stutter/freeze - so we coalesce any renders
         // requested within the same animation frame into a single actual render.
         let ordersRenderScheduled = false;
+        // Shared helper for the date-range filters on Orders and Wallet Top Ups.
+        // fromStr/toStr are yyyy-mm-dd values straight from <input type="date">.
+        function isWithinDateRange(timestamp, fromStr, toStr) {
+            if (!fromStr && !toStr) return true;
+            if (!timestamp || typeof timestamp.toMillis !== 'function') return false;
+            const ms = timestamp.toMillis();
+            if (fromStr && ms < new Date(fromStr + 'T00:00:00').getTime()) return false;
+            if (toStr && ms > new Date(toStr + 'T23:59:59.999').getTime()) return false;
+            return true;
+        }
+
         function renderOrdersList() {
             if (ordersRenderScheduled) return;
             ordersRenderScheduled = true;
@@ -3028,7 +3205,10 @@
         // called from listenGames() to fill in thumbnails once game images arrive.
         function renderOrdersListImpl() {
             const searchTerm = (document.getElementById('order-search')?.value || '').trim().toLowerCase();
+            const dateFrom = document.getElementById('order-date-from')?.value || '';
+            const dateTo = document.getElementById('order-date-to')?.value || '';
             const allOrders = Object.values(ORDERS).filter(o => {
+                if (!isWithinDateRange(o.timestamp, dateFrom, dateTo)) return false;
                 if (!searchTerm) return true;
                 return (o.game || '').toLowerCase().includes(searchTerm)
                     || (o.userName || '').toLowerCase().includes(searchTerm)
@@ -3039,13 +3219,16 @@
             });
             const cleanedCount = allOrders.filter(o => o.adminCleared).length;
             const visibleOrders = allOrders.filter(o => !!o.adminCleared === showCleanedOrders);
+            const hasFilters = !!(searchTerm || dateFrom || dateTo);
 
             if (allOrders.length === 0) {
-                ordersContainer.innerHTML = `<p class="empty-msg">${searchTerm ? 'No orders match your search.' : 'No orders found.'}</p>`;
+                ordersContainer.innerHTML = `<p class="empty-msg">${hasFilters ? 'No orders match your search/filters.' : 'No orders found.'}</p>`;
+                updateBulkActionBar();
                 return;
             }
             if (visibleOrders.length === 0) {
                 ordersContainer.innerHTML = `<p class="empty-msg">${showCleanedOrders ? 'No cleaned orders.' : 'No active orders — all clean! 🎉'}</p>`;
+                updateBulkActionBar();
                 return;
             }
 
@@ -3112,16 +3295,21 @@
                     : '';
 
                 const isOpen = expandedOrders.has(orderId);
+                // Bulk-select checkbox: only Pending orders can be bulk-confirmed/rejected.
+                const selectBox = data.status === 'Pending'
+                    ? `<span class="order-select-box" onclick="event.stopPropagation()"><input type="checkbox" onclick="toggleOrderSelect('${orderId}', this.checked)" ${selectedOrderIds.has(orderId) ? 'checked' : ''} title="Select for bulk action"></span>`
+                    : '';
                 return `
                     <div class="admin-card" id="card-${orderId}" style="border-left:3px solid ${statusColor};">
                         <div class="oc-top" onclick="toggleOrderCard('${orderId}')">
+                            ${selectBox}
                             <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
                             <div class="oc-info">
                                 <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
                                 <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
                             </div>
                             <div class="oc-status">
-                                <span class="badge ${badgeClass}">${data.status}</span>
+                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, data.status)}</span>
                                 <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
@@ -3171,6 +3359,15 @@
                     </div>
                 `;
             }).join('');
+            updateBulkActionBar();
+        }
+
+        function clearOrderDateRange() {
+            const from = document.getElementById('order-date-from');
+            const to = document.getElementById('order-date-to');
+            if (from) from.value = '';
+            if (to) to.value = '';
+            renderOrdersList();
         }
 
         async function startProcessing(orderId, btnElement) {
@@ -3186,17 +3383,19 @@
                 return placeJCPlaysOrder(orderId, order, btnElement);
             }
 
-            btnElement.innerText = "Updating...";
-            btnElement.disabled = true;
+            // btnElement is null when called from the bulk "Confirm Selected" action
+            // (see doBulkConfirm), which has no single button to update.
+            if (btnElement) { btnElement.innerText = "Updating..."; btnElement.disabled = true; }
 
             try {
                 await updateDoc(doc(db, "orders", orderId), { status: "Processing" });
                 window.showToast("Order moved to Processing.", 'success');
+                return 'processing';
             } catch (error) {
                 console.error("Update Error: ", error);
                 window.showToast("Failed to update order! Check Rules.", 'fail');
-                btnElement.innerText = "Start Processing";
-                btnElement.disabled = false;
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
             }
         }
 
@@ -3478,8 +3677,8 @@
         }
 
         async function doMarkFail(orderId, btnElement, note) {
-            btnElement.innerText = "Updating...";
-            btnElement.disabled = true;
+            // btnElement is null when called from the bulk "Reject Selected" action.
+            if (btnElement) { btnElement.innerText = "Updating..."; btnElement.disabled = true; }
 
             try {
                 await markOrderFailedWithRefund(orderId, note ? { statusNote: note } : {});
@@ -3488,10 +3687,137 @@
             } catch (error) {
                 console.error("Update Error: ", error);
                 window.showToast("Failed to update order! Check Rules.", 'fail');
-                btnElement.innerText = "Mark Fail";
-                btnElement.disabled = false;
+                if (btnElement) { btnElement.innerText = "Mark Fail"; btnElement.disabled = false; }
             }
         }
+
+        // ---------- Bulk order actions (Pending only) ----------
+        // Lets the admin check off several Pending orders and Confirm (start
+        // processing / auto-fulfill) or Reject (mark Fail + refund wallet where
+        // applicable) all of them in one pass, instead of tapping each order card
+        // individually. Reuses the exact same per-order logic as the single-order
+        // buttons (startProcessing / markOrderFailedWithRefund) so behavior stays
+        // identical — G2Bulk/JCPlays-linked orders still auto-fulfill, wallet
+        // refunds on reject still happen, Telegram messages still get edited, etc.
+
+        function toggleOrderSelect(orderId, checked) {
+            if (checked) selectedOrderIds.add(orderId);
+            else selectedOrderIds.delete(orderId);
+            updateBulkActionBar();
+        }
+        window.toggleOrderSelect = toggleOrderSelect;
+
+        function toggleSelectAllPending(checked) {
+            const pendingIds = Object.values(ORDERS)
+                .filter(o => o.status === 'Pending' && !o.adminCleared)
+                .map(o => o.id);
+            if (checked) pendingIds.forEach(id => selectedOrderIds.add(id));
+            else pendingIds.forEach(id => selectedOrderIds.delete(id));
+            renderOrdersListImpl(); // re-render so each row's checkbox reflects the new state
+        }
+        window.toggleSelectAllPending = toggleSelectAllPending;
+
+        function clearOrderSelection() {
+            selectedOrderIds.clear();
+            renderOrdersListImpl();
+        }
+        window.clearOrderSelection = clearOrderSelection;
+
+        // Drops any selected id that's no longer Pending (e.g. it finished
+        // processing, or was rejected, since it was checked) so the bar's count
+        // and the bulk actions never act on stale selections.
+        function pruneOrderSelection() {
+            for (const id of Array.from(selectedOrderIds)) {
+                const o = ORDERS[id];
+                if (!o || o.status !== 'Pending') selectedOrderIds.delete(id);
+            }
+        }
+
+        function updateBulkActionBar() {
+            pruneOrderSelection();
+            const bar = document.getElementById('order-bulk-bar');
+            const countEl = document.getElementById('order-bulk-count');
+            const selectAllCb = document.getElementById('order-select-all');
+            if (!bar || !countEl) return;
+            const count = selectedOrderIds.size;
+            bar.style.display = count > 0 ? 'flex' : 'none';
+            countEl.textContent = `${count} selected`;
+            if (selectAllCb) {
+                const pendingVisible = Object.values(ORDERS).filter(o => o.status === 'Pending' && !o.adminCleared);
+                const allSelected = pendingVisible.length > 0 && pendingVisible.every(o => selectedOrderIds.has(o.id));
+                selectAllCb.checked = allSelected;
+                selectAllCb.indeterminate = count > 0 && !allSelected;
+            }
+        }
+        window.updateBulkActionBar = updateBulkActionBar;
+
+        function bulkConfirmSelected() {
+            const ids = Array.from(selectedOrderIds).filter(id => ORDERS[id] && ORDERS[id].status === 'Pending');
+            if (ids.length === 0) { window.showToast('No pending orders selected.'); return; }
+            window.showActionDialog({
+                type: 'success',
+                title: `Confirm ${ids.length} order${ids.length > 1 ? 's' : ''}?`,
+                message: `Each order moves to Processing (auto-fulfilled via G2Bulk/JCPlays where linked, otherwise manual). This runs one order at a time and may take a few seconds per order.`,
+                confirmText: `Confirm ${ids.length} Order${ids.length > 1 ? 's' : ''}`,
+                onConfirm: () => doBulkConfirm(ids)
+            });
+        }
+        window.bulkConfirmSelected = bulkConfirmSelected;
+
+        async function doBulkConfirm(ids) {
+            window.showToast(`Confirming ${ids.length} order${ids.length > 1 ? 's' : ''}...`);
+            let okCount = 0, failCount = 0;
+            for (const id of ids) {
+                try {
+                    const result = await startProcessing(id, null);
+                    if (result === 'error') failCount++; else okCount++;
+                } catch (error) {
+                    console.error('Bulk confirm error for order', id, error);
+                    failCount++;
+                }
+                selectedOrderIds.delete(id);
+                await new Promise(r => setTimeout(r, 400)); // stagger — don't hammer G2Bulk/JCPlays back-to-back
+            }
+            logAdminActivity('Bulk confirmed orders', `${okCount} started, ${failCount} failed — ${ids.join(', ')}`);
+            window.showToast(
+                `Bulk confirm done: ${okCount} started${failCount ? `, ${failCount} failed` : ''}.`,
+                failCount ? 'fail' : 'success'
+            );
+            renderOrdersListImpl();
+        }
+
+        function bulkRejectSelected() {
+            const ids = Array.from(selectedOrderIds).filter(id => ORDERS[id] && ORDERS[id].status === 'Pending');
+            if (ids.length === 0) { window.showToast('No pending orders selected.'); return; }
+            window.showActionDialog({
+                type: 'warning',
+                title: `Reject ${ids.length} order${ids.length > 1 ? 's' : ''}?`,
+                message: `Customers will need to reorder. Any wallet-paid orders among these are refunded automatically. This cannot be undone.`,
+                confirmText: `Reject ${ids.length} Order${ids.length > 1 ? 's' : ''}`,
+                showNote: true,
+                notePlaceholder: 'Reason (optional, applied to all selected) — e.g. "Wrong player ID, please recheck and reorder"',
+                onConfirm: (note) => doBulkReject(ids, note)
+            });
+        }
+        window.bulkRejectSelected = bulkRejectSelected;
+
+        async function doBulkReject(ids, note) {
+            window.showToast(`Rejecting ${ids.length} order${ids.length > 1 ? 's' : ''}...`);
+            let count = 0;
+            for (const id of ids) {
+                try {
+                    await markOrderFailedWithRefund(id, note ? { statusNote: note } : {});
+                    editTelegramOrderMessage(id, 'Fail');
+                    count++;
+                } catch (error) {
+                    console.error('Bulk reject error for order', id, error);
+                }
+                selectedOrderIds.delete(id);
+            }
+            window.showToast(`${count} order${count !== 1 ? 's' : ''} rejected.`, 'fail');
+            renderOrdersListImpl();
+        }
+        window.doBulkReject = doBulkReject;
 
         // ============================================================
         // ---------- WALLET TOP UPS ----------
@@ -3545,18 +3871,22 @@
             const container = document.getElementById('topups-container');
             if (!container) return;
             const searchTerm = (document.getElementById('topup-search')?.value || '').trim().toLowerCase();
+            const dateFrom = document.getElementById('topup-date-from')?.value || '';
+            const dateTo = document.getElementById('topup-date-to')?.value || '';
             const all = Object.values(WALLET_TOPUPS);
             const visible = all.filter(t => {
                 if (t.status !== currentTopupTab) return false;
+                if (!isWithinDateRange(t.timestamp, dateFrom, dateTo)) return false;
                 if (!searchTerm) return true;
                 return (t.userName || '').toLowerCase().includes(searchTerm)
                     || (t.userId || '').toLowerCase().includes(searchTerm)
                     || (t.userPhone || '').toLowerCase().includes(searchTerm)
                     || String(t.amount || '').includes(searchTerm);
             });
+            const hasFilters = !!(searchTerm || dateFrom || dateTo);
 
             if (visible.length === 0) {
-                container.innerHTML = `<p class="empty-msg">${searchTerm ? `No matching ${currentTopupTab.toLowerCase()} top ups.` : `No ${currentTopupTab.toLowerCase()} top ups.`}</p>`;
+                container.innerHTML = `<p class="empty-msg">${hasFilters ? `No matching ${currentTopupTab.toLowerCase()} top ups.` : `No ${currentTopupTab.toLowerCase()} top ups.`}</p>`;
                 return;
             }
 
@@ -3589,7 +3919,7 @@
                                 <p class="oc-meta">${t.userName || t.userId || 'Guest'} &middot; ${t.paymentMethod || 'N/A'}</p>
                             </div>
                             <div class="oc-status">
-                                <span class="badge ${badgeClass}">${t.status}</span>
+                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, t.status)}</span>
                             </div>
                         </div>
                         <div class="ac-body" style="display:block;padding-top:10px;margin-top:10px;border-top:1px solid var(--bg-subtle);">
@@ -3606,6 +3936,14 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function clearTopupDateRange() {
+            const from = document.getElementById('topup-date-from');
+            const to = document.getElementById('topup-date-to');
+            if (from) from.value = '';
+            if (to) to.value = '';
+            renderTopupsList();
         }
 
         async function setTopupProcessing(id, btnElement) {
@@ -4308,20 +4646,25 @@
                 </div>
                 <div class="pkg-row-fields">
                     <div class="pkg-summary" onclick="expandPackageRow(this)">
-                        <div class="pkg-summary-thumb">
-                            <img class="pkg-summary-thumb-img" src="${image}" style="${image ? '' : 'display:none;'}">
-                            <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
-                        </div>
-                        <div class="pkg-summary-info">
-                            <div class="pkg-summary-name">${amount || 'Unnamed package'}</div>
-                            <div class="pkg-summary-price">
-                                <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() + ' MMK' : '--'}</span>
-                                <span class="pkg-summary-profit">--</span>
+                        <div class="pkg-summary-head">
+                            <div class="pkg-summary-label">
+                                <div class="pkg-summary-thumb">
+                                    <img class="pkg-summary-thumb-img" src="${image}" style="${image ? '' : 'display:none;'}">
+                                    <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
+                                </div>
+                                <span class="pkg-summary-name">${amount || 'Unnamed package'}</span>
                             </div>
+                            <span class="pkg-summary-dot ${type === 'package' ? 'pkg-dot-package' : ''}" title="${type === 'package' ? 'Package (wide banner)' : 'Currency (grid card)'}"></span>
                         </div>
-                        <div class="pkg-summary-actions">
-                            <span class="pkg-summary-edit-hint">✎</span>
-                            <div class="pkg-summary-remove" onclick="event.stopPropagation(); removePackageRow(this)" title="ဖျက်ရန်">&times;</div>
+                        <div class="pkg-summary-body">
+                            <div class="pkg-summary-value">
+                                <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() : '--'}</span>
+                                <span class="pkg-summary-price-unit">${price ? 'MMK' : ''}</span>
+                            </div>
+                            <div class="pkg-summary-actions">
+                                <span class="pkg-summary-profit">--</span>
+                                <div class="pkg-summary-remove" onclick="event.stopPropagation(); removePackageRow(this)" title="ဖျက်ရန်">&times;</div>
+                            </div>
                         </div>
                     </div>
                     <div class="pkg-card-overlay" onclick="collapsePackageRow(this)">
@@ -4332,6 +4675,10 @@
                             </div>
                             <div class="pkg-row-top">
                                 <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div class="pkg-price-field">
+                                <label>Tab (ဒီ package ကို ထားမည့် tab)</label>
+                                <select class="pkg-tab-select" onchange="movePackageToTab(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;background:#fff;"></select>
                             </div>
                             <div class="pkg-row-media">
                                 <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
@@ -4480,13 +4827,26 @@
             const price = row.querySelector('.pkg-price').value;
             const image = row.querySelector('.pkg-img-preview').dataset.url;
             const profitBadge = row.querySelector('.pkg-profit-badge');
+            const type = row.querySelector('.pkg-type').value;
 
             row.querySelector('.pkg-summary-name').innerText = amount || 'Unnamed package';
-            row.querySelector('.pkg-summary-price-text').innerText = price ? Number(price).toLocaleString() + ' MMK' : '--';
+            row.querySelector('.pkg-summary-price-text').innerText = price ? Number(price).toLocaleString() : '--';
+            row.querySelector('.pkg-summary-price-unit').innerText = price ? 'MMK' : '';
 
+            const dot = row.querySelector('.pkg-summary-dot');
+            dot.classList.toggle('pkg-dot-package', type === 'package');
+            dot.title = type === 'package' ? 'Package (wide banner)' : 'Currency (grid card)';
+
+            const isPositive = profitBadge.classList.contains('positive');
+            const isNegative = profitBadge.classList.contains('negative');
             const summaryProfit = row.querySelector('.pkg-summary-profit');
-            summaryProfit.className = 'pkg-summary-profit' + (profitBadge.classList.contains('positive') ? ' positive' : profitBadge.classList.contains('negative') ? ' negative' : '');
-            summaryProfit.innerText = profitBadge.innerText;
+            summaryProfit.className = 'pkg-summary-profit' + (isPositive ? ' positive' : isNegative ? ' negative' : '');
+            const arrowIcon = isPositive
+                ? '<svg class="ui-icon"><use href="#icon-trending-up"></use></svg>'
+                : isNegative
+                    ? '<svg class="ui-icon" style="transform:rotate(90deg);"><use href="#icon-trending-up"></use></svg>'
+                    : '';
+            summaryProfit.innerHTML = arrowIcon + '<span>' + profitBadge.innerText + '</span>';
 
             const thumbImg = row.querySelector('.pkg-summary-thumb-img');
             const thumbPlaceholder = row.querySelector('.pkg-summary-thumb-placeholder');
@@ -4506,10 +4866,38 @@
         // editable without the list itself growing tall on a small screen.
         function expandPackageRow(el) {
             const row = el.closest('.package-row');
+            populatePkgTabSelect(row);
             row.classList.add('editing');
             applyPkgCardViewportFix();
         }
         window.expandPackageRow = expandPackageRow;
+
+        // Fills the card's "Tab" dropdown with every tab that currently exists
+        // (the two built-ins plus any custom ones), selecting whichever tab this
+        // package is presently in. Rebuilt fresh each time the card opens so a
+        // tab added after this row was created still shows up as an option —
+        // this is how an *existing* package gets moved into a custom tab, since
+        // the Currency/Package toggle above only ever targets the two built-ins.
+        function populatePkgTabSelect(row) {
+            const select = row.querySelector('.pkg-tab-select');
+            if (!select) return;
+            const current = row.dataset.tab || 'currency';
+            const allTabs = ['package', 'currency', ...customPkgTabs];
+            if (!allTabs.includes(current)) allTabs.push(current); // safety net for stray/legacy tab values
+            select.innerHTML = allTabs.map(t => `<option value="${escapeHtml(t)}" ${t === current ? 'selected' : ''}>${escapeHtml(pkgTabLabel(t))}</option>`).join('');
+        }
+
+        // Moves this package into whichever tab was picked from the dropdown.
+        // Distinct from setPkgType()'s Currency/Package toggle: that controls
+        // how the package's card looks in the Store, this controls which admin
+        // tab it's organized under — the two only stay linked automatically
+        // while a row sits in one of the two built-in tabs.
+        function movePackageToTab(selectEl) {
+            const row = selectEl.closest('.package-row');
+            row.dataset.tab = selectEl.value;
+            renderPkgTabBar();
+        }
+        window.movePackageToTab = movePackageToTab;
 
         // Closes a package row's card — used by the Save button, the × close
         // icon, and tapping the dimmed backdrop. All three just collapse the
@@ -4525,6 +4913,11 @@
             overlay.style.top = '';
             overlay.style.left = '';
             overlay.style.width = '';
+            // If the Tab dropdown moved this package to a different tab while the
+            // card was open, re-apply the current tab's filter now so it actually
+            // disappears from view here (it was left visible while editing so the
+            // overlay itself didn't get hidden along with its parent row).
+            applyPackageTabFilter();
         }
         window.collapsePackageRow = collapsePackageRow;
 
@@ -4601,19 +4994,31 @@
                 row.style.left = startRect.left + 'px';
                 row.style.zIndex = '999';
                 row.style.pointerEvents = 'none';
+                row.style.willChange = 'transform';
 
                 let currentOverRow = null;
+                let latestClientY = startY;
+                let rafId = null;
 
-                function onMove(moveEvent) {
-                    const deltaY = moveEvent.clientY - startY;
-                    row.style.top = (startRect.top + deltaY) + 'px';
+                // All the expensive work below (sibling hit-testing, DOM moves)
+                // runs at most once per animation frame, no matter how many
+                // pointermove events fire in between — pointermove can fire far
+                // faster than the screen can paint, and re-measuring every row's
+                // getBoundingClientRect() on every single event (as this used to
+                // do) is what caused the drag to feel stuck/stuttery.
+                function processFrame() {
+                    rafId = null;
+                    const deltaY = latestClientY - startY;
+                    // transform is compositor-only (no layout/paint), unlike
+                    // continuously rewriting `top`, so moving the floating row
+                    // itself no longer forces a reflow on every frame.
+                    row.style.transform = `translate3d(0, ${deltaY}px, 0)`;
 
-                    const centerY = moveEvent.clientY;
                     const siblings = Array.from(list.querySelectorAll('.package-row')).filter(r => r !== row);
                     let target = null;
                     for (const sib of siblings) {
                         const r = sib.getBoundingClientRect();
-                        if (centerY > r.top && centerY < r.bottom) { target = sib; break; }
+                        if (latestClientY > r.top && latestClientY < r.bottom) { target = sib; break; }
                     }
 
                     if (currentOverRow && currentOverRow !== target) {
@@ -4624,12 +5029,18 @@
                         target.classList.add('drag-over');
                         currentOverRow = target;
                         const targetRect = target.getBoundingClientRect();
-                        const before = centerY < targetRect.top + targetRect.height / 2;
+                        const before = latestClientY < targetRect.top + targetRect.height / 2;
                         list.insertBefore(placeholder, before ? target : target.nextSibling);
                     }
                 }
 
+                function onMove(moveEvent) {
+                    latestClientY = moveEvent.clientY;
+                    if (rafId === null) rafId = requestAnimationFrame(processFrame);
+                }
+
                 function onUp() {
+                    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
                     if (currentOverRow) currentOverRow.classList.remove('drag-over');
                     list.insertBefore(row, placeholder);
                     placeholder.remove();
@@ -4641,6 +5052,8 @@
                     row.style.width = '';
                     row.style.zIndex = '';
                     row.style.pointerEvents = '';
+                    row.style.transform = '';
+                    row.style.willChange = '';
 
                     renumberPackageRows();
                     window.removeEventListener('pointermove', onMove);
@@ -4851,7 +5264,13 @@
 
                 const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : 'manual');
                 setFulfillProvider(initialProvider);
+                // Restore custom tabs up front (including any left empty) so they don't
+                // silently disappear on reload - addPackageRow below will also pick up
+                // any tab name referenced by a package that, for older saved data, isn't
+                // in this list yet.
+                customPkgTabs = Array.isArray(g.packageTabs) ? g.packageTabs.slice() : [];
                 (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency'));
+                renderPkgTabBar();
                 switchPackageTab('package');
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
@@ -5002,7 +5421,11 @@
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', fulfillProvider: currentFulfillProvider, category: category || '', popular, serverIdRequired };
+                // packageTabs persists custom tab *names* independently of which packages
+                // currently sit in them - without this, a tab created but left empty (or
+                // emptied out later) would vanish on reload since nothing else in the
+                // saved data would reference it.
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', fulfillProvider: currentFulfillProvider, category: category || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -5333,7 +5756,7 @@
                 return `
                     <div class="user-grid-card">
                         <div class="ugc-top">
-                            <span class="badge ${u.banned ? 'badge-danger' : 'badge-success'}">${u.banned ? 'Banned' : 'Active'}</span>
+                            <span class="badge ${u.banned ? 'badge-danger' : 'badge-success'}">${statusBadgeHtml(u.banned ? 'badge-danger' : 'badge-success', u.banned ? 'Banned' : 'Active')}</span>
                         </div>
                         <div class="ugc-identity">
                             <div class="user-avatar" style="width:48px;height:48px;flex-shrink:0;">
@@ -5433,7 +5856,7 @@
                         <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;cursor:pointer;" onclick="toggleUserOrderCard('${orderId}')">
                             <span class="ac-id">${o.game} (${o.itemAmount})</span>
                             <div style="display:flex;align-items:center;gap:8px;">
-                                <span class="badge ${badgeClass}">${o.status}${o.adminCleared ? ' · cleaned' : ''}</span>
+                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, o.status + (o.adminCleared ? ' · cleaned' : ''))}</span>
                                 <svg class="ui-icon" id="ud-oc-chevron-${orderId}" style="width:15px;height:15px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
@@ -5502,7 +5925,7 @@
             document.getElementById('ud-reg-docid').innerText = userId;
             document.getElementById('ud-reg-phone').innerText = u.phone || 'N/A';
             document.getElementById('ud-reg-google').innerHTML = u.googleEmail ? `${escapeHtml(u.googleEmail)} ${googleVerifiedBadgeHTML(u)}` : 'Not linked';
-            document.getElementById('ud-reg-status').innerHTML = u.banned ? '<span class="badge badge-danger">Banned</span>' : '<span class="badge badge-success">Active</span>';
+            document.getElementById('ud-reg-status').innerHTML = u.banned ? `<span class="badge badge-danger">${statusBadgeHtml('badge-danger', 'Banned')}</span>` : `<span class="badge badge-success">${statusBadgeHtml('badge-success', 'Active')}</span>`;
 
             // Login Time tab
             document.getElementById('ud-lt-last-login').innerText = lastSeenStr;
@@ -5571,7 +5994,7 @@
                     <div class="admin-card" style="padding:12px;">
                         <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;">
                             <span class="ac-id">${fmtMoney(t.amount || 0)}</span>
-                            <span class="badge ${badgeClass}">${t.status || 'Pending'}</span>
+                            <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, t.status || 'Pending')}</span>
                         </div>
                         <p style="font-size:13px;color:var(--text-secondary);">${t.paymentMethod || 'N/A'}</p>
                         <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">${dateStr}</p>
@@ -6117,7 +6540,15 @@
         async function deleteCurrentFrame() {
             const frameId = document.getElementById('edit-frame-id').value;
             if (!frameId) return;
-            if (!confirm('Delete this frame? Customers who already unlocked it will lose it.')) return;
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete this frame?',
+                message: 'Customers who already unlocked it will lose it.',
+                confirmText: 'Delete',
+                onConfirm: () => doDeleteCurrentFrame(frameId)
+            });
+        }
+        async function doDeleteCurrentFrame(frameId) {
             try {
                 const frameName = FRAMES[frameId]?.name || frameId;
                 await deleteDoc(doc(db, "frames", frameId));
@@ -6956,6 +7387,29 @@
             div.textContent = str;
             return div.innerHTML;
         }
+
+        // Small leading icon shown inside a status badge, matching each of the
+        // 4 status colors used across Orders/Top Ups/Users (badge-pending =
+        // warning triangle, badge-processing = spinning dashed ring,
+        // badge-success = check circle, badge-danger = x circle).
+        function statusBadgeIcon(badgeClass) {
+            switch (badgeClass) {
+                case 'badge-pending': return '<svg class="ui-icon"><use href="#icon-warning"></use></svg>';
+                case 'badge-processing': return '<span class="badge-spinner"></span>';
+                case 'badge-success': return '<svg class="ui-icon"><use href="#icon-verified-blue"></use></svg>';
+                case 'badge-danger': return '<svg class="ui-icon"><use href="#icon-x-circle"></use></svg>';
+                default: return '';
+            }
+        }
+        window.statusBadgeIcon = statusBadgeIcon;
+
+        // Wraps status text with its badge icon — used everywhere a status
+        // badge is rendered so every one of them (Orders, Top Ups, Users) gets
+        // the same icon+pill treatment consistently.
+        function statusBadgeHtml(badgeClass, label) {
+            return `${statusBadgeIcon(badgeClass)}<span>${escapeHtml(label)}</span>`;
+        }
+        window.statusBadgeHtml = statusBadgeHtml;
 
         // Toggles which auto-fulfillment provider's fields are visible in the
         // game editor - both at the game level (the two picker sections) and
