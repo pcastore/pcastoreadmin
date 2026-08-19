@@ -742,20 +742,42 @@
         .pkg-tab-empty-msg { text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 18px 0; }
 
         /* Package (currency grid) — drag-to-reorder card list */
-        #edit-packages-list { display: flex; flex-direction: column; gap: 8px; position: relative; }
-        .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
+        #edit-packages-list { display: flex; flex-direction: column; gap: 6px; position: relative; }
+        .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 9px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
         .package-row.drag-over { border-color: var(--accent); }
-        .pkg-order-col { flex-shrink: 0; width: 34px; display: flex; flex-direction: column; align-items: stretch; }
-        .pkg-move-btn { border: none; background: #F7F8FA; color: var(--text-muted); padding: 6px 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .pkg-order-col { flex-shrink: 0; width: 26px; display: flex; flex-direction: column; align-items: stretch; }
+        .pkg-move-btn { border: none; background: #F7F8FA; color: var(--text-muted); padding: 3px 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .pkg-move-btn:active { background: var(--fill-soft); color: var(--accent); }
         .pkg-move-btn:disabled { opacity: 0.25; cursor: default; }
         .pkg-move-btn:disabled:active { background: #F7F8FA; color: var(--text-muted); }
-        .pkg-drag-handle { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 0; background: var(--bg-subtle); color: var(--text-muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+        .pkg-drag-handle { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px 0; background: var(--bg-subtle); color: var(--text-muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
         .pkg-drag-handle:active { cursor: grabbing; background: var(--fill-soft); color: var(--accent); }
-        .pkg-drag-handle svg { width: 14px; height: 14px; pointer-events: none; }
-        .pkg-order-num { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
-        .pkg-row-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
+        .pkg-drag-handle svg { width: 11px; height: 11px; pointer-events: none; }
+        .pkg-order-num { flex-shrink: 0; font-size: 9.5px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
+        .pkg-row-fields { flex: 1; min-width: 0; }
+        .pkg-summary { display: flex; align-items: center; gap: 7px; padding: 5px 8px; cursor: pointer; }
+        .pkg-summary:active { background: var(--bg-subtle); }
+        .pkg-summary-thumb { flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; overflow: hidden; background: #F7F8FA; border: 1px solid var(--fill-soft); display: flex; align-items: center; justify-content: center; }
+        .pkg-summary-thumb img { width: 100%; height: 100%; object-fit: contain; }
+        .pkg-summary-thumb-placeholder { font-size: 11px; color: var(--text-muted); }
+        .pkg-summary-info { flex: 1; min-width: 0; }
+        .pkg-summary-name { font-size: 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+        .pkg-summary-price { font-size: 10.5px; color: var(--text-secondary); margin-top: 1px; display: flex; align-items: center; gap: 5px; line-height: 1.3; }
+        .pkg-summary-profit { font-size: 9px; font-weight: 700; padding: 0px 5px; border-radius: 5px; background: var(--bg-subtle); color: var(--text-secondary); }
+        .pkg-summary-profit.positive { background: #E3F9E9; color: #31A24C; }
+        .pkg-summary-profit.negative { background: var(--danger-soft); color: var(--danger-strong); }
+        .pkg-summary-actions { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+        .pkg-summary-edit-hint { font-size: 13px; color: var(--text-muted); }
+        .pkg-summary-remove { color: var(--danger); font-size: 16px; padding: 2px 3px; cursor: pointer; line-height: 1; }
+        .pkg-card-overlay { display: none; }
+        .package-row.editing .pkg-card-overlay { display: flex; position: fixed; inset: 0; z-index: 300; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); padding: 16px; }
+        .pkg-card { background: #fff; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
+        .pkg-card-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 800; color: var(--text-primary); padding-bottom: 2px; }
+        .pkg-card-close { font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 2px 8px; }
+        .pkg-card-footer { margin-top: 4px; }
+        .pkg-card-save-btn { width: 100%; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 800; color: #fff; background: var(--accent); cursor: pointer; }
+        .pkg-card-save-btn:active { transform: scale(0.98); }
         .pkg-row-top { display: flex; gap: 6px; align-items: center; }
         .pkg-row-pricing { display: flex; gap: 6px; align-items: flex-end; }
         .pkg-price-field { flex: 1; min-width: 0; }
@@ -4237,48 +4259,75 @@
                     </button>
                 </div>
                 <div class="pkg-row-fields">
-                    <div class="pkg-row-top">
-                        <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
-                        <div onclick="removePackageRow(this)" style="cursor:pointer;color:var(--danger);font-size:18px;padding:4px 6px;flex-shrink:0;">&times;</div>
-                    </div>
-                    <div class="pkg-row-media">
-                        <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
-                            <img class="pkg-img-tag" src="${image}" style="${image ? '' : 'display:none;'}">
-                            <span class="pkg-img-placeholder" style="${image ? 'display:none;' : ''}">+ Image</span>
+                    <div class="pkg-summary" onclick="expandPackageRow(this)">
+                        <div class="pkg-summary-thumb">
+                            <img class="pkg-summary-thumb-img" src="${image}" style="${image ? '' : 'display:none;'}">
+                            <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
                         </div>
-                        <input type="file" accept="image/*" class="pkg-img-file" style="display:none;" onchange="handlePackageImageSelect(this)">
-                        <div class="pkg-media-right">
-                            <div class="pkg-type-toggle">
-                                <button type="button" class="pkg-type-opt ${type !== 'package' ? 'active' : ''}" data-value="currency" onclick="setPkgType(this,'currency')" title="How this package's card looks in the Store grid">
-                                    <svg class="ui-icon" style="width:12px;height:12px;"><use href="#icon-grid"></use></svg>
-                                    Currency
-                                </button>
-                                <button type="button" class="pkg-type-opt ${type === 'package' ? 'active' : ''}" data-value="package" onclick="setPkgType(this,'package')" title="How this package's card looks in the Store grid">
-                                    <svg class="ui-icon" style="width:12px;height:12px;"><use href="#icon-list"></use></svg>
-                                    Package
-                                </button>
+                        <div class="pkg-summary-info">
+                            <div class="pkg-summary-name">${amount || 'Unnamed package'}</div>
+                            <div class="pkg-summary-price">
+                                <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() + ' MMK' : '--'}</span>
+                                <span class="pkg-summary-profit">--</span>
                             </div>
-                            <select class="pkg-type" style="display:none;">
-                                <option value="currency" ${type !== 'package' ? 'selected' : ''}>Currency (grid card)</option>
-                                <option value="package" ${type === 'package' ? 'selected' : ''}>Package (wide banner)</option>
-                            </select>
-                            <div class="pkg-img-remove" onclick="removePackageImage(this)" style="${image ? '' : 'display:none;'}">Remove img</div>
+                        </div>
+                        <div class="pkg-summary-actions">
+                            <span class="pkg-summary-edit-hint">✎</span>
+                            <div class="pkg-summary-remove" onclick="event.stopPropagation(); removePackageRow(this)" title="ဖျက်ရန်">&times;</div>
                         </div>
                     </div>
-                    <div class="pkg-row-pricing">
-                        <div class="pkg-price-field">
-                            <label>Cost (မသိမ်း — Store မှာ မပြပါ)</label>
-                            <input type="number" class="pkg-cost" placeholder="0" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
-                            <button type="button" class="pkg-cost-update-btn" style="display:none;" onclick="applyCostUpdate(this)"></button>
+                    <div class="pkg-card-overlay" onclick="collapsePackageRow(this)">
+                        <div class="pkg-card" onclick="event.stopPropagation()">
+                            <div class="pkg-card-header">
+                                <span>Package ပြင်ရန်</span>
+                                <div class="pkg-card-close" onclick="collapsePackageRow(this)">&times;</div>
+                            </div>
+                            <div class="pkg-row-top">
+                                <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div class="pkg-row-media">
+                                <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
+                                    <img class="pkg-img-tag" src="${image}" style="${image ? '' : 'display:none;'}">
+                                    <span class="pkg-img-placeholder" style="${image ? 'display:none;' : ''}">+ Image</span>
+                                </div>
+                                <input type="file" accept="image/*" class="pkg-img-file" style="display:none;" onchange="handlePackageImageSelect(this)">
+                                <div class="pkg-media-right">
+                                    <div class="pkg-type-toggle">
+                                        <button type="button" class="pkg-type-opt ${type !== 'package' ? 'active' : ''}" data-value="currency" onclick="setPkgType(this,'currency')" title="How this package's card looks in the Store grid">
+                                            <svg class="ui-icon" style="width:12px;height:12px;"><use href="#icon-grid"></use></svg>
+                                            Currency
+                                        </button>
+                                        <button type="button" class="pkg-type-opt ${type === 'package' ? 'active' : ''}" data-value="package" onclick="setPkgType(this,'package')" title="How this package's card looks in the Store grid">
+                                            <svg class="ui-icon" style="width:12px;height:12px;"><use href="#icon-list"></use></svg>
+                                            Package
+                                        </button>
+                                    </div>
+                                    <select class="pkg-type" style="display:none;">
+                                        <option value="currency" ${type !== 'package' ? 'selected' : ''}>Currency (grid card)</option>
+                                        <option value="package" ${type === 'package' ? 'selected' : ''}>Package (wide banner)</option>
+                                    </select>
+                                    <div class="pkg-img-remove" onclick="removePackageImage(this)" style="${image ? '' : 'display:none;'}">Remove img</div>
+                                </div>
+                            </div>
+                            <div class="pkg-row-pricing">
+                                <div class="pkg-price-field">
+                                    <label>Cost (မသိမ်း — Store မှာ မပြပါ)</label>
+                                    <input type="number" class="pkg-cost" placeholder="0" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                                    <button type="button" class="pkg-cost-update-btn" style="display:none;" onclick="applyCostUpdate(this)"></button>
+                                </div>
+                                <div class="pkg-price-field">
+                                    <label>Price (Store မှာ ပြမည်)</label>
+                                    <input type="number" class="pkg-price" placeholder="0" value="${price}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                                </div>
+                                <div class="pkg-profit-badge" title="Profit margin = (Price − Cost) / Cost">--</div>
+                            </div>
+                            <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk' ? 'block' : 'none'};">
+                            <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'jcplays' ? 'block' : 'none'};">
+                            <div class="pkg-card-footer">
+                                <button type="button" class="pkg-card-save-btn" onclick="collapsePackageRow(this)">Save</button>
+                            </div>
                         </div>
-                        <div class="pkg-price-field">
-                            <label>Price (Store မှာ ပြမည်)</label>
-                            <input type="number" class="pkg-price" placeholder="0" value="${price}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
-                        </div>
-                        <div class="pkg-profit-badge" title="Profit margin = (Price − Cost) / Cost">--</div>
                     </div>
-                    <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk' ? 'block' : 'none'};">
-                    <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'jcplays' ? 'block' : 'none'};">
                 </div>
             `;
             list.appendChild(row);
@@ -4365,13 +4414,65 @@
             if (cost <= 0) {
                 badge.className = 'pkg-profit-badge';
                 badge.innerText = '--';
-                return;
+            } else {
+                const pct = ((price - cost) / cost) * 100;
+                badge.className = 'pkg-profit-badge ' + (pct > 0 ? 'positive' : (pct < 0 ? 'negative' : ''));
+                badge.innerText = (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
             }
-            const pct = ((price - cost) / cost) * 100;
-            badge.className = 'pkg-profit-badge ' + (pct > 0 ? 'positive' : (pct < 0 ? 'negative' : ''));
-            badge.innerText = (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
+            syncPkgSummary(row);
         }
         window.updatePackageProfit = updatePackageProfit;
+
+        // Refreshes the collapsed summary row (name, price, profit badge, thumb)
+        // to match whatever is currently in the card's fields. Called whenever
+        // Cost/Price change (live) and whenever the card is closed, so the
+        // summary is never stale.
+        function syncPkgSummary(row) {
+            const amount = row.querySelector('.pkg-amount').value;
+            const price = row.querySelector('.pkg-price').value;
+            const image = row.querySelector('.pkg-img-preview').dataset.url;
+            const profitBadge = row.querySelector('.pkg-profit-badge');
+
+            row.querySelector('.pkg-summary-name').innerText = amount || 'Unnamed package';
+            row.querySelector('.pkg-summary-price-text').innerText = price ? Number(price).toLocaleString() + ' MMK' : '--';
+
+            const summaryProfit = row.querySelector('.pkg-summary-profit');
+            summaryProfit.className = 'pkg-summary-profit' + (profitBadge.classList.contains('positive') ? ' positive' : profitBadge.classList.contains('negative') ? ' negative' : '');
+            summaryProfit.innerText = profitBadge.innerText;
+
+            const thumbImg = row.querySelector('.pkg-summary-thumb-img');
+            const thumbPlaceholder = row.querySelector('.pkg-summary-thumb-placeholder');
+            if (image) {
+                thumbImg.src = image;
+                thumbImg.style.display = 'block';
+                thumbPlaceholder.style.display = 'none';
+            } else {
+                thumbImg.style.display = 'none';
+                thumbPlaceholder.style.display = 'block';
+            }
+        }
+
+        // Opens a package row's card overlay for editing. Tapping the compact
+        // summary row triggers this — the card floats centered over everything
+        // else so full details (image, cost/price, G2Bulk/JCPlays IDs) are
+        // editable without the list itself growing tall on a small screen.
+        function expandPackageRow(el) {
+            const row = el.closest('.package-row');
+            row.classList.add('editing');
+        }
+        window.expandPackageRow = expandPackageRow;
+
+        // Closes a package row's card — used by the Save button, the × close
+        // icon, and tapping the dimmed backdrop. All three just collapse the
+        // card back to its summary row: there's no separate "cancel" state
+        // since every field already writes straight into the same inputs that
+        // saveGame() reads, so "closing" and "saving" are the same action here.
+        function collapsePackageRow(el) {
+            const row = el.closest('.package-row');
+            syncPkgSummary(row);
+            row.classList.remove('editing');
+        }
+        window.collapsePackageRow = collapsePackageRow;
 
         // Removes a package row (called from the × button) and refreshes order numbers.
         function removePackageRow(el) {
@@ -6205,6 +6306,7 @@
             try {
                 await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret, enabled }, { merge: true });
                 window.showToast('G2Bulk key saved!', 'success');
+                closeG2BulkModal();
             } catch (error) {
                 console.error("Save G2Bulk key error:", error);
                 window.showToast('Failed to save G2Bulk key.', 'fail');
@@ -7393,6 +7495,7 @@
             try {
                 await setDoc(doc(db, "settings", "jcplays"), { baseUrl, uid, email, mKey, enabled }, { merge: true });
                 window.showToast('JCPlays credentials saved!', 'success');
+                closeJCPlaysModal();
             } catch (error) {
                 console.error("Save JCPlays credentials error:", error);
                 window.showToast('Failed to save JCPlays credentials.', 'fail');
