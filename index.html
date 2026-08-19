@@ -176,57 +176,36 @@
         }
         #login-screen.hidden { display: none; }
 
-        /* Ambient "atom" animation on the login screen's black backdrop —
-           a glowing nucleus with 4 electrons orbiting it on tilted elliptical
-           paths, purely decorative and sits behind the login card. */
-        .atom-loader { position: absolute; top: 50%; left: 50%; width: 260px; height: 260px; transform: translate(-50%,-50%); z-index: 0; pointer-events: none; opacity: 0.9; }
-        .atom-core {
-            position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; margin: -8px;
-            border-radius: 50%; background: radial-gradient(circle at 32% 28%, #fff, var(--accent, #1877F2) 65%);
-            box-shadow: 0 0 22px 6px rgba(24,119,242,0.55), 0 0 50px 14px rgba(24,119,242,0.25);
-            animation: atom-core-pulse 2.4s ease-in-out infinite;
+        /* Static gradient-mesh backdrop — soft blurred colour blobs behind the
+           login card, no motion, echoing the same mesh look used elsewhere
+           in the panel (see the --mesh-* tokens on body::before). */
+        .login-mesh {
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(40% 34% at 14% 12%, rgba(76,154,255,0.28) 0%, transparent 70%),
+                radial-gradient(44% 36% at 88% 20%, rgba(168,85,247,0.22) 0%, transparent 72%),
+                radial-gradient(42% 34% at 22% 92%, rgba(45,212,191,0.18) 0%, transparent 70%),
+                radial-gradient(46% 38% at 92% 88%, rgba(76,154,255,0.2) 0%, transparent 70%);
+            filter: blur(4px);
         }
-        .atom-orbit { position: absolute; inset: 0; }
-        .atom-orbit:nth-child(2) { transform: rotate(0deg); }
-        .atom-orbit:nth-child(3) { transform: rotate(45deg); }
-        .atom-orbit:nth-child(4) { transform: rotate(90deg); }
-        .atom-orbit:nth-child(5) { transform: rotate(135deg); }
-        .atom-orbit-ring { position: absolute; inset: 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 50%; transform: scaleY(0.4); }
-        .atom-electron-spin { position: absolute; inset: 0; transform: scaleY(0.4); animation: atom-spin linear infinite; }
-        .atom-orbit:nth-child(2) .atom-electron-spin { animation-duration: 3.2s; }
-        .atom-orbit:nth-child(3) .atom-electron-spin { animation-duration: 4s; animation-direction: reverse; }
-        .atom-orbit:nth-child(4) .atom-electron-spin { animation-duration: 2.6s; }
-        .atom-orbit:nth-child(5) .atom-electron-spin { animation-duration: 4.6s; animation-direction: reverse; }
-        .atom-electron {
-            position: absolute; top: 0; left: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
-            border-radius: 50%; background: #fff;
-            box-shadow: 0 0 10px 3px rgba(76,154,255,0.85), 0 0 18px 6px rgba(76,154,255,0.35);
-        }
-        @keyframes atom-spin { from { transform: scaleY(0.4) rotate(0deg); } to { transform: scaleY(0.4) rotate(360deg); } }
-        @keyframes atom-core-pulse { 0%, 100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.18); } }
-        @media (prefers-reduced-motion: reduce) {
-            .atom-electron-spin, .atom-core { animation: none; }
-        }
-        /* Extra ambient atoms scattered around the login card — smaller,
-           dimmer copies of the main one, placed in the open corners so
-           they stay clear of the card on both phone and desktop widths. */
-        .atom-loader--tl { top: 9%;  left: 8%;  width: 140px; height: 140px; opacity: 0.55; }
-        .atom-loader--tr { top: 15%; left: 92%; width: 120px; height: 120px; opacity: 0.45; }
-        .atom-loader--bl { top: 80%; left: 10%; width: 130px; height: 130px; opacity: 0.5;  }
-        .atom-loader--br { top: 87%; left: 90%; width: 150px; height: 150px; opacity: 0.55; }
-        /* ---- Login card: split layout (form left, illustration right),
-           modeled on the reference mock. Always renders as a bright white
-           card regardless of admin theme, since it sits on the dark
-           atom-animation backdrop. Stacks to a single column on narrow
-           screens, hiding the illustration panel to save space. */
+        /* ---- Login card: split layout (form left, illustration right).
+           Re-themed as a dark glass "atom" card so the ambient orbiting-
+           electron backdrop shows through behind it, instead of a plain
+           opaque white card that clashed with the dark atom animation.
+           Stacks to a single column on narrow screens, hiding the
+           illustration panel to save space. */
         .login-card {
             position: relative; z-index: 1; display: flex; width: 100%; max-width: 760px;
-            min-height: 480px; background: #fff; border-radius: 28px; overflow: hidden;
-            box-shadow: 0 40px 90px -24px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+            min-height: 480px; background: rgba(13,17,32,0.68); border-radius: 28px; overflow: hidden;
+            border: 1px solid rgba(120,170,255,0.16);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            backdrop-filter: blur(24px) saturate(150%);
+            box-shadow: 0 40px 90px -24px rgba(0,0,0,0.75), 0 0 70px -18px rgba(76,154,255,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .login-card-left { flex: 1 1 50%; padding: 46px 42px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
         .login-card-right {
-            flex: 1 1 50%; background: linear-gradient(165deg, #F4F6FC 0%, #EDF1FB 100%);
+            flex: 1 1 50%; background: linear-gradient(165deg, rgba(35,48,90,0.5) 0%, rgba(8,11,22,0.55) 100%);
+            border-left: 1px solid rgba(255,255,255,0.07);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 40px 34px; position: relative; text-align: center;
         }
@@ -235,61 +214,62 @@
             .login-card-right { display: none; }
             .login-card-left { padding: 38px 26px; }
         }
-        .login-box .logo-icon { background: var(--accent, #4C6FFF); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 0 18px; }
-        .login-box h2 { text-align: center; font-size: 25px; font-weight: 800; color: #14161A; margin-bottom: 6px; letter-spacing: -0.3px; }
-        .login-box p.sub { text-align: center; font-size: 13px; color: #8A8F98; margin-bottom: 24px; }
-        .login-box label { font-size: 12px; font-weight: 500; color: #9AA0A8; display: block; margin-bottom: 7px; }
+        .login-box .logo-icon { background: var(--accent, #4C6FFF); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 0 18px; box-shadow: 0 0 22px -2px rgba(76,154,255,0.65); }
+        .login-box h2 { text-align: center; font-size: 25px; font-weight: 800; color: #F3F6FF; margin-bottom: 6px; letter-spacing: -0.3px; }
+        .login-box p.sub { text-align: center; font-size: 13px; color: rgba(230,236,255,0.55); margin-bottom: 24px; }
+        .login-box label { font-size: 12px; font-weight: 500; color: rgba(230,236,255,0.45); display: block; margin-bottom: 7px; }
         .login-box .field-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-        .login-box .forgot-link { font-size: 12px; font-weight: 600; color: #4C6FFF; text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
+        .login-box .forgot-link { font-size: 12px; font-weight: 600; color: #6FA3FF; text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
         .login-box .forgot-link:hover { text-decoration: underline; }
         .login-box .field-wrap { position: relative; margin-bottom: 16px; }
         .login-box input {
-            width: 100%; padding: 13px 14px; border: 1.5px solid transparent; background: #F3F5F9;
-            color: #14161A; border-radius: 11px; font-size: 14px; transition: border-color 0.15s ease, background 0.15s ease;
+            width: 100%; padding: 13px 14px; border: 1.5px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.055);
+            color: #F3F6FF; border-radius: 11px; font-size: 14px; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
         }
         .login-box .field-wrap input { margin-bottom: 0; }
         .login-box .field-wrap.has-toggle input { padding-right: 42px; }
-        .login-box input::placeholder { color: #B4B8C0; }
-        .login-box input:focus { outline: none; border-color: var(--accent, #4C6FFF); background: #fff; box-shadow: 0 0 0 3px rgba(76,111,255,0.10); }
+        .login-box input::placeholder { color: rgba(230,236,255,0.32); }
+        .login-box input:focus { outline: none; border-color: var(--accent, #4C6FFF); background: rgba(255,255,255,0.08); box-shadow: 0 0 0 3px rgba(76,154,255,0.18), 0 0 18px -4px rgba(76,154,255,0.55); }
         .login-box .pw-toggle-btn {
             position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px;
-            border: none; background: transparent; color: #9AA0A8; display: flex; align-items: center; justify-content: center;
+            border: none; background: transparent; color: rgba(230,236,255,0.45); display: flex; align-items: center; justify-content: center;
             cursor: pointer; border-radius: 8px;
         }
-        .login-box .pw-toggle-btn:hover { color: #4C6FFF; background: rgba(76,111,255,0.08); }
+        .login-box .pw-toggle-btn:hover { color: #6FA3FF; background: rgba(111,163,255,0.12); }
         .login-box .pw-toggle-btn svg { width: 18px; height: 18px; }
         .login-box .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
         .login-box .remember-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent, #4C6FFF); cursor: pointer; margin: 0; }
-        .login-box .remember-row label { font-size: 13px; color: #6B707A; margin: 0; cursor: pointer; }
+        .login-box .remember-row label { font-size: 13px; color: rgba(230,236,255,0.55); margin: 0; cursor: pointer; }
         .login-box button {
             width: 100%; padding: 14px; border-radius: 11px; font-weight: 700; font-size: 15px; border: none;
             background: var(--accent, #4C6FFF); color: #fff; cursor: pointer;
-            box-shadow: 0 10px 22px -8px rgba(76,111,255,0.55);
+            box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6), 0 0 30px -10px rgba(76,154,255,0.5);
             transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
         .login-box button:active { transform: translateY(1px); }
         .login-box button:disabled { opacity: 0.6; box-shadow: none; }
-        .login-box .login-footnote { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; font-size: 12px; color: #9AA0A8; }
+        .login-box .login-footnote { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; font-size: 12px; color: rgba(230,236,255,0.4); }
         .login-box .login-footnote svg { width: 13px; height: 13px; }
-        #login-error { color: var(--danger-strong); font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
-        .login-msg-error { color: var(--danger-strong); font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
-        .login-msg-info { font-size: 13px; color: #14161A; text-align: center; margin-bottom: 16px; line-height: 1.5; }
-        .login-msg-hint { font-size: 12px; color: #8A8F98; text-align: center; margin: -6px 0 14px; }
-        .login-secondary-btn { background: #F3F5F9 !important; color: #14161A !important; margin-top: 8px; box-shadow: none !important; }
-        .mfa-secret-box { background: #F3F5F9; border: 1px dashed #D6DAE2; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
-        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--accent, #4C6FFF); }
-        #resend-verify-btn { width: 100%; padding: 14px; border-radius: 11px; font-weight: 700; font-size: 15px; border: none; background: var(--accent, #4C6FFF); color: #fff; cursor: pointer; margin-bottom: 8px; box-shadow: 0 10px 22px -8px rgba(76,111,255,0.55); }
+        #login-error { color: #FF8A8A; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        .login-msg-error { color: #FF8A8A; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        .login-msg-info { font-size: 13px; color: rgba(243,246,255,0.9); text-align: center; margin-bottom: 16px; line-height: 1.5; }
+        .login-msg-hint { font-size: 12px; color: rgba(230,236,255,0.45); text-align: center; margin: -6px 0 14px; }
+        .login-secondary-btn { background: rgba(255,255,255,0.08) !important; color: #F3F6FF !important; margin-top: 8px; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.1) !important; }
+        .mfa-secret-box { background: rgba(255,255,255,0.055); border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
+        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #6FA3FF; }
+        #resend-verify-btn { width: 100%; padding: 14px; border-radius: 11px; font-weight: 700; font-size: 15px; border: none; background: var(--accent, #4C6FFF); color: #fff; cursor: pointer; margin-bottom: 8px; box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6); }
 
-        /* ---- Right-panel illustration: a small original dashboard/coin
-           mockup (not a copy of any stock asset) echoing the reference's
-           "progress" visual language, themed to PCA Store's order flow. */
-        .login-illustration { width: 220px; height: 180px; position: relative; margin-bottom: 26px; }
+        /* ---- Right-panel illustration: a small orbiting-atom graphic (glowing
+           nucleus + elliptical orbit rings), echoing the ambient backdrop
+           animation so the whole card commits to one "atom" visual language
+           instead of a generic dashboard mockup. */
+        .login-illustration { width: 190px; height: 190px; position: relative; margin-bottom: 26px; }
         .login-illustration svg { width: 100%; height: 100%; }
-        .login-card-right h3 { font-size: 17px; font-weight: 800; color: #14161A; margin-bottom: 8px; }
-        .login-card-right p { font-size: 12.5px; color: #9AA0A8; line-height: 1.6; max-width: 240px; }
+        .login-card-right h3 { font-size: 17px; font-weight: 800; color: #F3F6FF; margin-bottom: 8px; }
+        .login-card-right p { font-size: 12.5px; color: rgba(230,236,255,0.5); line-height: 1.6; max-width: 240px; }
         .login-dots { display: flex; align-items: center; gap: 6px; margin-top: 22px; }
-        .login-dots span { display: block; height: 6px; width: 6px; border-radius: 999px; background: #D6DAE2; }
-        .login-dots span.active { width: 20px; background: var(--accent, #4C6FFF); }
+        .login-dots span { display: block; height: 6px; width: 6px; border-radius: 999px; background: rgba(255,255,255,0.18); }
+        .login-dots span.active { width: 20px; background: var(--accent, #4C6FFF); box-shadow: 0 0 10px -1px rgba(76,154,255,0.8); }
 
         /* Header */
         .header { background-color: var(--surface); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 var(--border-glass), 0 8px 24px -12px rgba(0,0,0,0.25); border-bottom: 1px solid var(--fill-soft); }
@@ -842,13 +822,13 @@
         .pkg-summary-thumb { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; overflow: hidden; background: var(--accent-soft); border: 1px solid var(--fill-soft); display: flex; align-items: center; justify-content: center; }
         .pkg-summary-thumb img { width: 100%; height: 100%; object-fit: contain; }
         .pkg-summary-thumb-placeholder { font-size: 10px; font-weight: 700; color: var(--accent); }
-        .pkg-summary-name { font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pkg-summary-name { flex-shrink: 0; font-size: 15px; font-weight: 800; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pkg-summary-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
         .pkg-summary-dot.pkg-dot-package { background: #A855F7; }
-        .pkg-summary-body { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .pkg-summary-value { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
-        .pkg-summary-price-text { font-size: 19px; font-weight: 800; color: var(--text-strong); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pkg-summary-price-unit { font-size: 10.5px; font-weight: 700; color: var(--text-muted); }
+        .pkg-summary-body { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+        .pkg-summary-value { display: flex; align-items: baseline; gap: 4px; min-width: 0; flex-shrink: 1; overflow: hidden; padding-left: 8px; border-left: 1px solid var(--fill-soft); }
+        .pkg-summary-price-text { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--accent); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pkg-summary-price-unit { font-size: 10.5px; font-weight: 700; color: var(--accent); opacity: 0.75; }
         .pkg-summary-actions { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
         .pkg-summary-profit { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 7px; background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--fill-soft); white-space: nowrap; }
         .pkg-summary-profit svg { width: 10px; height: 10px; flex-shrink: 0; }
@@ -856,7 +836,7 @@
         .pkg-summary-profit.negative { background: var(--danger-soft); color: var(--danger-strong); border-color: rgba(250,62,62,0.28); }
         .pkg-summary-remove { color: var(--danger); font-size: 15px; padding: 2px 4px; cursor: pointer; line-height: 1; opacity: 0.65; }
         .pkg-summary-remove:active { opacity: 1; }
-        #orders-container .pkg-summary-price-text { font-size: 17px; }
+        #orders-container .pkg-summary-price-text { font-size: 12px; }
         .pkg-card-overlay { display: none; }
         .package-row.editing .pkg-card-overlay { display: flex; position: fixed; inset: 0; z-index: 300; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); padding: 16px; }
         .pkg-card { background: #fff; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
@@ -888,6 +868,15 @@
         .pkg-cost-update-btn { margin-top: 4px; width: 100%; border: none; border-radius: 6px; padding: 5px 6px; font-size: 11px; font-weight: 700; color: #fff; background: #FF9500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; animation: pkgUpdatePulse 1.4s ease-in-out infinite; }
         .pkg-cost-update-btn:active { transform: scale(0.97); animation: none; }
         @keyframes pkgUpdatePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,149,0,0.45); } 50% { box-shadow: 0 0 0 4px rgba(255,149,0,0); } }
+
+        /* Scroll-reveal: cards/items fade + slide up into place as they enter
+           the viewport while scrolling (see initScrollReveal in JS). Respects
+           reduced-motion preference by skipping the animated state entirely. */
+        .scroll-reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.5s cubic-bezier(0.22,0.61,0.36,1), transform 0.5s cubic-bezier(0.22,0.61,0.36,1); }
+        .scroll-reveal.revealed { opacity: 1; transform: translateY(0); }
+        @media (prefers-reduced-motion: reduce) {
+            .scroll-reveal, .scroll-reveal.revealed { opacity: 1; transform: none; transition: none; }
+        }
 
         /* ===================== Desktop Mode =====================
            Above ~900px this panel stops behaving like a stretched-out
@@ -994,43 +983,8 @@
          Steps: password -> (verify email if needed) -> TOTP enroll (first time)
          or TOTP challenge (already enrolled) -> app unlocks. -->
     <div id="login-screen">
-        <!-- Ambient atom animation on the black backdrop (decorative only) -->
-        <div class="atom-loader" aria-hidden="true">
-            <div class="atom-core"></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-        </div>
-        <!-- Extra scattered atoms in the open corners around the card -->
-        <div class="atom-loader atom-loader--tl" aria-hidden="true">
-            <div class="atom-core"></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-        </div>
-        <div class="atom-loader atom-loader--tr" aria-hidden="true">
-            <div class="atom-core"></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-        </div>
-        <div class="atom-loader atom-loader--bl" aria-hidden="true">
-            <div class="atom-core"></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-        </div>
-        <div class="atom-loader atom-loader--br" aria-hidden="true">
-            <div class="atom-core"></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-            <div class="atom-orbit"><div class="atom-orbit-ring"></div><div class="atom-electron-spin"><div class="atom-electron"></div></div></div>
-        </div>
+        <!-- Static gradient-mesh backdrop (decorative only, no motion) -->
+        <div class="login-mesh" aria-hidden="true"></div>
         <!-- Obscurity gate: only this tiny version label shows at first. Tap it
              7 times (within 2s of each tap) to reveal the real login form below.
              This is NOT the security boundary by itself — it just keeps the
@@ -1115,28 +1069,31 @@
                  reference mock's "progress" visual but themed to order tracking. -->
             <div class="login-card-right">
                 <div class="login-illustration" aria-hidden="true">
-                    <svg viewBox="0 0 220 180" fill="none">
-                        <rect x="18" y="14" width="150" height="104" rx="12" fill="#fff" stroke="#E3E7F1" stroke-width="1.5"/>
-                        <circle cx="34" cy="30" r="4" fill="#FF6B6B"/>
-                        <circle cx="46" cy="30" r="4" fill="#FFC24B"/>
-                        <circle cx="58" cy="30" r="4" fill="#4CD97B"/>
-                        <rect x="32" y="48" width="60" height="7" rx="3.5" fill="#EDF0F8"/>
-                        <rect x="32" y="60" width="40" height="6" rx="3" fill="#EDF0F8"/>
-                        <rect x="30" y="78" width="14" height="28" rx="3" fill="#C9D3FF"/>
-                        <rect x="49" y="66" width="14" height="40" rx="3" fill="#4C6FFF"/>
-                        <rect x="68" y="86" width="14" height="20" rx="3" fill="#C9D3FF"/>
-                        <rect x="105" y="46" width="50" height="50" rx="10" fill="#4C6FFF"/>
-                        <path d="M116 74l8 8 16-18" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                        <circle cx="185" cy="46" r="17" fill="#FFC24B"/>
-                        <text x="185" y="51" font-size="13" font-weight="800" fill="#B4790A" text-anchor="middle" font-family="Roboto, sans-serif">K</text>
-                        <circle cx="196" cy="72" r="10" fill="#FFDFA0"/>
-                        <rect x="14" y="130" width="192" height="40" rx="12" fill="#fff" stroke="#E3E7F1" stroke-width="1.5"/>
-                        <circle cx="34" cy="150" r="10" fill="#4C6FFF"/>
-                        <path d="M29 150l3.5 3.5L39 146" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                        <rect x="52" y="144" width="80" height="6" rx="3" fill="#EDF0F8"/>
-                        <rect x="52" y="154" width="52" height="5" rx="2.5" fill="#EDF0F8"/>
-                        <rect x="150" y="142" width="42" height="16" rx="8" fill="#E9EEFF"/>
-                        <text x="171" y="153" font-size="9" font-weight="700" fill="#4C6FFF" text-anchor="middle" font-family="Roboto, sans-serif">Done</text>
+                    <svg viewBox="0 0 190 190" fill="none">
+                        <defs>
+                            <radialGradient id="meshBlobA" cx="35%" cy="30%" r="65%">
+                                <stop offset="0%" stop-color="#6FA3FF" stop-opacity="0.55"/>
+                                <stop offset="100%" stop-color="#6FA3FF" stop-opacity="0"/>
+                            </radialGradient>
+                            <radialGradient id="meshBlobB" cx="65%" cy="70%" r="60%">
+                                <stop offset="0%" stop-color="#A855F7" stop-opacity="0.4"/>
+                                <stop offset="100%" stop-color="#A855F7" stop-opacity="0"/>
+                            </radialGradient>
+                            <radialGradient id="meshBlobC" cx="70%" cy="25%" r="55%">
+                                <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
+                            </radialGradient>
+                            <linearGradient id="shieldFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#6FA3FF"/>
+                                <stop offset="100%" stop-color="#4C6FFF"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobA)"/>
+                        <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobB)"/>
+                        <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobC)"/>
+                        <circle cx="95" cy="95" r="60" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+                        <path d="M95 60l26 10v18c0 20-11 33-26 40-15-7-26-20-26-40V70z" fill="url(#shieldFill)" opacity="0.95"/>
+                        <path d="M83 96l8 8 17-19" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                     </svg>
                 </div>
                 <h3>Track Every Order in Real Time</h3>
@@ -2524,6 +2481,45 @@
             setTimeout(() => { toastBusy = false; processToastQueue(); }, 300);
         }
         window.dismissToast = dismissToast;
+
+        // ---------- Scroll-reveal (fade + slide up) ----------
+        // Applies to a list container right after its cards are (re)rendered
+        // via innerHTML. Each direct card fades/slides in as it scrolls into
+        // view. Cards are deduped by their `id` attribute (via revealedCardIds)
+        // so a live re-render (Firestore onSnapshot) doesn't replay the
+        // entrance animation on cards the user has already seen - only
+        // genuinely new cards animate in.
+        const revealedCardIds = new Set();
+        let scrollRevealObserver = null;
+        function getScrollRevealObserver() {
+            if (scrollRevealObserver) return scrollRevealObserver;
+            scrollRevealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('revealed');
+                    if (entry.target.id) revealedCardIds.add(entry.target.id);
+                    scrollRevealObserver.unobserve(entry.target);
+                });
+            }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+            return scrollRevealObserver;
+        }
+        function initScrollReveal(container, selector = ':scope > .admin-card, :scope > .package-row') {
+            if (!container) return;
+            const observer = getScrollRevealObserver();
+            const items = container.querySelectorAll(selector);
+            items.forEach((el, i) => {
+                if (el.id && revealedCardIds.has(el.id)) {
+                    // Already seen this card before (by id) - show it immediately,
+                    // no replay animation on re-render.
+                    el.classList.add('scroll-reveal', 'revealed');
+                    return;
+                }
+                el.classList.add('scroll-reveal');
+                el.style.transitionDelay = (Math.min(i, 8) * 40) + 'ms';
+                observer.observe(el);
+            });
+        }
+        window.initScrollReveal = initScrollReveal;
         // Reusable Delete / Warning / Information dialog — replaces window.confirm() / alert().
         // type: 'delete' (red, destructive) | 'warning' (amber, needs a decision) | 'info' (blue, OK-only notice)
         let actionDialogCallback = null;
@@ -3335,6 +3331,10 @@
                                     <div class="od-label">Order ID</div>
                                     <div class="od-value mono">${orderId}</div>
                                 </div>
+                                ${data.g2bulkOrderId ? `<div class="od-cell">
+                                    <div class="od-label">G2Bulk Order ID</div>
+                                    <div class="od-value mono">${data.g2bulkOrderId}</div>
+                                </div>` : ''}
                                 <div class="od-cell">
                                     <div class="od-label">Transaction ID</div>
                                     <div class="od-value mono">${data.transactionId || 'N/A'}</div>
@@ -3360,6 +3360,7 @@
                 `;
             }).join('');
             updateBulkActionBar();
+            initScrollReveal(ordersContainer);
         }
 
         function clearOrderDateRange() {
@@ -3936,6 +3937,7 @@
                     </div>
                 `;
             }).join('');
+            initScrollReveal(container);
         }
 
         function clearTopupDateRange() {
@@ -4436,7 +4438,7 @@
             container.innerHTML = ids.map(id => {
                 const g = GAMES[id];
                 return `
-                    <div class="admin-card">
+                    <div class="admin-card" id="game-card-${id}">
                         <div class="ac-header">
                             <span class="ac-id">${g.name}</span>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
@@ -4459,9 +4461,8 @@
                     </div>
                 `;
             }).join('');
+            initScrollReveal(container);
         }
-
-        function listenGames() {
             onSnapshot(collection(db, "games"), (snap) => {
                 const newGames = {};
                 snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
@@ -4653,14 +4654,14 @@
                                     <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
                                 </div>
                                 <span class="pkg-summary-name">${amount || 'Unnamed package'}</span>
+                                <span class="pkg-summary-value">
+                                    <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() : '--'}</span>
+                                    <span class="pkg-summary-price-unit">${price ? 'MMK' : ''}</span>
+                                </span>
                             </div>
                             <span class="pkg-summary-dot ${type === 'package' ? 'pkg-dot-package' : ''}" title="${type === 'package' ? 'Package (wide banner)' : 'Currency (grid card)'}"></span>
                         </div>
                         <div class="pkg-summary-body">
-                            <div class="pkg-summary-value">
-                                <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() : '--'}</span>
-                                <span class="pkg-summary-price-unit">${price ? 'MMK' : ''}</span>
-                            </div>
                             <div class="pkg-summary-actions">
                                 <span class="pkg-summary-profit">--</span>
                                 <div class="pkg-summary-remove" onclick="event.stopPropagation(); removePackageRow(this)" title="ဖျက်ရန်">&times;</div>
@@ -5880,6 +5881,10 @@
                                     <div class="od-label">Order ID</div>
                                     <div class="od-value mono">${orderId}</div>
                                 </div>
+                                ${o.g2bulkOrderId ? `<div class="od-cell">
+                                    <div class="od-label">G2Bulk Order ID</div>
+                                    <div class="od-value mono">${o.g2bulkOrderId}</div>
+                                </div>` : ''}
                                 <div class="od-cell">
                                     <div class="od-label">Transaction ID</div>
                                     <div class="od-value mono">${o.transactionId || 'N/A'}</div>
@@ -7797,7 +7802,7 @@
 
         // Applies one row's pending live-price update (set by checkLivePriceChanges)
         // to its Cost field, refreshes the profit badge, and hides the button.
-        function applyCostUpdate(btn) {
+        function applyCostUpdate(btn, silent = false) {
             const newCost = btn.dataset.newCost;
             if (newCost === undefined) return;
             const row = btn.closest('.package-row');
@@ -7806,18 +7811,20 @@
             updatePackageProfit(costInput);
             btn.style.display = 'none';
             delete btn.dataset.newCost;
-            window.showToast('Cost updated', 'success');
+            if (!silent) window.showToast('Cost updated', 'success');
         }
         window.applyCostUpdate = applyCostUpdate;
 
         // Applies every row's pending live-price update in one tap, instead
         // of tapping "Update Cost" on each row one by one. Reuses
-        // applyCostUpdate per row so the profit badge stays in sync.
+        // applyCostUpdate per row so the profit badge stays in sync. Each row
+        // is applied silently so only the single summary toast below shows,
+        // instead of queuing up one "Cost updated" toast per row.
         function applyAllCostUpdates() {
             const buttons = Array.from(document.querySelectorAll('.pkg-cost-update-btn'))
                 .filter(u => u.dataset.newCost !== undefined && u.style.display !== 'none');
             if (buttons.length === 0) return;
-            buttons.forEach(applyCostUpdate);
+            buttons.forEach(u => applyCostUpdate(u, true));
 
             const allBtn = document.getElementById('pkg-apply-all-cost-btn');
             if (allBtn) allBtn.style.display = 'none';
