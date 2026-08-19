@@ -7,6 +7,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        html { -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
 
         /* ============================================================
            THEME ENGINE — CSS variables driven by [data-theme] on <html>.
@@ -484,6 +485,22 @@
         .oc-meta { font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .oc-meta b { color: var(--text-primary); font-weight: 600; }
         .oc-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+
+        /* Order History (Orders admin page) — same compact-row + tap-to-expand
+           idea as the package rows: a tight one-line summary by default, full
+           detail only once a card is opened. Scoped to #orders-container so
+           the identical oc-*/ac-* classes used by the Wallet Top-up list (and
+           anywhere else) keep their original, roomier size. */
+        #orders-container .admin-card { padding: 8px 10px; border-radius: 12px; margin-bottom: 6px; }
+        #orders-container .oc-top { gap: 8px; }
+        #orders-container .oc-thumb { width: 34px; height: 34px; border-radius: 7px; }
+        #orders-container .oc-game-name { font-size: 12.5px; }
+        #orders-container .oc-meta { font-size: 10.5px; margin-top: 1px; }
+        #orders-container .oc-status { gap: 4px; }
+        #orders-container .oc-status .badge { font-size: 10px; padding: 2px 8px; }
+        #orders-container .ac-body { padding-top: 8px !important; margin-top: 8px !important; }
+        #orders-container .ac-footer { margin-top: 8px; gap: 6px; }
+        #orders-container .ac-footer .btn { padding: 8px 10px; font-size: 12.5px; }
         
         /* Badges & Buttons */
         .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block;}
@@ -722,7 +739,7 @@
         /* Package/Currency/Custom tabs — filters #edit-packages-list so the
            two package "types" (and any admin-defined custom groups) never
            show mixed together while editing. */
-        .pkg-tab-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .pkg-tab-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; position: sticky; top: -1px; z-index: 8; background: var(--surface-strong); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 6px 0; border-bottom: 1px solid var(--fill-soft); }
         .pkg-tab-btn {
             display: flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 999px;
             border: 1px solid var(--fill-soft); background: var(--surface); color: var(--text-secondary);
@@ -743,11 +760,11 @@
 
         /* Package (currency grid) — drag-to-reorder card list */
         #edit-packages-list { display: flex; flex-direction: column; gap: 6px; position: relative; }
-        .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 9px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
+        .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
         .package-row.drag-over { border-color: var(--accent); }
-        .pkg-order-col { flex-shrink: 0; width: 26px; display: flex; flex-direction: column; align-items: stretch; }
-        .pkg-move-btn { border: none; background: #F7F8FA; color: var(--text-muted); padding: 3px 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .pkg-order-col { flex-shrink: 0; width: 26px; display: flex; flex-direction: column; align-items: stretch; border-right: 1px solid var(--fill-soft); }
+        .pkg-move-btn { border: none; background: #F7F8FA; color: var(--text-muted); padding: 4px 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .pkg-move-btn:active { background: var(--fill-soft); color: var(--accent); }
         .pkg-move-btn:disabled { opacity: 0.25; cursor: default; }
         .pkg-move-btn:disabled:active { background: #F7F8FA; color: var(--text-muted); }
@@ -1160,7 +1177,6 @@
                 <div class="modal-close" onclick="closeThemeSheet()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12.5px;color:var(--text-secondary);margin:-4px 0 4px;">Liquid glass appearance for this admin panel. Applies instantly and is remembered on this device.</p>
                 <div id="theme-swatch-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div>
             </div>
         </div>
@@ -1207,6 +1223,9 @@
         </div>
         <div class="nav-item" id="btn-frames" onclick="showPage('frames')">
             <svg class="ui-icon"><use href="#icon-frame"></use></svg> Frames
+        </div>
+        <div class="nav-item" id="btn-activity-log" onclick="showPage('activity-log')">
+            <svg class="ui-icon"><use href="#icon-shield"></use></svg> Activity
         </div>
         <div class="nav-item" id="btn-settings" onclick="showPage('settings')">
             <svg class="ui-icon"><use href="#icon-gear"></use></svg> Settings
@@ -1347,7 +1366,6 @@
                     <svg class="ui-icon" id="social-links-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="social-links-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">These appear as tappable icons on the Store app's Profile page.</p>
                     <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">Facebook URL</label>
                     <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                     <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">Telegram URL</label>
@@ -1364,11 +1382,9 @@
                     <svg class="ui-icon" id="branding-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="branding-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Shown next to "PCA Store" in the header here and in the Store app.</p>
                     <label class="img-update-box" id="logo-img-update-box" for="edit-logo-file">
                         <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                         <span class="img-update-label">Image Update</span>
-                        <span class="img-update-hint">Tap to choose a logo photo</span>
                         <img id="edit-logo-preview" src="" alt="Preview" style="display:none;">
                         <span class="img-update-change" id="logo-img-update-change" style="display:none;">
                             <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
@@ -1386,7 +1402,6 @@
                     <svg class="ui-icon" id="receipt-style-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="receipt-style-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Controls the look of the PNG receipt customers download from Order History.</p>
                     <div id="receipt-style-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
                         <div class="receipt-style-option" data-style="minimal" onclick="selectReceiptStyle('minimal')" style="cursor:pointer;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:#FFFFFF;">
                             <div style="height:64px;background:#FFFFFF;position:relative;padding:8px;">
@@ -1419,11 +1434,9 @@
                     <svg class="ui-icon" id="admin-login-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="admin-login-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Currently, this admin panel opens with no login. Turn this on to require a username + password (with 2FA) before anyone can open it.</p>
                     <div class="switch-row">
                         <div>
                             <span class="switch-label">Require Login</span>
-                            <span class="switch-hint">When off, the panel opens directly with no password gate</span>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="admin-login-enabled-toggle" onchange="onAdminLoginToggle(this.checked)">
@@ -1436,7 +1449,6 @@
                     <input type="text" id="admin-login-username" placeholder="username" autocapitalize="none" autocorrect="off" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                     <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">New Password</label>
                     <input type="password" id="admin-login-password" placeholder="At least 6 characters" autocomplete="new-password" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <p style="font-size:11.5px;color:var(--text-secondary);margin:-6px 0 12px;">Saving replaces any existing password for this username and resets its 2FA — you'll set up the authenticator app again on the next login.</p>
                     <button class="btn btn-primary" id="save-admin-login-btn" onclick="saveAdminLoginCredentials()">Save Username &amp; Password</button>
                 </div>
             </div>
@@ -1479,7 +1491,6 @@
                     <svg class="ui-icon" id="g2bulk-tx-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="g2bulk-tx-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Every charge and top-up on your G2Bulk wallet, straight from their ledger — use this to reconcile against your own sales. API key is managed from the <b>API</b> tab.</p>
                     <button class="btn btn-outline" id="g2bulk-tx-refresh-btn" onclick="loadG2BulkTransactions()" style="margin-bottom:10px;">Load / Refresh</button>
                     <div id="g2bulk-tx-list"></div>
                 </div>
@@ -1489,13 +1500,11 @@
         <!-- API TAB: every third-party key/credential the app uses, in one place -->
         <div id="api-docs" class="page-section">
             <h2 class="title-header">API &amp; Integrations</h2>
-            <p style="font-size:12.5px;color:var(--text-secondary);margin-top:-8px;margin-bottom:14px;">Keys and credentials that power auto-fulfillment, image uploads, and balance checks across the app.</p>
 
             <div class="api-doc-card">
                 <div class="api-doc-icon" style="background:#29A9EA;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-telegram"></use></svg></div>
                 <div class="api-doc-info">
                     <span class="api-doc-title">Telegram Notifications Bot</span>
-                    <span class="api-doc-desc">Sends every new order and wallet top up to your Telegram with full details and Confirm/Reject buttons — no need to open this admin panel.</span>
                 </div>
                 <button class="btn btn-outline api-doc-btn" onclick="openTelegramBotModal()">Settings</button>
             </div>
@@ -1504,7 +1513,6 @@
                 <div class="api-doc-icon" style="background:#7C3AED;"><svg class="ui-icon" style="stroke:#fff;color:#fff;"><use href="#icon-g2bulk"></use></svg></div>
                 <div class="api-doc-info">
                     <span class="api-doc-title">G2Bulk API Key</span>
-                    <span class="api-doc-desc">Auto-fulfills top-ups via g2bulk.com — also powers wallet balance and the Transactions ledger on the G2Bulk tab.</span>
                 </div>
                 <button class="btn btn-outline api-doc-btn" onclick="openG2BulkModal()">Settings</button>
             </div>
@@ -1513,7 +1521,6 @@
                 <div class="api-doc-icon" style="background:#16A34A;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-key"></use></svg></div>
                 <div class="api-doc-info">
                     <span class="api-doc-title">JCPlays API Credentials</span>
-                    <span class="api-doc-desc">Auto-fulfills PUBG Mobile UC / Honor of Kings via jcplays.com (SmileCoin-compatible) — Base URL, UID, Email, M_KEY.</span>
                 </div>
                 <button class="btn btn-outline api-doc-btn" onclick="openJCPlaysModal()">Settings</button>
             </div>
@@ -1522,11 +1529,9 @@
                 <div class="api-doc-icon" style="background:#E67E22;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-camera"></use></svg></div>
                 <div class="api-doc-info">
                     <span class="api-doc-title">ImgBB API Key</span>
-                    <span class="api-doc-desc">Hosts every image uploaded from this panel — game covers, banners, logo, and customer payment receipts.</span>
                 </div>
                 <span class="api-doc-static-key" id="imgbb-key-display" onclick="toggleImgBBKeyReveal()">••••••••</span>
             </div>
-            <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">This one's hardcoded in the app's source (not stored in Firestore) — to rotate it, replace the <code>IMGBB_API_KEY</code> constant near the top of the file and re-upload.</p>
         </div>
 
         <!-- GAMES PAGE (Live Firestore Data) -->
@@ -1620,7 +1625,6 @@
                 </div>
                 <div class="modal-body">
                     <label>Customer UID</label>
-                    <p style="font-size:11px;color:var(--text-secondary);margin:-4px 0 6px;">The guest ID shown on the customer's Profile page (e.g. Guest-1234), or their Users tab entry.</p>
                     <input type="text" id="manual-topup-uid" placeholder="e.g. Guest-1234" style="width:100%;margin-bottom:12px;" autocomplete="off">
 
                     <label>Amount (MMK)</label>
@@ -1658,7 +1662,6 @@
                 <label style="font-size:13px;font-weight:600;color:var(--text-secondary);">New message</label>
                 <input type="text" id="ticker-text" placeholder="e.g. Shop open daily 9AM - 9PM" maxlength="120" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <button class="btn btn-primary" id="add-ticker-btn" onclick="addAnnouncement()">Add to Ticker</button>
-                <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Shows in the Store app's scrolling ticker at the top, mixed in with real top-up activity. Stays until you delete it — it doesn't expire on its own.</p>
             </div>
             <h2 class="title-header" style="margin-top:20px;">Current Messages</h2>
             <div id="ticker-list-container">
@@ -1753,7 +1756,6 @@
                 <button class="btn btn-outline" style="margin-top:8px;padding:7px 14px;font-size:12px;" onclick="saveUserAdminNote()">Save Note</button>
 
                 <h3 class="detail-section-title" style="margin-top:18px;">Frames</h3>
-                <p style="font-size:11px;color:var(--text-muted);margin:-4px 0 6px;">Flip any switch to grant or revoke that frame for this customer — mission-based frames also unlock automatically once they qualify.</p>
                 <div id="ud-frames-container">
                     <p class="empty-msg">Loading frames...</p>
                 </div>
@@ -1810,9 +1812,6 @@
              threshold (MMK) each VIP rank requires. Read live by Store.html. -->
         <div id="tier-list" class="page-section">
             <h2 class="title-header">VIP Tier Limits</h2>
-            <p style="font-size:12.5px;color:var(--text-secondary);margin:-8px 0 14px;line-height:1.5;">
-                Set the minimum lifetime top-up spend (MMK) a customer needs to reach each rank. Changes apply instantly in the Store app. Bronze is always the starting rank at 0 MMK.
-            </p>
             <div id="tier-limits-container">
                 <p class="empty-msg">Loading tier settings...</p>
             </div>
@@ -1825,12 +1824,23 @@
              Read live by Store.html's Frame Collection page. -->
         <div id="frames" class="page-section">
             <h2 class="title-header">Avatar &amp; Name Frames</h2>
-            <p style="font-size:12.5px;color:var(--text-secondary);margin:-8px 0 14px;line-height:1.5;">
-                Design frames customers unlock by completing a mission, or grant manually per-user from their profile (Users → tap a user → Frames). Event-limited frames only count progress while the event window is open, but stay owned forever once unlocked.
-            </p>
             <button class="btn btn-primary" style="margin-bottom:14px;" onclick="openFrameModal()">+ New Frame</button>
             <div id="frames-container" class="frame-admin-grid">
                 <p class="empty-msg">Loading frames...</p>
+            </div>
+        </div>
+
+        <!-- ADMIN ACTIVITY LOG PAGE (Firebase Connected) — audit trail of admin
+             actions (who changed what, from which IP) written by
+             logAdminActivity() throughout the app. Read-only here; entries can't
+             be edited or deleted from the client. -->
+        <div id="activity-log" class="page-section">
+            <h2 class="title-header">Admin Activity Log</h2>
+            <div class="admin-search-wrap" style="margin-bottom:12px;">
+                <input type="text" id="activity-log-filter" placeholder="Filter by admin username..." oninput="renderActivityLog()">
+            </div>
+            <div id="activity-log-container">
+                <p class="empty-msg">Loading activity...</p>
             </div>
         </div>
 
@@ -1853,7 +1863,6 @@
                 <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
 
                 <label>Server / Region <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">If this game has multiple servers (e.g. Malaysia Server, Singapore Server), give each upload the SAME Game Name above and a different Server name here. The Store will group them under one card and let customers pick a server. Leave blank for games with only one server.</p>
                 <input type="text" id="edit-game-server-name" placeholder="e.g. Malaysia Server (leave blank if only one server)">
 
                 <label>Game Category</label>
@@ -1863,7 +1872,6 @@
                 <div class="switch-row">
                     <div>
                         <span class="switch-label">Mark as Popular</span>
-                        <span class="switch-hint">Shows in the "Popular Games" horizontal row on the Store home page</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="edit-game-popular">
@@ -1874,7 +1882,6 @@
                 <div class="switch-row">
                     <div>
                         <span class="switch-label">Requires Server ID</span>
-                        <span class="switch-hint">Turn off for games that don't need a Server ID field</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="edit-game-serverid" checked>
@@ -1883,11 +1890,9 @@
                 </div>
 
                 <label>Game Image</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Photo auto-crops to a square — center the character/logo for the best fit.</p>
                 <label class="img-update-box" id="game-img-update-box" for="edit-game-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Image Update</span>
-                    <span class="img-update-hint">Tap to choose a game photo</span>
                     <img id="edit-game-preview" src="" alt="Preview" style="display:none;">
                     <span class="img-update-change" id="game-img-update-change" style="display:none;">
                         <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
@@ -1897,11 +1902,9 @@
                 <p id="upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
 
                 <label>Banner Image</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Wide photo shown at the top of the game's page. Leave empty to reuse the Game Image above.</p>
                 <label class="img-update-box" id="game-banner-update-box" for="edit-game-banner-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Banner Update</span>
-                    <span class="img-update-hint">Tap to choose a banner photo (16:9)</span>
                     <img id="edit-game-banner-preview" src="" alt="Banner preview" style="display:none;">
                     <span class="img-update-change" id="game-banner-update-change" style="display:none;">
                         <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
@@ -1912,7 +1915,6 @@
 
                 <div style="margin:4px 0 2px;padding:12px;background:#F7F8FA;border-radius:12px;border:1px solid var(--fill-soft);">
                     <p style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional)</p>
-                    <p style="font-size:11px;color:var(--text-muted);margin:-4px 0 10px;">Pick one provider for this game. Switching hides the other one, and Save only keeps the picked provider's links.</p>
 
                     <div class="pkg-type-tabs" id="fulfill-provider-tabs">
                         <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
@@ -1933,7 +1935,6 @@
 
                     <div id="jcplays-fulfill-section" style="display:none;margin-top:10px;">
                         <label style="margin-top:0;">JCPlays Game</label>
-                        <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Pick from the list, or type a custom Product Code if a game isn't listed yet.</p>
                         <div class="picker-btn" id="jcplays-picker-btn" onclick="openGamePicker('jcplays')">
                             <div class="picker-btn-thumb" id="jcplays-picker-thumb"></div>
                             <span class="picker-btn-label muted" id="jcplays-picker-display">-- Not linked (manual fulfillment) --</span>
@@ -1948,13 +1949,13 @@
                 </div>
 
                 <label>Top-up Packages</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Cost = your wholesale price (Store never shows this). Price = what the customer pays. The badge on the right shows your profit %.</p>
                 <div class="pkg-tab-bar" id="pkg-tab-bar"></div>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
                 <p class="pkg-tab-empty-msg" id="pkg-tab-empty-msg" style="display:none;">No packages in this tab yet — tap "+ Add Package" to add one.</p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
                     <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
+                    <button class="btn btn-outline" onclick="openBulkPkgModal()" title="Cost/Price အားလုံးကို % တစ်ခုတည်းနဲ့ တစ်ခါတည်းချိန်ညှိပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-dollar"></use></svg> Bulk %</button>
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
                     <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy All</button>
@@ -1966,6 +1967,41 @@
                 <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
                 <button class="btn btn-outline" id="duplicate-game-btn" style="display:none;" onclick="duplicateGameAsNewServer()" title="Keeps the Game Name, Image, Category and toggles, but clears the Server name, the G2Bulk/JCPlays link, and all packages so this server's own Import stays completely separate">+ New Server</button>
                 <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Price/Cost Adjust Modal: shift every package's Price or Cost by a
+         percentage in one tap (e.g. "+5% all prices" after a supplier hike).
+         Scoped to the currently-open tab by default so it matches Sort's
+         per-tab behavior, with an "All tabs" option for a full-game-wide change. -->
+    <div class="modal-overlay" id="bulk-pkg-modal-overlay" onclick="if(event.target===this) closeBulkPkgModal()">
+        <div class="modal-box" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>Bulk Price Adjust</h3>
+                <div class="modal-close" onclick="closeBulkPkgModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <label style="margin-top:0;">Field to change</label>
+                <div class="pkg-type-toggle" id="bulk-pkg-field-toggle" style="padding:4px;">
+                    <button type="button" class="pkg-type-opt active" data-value="price" onclick="setBulkPkgField(this,'price')">Price</button>
+                    <button type="button" class="pkg-type-opt" data-value="cost" onclick="setBulkPkgField(this,'cost')">Cost</button>
+                </div>
+
+                <label>Apply to</label>
+                <div class="pkg-type-toggle" id="bulk-pkg-scope-toggle" style="padding:4px;">
+                    <button type="button" class="pkg-type-opt active" data-value="tab" onclick="setBulkPkgScope(this,'tab')">This tab (<span id="bulk-pkg-tab-name"></span>)</button>
+                    <button type="button" class="pkg-type-opt" data-value="all" onclick="setBulkPkgScope(this,'all')">All tabs</button>
+                </div>
+
+                <label>Change (%)</label>
+                <input type="number" id="bulk-pkg-percent" placeholder="e.g. 5 or -10" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeBulkPkgModal()" style="flex:1;">Cancel</button>
+                <button class="btn btn-primary" onclick="applyBulkPkgAdjust()" style="flex:1;">Apply</button>
             </div>
         </div>
     </div>
@@ -2002,11 +2038,9 @@
                 </select>
 
                 <label>Frame Image</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Use a transparent PNG (ring/banner art). It's overlaid directly on the avatar or name — see the reference frame designs you have on hand.</p>
                 <label class="img-update-box" id="frame-img-update-box" for="edit-frame-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-frame"></use></svg></div>
                     <span class="img-update-label">Frame Image</span>
-                    <span class="img-update-hint">Tap to choose a frame image</span>
                     <img id="edit-frame-preview" src="" alt="Preview" style="display:none;">
                     <span class="img-update-change" id="frame-img-update-change" style="display:none;">
                         <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
@@ -2031,7 +2065,6 @@
                 <div class="switch-row">
                     <div>
                         <span class="switch-label">Event-Limited</span>
-                        <span class="switch-hint">Only unlockable while the event window below is open. Already-unlocked frames stay with the customer after it ends.</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="edit-frame-event" onchange="onFrameEventToggle()">
@@ -2049,7 +2082,6 @@
                 <div class="switch-row">
                     <div>
                         <span class="switch-label">Active</span>
-                        <span class="switch-hint">Turn off to hide this frame from the Store without deleting it</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="edit-frame-active" checked>
@@ -2104,7 +2136,6 @@
                 <label class="img-update-box" id="payment-img-update-box" for="edit-payment-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Image Update</span>
-                    <span class="img-update-hint">Tap to choose a logo / QR photo</span>
                     <img id="edit-payment-preview" src="" alt="Preview" style="display:none;">
                     <span class="img-update-change" id="payment-img-update-change" style="display:none;">
                         <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
@@ -2130,7 +2161,6 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12px;color:var(--text-secondary);">Used to auto-fulfill top-ups via jcplays.com. These credentials can spend your jcplays balance — keep them private, they are not shown anywhere in the Store app.</p>
 
                 <label>Base URL</label>
                 <input type="text" id="jcplays-base-url" placeholder="https://jcplays.com/smilecoin/api">
@@ -2167,22 +2197,18 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12px;color:var(--text-secondary);">Used to auto-fulfill top-ups via G2Bulk. This key can spend your G2Bulk wallet balance — keep it private, it is not shown anywhere in the Store app.</p>
                 <label>API Key</label>
                 <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" autocomplete="off">
                 <p id="g2bulk-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
                 <div id="g2bulk-result-grid" style="display:none;"></div>
 
                 <label>USD → MMK Rate</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">G2Bulk prices are in USD. This rate is used to pre-fill MMK prices when you tap "Import from G2Bulk" — you can still edit each price by hand afterward.</p>
                 <input type="number" id="g2bulk-usd-rate" placeholder="e.g. 4500" step="1">
 
                 <label>Webhook URL <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Your Cloudflare Worker URL. When set, orders auto-complete the instant G2Bulk confirms them — no need to keep this admin panel open. Leave blank to fall back to tab-based polling.</p>
                 <input type="text" id="g2bulk-webhook-url" placeholder="https://your-worker.workers.dev/g2bulk-webhook" autocomplete="off">
 
                 <label>Webhook Secret</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Must match the WEBHOOK_SECRET you set on the Worker. Sent as a query param so outsiders can't spoof completions.</p>
                 <input type="password" id="g2bulk-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
 
                 <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
@@ -2207,28 +2233,23 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12px;color:var(--text-secondary);">Message <a href="https://t.me/BotFather" target="_blank" style="color:var(--accent);">@BotFather</a> on Telegram to create a bot and get its token. Then message your new bot once and use <a href="https://t.me/userinfobot" target="_blank" style="color:var(--accent);">@userinfobot</a> (or check the bot's getUpdates response) to find your Chat ID.</p>
 
                 <label>Bot Token</label>
                 <input type="password" id="tg-bot-token" placeholder="123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
 
                 <label>Chat ID</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Your personal chat ID, or a group/channel ID where orders should be posted.</p>
                 <input type="text" id="tg-chat-id" placeholder="e.g. 123456789 or -100123456789" autocomplete="off">
 
                 <label style="margin-top:14px;">Webhook URL <span style="font-weight:400;color:var(--text-muted);">(pca-telegram-bot Worker)</span></label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">The Cloudflare Worker URL you registered with Telegram's setWebhook — kept here for reference so it's not only in the Cloudflare dashboard.</p>
                 <input type="text" id="tg-webhook-url" placeholder="https://your-worker.workers.dev/telegram-webhook" autocomplete="off">
 
                 <label>Webhook Secret</label>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:-6px;">Must match the secret_token set on the Worker's Telegram webhook, so outsiders can't spoof button presses.</p>
                 <input type="password" id="tg-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
 
                 <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
                     <input type="checkbox" id="tg-enabled" style="width:auto;">
                     <span>Enabled — send new orders to Telegram automatically</span>
                 </label>
-                <p style="font-size:12px;color:var(--text-secondary);margin-top:14px;">A text-only summary of the day's orders (counts, total sales, full list — no receipt images) is also sent automatically at midnight once a Bot Token + Chat ID are saved above.</p>
                 <p id="tg-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:8px;"></p>
             </div>
             <div class="modal-footer">
@@ -2463,6 +2484,11 @@
         // this screen alone is just UX, the rules are what actually enforce it.
         let adminAppStarted = false;
         let pendingUsername = null;
+        // Resolved once per session at login (see routeAfterAuth) and reused by
+        // the Activity Log and IP login-alert features below so every write
+        // knows exactly which admin made it.
+        let currentAdminUsername = null;
+        let currentAdminIP = null;
         let pendingEnrollSecret = null;
 
         // ---------- Require Login toggle (Dashboard → Settings → Admin Login) ----------
@@ -2503,6 +2529,7 @@
         async function onAdminLoginToggle(checked) {
             try {
                 await setDoc(doc(db, "settings", "adminAuth"), { loginEnabled: checked }, { merge: true });
+                logAdminActivity('Changed login gate', checked ? 'Enabled' : 'Disabled');
                 loginGateEnabled = checked;
                 renderAdminLoginStatus();
                 window.showToast(checked ? 'Login required — takes effect next time the panel is opened.' : 'Login turned off — takes effect next time the panel is opened.', 'success');
@@ -2730,7 +2757,10 @@
                 title: 'Sign out?',
                 message: 'You will need to sign back in to manage the store.',
                 confirmText: 'Sign Out',
-                onConfirm: async () => { await signOut(auth); }
+                onConfirm: async () => {
+                    await logAdminActivity('Logout');
+                    await signOut(auth);
+                }
             });
         }
         window.handleAdminLogout = handleAdminLogout;
@@ -2753,6 +2783,16 @@
 
         // ---------- Step 2/3: TOTP enroll (first time) or challenge (returning) ----------
         async function routeAfterAuth(user) {
+            // Resolve the admin's username from their email up front, before the
+            // early-return below, so it's always available for the Activity Log
+            // and login-alert features - including on a page refresh where the
+            // TOTP step is skipped entirely.
+            try {
+                const uq = query(collection(db, "adminUsernames"), where("email", "==", user.email));
+                const usnap = await getDocs(uq);
+                if (!usnap.empty) currentAdminUsername = usnap.docs[0].id;
+            } catch (e) { console.error('Admin username lookup error:', e); }
+
             if (sessionStorage.getItem('pca_mfa_ok') === '1') { unlockAdminApp(); return; }
 
             let totpSecret = null;
@@ -2844,6 +2884,9 @@
                 sessionStorage.removeItem('pca_mfa_ok');
                 loginScreen.classList.remove('hidden');
                 resetGateLocked();
+                currentAdminUsername = null;
+                currentAdminIP = null;
+                activityLogListenerAttached = false;
             }
         });
 
@@ -3307,6 +3350,7 @@
                         tx.update(orderRef, { ...extraFields, status: 'Fail' });
                     }
                 });
+                logAdminActivity('Marked order Failed', `order: ${orderId}`);
             } catch (error) {
                 console.error("markOrderFailedWithRefund error:", error);
             }
@@ -3408,6 +3452,7 @@
                     confirmedAt: serverTimestamp(),
                     ...(note ? { statusNote: note } : {})
                 });
+                logAdminActivity('Marked order Success', `order: ${orderId}${note ? ' — ' + note : ''}`);
                 window.showToast("Order marked as Success!", 'success');
                 editTelegramOrderMessage(orderId, 'Success');
                 // No manual DOM removal needed - the live listener re-renders the
@@ -3627,6 +3672,7 @@
             if (btnElement) { btnElement.innerText = "Crediting..."; btnElement.disabled = true; }
             try {
                 const { creditedAmount } = await creditWalletTopup(id, note);
+                logAdminActivity('Confirmed top-up', `${creditedAmount.toLocaleString()} MMK (id: ${id})`);
                 window.showToast(`Wallet credited ${creditedAmount.toLocaleString()} MMK ✓`, 'success');
                 editTelegramWalletTopupMessage(id, 'Completed');
             } catch (error) {
@@ -3656,6 +3702,7 @@
                     status: "Rejected",
                     ...(note ? { statusNote: note } : {})
                 });
+                logAdminActivity('Rejected top-up', `id: ${id}${note ? ' — ' + note : ''}`);
                 window.showToast("Top up rejected.", 'fail');
                 editTelegramWalletTopupMessage(id, 'Rejected');
             } catch (error) {
@@ -3708,6 +3755,7 @@
                     confirmedAt: serverTimestamp(),
                     ...(note ? { statusNote: note } : {})
                 });
+                logAdminActivity('Manual top-up', `${amount.toLocaleString()} MMK to ${userName} (${uid})`);
                 window.showToast(`Credited ${amount.toLocaleString()} MMK to ${uid} ✓`, 'success');
                 closeManualTopupModal();
             } catch (error) {
@@ -4459,6 +4507,7 @@
         function expandPackageRow(el) {
             const row = el.closest('.package-row');
             row.classList.add('editing');
+            applyPkgCardViewportFix();
         }
         window.expandPackageRow = expandPackageRow;
 
@@ -4471,8 +4520,49 @@
             const row = el.closest('.package-row');
             syncPkgSummary(row);
             row.classList.remove('editing');
+            const overlay = row.querySelector('.pkg-card-overlay');
+            overlay.style.height = '';
+            overlay.style.top = '';
+            overlay.style.left = '';
+            overlay.style.width = '';
         }
         window.collapsePackageRow = collapsePackageRow;
+
+        // Mobile browsers don't reflow position:fixed elements when the
+        // on-screen keyboard opens — the card stays sized to the full layout
+        // viewport, so its bottom half (and the input the admin just tapped)
+        // can end up hidden behind the keyboard. window.visualViewport reports
+        // the actual visible area, which shrinks as the keyboard rises, so we
+        // resize/reposition the open card's overlay to match it — the card's
+        // own overflow-y:auto then makes the (now-shorter) card scrollable.
+        function applyPkgCardViewportFix() {
+            if (!window.visualViewport) return;
+            const vv = window.visualViewport;
+            document.querySelectorAll('.package-row.editing .pkg-card-overlay').forEach(overlay => {
+                overlay.style.height = vv.height + 'px';
+                overlay.style.top = vv.offsetTop + 'px';
+                overlay.style.left = vv.offsetLeft + 'px';
+                overlay.style.width = vv.width + 'px';
+            });
+        }
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', applyPkgCardViewportFix);
+            window.visualViewport.addEventListener('scroll', applyPkgCardViewportFix);
+        }
+
+        // Whichever field the admin just tapped inside an open package card,
+        // bring it into view once the keyboard has finished animating in —
+        // covers the case where the field sits low enough in the card that
+        // the keyboard would otherwise still cover it even after the resize above.
+        document.addEventListener('focusin', (e) => {
+            const card = e.target.closest('.pkg-card');
+            if (!card) return;
+            setTimeout(() => {
+                if (document.activeElement === e.target) {
+                    e.target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+            }, 300);
+        });
 
         // Removes a package row (called from the × button) and refreshes order numbers.
         function removePackageRow(el) {
@@ -4603,6 +4693,71 @@
             window.showToast('Packages sorted ✓', 'success');
         }
         window.sortPackageRows = sortPackageRows;
+
+        // ---------- Bulk % adjust for Price/Cost ----------
+        let bulkPkgField = 'price';
+        let bulkPkgScope = 'tab';
+
+        function openBulkPkgModal() {
+            document.getElementById('bulk-pkg-percent').value = '';
+            document.getElementById('bulk-pkg-tab-name').innerText = pkgTabLabel(currentPkgTab);
+            document.getElementById('bulk-pkg-modal-overlay').classList.add('show');
+        }
+        window.openBulkPkgModal = openBulkPkgModal;
+
+        function closeBulkPkgModal() {
+            document.getElementById('bulk-pkg-modal-overlay').classList.remove('show');
+        }
+        window.closeBulkPkgModal = closeBulkPkgModal;
+
+        function setBulkPkgField(btn, value) {
+            bulkPkgField = value;
+            btn.closest('.pkg-type-toggle').querySelectorAll('.pkg-type-opt').forEach(b => b.classList.toggle('active', b.dataset.value === value));
+        }
+        window.setBulkPkgField = setBulkPkgField;
+
+        function setBulkPkgScope(btn, value) {
+            bulkPkgScope = value;
+            btn.closest('.pkg-type-toggle').querySelectorAll('.pkg-type-opt').forEach(b => b.classList.toggle('active', b.dataset.value === value));
+        }
+        window.setBulkPkgScope = setBulkPkgScope;
+
+        // Shifts every matched row's Price or Cost by the given percentage —
+        // rounds to the nearest Kyat and skips rows where the field is blank
+        // or zero, so an unset package never gets a value invented for it.
+        // Reuses updatePackageProfit() per row so the profit badge AND the
+        // collapsed summary line (via syncPkgSummary) both stay in sync.
+        function applyBulkPkgAdjust() {
+            const pctInput = document.getElementById('bulk-pkg-percent');
+            const pct = Number(pctInput.value);
+            if (!pctInput.value.trim() || isNaN(pct) || pct === 0) {
+                window.showToast('Enter a percentage first (e.g. 5 or -10)', 'fail');
+                return;
+            }
+            const allRows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            const rows = bulkPkgScope === 'tab' ? allRows.filter(r => r.dataset.tab === currentPkgTab) : allRows;
+            if (rows.length === 0) {
+                window.showToast('No packages to update', 'fail');
+                return;
+            }
+            const fieldClass = bulkPkgField === 'price' ? '.pkg-price' : '.pkg-cost';
+            let changed = 0;
+            rows.forEach(row => {
+                const input = row.querySelector(fieldClass);
+                const current = Number(input.value);
+                if (!current || current <= 0) return;
+                input.value = Math.max(0, Math.round(current * (1 + pct / 100)));
+                updatePackageProfit(input);
+                changed++;
+            });
+            closeBulkPkgModal();
+            if (changed === 0) {
+                window.showToast(`No packages had a ${bulkPkgField === 'price' ? 'Price' : 'Cost'} set to adjust`, 'fail');
+            } else {
+                window.showToast(`Updated ${changed} package(s) ${pct > 0 ? '+' : ''}${pct}% ✓`, 'success');
+            }
+        }
+        window.applyBulkPkgAdjust = applyBulkPkgAdjust;
 
         // One-tap reorder: swaps the row with its immediate neighbor. Simpler
         // and more reliable than drag on a small phone screen (which fights
@@ -4851,8 +5006,10 @@
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
+                    logAdminActivity('Edited game', name);
                 } else {
                     await addDoc(collection(db, "games"), data);
+                    logAdminActivity('Added game', name);
                 }
 
                 window.showToast('Game saved!', 'success');
@@ -4875,7 +5032,9 @@
                 confirmText: 'Delete',
                 onConfirm: async () => {
                     try {
+                        const gameName = GAMES[gameId]?.name || gameId;
                         await deleteDoc(doc(db, "games", gameId));
+                        logAdminActivity('Deleted game', gameName);
                         window.showToast('Game deleted', 'cancel');
                     } catch (error) {
                         console.error("Delete game error:", error);
@@ -4895,7 +5054,9 @@
                 confirmText: 'Delete',
                 onConfirm: async () => {
                     try {
+                        const gameName = GAMES[gameId]?.name || gameId;
                         await deleteDoc(doc(db, "games", gameId));
+                        logAdminActivity('Deleted game', gameName);
                         window.showToast('Game deleted', 'cancel');
                         closeGameEditor();
                     } catch (error) {
@@ -5439,7 +5600,6 @@
                         <span>${u.lastSeen.toDate().toLocaleString()}</span>
                     </div>
                 </div>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Only the latest activity timestamp is currently tracked — a full per-session log isn't recorded yet.</p>
             `;
         }
         window.renderUserLoginList = renderUserLoginList;
@@ -5483,6 +5643,7 @@
                 onConfirm: async () => {
                     try {
                         await updateDoc(doc(db, "users", userId), { banned: willBan });
+                        logAdminActivity(willBan ? 'Banned user' : 'Unbanned user', u.name || userId);
                         window.showToast(willBan ? 'User banned' : 'User unbanned', willBan ? 'fail' : 'success');
                     } catch (error) {
                         console.error("Ban toggle error:", error);
@@ -5740,6 +5901,7 @@
             btn.innerText = 'Saving...';
             try {
                 await setDoc(doc(db, "settings", "tiers"), { mins }, { merge: true });
+                logAdminActivity('Saved VIP tier limits');
                 window.showToast('Tier limits saved!', 'success');
             } catch (error) {
                 console.error("Save tier settings error:", error);
@@ -5933,11 +6095,13 @@
                 };
                 if (frameId) {
                     await updateDoc(doc(db, "frames", frameId), data);
+                    logAdminActivity('Edited frame', name);
                     window.showToast('Frame updated!', 'success');
                 } else {
                     data.createdAtMs = Date.now();
                     data.createdAt = serverTimestamp();
                     await addDoc(collection(db, "frames"), data);
+                    logAdminActivity('Added frame', name);
                     window.showToast('Frame created!', 'success');
                 }
                 closeFrameModal();
@@ -5955,7 +6119,9 @@
             if (!frameId) return;
             if (!confirm('Delete this frame? Customers who already unlocked it will lose it.')) return;
             try {
+                const frameName = FRAMES[frameId]?.name || frameId;
                 await deleteDoc(doc(db, "frames", frameId));
+                logAdminActivity('Deleted frame', frameName);
                 window.showToast('Frame deleted.', 'success');
                 closeFrameModal();
             } catch (error) {
@@ -6036,6 +6202,7 @@
 
             try {
                 await setDoc(doc(db, "settings", "social"), { facebook, telegram, tiktok }, { merge: true });
+                logAdminActivity('Saved social links');
                 window.showToast('Social links saved!', 'success');
             } catch (error) {
                 console.error("Save social links error:", error);
@@ -6126,6 +6293,7 @@
             btn.innerText = 'Saving...';
             try {
                 await setDoc(doc(db, "settings", "receipt"), { style: selectedReceiptStyle }, { merge: true });
+                logAdminActivity('Changed receipt style', selectedReceiptStyle);
                 window.showToast('Receipt style updated!', 'success');
             } catch (error) {
                 console.error("Save receipt style error:", error);
@@ -6193,6 +6361,7 @@
             try {
                 const logoUrl = await uploadImageToImgBB(editingLogoImageFile, 'logo-upload-status');
                 await setDoc(doc(db, "settings", "branding"), { logoUrl }, { merge: true });
+                logAdminActivity('Updated store logo');
                 window.showToast('Store logo updated!', 'success');
                 editingLogoImageFile = null;
             } catch (error) {
@@ -6305,6 +6474,7 @@
 
             try {
                 await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret, enabled }, { merge: true });
+                logAdminActivity('Saved G2Bulk settings', enabled ? 'Enabled' : 'Disabled');
                 window.showToast('G2Bulk key saved!', 'success');
                 closeG2BulkModal();
             } catch (error) {
@@ -6579,6 +6749,7 @@
             btn.innerText = 'Saving...';
             try {
                 await setDoc(doc(db, "settings", "telegramBot"), { botToken, chatId, webhookUrl, webhookSecret, enabled }, { merge: true });
+                logAdminActivity('Saved Telegram Bot settings', enabled ? 'Enabled' : 'Disabled');
                 window.showToast('Telegram Bot settings saved!', 'success');
                 if (enabled && botToken) startTelegramPollingOnce();
             } catch (error) {
@@ -7494,6 +7665,7 @@
 
             try {
                 await setDoc(doc(db, "settings", "jcplays"), { baseUrl, uid, email, mKey, enabled }, { merge: true });
+                logAdminActivity('Saved JCPlays settings', enabled ? 'Enabled' : 'Disabled');
                 window.showToast('JCPlays credentials saved!', 'success');
                 closeJCPlaysModal();
             } catch (error) {
@@ -7824,8 +7996,10 @@
                 const data = { name, number, accountName, image: imageUrl };
                 if (paymentId) {
                     await updateDoc(doc(db, "paymentMethods", paymentId), data);
+                    logAdminActivity('Edited payment method', name);
                 } else {
                     await addDoc(collection(db, "paymentMethods"), data);
+                    logAdminActivity('Added payment method', name);
                 }
                 window.showToast('Payment method saved!', 'success');
                 closePaymentEditor();
@@ -7847,7 +8021,9 @@
                 confirmText: 'Delete',
                 onConfirm: async () => {
                     try {
+                        const pmName = PAYMENT_METHODS[paymentId]?.name || paymentId;
                         await deleteDoc(doc(db, "paymentMethods", paymentId));
+                        logAdminActivity('Deleted payment method', pmName);
                         window.showToast('Payment method deleted', 'cancel');
                     } catch (error) {
                         console.error("Delete payment method error:", error);
@@ -8166,9 +8342,140 @@
             listenUsers();
             listenTierSettings();
             listenFrames();
+            listenActivityLog();
             startAdminHeartbeat();
             startOrderArchiveScheduler();
             startDailySummaryScheduler();
+            runLoginSecurityCheck();
+        }
+
+        // ---------- Admin Activity Log ----------
+        // Records a lightweight audit trail of admin actions ("who changed what")
+        // to Firestore so it can't be edited/cleared from the client the way a
+        // browser console log could be. Every write includes the signed-in
+        // admin's username (resolved once at login, see currentAdminUsername),
+        // their IP at the time (see currentAdminIP, also resolved at login),
+        // and the device's user agent string.
+        let activityLogListenerAttached = false;
+        let ACTIVITY_LOG = [];
+
+        async function logAdminActivity(action, details = '') {
+            try {
+                await addDoc(collection(db, "adminActivityLog"), {
+                    admin: currentAdminUsername || 'unknown',
+                    action,
+                    details: details || '',
+                    ip: currentAdminIP || 'unknown',
+                    userAgent: navigator.userAgent || '',
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                // Never let a logging failure block the admin's actual action -
+                // the write above already succeeded by the time this runs.
+                console.error('logAdminActivity error:', error);
+            }
+        }
+
+        function listenActivityLog() {
+            if (activityLogListenerAttached) return;
+            activityLogListenerAttached = true;
+            const q = query(collection(db, "adminActivityLog"), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snap) => {
+                ACTIVITY_LOG = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderActivityLog();
+            }, (error) => {
+                console.error('Activity log listener error:', error);
+            });
+        }
+
+        function renderActivityLog() {
+            const container = document.getElementById('activity-log-container');
+            if (!container) return;
+            const filter = (document.getElementById('activity-log-filter')?.value || '').toLowerCase();
+            const rows = ACTIVITY_LOG.filter(a => !filter || (a.admin || '').toLowerCase().includes(filter));
+            if (rows.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No activity recorded yet.</p>';
+                return;
+            }
+            container.innerHTML = rows.map(a => {
+                const dateStr = a.timestamp?.toDate ? a.timestamp.toDate().toLocaleString() : '—';
+                return `
+                <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                        <div style="min-width:0;">
+                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${escapeHtml(a.action || '—')}</div>
+                            ${a.details ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;word-break:break-word;">${escapeHtml(a.details)}</div>` : ''}
+                        </div>
+                        <div style="flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--bg-subtle);color:var(--text-secondary);white-space:nowrap;">${escapeHtml(a.admin || 'unknown')}</div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--text-muted);">
+                        <span>${dateStr}</span>
+                        <span>IP: ${escapeHtml(a.ip || 'unknown')}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        window.renderActivityLog = renderActivityLog;
+
+        // ---------- IP-based login alert ----------
+        // Resolves the admin's current public IP via a free, keyless lookup and,
+        // if it differs from the IP stored on their adminUsernames doc from the
+        // last successful login, sends a Telegram alert (reusing the same bot
+        // configured for order notifications) and always updates the stored IP.
+        // Also logs every login to the Activity Log regardless of IP change.
+        async function getPublicIP() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                return data.ip || 'unknown';
+            } catch (error) {
+                console.error('getPublicIP error:', error);
+                return 'unknown';
+            }
+        }
+
+        async function sendLoginAlertToTelegram(username, ip, isNewIp) {
+            if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
+            try {
+                const text = [
+                    isNewIp ? '🔐 <b>New IP Admin Login</b>' : '🔐 <b>Admin Login</b>',
+                    `Admin: <code>${username}</code>`,
+                    `IP: <code>${ip}</code>`,
+                    `Time: ${new Date().toLocaleString()}`
+                ].join('\n');
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: TELEGRAM_SETTINGS.chatId, text, parse_mode: 'HTML' })
+                });
+            } catch (error) {
+                console.error('sendLoginAlertToTelegram error:', error);
+            }
+        }
+
+        // Runs once per successful login (called from startAdminApp). Waits
+        // briefly for listenTelegramBot()'s onSnapshot to populate
+        // TELEGRAM_SETTINGS before deciding whether to send an alert.
+        async function runLoginSecurityCheck() {
+            currentAdminIP = await getPublicIP();
+            let lastIp = null;
+            try {
+                if (currentAdminUsername) {
+                    const snap = await getDoc(doc(db, "adminUsernames", currentAdminUsername));
+                    lastIp = snap.exists() ? (snap.data().lastLoginIp || null) : null;
+                    await setDoc(doc(db, "adminUsernames", currentAdminUsername), {
+                        lastLoginIp: currentAdminIP,
+                        lastLoginAt: serverTimestamp()
+                    }, { merge: true });
+                }
+            } catch (error) {
+                console.error('runLoginSecurityCheck error:', error);
+            }
+            const isNewIp = lastIp !== null && lastIp !== currentAdminIP;
+            logAdminActivity('Login', `Signed in from IP ${currentAdminIP}${isNewIp ? ' (new IP)' : ''}`);
+            setTimeout(() => {
+                sendLoginAlertToTelegram(currentAdminUsername || 'unknown', currentAdminIP, isNewIp);
+            }, 1500);
         }
 
         // ---------- Admin presence heartbeat ----------
