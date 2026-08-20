@@ -712,7 +712,7 @@
         .category-chip-select { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 6px; }
         .category-chip-select .cat-chip {
             display: flex; align-items: center; gap: 6px; padding: 8px 13px 8px 10px; border-radius: 18px;
-            background: #F7F8FA; border: 1.5px solid var(--fill-soft); color: var(--text-secondary); font-size: 12.5px; font-weight: 700;
+            background: var(--fill-soft); border: 1.5px solid var(--fill-soft); color: var(--text-secondary); font-size: 12.5px; font-weight: 700;
             cursor: pointer; user-select: none; transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
         }
         .category-chip-select .cat-chip svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.75; transition: opacity 0.15s ease; }
@@ -725,7 +725,7 @@
 
         /* Game picker: a button that opens a searchable grid-of-images modal,
            used for both linking a G2Bulk game and a JCPlays game. */
-        .picker-btn { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--fill-soft); border-radius: 10px; background: #fff; cursor: pointer; transition: border-color 0.15s ease; }
+        .picker-btn { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--fill-soft); border-radius: 10px; background: var(--surface); cursor: pointer; transition: border-color 0.15s ease; }
         .picker-btn:hover { border-color: var(--accent); }
         .picker-btn-thumb { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; overflow: hidden; background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
         .picker-btn-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -736,7 +736,7 @@
         .game-picker-search-wrap { position: relative; margin-bottom: 12px; flex-shrink: 0; }
         .game-picker-search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .game-picker-search-wrap input { width: 100%; padding: 10px 12px 10px 34px; border: 1px solid var(--border-glass); border-radius: 12px; font-size: 14px; background: var(--bg-subtle-2); color: var(--text-primary); box-sizing: border-box; }
-        .game-picker-search-wrap input:focus { outline: none; border-color: var(--accent); background: #fff; }
+        .game-picker-search-wrap input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
 
         /* Reusable search bar for admin list pages (Games, Orders, Wallet Top Ups, Users) */
         .admin-search-wrap { position: relative; margin-bottom: 14px; }
@@ -799,21 +799,21 @@
 
         /* Package (currency grid) — drag-to-reorder card list */
         #edit-packages-list { display: flex; flex-direction: column; gap: 6px; position: relative; }
-        .package-row { display: flex; align-items: stretch; gap: 0; background: #fff; border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
+        .package-row { display: flex; align-items: stretch; gap: 0; background: var(--surface); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
         .package-row.drag-over { border-color: var(--accent); }
         .pkg-order-col { flex-shrink: 0; width: 26px; display: flex; flex-direction: column; align-items: stretch; border-right: 1px solid var(--fill-soft); }
-        .pkg-move-btn { border: none; background: #F7F8FA; color: var(--text-muted); padding: 4px 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .pkg-move-btn { border: none; background: var(--fill-soft); color: var(--text-muted); padding: 4px 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .pkg-move-btn:active { background: var(--fill-soft); color: var(--accent); }
         .pkg-move-btn:disabled { opacity: 0.25; cursor: default; }
-        .pkg-move-btn:disabled:active { background: #F7F8FA; color: var(--text-muted); }
+        .pkg-move-btn:disabled:active { background: var(--fill-soft); color: var(--text-muted); }
         .pkg-drag-handle { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px 0; background: var(--bg-subtle); color: var(--text-muted); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
         .pkg-drag-handle:active { cursor: grabbing; background: var(--fill-soft); color: var(--accent); }
         .pkg-drag-handle svg { width: 11px; height: 11px; pointer-events: none; }
 
         /* Reorder-games grid: small 2-column cards matching the Store's game
            grid look, draggable by pointer (touch + mouse). */
-        .game-reorder-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .game-reorder-grid { display: grid; grid-template-columns: repeat(var(--reorder-cols, 2), 1fr); gap: 10px; transition: grid-template-columns 0.1s ease; }
         .game-reorder-card { position: relative; background: var(--surface); border: 1px solid var(--fill-soft); border-radius: 14px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; transition: box-shadow 0.15s ease; }
         .game-reorder-card:active { cursor: grabbing; }
         .game-reorder-card.dragging { box-shadow: var(--shadow-soft); opacity: 0.92; }
@@ -822,6 +822,11 @@
         .game-reorder-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .game-reorder-name { padding: 7px 8px; font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
         .game-reorder-num { position: absolute; top: 6px; left: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1; }
+        /* Reorder-grid card size slider — 100% (fewest, biggest cards) down to 10% (most, smallest cards) */
+        .reorder-size-row { display: flex; align-items: center; gap: 10px; margin: -4px 0 12px; }
+        .reorder-size-row span:first-child { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+        .reorder-size-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+        .reorder-size-label { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); min-width: 36px; text-align: right; flex-shrink: 0; }
         .pkg-order-num { flex-shrink: 0; font-size: 9.5px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
         .pkg-row-fields { flex: 1; min-width: 0; }
         /* Package summary card — icon+label header row (with a small colour dot,
@@ -852,7 +857,7 @@
         #orders-container .pkg-summary-price-text { font-size: 12px; }
         .pkg-card-overlay { display: none; }
         .package-row.editing .pkg-card-overlay { display: flex; position: fixed; inset: 0; z-index: 300; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); padding: 16px; }
-        .pkg-card { background: #fff; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
+        .pkg-card { background: var(--surface-strong); width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
         .pkg-card-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 800; color: var(--text-primary); padding-bottom: 2px; }
         .pkg-card-close { font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 2px 8px; }
         .pkg-card-footer { margin-top: 4px; }
@@ -865,7 +870,7 @@
         .pkg-profit-badge { flex-shrink: 0; min-width: 52px; text-align: center; padding: 8px 6px; border-radius: 6px; font-size: 12px; font-weight: 700; background: var(--bg-subtle); color: var(--text-secondary); }
         .pkg-profit-badge.positive { background: #E3F9E9; color: #31A24C; }
         .pkg-row-media { display: flex; gap: 8px; align-items: center; }
-        .pkg-img-preview { flex-shrink: 0; width: 44px; height: 44px; border-radius: 8px; border: 1px dashed var(--border-dashed); background: #F7F8FA; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
+        .pkg-img-preview { flex-shrink: 0; width: 44px; height: 44px; border-radius: 8px; border: 1px dashed var(--border-dashed); background: var(--fill-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
         .pkg-img-preview.uploading { opacity: 0.5; }
         .pkg-img-preview .pkg-img-tag { width: 100%; height: 100%; object-fit: contain; }
         .pkg-img-preview .pkg-img-placeholder { font-size: 9px; color: var(--text-muted); text-align: center; line-height: 1.3; }
@@ -873,7 +878,7 @@
         .pkg-type-toggle { flex: 1; min-width: 0; display: flex; background: var(--bg-subtle); border-radius: 8px; padding: 3px; gap: 3px; }
         .pkg-type-opt { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 4px; border: none; background: transparent; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: 0.15s ease; white-space: nowrap; }
         .pkg-type-opt svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.75; }
-        .pkg-type-opt.active { background: #fff; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .pkg-type-opt.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
         .pkg-type-opt.active svg { opacity: 1; }
         .pkg-type-opt:active { transform: scale(0.96); }
         .pkg-img-remove { flex-shrink: 0; font-size: 11px; color: var(--danger); cursor: pointer; white-space: nowrap; }
@@ -915,7 +920,7 @@
             }
             .nav-item.active { border-left-color: var(--accent); border-right-color: transparent; }
             .nav-item .ui-icon { width: 20px; height: 20px; flex-shrink: 0; }
-            .nav-item:hover:not(.active) { background: #F7F8FA; }
+            .nav-item:hover:not(.active) { background: var(--fill-soft); }
 
             /* Content column — capped width, centered, more breathing room */
             .content-area { padding: 26px 36px; max-width: 1180px; margin: 0 auto; }
@@ -1630,6 +1635,11 @@
                 </div>
                 <div class="modal-body">
                     <p style="font-size:12px;color:var(--text-secondary);margin:-4px 0 12px;">ဆွဲပြီး နေရာအလိုက် စီပေးပါ — Save လုပ်လိုက်ရင် Store မှာလည်း ဒီအစီအရီအတိုင်း ပေါ်ပါမယ်</p>
+                    <div class="reorder-size-row">
+                        <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;">Card Size</span>
+                        <input type="range" id="reorder-size-slider" min="10" max="100" step="1" value="100" oninput="onReorderSizeInput(this.value)">
+                        <span class="reorder-size-label" id="reorder-size-label">100%</span>
+                    </div>
                     <div id="game-reorder-grid" class="game-reorder-grid"></div>
                     <button type="button" class="btn btn-primary" id="save-game-order-btn" style="margin-top:16px;" onclick="saveGameOrder()">Save Order</button>
                 </div>
@@ -2035,7 +2045,7 @@
                 <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
                 <p id="banner-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
 
-                <div style="margin:4px 0 2px;padding:12px;background:#F7F8FA;border-radius:12px;border:1px solid var(--fill-soft);">
+                <div style="margin:4px 0 2px;padding:12px;background:var(--fill-soft);border-radius:12px;border:1px solid var(--fill-soft);">
                     <p style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional)</p>
 
                     <div class="pkg-type-tabs" id="fulfill-provider-tabs">
@@ -4774,7 +4784,7 @@
                             </div>
                             <div class="pkg-price-field">
                                 <label>Tab (ဒီ package ကို ထားမည့် tab)</label>
-                                <select class="pkg-tab-select" onchange="movePackageToTab(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;background:#fff;"></select>
+                                <select class="pkg-tab-select" onchange="movePackageToTab(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;background:var(--surface);"></select>
                             </div>
                             <div class="pkg-row-media">
                                 <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
@@ -5570,9 +5580,33 @@
         // saved here is exactly what customers see.
         let reorderGameIds = [];
 
+        // Card-size slider: 100% = 2 columns (biggest cards), 10% = 10 columns
+        // (smallest). Value is persisted so the admin's preferred density
+        // sticks between sessions.
+        function reorderColsFromSize(sizePct) {
+            const pct = Math.min(100, Math.max(10, Number(sizePct) || 100));
+            return Math.round(2 + (100 - pct) / 100 * 8);
+        }
+        function applyReorderSize(sizePct) {
+            const grid = document.getElementById('game-reorder-grid');
+            if (grid) grid.style.setProperty('--reorder-cols', reorderColsFromSize(sizePct));
+            const label = document.getElementById('reorder-size-label');
+            if (label) label.textContent = Math.round(sizePct) + '%';
+        }
+        function onReorderSizeInput(sizePct) {
+            applyReorderSize(sizePct);
+            try { localStorage.setItem('pca-admin-reorder-size', sizePct); } catch (e) {}
+        }
+        window.onReorderSizeInput = onReorderSizeInput;
+
         function openGameReorder() {
             reorderGameIds = Object.keys(GAMES).sort(gameSortKey);
             renderGameReorderGrid();
+            let savedSize = 100;
+            try { savedSize = Number(localStorage.getItem('pca-admin-reorder-size')) || 100; } catch (e) {}
+            const slider = document.getElementById('reorder-size-slider');
+            if (slider) slider.value = savedSize;
+            applyReorderSize(savedSize);
             document.getElementById('game-reorder-modal-overlay').classList.add('show');
         }
         window.openGameReorder = openGameReorder;
