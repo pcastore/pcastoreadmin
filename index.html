@@ -265,7 +265,11 @@
            animation so the whole card commits to one "atom" visual language
            instead of a generic dashboard mockup. */
         .login-illustration { width: 190px; height: 190px; position: relative; margin-bottom: 26px; }
-        .login-illustration svg { width: 100%; height: 100%; }
+        .login-illustration svg { width: 100%; height: 100%; overflow: visible; }
+        .login-illustration .orbit-group { transform-origin: 95px 95px; animation: orbitSpin 22s linear infinite; }
+        .login-illustration .twinkle { animation: twinkleFade 2.6s ease-in-out infinite; }
+        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes twinkleFade { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.9; } }
         .login-card-right h3 { font-size: 17px; font-weight: 800; color: #F3F6FF; margin-bottom: 8px; }
         .login-card-right p { font-size: 12.5px; color: rgba(230,236,255,0.5); line-height: 1.6; max-width: 240px; }
         .login-dots { display: flex; align-items: center; gap: 6px; margin-top: 22px; }
@@ -282,21 +286,11 @@
         /* Blue flame indicator (next to logout) */
         .header-flame-wrap { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
         .header-flame {
-            position: relative;
-            width: 15px; height: 20px;
-            background: radial-gradient(ellipse 70% 90% at 50% 75%, #eafcff 0%, #7fd9ff 22%, #2f9bff 46%, #1360e0 70%, rgba(19,96,224,0) 100%);
-            border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
-            filter: blur(0.4px);
-            box-shadow: 0 0 6px 1px rgba(60,150,255,0.55), 0 0 12px 3px rgba(50,130,255,0.28);
+            width: 22px; height: 22px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 4px rgba(50,130,255,0.55)) drop-shadow(0 0 8px rgba(50,130,255,0.3));
             animation: flameFlicker 2.6s ease-in-out infinite;
             transform-origin: 50% 100%;
-        }
-        .header-flame::after {
-            content: ''; position: absolute; left: 50%; bottom: 12%; width: 5px; height: 8px;
-            background: radial-gradient(ellipse 60% 90% at 50% 70%, #ffffff 0%, #cdf2ff 40%, rgba(205,242,255,0) 100%);
-            border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
-            transform: translateX(-50%);
-            animation: flameFlickerInner 2.6s ease-in-out infinite;
         }
         @keyframes flameFlicker {
             0%   { transform: scaleY(1) scaleX(1) skewX(0deg); opacity: 0.92; }
@@ -543,7 +537,7 @@
         
         /* Side Nav (was a bottom nav; now a left sidebar) */
         .side-nav { width: 70px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border-glass); display: flex; flex-direction: column; position: sticky; top: 61px; height: calc(100vh - 61px); overflow-y: auto; z-index: 90; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; transition: background 0.15s ease, color 0.15s ease; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; transition: background 0.15s ease, color 0.15s ease; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
         .nav-item.active { color: var(--accent); background: var(--accent-soft); border-right-color: var(--accent); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb),0.15); }
         .nav-item.active .ui-icon { stroke: var(--accent); }
         
@@ -675,6 +669,18 @@
         .modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .modal-body label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
         .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; }
+        /* Secret fields (API keys/tokens) — rendered as type="text" + CSS masking so Chrome/Firefox never
+           detect them as real login password fields and offer to save them in the browser's password manager. */
+        .secret-field-wrap { position: relative; }
+        .secret-field-wrap input.secret-input { padding-right: 42px; width: 100%; -webkit-text-security: disc; }
+        .secret-field-wrap input.secret-input.revealed { -webkit-text-security: none; }
+        .secret-toggle-btn {
+            position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px;
+            border: none; background: transparent; color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 8px;
+        }
+        .secret-toggle-btn:hover { background: var(--fill-soft); }
+        .secret-toggle-btn svg { width: 17px; height: 17px; }
         .modal-footer { padding-top: 16px; display: flex; gap: 8px; }
 
         /* Custom "Image Update" upload control (replaces default Browse/Choose file input) */
@@ -1118,17 +1124,83 @@
                                 <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.35"/>
                                 <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
                             </radialGradient>
-                            <linearGradient id="shieldFill" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#6FA3FF"/>
-                                <stop offset="100%" stop-color="#4C6FFF"/>
+                            <radialGradient id="planetGrad" cx="38%" cy="35%" r="72%">
+                                <stop offset="0%" stop-color="#4C9AFF"/>
+                                <stop offset="55%" stop-color="#1E4FD9"/>
+                                <stop offset="100%" stop-color="#050B23"/>
+                            </radialGradient>
+                            <linearGradient id="ringGradBack" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0"/>
+                                <stop offset="50%" stop-color="#7DE8FF" stop-opacity="0.8"/>
+                                <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
                             </linearGradient>
+                            <linearGradient id="ringGradFront" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#BFF2FF" stop-opacity="0"/>
+                                <stop offset="50%" stop-color="#EAFBFF" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#BFF2FF" stop-opacity="0"/>
+                            </linearGradient>
+                            <filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="1.3" result="blur"/>
+                                <feMerge>
+                                    <feMergeNode in="blur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
                         </defs>
+
                         <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobA)"/>
                         <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobB)"/>
                         <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobC)"/>
-                        <circle cx="95" cy="95" r="60" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
-                        <path d="M95 60l26 10v18c0 20-11 33-26 40-15-7-26-20-26-40V70z" fill="url(#shieldFill)" opacity="0.95"/>
-                        <path d="M83 96l8 8 17-19" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+                        <!-- static + twinkling stars -->
+                        <g fill="#ffffff">
+                            <circle cx="20" cy="24" r="1" opacity="0.5"/>
+                            <circle cx="168" cy="30" r="1.2" class="twinkle"/>
+                            <circle cx="150" cy="152" r="1" opacity="0.4"/>
+                            <circle cx="24" cy="142" r="1.3" class="twinkle"/>
+                            <circle cx="95" cy="12" r="0.9" opacity="0.5"/>
+                            <circle cx="178" cy="95" r="1" class="twinkle"/>
+                            <circle cx="12" cy="95" r="0.9" opacity="0.4"/>
+                        </g>
+
+                        <!-- ring: back half (behind the planet) -->
+                        <g transform="rotate(-18 95 95)">
+                            <ellipse cx="95" cy="95" rx="80" ry="21" fill="none" stroke="url(#ringGradBack)" stroke-width="2.6" opacity="0.75" filter="url(#ringGlow)"/>
+                        </g>
+
+                        <!-- planet body with a soft terminator shadow -->
+                        <circle cx="95" cy="95" r="40" fill="url(#planetGrad)"/>
+                        <path d="M95 55a40 40 0 0 1 0 80 44 44 0 0 0 0-80z" fill="#000814" opacity="0.35"/>
+
+                        <!-- ring: front arc (passes over the planet's lower half) -->
+                        <g transform="rotate(-18 95 95)">
+                            <ellipse cx="95" cy="95" rx="80" ry="21" fill="none" stroke="url(#ringGradFront)" stroke-width="2.8" stroke-dasharray="167 168" opacity="0.95" filter="url(#ringGlow)"/>
+                        </g>
+
+                        <!-- orbiting stones, rotating together around the planet -->
+                        <g class="orbit-group">
+                            <g transform="translate(95 95) rotate(0) translate(85 0)">
+                                <polygon points="-3,-2 2,-3 4,1 1,4 -3,2" fill="#2B3352"/>
+                            </g>
+                            <g transform="translate(95 95) rotate(48) translate(70 0)">
+                                <polygon points="-2,-2 2,-2 3,1 0,3 -3,1" fill="#3A4468"/>
+                            </g>
+                            <g transform="translate(95 95) rotate(95) translate(87 0)">
+                                <polygon points="-2,-1 1,-3 3,0 2,3 -2,2" fill="#232A47"/>
+                            </g>
+                            <g transform="translate(95 95) rotate(150) translate(76 0)">
+                                <polygon points="-3,0 -1,-3 2,-2 3,1 0,3" fill="#3A4468"/>
+                            </g>
+                            <g transform="translate(95 95) rotate(205) translate(86 0)">
+                                <polygon points="-2,-2 2,-2 3,0 1,3 -2,2" fill="#2B3352"/>
+                            </g>
+                            <g transform="translate(95 95) rotate(260) translate(72 0)">
+                                <polygon points="-2,0 0,-3 3,-1 2,2 -1,3" fill="#454F79"/>
+                            </g>
+                            <g transform="translate(95 95) rotate(310) translate(82 0)">
+                                <polygon points="-3,-1 1,-3 3,1 0,3 -2,1" fill="#2B3352"/>
+                            </g>
+                        </g>
                     </svg>
                 </div>
                 <h3>Track Every Order in Real Time</h3>
@@ -1235,7 +1307,7 @@
         <div style="display:flex;align-items:center;gap:8px;">
             <div class="conn-status" id="conn-status" title="Online"><span class="conn-dot" id="conn-dot"></span></div>
             <div class="header-icon" id="theme-toggle-btn" title="Theme" onclick="openThemeSheet()"><svg class="ui-icon" id="theme-toggle-icon" style="width:20px;"><use href="#icon-palette"></use></svg></div>
-            <div class="header-flame-wrap" title="Live"><div class="header-flame"></div></div>
+            <div class="header-flame-wrap" title="Live"><img class="header-flame" src="data:image/webp;base64,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" alt=""></div>
             <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
         </div>
     </header>
@@ -2304,7 +2376,10 @@
                 <input type="text" id="jcplays-email" placeholder="your account email" autocomplete="off">
 
                 <label>M_KEY (API Key)</label>
-                <input type="password" id="jcplays-mkey" placeholder="your_m_key_here" autocomplete="off">
+                <div class="secret-field-wrap">
+                    <input type="text" id="jcplays-mkey" class="secret-input" placeholder="your_m_key_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('jcplays-mkey', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
 
                 <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
                     <input type="checkbox" id="jcplays-enabled" style="width:auto;" checked>
@@ -2330,7 +2405,10 @@
             </div>
             <div class="modal-body">
                 <label>API Key</label>
-                <input type="password" id="g2bulk-api-key" placeholder="your_api_key_here" autocomplete="off">
+                <div class="secret-field-wrap">
+                    <input type="text" id="g2bulk-api-key" class="secret-input" placeholder="your_api_key_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('g2bulk-api-key', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
                 <p id="g2bulk-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
                 <div id="g2bulk-result-grid" style="display:none;"></div>
 
@@ -2341,7 +2419,10 @@
                 <input type="text" id="g2bulk-webhook-url" placeholder="https://your-worker.workers.dev/g2bulk-webhook" autocomplete="off">
 
                 <label>Webhook Secret</label>
-                <input type="password" id="g2bulk-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
+                <div class="secret-field-wrap">
+                    <input type="text" id="g2bulk-webhook-secret" class="secret-input" placeholder="your_random_secret_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('g2bulk-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
 
                 <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
                     <input type="checkbox" id="g2bulk-enabled" style="width:auto;" checked>
@@ -2367,7 +2448,10 @@
             <div class="modal-body">
 
                 <label>Bot Token</label>
-                <input type="password" id="tg-bot-token" placeholder="123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+                <div class="secret-field-wrap">
+                    <input type="text" id="tg-bot-token" class="secret-input" placeholder="123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('tg-bot-token', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
 
                 <label>Chat ID</label>
                 <input type="text" id="tg-chat-id" placeholder="e.g. 123456789 or -100123456789" autocomplete="off">
@@ -2376,7 +2460,10 @@
                 <input type="text" id="tg-webhook-url" placeholder="https://your-worker.workers.dev/telegram-webhook" autocomplete="off">
 
                 <label>Webhook Secret</label>
-                <input type="password" id="tg-webhook-secret" placeholder="your_random_secret_here" autocomplete="off">
+                <div class="secret-field-wrap">
+                    <input type="text" id="tg-webhook-secret" class="secret-input" placeholder="your_random_secret_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('tg-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
 
                 <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
                     <input type="checkbox" id="tg-enabled" style="width:auto;">
@@ -2902,6 +2989,18 @@
         }
         window.toggleLoginPasswordVisibility = toggleLoginPasswordVisibility;
 
+        // ---------- Secret field (API key/token) eye-toggle ----------
+        // These fields are type="text" + CSS masking (not type="password"), so the browser never offers
+        // to save them as a login password.
+        function toggleSecretVisibility(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            const useEl = btnEl.querySelector('use');
+            const revealed = input.classList.toggle('revealed');
+            useEl.setAttribute('href', revealed ? '#icon-eye-off' : '#icon-eye');
+            btnEl.setAttribute('aria-label', revealed ? 'Hide' : 'Show');
+        }
+        window.toggleSecretVisibility = toggleSecretVisibility;
+
         const REMEMBER_USERNAME_KEY = 'pca_admin_remember_username';
         function applyRememberedUsername() {
             const userInput = document.getElementById('login-username');
@@ -3264,7 +3363,7 @@
         // orders list (innerHTML + every thumbnail image) on each one is what was
         // causing the Orders page to stutter/freeze - so we coalesce any renders
         // requested within the same animation frame into a single actual render.
-        let ordersRenderScheduled = false;
+        let ordersRenderScheduled = null;
         // Shared helper for the date-range filters on Orders and Wallet Top Ups.
         // fromStr/toStr are yyyy-mm-dd values straight from <input type="date">.
         function isWithinDateRange(timestamp, fromStr, toStr) {
@@ -3277,12 +3376,8 @@
         }
 
         function renderOrdersList() {
-            if (ordersRenderScheduled) return;
-            ordersRenderScheduled = true;
-            requestAnimationFrame(() => {
-                ordersRenderScheduled = false;
-                renderOrdersListImpl();
-            });
+            clearTimeout(ordersRenderScheduled);
+            ordersRenderScheduled = setTimeout(renderOrdersListImpl, 60);
         }
 
         // Renders from the ORDERS cache rather than a live snapshot, so it can also be
@@ -4494,14 +4589,10 @@
         // Same rAF-coalescing trick as renderOrdersList: the games listener can
         // fire repeatedly in a burst (e.g. on first load), and rebuilding every
         // game card + thumbnail each time was making the Game List page stutter.
-        let gamesRenderScheduled = false;
+        let gamesRenderScheduled = null;
         function renderAdminGamesList() {
-            if (gamesRenderScheduled) return;
-            gamesRenderScheduled = true;
-            requestAnimationFrame(() => {
-                gamesRenderScheduled = false;
-                renderAdminGamesListImpl();
-            });
+            clearTimeout(gamesRenderScheduled);
+            gamesRenderScheduled = setTimeout(renderAdminGamesListImpl, 60);
         }
         function renderAdminGamesListImpl() {
             const container = document.getElementById('admin-games-container');
@@ -5949,12 +6040,18 @@
 
         function renderAdminPaymentList() {
             const container = document.getElementById('admin-payment-container');
-            const ids = Object.keys(PAYMENT_METHODS);
+            const ids = Object.keys(PAYMENT_METHODS).sort((a, b) => {
+                const oa = PAYMENT_METHODS[a].order, ob = PAYMENT_METHODS[b].order;
+                if (oa == null && ob == null) return 0;
+                if (oa == null) return 1;
+                if (ob == null) return -1;
+                return oa - ob;
+            });
             if (ids.length === 0) {
                 container.innerHTML = '<p class="empty-msg">No payment methods yet. Tap + Add to create one.</p>';
                 return;
             }
-            container.innerHTML = ids.map(id => {
+            container.innerHTML = ids.map((id, idx) => {
                 const p = PAYMENT_METHODS[id];
                 return `
                     <div class="admin-card">
@@ -5967,6 +6064,10 @@
                             </div>
                         </div>
                         <div class="ac-footer">
+                            <div style="display:flex;gap:4px;">
+                                <button class="btn btn-outline" style="padding:8px 10px;" ${idx === 0 ? 'disabled' : ''} onclick="movePaymentMethod('${id}', -1)" aria-label="Move up">↑</button>
+                                <button class="btn btn-outline" style="padding:8px 10px;" ${idx === ids.length - 1 ? 'disabled' : ''} onclick="movePaymentMethod('${id}', 1)" aria-label="Move down">↓</button>
+                            </div>
                             <button class="btn btn-outline" onclick="openPaymentEditor('${id}')">Edit</button>
                             <button class="btn btn-danger" onclick="deletePaymentMethod('${id}')">Delete</button>
                         </div>
@@ -5974,6 +6075,38 @@
                 `;
             }).join('');
         }
+
+        // Swap the `order` value of a payment method with its neighbor (dir: -1 = up, 1 = down)
+        async function movePaymentMethod(paymentId, dir) {
+            const ids = Object.keys(PAYMENT_METHODS).sort((a, b) => {
+                const oa = PAYMENT_METHODS[a].order, ob = PAYMENT_METHODS[b].order;
+                if (oa == null && ob == null) return 0;
+                if (oa == null) return 1;
+                if (ob == null) return -1;
+                return oa - ob;
+            });
+            const i = ids.indexOf(paymentId);
+            const j = i + dir;
+            if (i === -1 || j < 0 || j >= ids.length) return;
+
+            try {
+                const batch = writeBatch(db);
+                ids.forEach((id, idx) => {
+                    // Normalize everyone to a clean sequential order first (handles legacy docs with no order field)
+                    if (PAYMENT_METHODS[id].order !== idx) {
+                        batch.update(doc(db, "paymentMethods", id), { order: idx });
+                    }
+                });
+                // Then swap the two target positions
+                batch.update(doc(db, "paymentMethods", ids[i]), { order: j });
+                batch.update(doc(db, "paymentMethods", ids[j]), { order: i });
+                await batch.commit();
+            } catch (error) {
+                console.error("Reorder payment method error:", error);
+                window.showToast('Failed to reorder.', 'fail');
+            }
+        }
+        window.movePaymentMethod = movePaymentMethod;
 
         function listenPaymentMethods() {
             if (paymentListenerAttached) return;
@@ -8746,6 +8879,8 @@
                     await updateDoc(doc(db, "paymentMethods", paymentId), data);
                     logAdminActivity('Edited payment method', name);
                 } else {
+                    const existingOrders = Object.values(PAYMENT_METHODS).map(p => p.order).filter(o => typeof o === 'number');
+                    data.order = existingOrders.length ? Math.max(...existingOrders) + 1 : 0;
                     await addDoc(collection(db, "paymentMethods"), data);
                     logAdminActivity('Added payment method', name);
                 }
