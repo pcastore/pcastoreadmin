@@ -844,7 +844,7 @@
         /* Package (currency grid) — drag-to-reorder card list */
         #edit-packages-list {
             display: flex; flex-direction: column; gap: 6px; position: relative;
-            max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            max-height: 50vh; min-height: 160px; flex-shrink: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
             padding: 8px; border: 1px solid var(--border-glass); border-radius: 14px;
             background: var(--bg-subtle-2); box-shadow: inset 0 1px 0 var(--border-glass);
         }
@@ -2361,6 +2361,7 @@
                     <svg viewBox="0 0 24 24" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <input type="text" id="game-picker-search" placeholder="Search game name..." autocomplete="off" oninput="filterGamePicker(this.value)" style="width:100%;padding:10px 12px 10px 34px;border:1px solid var(--border-glass);border-radius:12px;font-size:14px;background:var(--bg-subtle-2);color:var(--text-primary);box-sizing:border-box;">
                 </div>
+                <span id="game-picker-count" style="font-size:12.5px;font-weight:600;color:var(--text-muted);background:var(--fill-soft);padding:9px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0;"></span>
                 <button type="button" class="btn btn-outline" id="game-picker-update-btn" onclick="refreshGamePickerList()" style="flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Update</button>
             </div>
             <div class="game-picker-grid" id="game-picker-grid"></div>
@@ -8091,6 +8092,7 @@
                     </div>`).join('');
             }
             gridEl.innerHTML = html;
+            document.getElementById('game-picker-count').innerText = q ? `${filtered.length}/${gamePickerItems.length}` : `${gamePickerItems.length}`;
         }
 
         // Event delegation for card taps - attached once to the (stable) grid
