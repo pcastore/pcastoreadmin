@@ -559,7 +559,12 @@
         .pkg-type-tabs { display: flex; gap: 4px; background: var(--fill-soft); border-radius: 14px; padding: 4px; }
         .pkg-type-tab { flex: 1; padding: 9px 4px; border: none; background: transparent; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: 0.15s; }
         .pkg-type-tab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-soft); }
-        .btn { padding: 11px 14px; border-radius: 8px; font-weight: 500; font-size: 14.5px; cursor: pointer; border: 1px solid transparent; text-align: center; flex: 1; transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease; }
+        .btn { padding: 9px 12px; border-radius: 8px; font-weight: 500; font-size: 13.5px; cursor: pointer; border: 1px solid transparent; text-align: center; flex: 1; transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease; }
+        /* Multi-button toolbar rows (e.g. Package editor actions): size each
+           button to its own text instead of stretching to an equal share of
+           the row, which was forcing labels like "+ Add Package" onto two
+           lines. Buttons wrap onto a new row as needed, chip-style. */
+        .pkg-actions-row .btn { flex: 0 1 auto; white-space: nowrap; padding: 8px 12px; }
         .btn:active { transform: scale(0.97); }
         .btn-primary { background-color: var(--accent); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(var(--accent-rgb),0.65), inset 0 1px 0 rgba(255,255,255,0.35); }
         .btn-primary:active { filter: brightness(0.94); }
@@ -835,7 +840,12 @@
         .pkg-tab-empty-msg { text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 18px 0; }
 
         /* Package (currency grid) — drag-to-reorder card list */
-        #edit-packages-list { display: flex; flex-direction: column; gap: 6px; position: relative; }
+        #edit-packages-list {
+            display: flex; flex-direction: column; gap: 6px; position: relative;
+            max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            padding: 8px; border: 1px solid var(--border-glass); border-radius: 14px;
+            background: var(--bg-subtle-2); box-shadow: inset 0 1px 0 var(--border-glass);
+        }
         .package-row { display: flex; align-items: stretch; gap: 0; background: var(--surface); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
         .package-row.drag-over { border-color: var(--accent); }
@@ -2190,7 +2200,7 @@
                 <div class="pkg-tab-bar" id="pkg-tab-bar"></div>
                 <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
                 <p class="pkg-tab-empty-msg" id="pkg-tab-empty-msg" style="display:none;">No packages in this tab yet — tap "+ Add Package" to add one.</p>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div class="pkg-actions-row" style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
                     <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
                     <button class="btn btn-outline" onclick="openBulkPkgModal()" title="Cost/Price အားလုံးကို % တစ်ခုတည်းနဲ့ တစ်ခါတည်းချိန်ညှိပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-dollar"></use></svg> Bulk %</button>
