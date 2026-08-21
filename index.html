@@ -242,7 +242,7 @@
         .login-box .remember-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent, #4C6FFF); cursor: pointer; margin: 0; }
         .login-box .remember-row label { font-size: 13px; color: rgba(230,236,255,0.55); margin: 0; cursor: pointer; }
         .login-box button {
-            width: 100%; padding: 14px; border-radius: 11px; font-weight: 700; font-size: 15px; border: none;
+            width: 100%; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none;
             background: var(--accent, #4C6FFF); color: #fff; cursor: pointer;
             box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6), 0 0 30px -10px rgba(76,154,255,0.5);
             transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -258,7 +258,7 @@
         .login-secondary-btn { background: rgba(255,255,255,0.08) !important; color: #F3F6FF !important; margin-top: 8px; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.1) !important; }
         .mfa-secret-box { background: rgba(255,255,255,0.055); border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
         .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #6FA3FF; }
-        #resend-verify-btn { width: 100%; padding: 14px; border-radius: 11px; font-weight: 700; font-size: 15px; border: none; background: var(--accent, #4C6FFF); color: #fff; cursor: pointer; margin-bottom: 8px; box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6); }
+        #resend-verify-btn { width: 100%; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 15px; border: none; background: var(--accent, #4C6FFF); color: #fff; cursor: pointer; margin-bottom: 8px; box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6); }
 
         /* ---- Right-panel illustration: a small orbiting-atom graphic (glowing
            nucleus + elliptical orbit rings), echoing the ambient backdrop
@@ -493,7 +493,29 @@
         #orders-container .oc-status .badge-spinner { width: 9px; height: 9px; border-width: 1.5px; }
         #orders-container .ac-body { padding-top: 8px !important; margin-top: 8px !important; }
         #orders-container .ac-footer { margin-top: 8px; gap: 6px; }
-        #orders-container .ac-footer .btn { padding: 8px 10px; font-size: 12.5px; }
+        #orders-container .ac-footer .btn { padding: 9px 10px; font-size: 12.5px; }
+
+        /* Game / Order lists: always a scrollable multi-column grid, even on
+           mobile - previously grid layout only kicked in at the >=900px
+           desktop breakpoint (see the @media block below), so phone users
+           saw one full-width card per row and could only scroll one at a
+           time. Cards are shrunk to fit comfortably in the narrower columns. */
+        #admin-games-container, #orders-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+            align-items: start;
+        }
+        #admin-games-container .admin-card, #orders-container .admin-card {
+            margin-bottom: 0;
+        }
+        #admin-games-container .admin-card { padding: 8px; border-radius: 12px; }
+        #admin-games-container .ac-header { flex-wrap: wrap; gap: 4px; margin-bottom: 6px; padding-bottom: 6px; }
+        #admin-games-container .ac-id { font-size: 11.5px; }
+        #admin-games-container .ac-footer { margin-top: 8px; gap: 6px; }
+        #admin-games-container .ac-footer .btn { padding: 8px 6px; font-size: 12px; }
+        #admin-games-container .badge { font-size: 9.5px; padding: 3px 7px 3px 5px; gap: 3px; }
+        #admin-games-container .badge svg { width: 10px; height: 10px; }
 
         /* Bulk order selection (Pending orders only) + sticky action bar */
         .order-select-box { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
@@ -511,7 +533,7 @@
         .obb-selectall input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
         .obb-selectall span { font-size: 12.5px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
         .obb-actions { display: flex; gap: 6px; flex-shrink: 0; }
-        .obb-actions .btn { flex: unset; padding: 7px 12px; font-size: 12px; }
+        .obb-actions .btn { flex: unset; padding: 10px 14px; font-size: 13px; }
         
         /* Badges & Buttons */
         .badge { padding: 5px 11px 5px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
@@ -528,7 +550,7 @@
         .pkg-type-tabs { display: flex; gap: 4px; background: var(--fill-soft); border-radius: 14px; padding: 4px; }
         .pkg-type-tab { flex: 1; padding: 9px 4px; border: none; background: transparent; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text-secondary); cursor: pointer; transition: 0.15s; }
         .pkg-type-tab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-soft); }
-        .btn { padding: 9px 12px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid transparent; text-align: center; flex: 1; transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease; }
+        .btn { padding: 13px 16px; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; border: 1px solid transparent; text-align: center; flex: 1; transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease; }
         .btn:active { transform: scale(0.97); }
         .btn-primary { background-color: var(--accent); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(var(--accent-rgb),0.65), inset 0 1px 0 rgba(255,255,255,0.35); }
         .btn-primary:active { filter: brightness(0.94); }
@@ -665,7 +687,7 @@
         .modal-overlay.show .modal-box { transform: translateY(0); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--fill-soft); margin-bottom: 14px; }
         .modal-header h3 { font-size: 17px; font-weight: 700; }
-        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: var(--fill-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border: 1px solid var(--border-glass); }
+        .modal-close { width: 40px; height: 40px; border-radius: 12px; background: var(--fill-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border: 1px solid var(--border-glass); }
         .modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .modal-body label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
         .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; }
@@ -4631,8 +4653,8 @@
                                 <span class="badge" style="background:var(--fill-soft);color:var(--text-primary);">${(g.packages || []).length} packages</span>
                             </div>
                         </div>
-                        <div class="ac-body" style="display:flex;gap:12px;align-items:center;">
-                            <div style="width:104px;height:104px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);">
+                        <div class="ac-body" style="display:flex;gap:12px;align-items:center;justify-content:center;">
+                            <div style="width:100%;max-width:64px;aspect-ratio:1;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);">
                                 <img src="${g.image}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;">
                             </div>
                         </div>
