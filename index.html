@@ -798,13 +798,43 @@
         .admin-search-wrap input::placeholder { color: var(--text-muted); }
 
         /* Date range filter row — pairs with .admin-search-wrap on Orders/Top Ups */
-        .date-range-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-        .date-range-wrap input[type="date"] { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-glass); border-radius: 12px; font-size: 13.5px; background: var(--surface); color: var(--text-primary); box-sizing: border-box; color-scheme: var(--scheme); }
-        .date-range-wrap input[type="date"]:focus { outline: none; border-color: var(--accent); }
-        .date-range-wrap .drw-sep { color: var(--text-muted); font-size: 13px; flex-shrink: 0; }
-        .date-range-wrap .drw-clear { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); }
-        .date-range-wrap .drw-clear svg { width: 15px; height: 15px; }
-        .date-range-wrap .drw-clear:active { background: var(--fill-soft); }
+        .drw-clear { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); }
+        .drw-clear svg { width: 15px; height: 15px; }
+        .drw-clear:active { background: var(--fill-soft); }
+
+        /* ---- Custom calendar range-picker (replaces native <input type=date>) ---- */
+        .date-filter-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .date-filter-trigger { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border-glass); border-radius: 12px; background: var(--surface); color: var(--text-primary); font-size: 13.5px; font-family: inherit; cursor: pointer; text-align: left; }
+        .date-filter-trigger svg { width: 16px; height: 16px; color: var(--text-secondary); flex-shrink: 0; }
+        .date-filter-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .date-filter-trigger.has-value span { color: var(--text-primary); font-weight: 600; }
+        .date-filter-trigger:active { background: var(--fill-soft); }
+
+        .cal-modal-box { max-width: 380px; }
+        .cal-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+        .cal-presets button { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; }
+        .cal-presets button:active { background: var(--accent-soft); color: var(--accent); }
+
+        .cal-card { background: var(--bg-subtle); border-radius: 18px; padding: 14px; border: 1px solid var(--border-glass); }
+        .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .cal-title { font-size: 16px; font-weight: 700; color: var(--text-strong); }
+        .cal-nav-btn { width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--surface); color: var(--text-primary); font-size: 17px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: inherit; }
+        .cal-nav-btn:active { background: var(--fill-soft); }
+
+        .cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
+        .cal-dow-row span { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; }
+
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 3px; }
+        .cal-day { position: relative; aspect-ratio: 1 / 1; border: none; background: transparent; color: var(--text-primary); font-size: 13.5px; font-weight: 500; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+        .cal-day.muted { color: var(--text-muted); opacity: 0.4; }
+        .cal-day.today:not(.range-start):not(.range-end) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent); font-weight: 700; }
+        .cal-day.in-range { background: var(--accent-soft); border-radius: 0; }
+        .cal-day.range-start, .cal-day.range-end { background: var(--accent); color: #fff; font-weight: 700; }
+        .cal-day.range-start { border-radius: 50% 0 0 50%; }
+        .cal-day.range-end { border-radius: 0 50% 50% 0; }
+        .cal-day.range-start.range-end { border-radius: 50%; }
+
+        .cal-range-display { text-align: center; margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
 
         .game-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 6px; }
         .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid var(--fill-soft); border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; }
@@ -918,20 +948,20 @@
            like a status/category indicator) over a big price number and a
            profit-margin badge, echoing a compact "stat card" look rather than
            a plain price/name line. */
-        .pkg-summary { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px; min-height: 48px; cursor: pointer; }
+        .pkg-summary { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; min-height: 48px; cursor: pointer; }
         .pkg-summary:active { background: var(--bg-subtle); }
         .pkg-summary-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .pkg-summary-label { display: flex; align-items: center; gap: 7px; min-width: 0; }
+        .pkg-summary-label { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; }
         .pkg-summary-thumb { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; overflow: hidden; background: var(--accent-soft); border: 1px solid var(--fill-soft); display: flex; align-items: center; justify-content: center; }
         .pkg-summary-thumb img { width: 100%; height: 100%; object-fit: contain; }
         .pkg-summary-thumb-placeholder { font-size: 10px; font-weight: 500; color: var(--accent); }
-        .pkg-summary-name { flex-shrink: 0; font-size: 13px; font-weight: 500; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--fill-soft); border-radius: 8px; padding: 4px 8px; }
+        .pkg-summary-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pkg-summary-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
         .pkg-summary-dot.pkg-dot-package { background: #A855F7; }
-        .pkg-summary-body { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+        .pkg-summary-body { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 6px; border-top: 1px solid var(--fill-soft); }
         .pkg-summary-value { display: flex; align-items: baseline; gap: 4px; min-width: 0; flex-shrink: 1; overflow: hidden; background: var(--accent-soft); border-radius: 8px; padding: 4px 8px; }
-        .pkg-summary-price-text { font-size: 13px; font-weight: 500; letter-spacing: 0.02em; color: var(--accent); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pkg-summary-price-unit { font-size: 10.5px; font-weight: 500; color: var(--accent); opacity: 0.75; }
+        .pkg-summary-price-text { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--accent); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pkg-summary-price-unit { font-size: 10.5px; font-weight: 500; color: var(--accent); opacity: 0.75; flex-shrink: 0; }
         .pkg-summary-actions { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
         .pkg-summary-profit { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; padding: 3px 7px; border-radius: 7px; background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--fill-soft); white-space: nowrap; }
         .pkg-summary-profit svg { width: 10px; height: 10px; flex-shrink: 0; }
@@ -1835,13 +1865,16 @@
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="order-search" placeholder="Search by game, customer, phone, player ID, order ID..." autocomplete="off" oninput="renderOrdersList()">
             </div>
-            <div class="date-range-wrap">
-                <input type="date" id="order-date-from" onchange="renderOrdersList()" aria-label="From date">
-                <span class="drw-sep">–</span>
-                <input type="date" id="order-date-to" onchange="renderOrdersList()" aria-label="To date">
-                <button type="button" class="drw-clear" onclick="clearOrderDateRange()" title="Clear date filter" aria-label="Clear date filter">
+            <div class="date-filter-wrap">
+                <button type="button" class="date-filter-trigger" id="order-date-trigger" onclick="openDateRangeModal('order')" aria-label="Filter by date">
+                    <svg class="ui-icon"><use href="#icon-calendar"></use></svg>
+                    <span id="order-date-trigger-label">Filter by date</span>
+                </button>
+                <button type="button" class="drw-clear" id="order-date-clear-btn" onclick="clearOrderDateRange()" title="Clear date filter" aria-label="Clear date filter" style="display:none;">
                     <svg class="ui-icon"><use href="#icon-close"></use></svg>
                 </button>
+                <input type="hidden" id="order-date-from">
+                <input type="hidden" id="order-date-to">
             </div>
 
             <!-- Bulk actions bar — appears once one or more Pending orders are checked -->
@@ -1883,17 +1916,52 @@
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="topup-search" placeholder="Search by name, UID, phone, or amount..." autocomplete="off" oninput="renderTopupsList()">
             </div>
-            <div class="date-range-wrap">
-                <input type="date" id="topup-date-from" onchange="renderTopupsList()" aria-label="From date">
-                <span class="drw-sep">–</span>
-                <input type="date" id="topup-date-to" onchange="renderTopupsList()" aria-label="To date">
-                <button type="button" class="drw-clear" onclick="clearTopupDateRange()" title="Clear date filter" aria-label="Clear date filter">
+            <div class="date-filter-wrap">
+                <button type="button" class="date-filter-trigger" id="topup-date-trigger" onclick="openDateRangeModal('topup')" aria-label="Filter by date">
+                    <svg class="ui-icon"><use href="#icon-calendar"></use></svg>
+                    <span id="topup-date-trigger-label">Filter by date</span>
+                </button>
+                <button type="button" class="drw-clear" id="topup-date-clear-btn" onclick="clearTopupDateRange()" title="Clear date filter" aria-label="Clear date filter" style="display:none;">
                     <svg class="ui-icon"><use href="#icon-close"></use></svg>
                 </button>
+                <input type="hidden" id="topup-date-from">
+                <input type="hidden" id="topup-date-to">
             </div>
 
             <div id="topups-container">
                 <p class="empty-msg">Loading top up requests...</p>
+            </div>
+        </div>
+
+        <!-- Custom Calendar Date-Range Picker Modal (shared by Orders + Wallet Top Ups) -->
+        <div class="modal-overlay" id="date-range-modal-overlay" onclick="if(event.target===this) closeDateRangeModal()">
+            <div class="modal-box cal-modal-box">
+                <div class="modal-header">
+                    <h3>Select Date Range</h3>
+                    <div class="modal-close" onclick="closeDateRangeModal()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+                </div>
+                <div class="modal-body">
+                    <div class="cal-presets">
+                        <button type="button" onclick="calApplyPreset('today')">Today</button>
+                        <button type="button" onclick="calApplyPreset('yesterday')">Yesterday</button>
+                        <button type="button" onclick="calApplyPreset('last7')">Last 7 days</button>
+                        <button type="button" onclick="calApplyPreset('thismonth')">This month</button>
+                    </div>
+                    <div class="cal-card">
+                        <div class="cal-head">
+                            <button type="button" class="cal-nav-btn" onclick="calPrevMonth()" aria-label="Previous month">‹</button>
+                            <div class="cal-title" id="cal-title">—</div>
+                            <button type="button" class="cal-nav-btn" onclick="calNextMonth()" aria-label="Next month">›</button>
+                        </div>
+                        <div class="cal-dow-row" id="cal-dow-row"></div>
+                        <div class="cal-grid" id="cal-grid"></div>
+                    </div>
+                    <div class="cal-range-display" id="cal-range-display">Select a start date</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="calClear()">Clear</button>
+                    <button type="button" class="btn btn-primary" onclick="calApply()">Apply</button>
+                </div>
             </div>
         </div>
 
@@ -3461,6 +3529,176 @@
             return true;
         }
 
+        // ---- Custom calendar date-range picker (shared by Orders + Wallet Top Ups) ----
+        let calRangeContext = null;   // 'order' | 'topup'
+        let calRangeStart = null;     // Date, local, midnight
+        let calRangeEnd = null;
+        let calViewYear = null;
+        let calViewMonth = null;      // 0-indexed
+
+        function ymdLocal(d) {
+            const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+        function parseYmd(s) {
+            if (!s) return null;
+            const parts = s.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+        function isSameDay(a, b) {
+            return !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        }
+        function fmtCalShort(d) {
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return `${monthNames[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+        }
+
+        function openDateRangeModal(context) {
+            calRangeContext = context;
+            const fromVal = document.getElementById(context + '-date-from')?.value || '';
+            const toVal = document.getElementById(context + '-date-to')?.value || '';
+            calRangeStart = parseYmd(fromVal);
+            calRangeEnd = parseYmd(toVal);
+            const base = calRangeStart || new Date();
+            calViewYear = base.getFullYear();
+            calViewMonth = base.getMonth();
+            renderCalDowRow();
+            renderCalendar();
+            document.getElementById('date-range-modal-overlay').classList.add('show');
+        }
+        function closeDateRangeModal() {
+            document.getElementById('date-range-modal-overlay').classList.remove('show');
+        }
+        function renderCalDowRow() {
+            const dow = document.getElementById('cal-dow-row');
+            if (!dow) return;
+            dow.innerHTML = ['MO','TU','WE','TH','FR','SA','SU'].map(l => `<span>${l}</span>`).join('');
+        }
+        function calPrevMonth() {
+            calViewMonth--;
+            if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+            renderCalendar();
+        }
+        function calNextMonth() {
+            calViewMonth++;
+            if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+            renderCalendar();
+        }
+        function renderCalendar() {
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const titleEl = document.getElementById('cal-title');
+            if (titleEl) titleEl.textContent = `${monthNames[calViewMonth]} ${calViewYear}`;
+
+            const grid = document.getElementById('cal-grid');
+            if (!grid) return;
+
+            const firstOfMonth = new Date(calViewYear, calViewMonth, 1);
+            const startOffset = (firstOfMonth.getDay() + 6) % 7; // Monday-first offset
+            const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+            const daysInPrevMonth = new Date(calViewYear, calViewMonth, 0).getDate();
+            const today = new Date(); today.setHours(0,0,0,0);
+
+            let cells = [];
+            for (let i = startOffset - 1; i >= 0; i--) {
+                cells.push(new Date(calViewYear, calViewMonth - 1, daysInPrevMonth - i));
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                cells.push(new Date(calViewYear, calViewMonth, d));
+            }
+            let nextDay = 1;
+            while (cells.length % 7 !== 0) {
+                cells.push(new Date(calViewYear, calViewMonth + 1, nextDay));
+                nextDay++;
+            }
+
+            grid.innerHTML = cells.map(date => {
+                const muted = date.getMonth() !== calViewMonth;
+                const classes = ['cal-day'];
+                if (muted) classes.push('muted');
+                if (isSameDay(date, today)) classes.push('today');
+                if (calRangeStart && isSameDay(date, calRangeStart)) classes.push('range-start');
+                if (calRangeEnd && isSameDay(date, calRangeEnd)) classes.push('range-end');
+                if (calRangeStart && !calRangeEnd && isSameDay(date, calRangeStart)) classes.push('range-end');
+                if (calRangeStart && calRangeEnd && date > calRangeStart && date < calRangeEnd) classes.push('in-range');
+                const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
+                return `<button type="button" class="${classes.join(' ')}" onclick="calSelectDay(${y},${m},${d})">${d}</button>`;
+            }).join('');
+
+            const rd = document.getElementById('cal-range-display');
+            if (rd) {
+                if (calRangeStart && calRangeEnd && !isSameDay(calRangeStart, calRangeEnd)) {
+                    rd.textContent = `${fmtCalShort(calRangeStart)} – ${fmtCalShort(calRangeEnd)}`;
+                } else if (calRangeStart) {
+                    rd.textContent = calRangeEnd ? fmtCalShort(calRangeStart) : `${fmtCalShort(calRangeStart)} – Select end date`;
+                } else {
+                    rd.textContent = 'Select a start date';
+                }
+            }
+        }
+        function calSelectDay(y, m, d) {
+            const clicked = new Date(y, m, d);
+            if (!calRangeStart || (calRangeStart && calRangeEnd)) {
+                calRangeStart = clicked;
+                calRangeEnd = null;
+            } else if (clicked < calRangeStart) {
+                calRangeEnd = calRangeStart;
+                calRangeStart = clicked;
+            } else {
+                calRangeEnd = clicked;
+            }
+            if (m !== calViewMonth || y !== calViewYear) { calViewYear = y; calViewMonth = m; }
+            renderCalendar();
+        }
+        function calApplyPreset(type) {
+            const today = new Date(); today.setHours(0,0,0,0);
+            if (type === 'today') { calRangeStart = today; calRangeEnd = today; }
+            else if (type === 'yesterday') { const y = new Date(today); y.setDate(y.getDate()-1); calRangeStart = y; calRangeEnd = y; }
+            else if (type === 'last7') { const s = new Date(today); s.setDate(s.getDate()-6); calRangeStart = s; calRangeEnd = today; }
+            else if (type === 'thismonth') { calRangeStart = new Date(today.getFullYear(), today.getMonth(), 1); calRangeEnd = today; }
+            calViewYear = calRangeStart.getFullYear();
+            calViewMonth = calRangeStart.getMonth();
+            renderCalendar();
+        }
+        function calApply() {
+            if (!calRangeContext) return;
+            const fromInput = document.getElementById(calRangeContext + '-date-from');
+            const toInput = document.getElementById(calRangeContext + '-date-to');
+            if (fromInput) fromInput.value = calRangeStart ? ymdLocal(calRangeStart) : '';
+            if (toInput) toInput.value = calRangeEnd ? ymdLocal(calRangeEnd) : (calRangeStart ? ymdLocal(calRangeStart) : '');
+            updateDateTriggerLabel(calRangeContext);
+            closeDateRangeModal();
+            if (calRangeContext === 'order') renderOrdersList();
+            else if (calRangeContext === 'topup') renderTopupsList();
+        }
+        function calClear() {
+            calRangeStart = null;
+            calRangeEnd = null;
+            renderCalendar();
+            const ctx = calRangeContext;
+            closeDateRangeModal();
+            if (ctx === 'order') clearOrderDateRange();
+            else if (ctx === 'topup') clearTopupDateRange();
+        }
+        function updateDateTriggerLabel(context) {
+            const fromVal = document.getElementById(context + '-date-from')?.value || '';
+            const toVal = document.getElementById(context + '-date-to')?.value || '';
+            const label = document.getElementById(context + '-date-trigger-label');
+            const trigger = document.getElementById(context + '-date-trigger');
+            const clearBtn = document.getElementById(context + '-date-clear-btn');
+            if (!label) return;
+            if (fromVal) {
+                const s = parseYmd(fromVal);
+                const e = toVal ? parseYmd(toVal) : s;
+                label.textContent = isSameDay(s, e) ? fmtCalShort(s) : `${fmtCalShort(s)} – ${fmtCalShort(e)}`;
+                if (trigger) trigger.classList.add('has-value');
+                if (clearBtn) clearBtn.style.display = '';
+            } else {
+                label.textContent = 'Filter by date';
+                if (trigger) trigger.classList.remove('has-value');
+                if (clearBtn) clearBtn.style.display = 'none';
+            }
+        }
+
         function renderOrdersList() {
             clearTimeout(ordersRenderScheduled);
             ordersRenderScheduled = setTimeout(renderOrdersListImpl, 60);
@@ -3637,6 +3875,7 @@
             const to = document.getElementById('order-date-to');
             if (from) from.value = '';
             if (to) to.value = '';
+            updateDateTriggerLabel('order');
             renderOrdersList();
         }
 
@@ -4214,6 +4453,7 @@
             const to = document.getElementById('topup-date-to');
             if (from) from.value = '';
             if (to) to.value = '';
+            updateDateTriggerLabel('topup');
             renderTopupsList();
         }
 
@@ -4936,14 +5176,14 @@
                                     <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
                                 </div>
                                 <span class="pkg-summary-name">${amount || 'Unnamed package'}</span>
-                                <span class="pkg-summary-value">
-                                    <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() : '--'}</span>
-                                    <span class="pkg-summary-price-unit">${price ? 'MMK' : ''}</span>
-                                </span>
                             </div>
                             <span class="pkg-summary-dot ${type === 'package' ? 'pkg-dot-package' : ''}" title="${type === 'package' ? 'Package (wide banner)' : 'Currency (grid card)'}"></span>
                         </div>
                         <div class="pkg-summary-body">
+                            <span class="pkg-summary-value">
+                                <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() : '--'}</span>
+                                <span class="pkg-summary-price-unit">${price ? 'MMK' : ''}</span>
+                            </span>
                             <div class="pkg-summary-actions">
                                 <span class="pkg-summary-profit">--</span>
                                 <div class="pkg-summary-remove" onclick="event.stopPropagation(); removePackageRow(this)" title="ဖျက်ရန်">&times;</div>
