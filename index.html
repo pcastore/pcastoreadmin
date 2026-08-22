@@ -1446,6 +1446,7 @@
         <symbol id="icon-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></symbol>
         <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
         <symbol id="icon-gamepad" viewBox="0 0 24 24"><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z" fill="#7C5CFC" stroke="none"></path><path d="M6.7 10.7v3.2M5.1 12.3h3.2" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="15.9" cy="11.1" r="1.05" fill="#ffffff" stroke="none"></circle><circle cx="18.3" cy="13.5" r="1.05" fill="#ffffff" stroke="none"></circle></symbol>
+        <symbol id="icon-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></symbol>
         <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
         <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
         <symbol id="icon-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></symbol>
@@ -1573,8 +1574,11 @@
         <div class="nav-item" id="btn-api-docs" onclick="showPage('api-docs')">
             <svg class="ui-icon"><use href="#icon-plug"></use></svg> API
         </div>
-        <div class="nav-item" id="btn-game-list" onclick="showPage('game-list')">
-            <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> Games
+        <div class="nav-item" id="btn-game-list-direct" onclick="showGameListTab('direct')">
+            <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> Direct
+        </div>
+        <div class="nav-item" id="btn-game-list-voucher" onclick="showGameListTab('voucher')">
+            <svg class="ui-icon"><use href="#icon-gift"></use></svg> Gift Cards
         </div>
         <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
             <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
@@ -1998,7 +2002,8 @@
 
         <!-- GAMES PAGE (Live Firestore Data) -->
         <div id="game-list" class="page-section">
-            <h2 class="title-header">Game List
+            <h2 class="title-header">
+                <span id="game-list-title">Direct Games</span>
                 <span style="display:flex;gap:6px;flex-wrap:wrap;">
                     <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameReorder()">↕ Reorder</button>
                     <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button>
@@ -2432,6 +2437,16 @@
                 </div>
 
                 <div class="switch-row">
+                    <div>
+                        <span class="switch-label">Requires Player ID</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-game-playerid" checked onchange="onPlayerIdRequiredToggle()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-row" id="requires-serverid-row">
                     <div>
                         <span class="switch-label">Requires Server ID</span>
                     </div>
@@ -5534,6 +5549,22 @@
         // fire repeatedly in a burst (e.g. on first load), and rebuilding every
         // game card + thumbnail each time was making the Game List page stutter.
         let gamesRenderScheduled = null;
+        // 'direct' = manual fulfillment, G2Bulk game top-ups, or JCPlays;
+        // 'voucher' = G2Bulk Giftcards & Vouchers-linked games. Split into
+        // two separate sidebar entries (Direct / Gift Cards) so the two
+        // kinds are never mixed in one list.
+        let gameListTab = 'direct';
+        function showGameListTab(tab) {
+            gameListTab = tab;
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
+            document.getElementById('game-list').classList.add('active');
+            document.getElementById(tab === 'voucher' ? 'btn-game-list-voucher' : 'btn-game-list-direct').classList.add('active');
+            document.getElementById('game-list-title').innerText = tab === 'voucher' ? 'Gift Card & Vouchers' : 'Direct Games';
+            window.scrollTo(0, 0);
+            renderAdminGamesList();
+        }
+        window.showGameListTab = showGameListTab;
         function renderAdminGamesList() {
             clearTimeout(gamesRenderScheduled);
             gamesRenderScheduled = setTimeout(renderAdminGamesListImpl, 60);
@@ -5546,8 +5577,10 @@
             // variants (same Game Name, different Server name) sit next to each
             // other in the list instead of being scattered.
             const ids = Object.keys(GAMES).filter(id => {
-                if (!searchTerm) return true;
                 const g = GAMES[id];
+                const isVoucher = g.fulfillProvider === 'g2bulk_voucher';
+                if (gameListTab === 'voucher' ? !isVoucher : isVoucher) return false;
+                if (!searchTerm) return true;
                 return (g.name || '').toLowerCase().includes(searchTerm) || (g.serverName || '').toLowerCase().includes(searchTerm);
             }).sort((a, b) => {
                 const ga = GAMES[a], gb = GAMES[b];
@@ -5556,7 +5589,7 @@
             if (ids.length === 0) {
                 container.innerHTML = searchTerm
                     ? '<p class="empty-msg">No games match your search.</p>'
-                    : '<p class="empty-msg">No games yet. Tap + Add to create one.</p>';
+                    : `<p class="empty-msg">No ${gameListTab === 'voucher' ? 'Gift Card & Voucher' : 'Direct'} games yet. Tap + Add to create one.</p>`;
                 return;
             }
             container.innerHTML = ids.map(id => {
@@ -5569,7 +5602,7 @@
                                 ${g.serverName ? `<span class="badge" style="background:#DBEAFE;color:#1E40AF;">🌐 ${g.serverName}</span>` : ''}
                                 ${categoryBadgeHtml(g.category)}
                                 ${g.popular ? `<span class="badge" style="background:#FFF3CD;color:#856404;">★ Popular</span>` : ''}
-                                ${g.serverIdRequired === false ? `<span class="badge" style="background:var(--fill-soft);color:var(--text-secondary);">No Server ID</span>` : ''}
+                                ${g.playerIdRequired === false ? `<span class="badge" style="background:var(--fill-soft);color:var(--text-secondary);">No Player ID</span>` : (g.serverIdRequired === false ? `<span class="badge" style="background:var(--fill-soft);color:var(--text-secondary);">No Server ID</span>` : '')}
                                 <span class="badge" style="background:var(--fill-soft);color:var(--text-primary);">${(g.packages || []).length} packages</span>
                             </div>
                         </div>
@@ -6527,7 +6560,9 @@
                 document.getElementById('edit-game-description').value = g.description || '';
                 document.getElementById('edit-game-popular').checked = !!g.popular;
                 // Missing field on older games defaults to "required" so nothing changes for them.
+                document.getElementById('edit-game-playerid').checked = g.playerIdRequired !== false;
                 document.getElementById('edit-game-serverid').checked = g.serverIdRequired !== false;
+                onPlayerIdRequiredToggle();
                 preview.src = g.image;
                 preview.style.display = 'block';
                 updateBox.classList.add('has-image');
@@ -6575,14 +6610,16 @@
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = '';
                 document.getElementById('edit-game-popular').checked = false;
+                document.getElementById('edit-game-playerid').checked = true;
                 document.getElementById('edit-game-serverid').checked = true;
+                onPlayerIdRequiredToggle();
                 document.getElementById('edit-game-g2bulk-code').value = '';
                 document.getElementById('edit-game-jcplays-code').value = '';
                 document.getElementById('jcplays-denom-status').innerText = '';
                 document.getElementById('edit-game-voucher-category').value = '';
                 document.getElementById('voucher-import-status').innerText = '';
                 onVoucherCategoryChange();
-                setFulfillProvider('manual');
+                setFulfillProvider(gameListTab === 'voucher' ? 'g2bulk_voucher' : 'manual');
                 preview.src = '';
                 preview.style.display = 'none';
                 updateBox.classList.remove('has-image');
@@ -6679,7 +6716,8 @@
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
-            const serverIdRequired = document.getElementById('edit-game-serverid').checked;
+            const playerIdRequired = document.getElementById('edit-game-playerid').checked;
+            const serverIdRequired = playerIdRequired && document.getElementById('edit-game-serverid').checked;
 
             const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
                 amount: row.querySelector('.pkg-amount').value.trim(),
@@ -6726,7 +6764,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -9181,7 +9219,12 @@
         // {code, name, image, count} shape the game picker grid already
         // knows how to render, so Voucher and Direct can share one renderer.
         function voucherPickerItems() {
-            return (G2BULK_CATEGORIES_LIST || []).map(c => ({ code: String(c.id), name: c.title, count: c.product_count, image: '' }));
+            return (G2BULK_CATEGORIES_LIST || []).map(c => ({
+                code: String(c.id),
+                name: c.title,
+                count: c.product_count,
+                image: c.image_url ? (/^https?:\/\//.test(c.image_url) ? c.image_url : 'https://api.g2bulk.com' + c.image_url) : ''
+            }));
         }
 
         // Updates the picker button's thumbnail + label to reflect whatever
@@ -9376,11 +9419,12 @@
             const nameInput = document.getElementById('edit-game-name');
             if (code && !nameInput.value.trim()) nameInput.value = name;
 
-            // Linking a G2Bulk Direct game also pulls in its cover image as
-            // the Game Image — the same "fill it in for you" treatment as the
-            // name field above — but only when no image has been set yet, so
-            // an admin's own uploaded photo is never overwritten.
-            if (kind === 'g2bulk' && code) {
+            // Linking a G2Bulk Direct game (or now, a Voucher category) also
+            // pulls in its cover image as the Game Image — the same "fill it
+            // in for you" treatment as the name field above — but only when
+            // no image has been set yet, so an admin's own uploaded photo is
+            // never overwritten.
+            if ((kind === 'g2bulk' || kind === 'voucher') && code) {
                 const match = gamePickerItems.find(g => g.code === code);
                 const preview = document.getElementById('edit-game-preview');
                 if (match && match.image && preview.style.display !== 'block') {
@@ -9501,6 +9545,17 @@
             document.getElementById('voucher-import-btn').style.display = categoryId ? '' : 'none';
         }
         window.onVoucherCategoryChange = onVoucherCategoryChange;
+
+        // Voucher/coupon-style games deliver a code rather than crediting a
+        // player account, so turning off "Requires Player ID" hides the
+        // customer-side In-Game ID + Server ID prompt entirely. The Server ID
+        // toggle only makes sense alongside a player ID, so it's hidden here
+        // too (its own checked state is preserved, just not shown/used).
+        function onPlayerIdRequiredToggle() {
+            const needsPlayerId = document.getElementById('edit-game-playerid').checked;
+            document.getElementById('requires-serverid-row').style.display = needsPlayerId ? '' : 'none';
+        }
+        window.onPlayerIdRequiredToggle = onPlayerIdRequiredToggle;
 
         // Fetches the live product list for the selected category and
         // pre-fills package rows the same way importG2BulkCatalogue() does
