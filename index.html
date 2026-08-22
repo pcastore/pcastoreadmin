@@ -2478,7 +2478,7 @@
                     <div id="g2bulk-fulfill-section" style="display:none;margin-top:10px;">
                         <label style="margin-top:0;">G2Bulk Game</label>
                         <input type="hidden" id="edit-game-g2bulk-code" value="">
-                        <div class="picker-btn" id="g2bulk-picker-btn" onclick="openGamePicker('g2bulk')">
+                        <div class="picker-btn" id="g2bulk-picker-btn" onclick="openGamePicker('g2bulk', 'direct')">
                             <div class="picker-btn-thumb" id="g2bulk-picker-thumb"></div>
                             <span class="picker-btn-label muted" id="g2bulk-picker-display">-- Not linked (manual fulfillment) --</span>
                             <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
@@ -2507,13 +2507,13 @@
                          instead of the game order endpoint. -->
                     <div id="g2bulk-voucher-fulfill-section" style="display:none;margin-top:10px;">
                         <label style="margin-top:0;">G2Bulk Giftcard / Voucher Category</label>
-                        <select id="edit-game-voucher-category" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;" onchange="onVoucherCategoryChange()">
-                            <option value="">Loading categories...</option>
-                        </select>
-                        <div style="display:flex;gap:8px;margin-top:8px;">
-                            <button type="button" class="btn btn-outline" id="voucher-refresh-categories-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="populateVoucherCategoryDropdown(true)">Refresh List</button>
-                            <button type="button" class="btn btn-outline" id="voucher-import-btn" style="display:none;" onclick="importG2BulkVoucherCatalogue()">Import Products</button>
+                        <input type="hidden" id="edit-game-voucher-category" value="">
+                        <div class="picker-btn" id="voucher-picker-btn" onclick="openGamePicker('g2bulk', 'voucher')">
+                            <div class="picker-btn-thumb" id="voucher-picker-thumb"></div>
+                            <span class="picker-btn-label muted" id="voucher-picker-display">-- Not linked (manual fulfillment) --</span>
+                            <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
                         </div>
+                        <button type="button" class="btn btn-outline" id="voucher-import-btn" style="display:none;margin-top:8px;" onclick="importG2BulkVoucherCatalogue()">Import Products</button>
                         <p id="voucher-import-status" style="font-size:11px;color:var(--text-muted);margin-top:6px;white-space:pre-wrap;"></p>
                     </div>
                 </div>
@@ -2675,6 +2675,10 @@
                 <div class="modal-close" onclick="closeGamePicker()">
                     <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
                 </div>
+            </div>
+            <div class="pkg-type-tabs" id="game-picker-subtabs" style="display:none;margin:0 0 10px;">
+                <button type="button" class="pkg-type-tab" data-subtab="direct" onclick="switchGamePickerSubtab('direct')">Direct</button>
+                <button type="button" class="pkg-type-tab" data-subtab="voucher" onclick="switchGamePickerSubtab('voucher')">Voucher</button>
             </div>
             <div class="game-picker-search-wrap" style="display:flex;gap:8px;align-items:center;">
                 <div style="position:relative;flex:1;">
@@ -6559,11 +6563,8 @@
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
-                if (g.g2bulkVoucherCategory) {
-                    const catSelect = document.getElementById('edit-game-voucher-category');
-                    catSelect.dataset.pending = g.g2bulkVoucherCategory;
-                    populateVoucherCategoryDropdown(false);
-                }
+                document.getElementById('edit-game-voucher-category').value = g.g2bulkVoucherCategory || '';
+                onVoucherCategoryChange();
                 deleteBtn.style.display = 'block';
                 document.getElementById('duplicate-game-btn').style.display = 'block';
             } else {
@@ -6578,7 +6579,6 @@
                 document.getElementById('edit-game-g2bulk-code').value = '';
                 document.getElementById('edit-game-jcplays-code').value = '';
                 document.getElementById('jcplays-denom-status').innerText = '';
-                document.getElementById('edit-game-voucher-category').dataset.pending = '';
                 document.getElementById('edit-game-voucher-category').value = '';
                 document.getElementById('voucher-import-status').innerText = '';
                 onVoucherCategoryChange();
@@ -6599,14 +6599,18 @@
             }
             refreshPickerButton('g2bulk');
             refreshPickerButton('jcplays');
+            refreshPickerButton('voucher');
             onG2BulkGameChange();
+            onVoucherCategoryChange();
             refreshCheckPricesBtn();
             document.getElementById('pkg-price-check-status').innerText = '';
             document.getElementById('pkg-apply-all-cost-btn').style.display = 'none';
-            // Fetch G2Bulk's games list in the background (cached after first
-            // load) so the button already shows the right name/thumb even
-            // before the admin opens the picker, instead of just the raw code.
+            // Fetch G2Bulk's games/categories lists in the background (cached
+            // after first load) so the picker buttons already show the right
+            // name/thumb even before the admin opens the picker, instead of
+            // just the raw code/id.
             fetchG2BulkGamesList().then(() => refreshPickerButton('g2bulk')).catch(() => {});
+            fetchG2BulkCategoriesList().then(() => refreshPickerButton('voucher')).catch(() => {});
             document.getElementById('game-editor-modal-overlay').classList.add('show');
             // Silently check the live API for price changes on this already-
             // linked game's packages, so an "Update" button appears on any
@@ -9088,7 +9092,7 @@
             document.querySelectorAll('#edit-packages-list .pkg-g2bulk').forEach(el => el.style.display = provider === 'g2bulk' ? 'block' : 'none');
             document.querySelectorAll('#edit-packages-list .pkg-jcplays').forEach(el => el.style.display = provider === 'jcplays' ? 'block' : 'none');
             document.querySelectorAll('#edit-packages-list .pkg-voucher-id').forEach(el => el.style.display = provider === 'g2bulk_voucher' ? 'block' : 'none');
-            if (provider === 'g2bulk_voucher') populateVoucherCategoryDropdown(false);
+            if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
             refreshCheckPricesBtn();
         }
         window.setFulfillProvider = setFulfillProvider;
@@ -9141,7 +9145,19 @@
         ];
 
         let gamePickerProvider = null;     // 'g2bulk' | 'jcplays'
-        let gamePickerItems = [];          // [{code, name, image?}] for the active provider
+        let gamePickerSubtab = 'direct';   // 'direct' | 'voucher' — only meaningful when provider === 'g2bulk'
+        let gamePickerItems = [];          // [{code, name, image?, count?}] for the active provider/subtab
+
+        // Which "kind" is actually active right now - folds provider +
+        // subtab into a single key so every other picker helper below can
+        // just switch on one string instead of re-deriving this each time.
+        function gamePickerKind() {
+            if (gamePickerProvider === 'g2bulk' && gamePickerSubtab === 'voucher') return 'voucher';
+            return gamePickerProvider; // 'g2bulk' (direct) | 'jcplays'
+        }
+        function gamePickerFieldId(kind) {
+            return kind === 'g2bulk' ? 'edit-game-g2bulk-code' : kind === 'voucher' ? 'edit-game-voucher-category' : 'edit-game-jcplays-code';
+        }
 
         // Deterministic accent color per game name, used behind its initials
         // whenever no cover image is available (e.g. most JCPlays entries).
@@ -9161,14 +9177,22 @@
             return '';
         }
 
+        // Normalizes G2Bulk's raw /v1/category response into the same
+        // {code, name, image, count} shape the game picker grid already
+        // knows how to render, so Voucher and Direct can share one renderer.
+        function voucherPickerItems() {
+            return (G2BULK_CATEGORIES_LIST || []).map(c => ({ code: String(c.id), name: c.title, count: c.product_count, image: '' }));
+        }
+
         // Updates the picker button's thumbnail + label to reflect whatever
-        // code is currently in the hidden/manual input for that provider.
-        function refreshPickerButton(provider) {
-            const codeEl = document.getElementById(provider === 'g2bulk' ? 'edit-game-g2bulk-code' : 'edit-game-jcplays-code');
-            const displayEl = document.getElementById(provider + '-picker-display');
-            const thumbEl = document.getElementById(provider + '-picker-thumb');
+        // code is currently in the hidden/manual input for that kind
+        // ('g2bulk' | 'jcplays' | 'voucher').
+        function refreshPickerButton(kind) {
+            const codeEl = document.getElementById(gamePickerFieldId(kind));
+            const displayEl = document.getElementById(kind + '-picker-display');
+            const thumbEl = document.getElementById(kind + '-picker-thumb');
             const code = codeEl.value;
-            const list = provider === 'g2bulk' ? (G2BULK_GAMES_LIST || []) : JCPLAYS_CATALOGUE;
+            const list = kind === 'g2bulk' ? (G2BULK_GAMES_LIST || []) : kind === 'voucher' ? voucherPickerItems() : JCPLAYS_CATALOGUE;
             const match = list.find(g => g.code === code);
 
             if (!code) {
@@ -9182,7 +9206,8 @@
                 thumbEl.style.background = match.image ? 'var(--bg-subtle)' : pickerColorFor(match.name);
                 thumbEl.innerHTML = pickerThumbHtml(match) || escapeHtml(pickerInitials(match.name));
             } else {
-                // A code we don't have metadata for (e.g. hand-typed JCPlays code)
+                // A code we don't have metadata for (e.g. hand-typed JCPlays code,
+                // or a voucher category not yet fetched into this session)
                 displayEl.innerText = code;
                 displayEl.classList.remove('muted');
                 thumbEl.style.background = pickerColorFor(code);
@@ -9191,15 +9216,47 @@
         }
         window.refreshPickerButton = refreshPickerButton;
 
-        function openGamePicker(provider) {
-            gamePickerProvider = provider;
-            document.getElementById('game-picker-title').innerText = provider === 'g2bulk' ? 'Choose G2Bulk Game' : 'Choose JCPlays Game';
-            document.getElementById('game-picker-search').value = '';
-            document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-loading">Loading games…</p>';
-            document.getElementById('game-picker-modal-overlay').classList.add('show');
-            document.getElementById('game-picker-update-btn').style.display = provider === 'g2bulk' ? 'block' : 'none';
+        function gamePickerTitleFor(kind) {
+            return kind === 'g2bulk' ? 'Choose G2Bulk Game' : kind === 'voucher' ? 'Choose Voucher Category' : 'Choose JCPlays Game';
+        }
 
-            if (provider === 'g2bulk') {
+        // provider: 'g2bulk' | 'jcplays'. subtab (only used for 'g2bulk')
+        // picks which list the modal opens on: 'direct' (Games, top-up by
+        // player ID) or 'voucher' (Giftcards & Vouchers catalogue). Both
+        // subtabs live in the same modal so linking either kind of G2Bulk
+        // item uses the identical search + card picker.
+        function openGamePicker(provider, subtab = 'direct') {
+            gamePickerProvider = provider;
+            gamePickerSubtab = subtab;
+            const showSubtabs = provider === 'g2bulk';
+            document.getElementById('game-picker-subtabs').style.display = showSubtabs ? 'flex' : 'none';
+            if (showSubtabs) {
+                document.querySelectorAll('#game-picker-subtabs .pkg-type-tab').forEach(el => el.classList.toggle('active', el.dataset.subtab === subtab));
+            }
+            loadGamePickerList();
+        }
+        window.openGamePicker = openGamePicker;
+
+        // Switches between the Direct / Voucher subtabs without closing the
+        // modal - lets the admin pick either kind of G2Bulk item from the
+        // same open picker instead of re-opening it from a different button.
+        function switchGamePickerSubtab(subtab) {
+            if (gamePickerProvider !== 'g2bulk' || gamePickerSubtab === subtab) return;
+            gamePickerSubtab = subtab;
+            document.querySelectorAll('#game-picker-subtabs .pkg-type-tab').forEach(el => el.classList.toggle('active', el.dataset.subtab === subtab));
+            loadGamePickerList();
+        }
+        window.switchGamePickerSubtab = switchGamePickerSubtab;
+
+        function loadGamePickerList() {
+            const kind = gamePickerKind();
+            document.getElementById('game-picker-title').innerText = gamePickerTitleFor(kind);
+            document.getElementById('game-picker-search').value = '';
+            document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-loading">Loading…</p>';
+            document.getElementById('game-picker-modal-overlay').classList.add('show');
+            document.getElementById('game-picker-update-btn').style.display = 'block';
+
+            if (kind === 'g2bulk') {
                 fetchG2BulkGamesList()
                     .then(games => {
                         gamePickerItems = games.map(g => ({
@@ -9213,35 +9270,53 @@
                         console.error("Load G2Bulk games list error:", error);
                         document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Couldn\'t load G2Bulk\'s games list. Close and try again.</p>';
                     });
+            } else if (kind === 'voucher') {
+                fetchG2BulkCategoriesList()
+                    .then(() => {
+                        gamePickerItems = voucherPickerItems();
+                        renderGamePickerGrid('');
+                    })
+                    .catch(error => {
+                        console.error("Load G2Bulk categories error:", error);
+                        document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Couldn\'t load voucher categories. Close and try again.</p>';
+                    });
             } else {
+                document.getElementById('game-picker-update-btn').style.display = 'none';
                 gamePickerItems = JCPLAYS_CATALOGUE;
                 renderGamePickerGrid('');
             }
         }
-        window.openGamePicker = openGamePicker;
 
-        // Forces a fresh fetch of G2Bulk's games list (bypassing the in-memory
-        // cache) so newly-added games on G2Bulk's side show up immediately,
-        // instead of only after a full page reload.
+        // Forces a fresh fetch (bypassing the in-memory cache) of whichever
+        // list is currently active - G2Bulk's games, or its voucher
+        // categories - so newly-added items on G2Bulk's side show up
+        // immediately, instead of only after a full page reload.
         function refreshGamePickerList() {
-            if (gamePickerProvider !== 'g2bulk') return;
+            const kind = gamePickerKind();
+            if (kind !== 'g2bulk' && kind !== 'voucher') return;
             const btn = document.getElementById('game-picker-update-btn');
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Updating...';
             document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-loading">Refreshing…</p>';
-            fetchG2BulkGamesList(true)
-                .then(games => {
+
+            const refreshPromise = kind === 'g2bulk'
+                ? fetchG2BulkGamesList(true).then(games => {
                     gamePickerItems = games.map(g => ({
                         code: g.code,
                         name: g.name,
                         image: g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : ''
                     }));
+                })
+                : fetchG2BulkCategoriesList(true).then(() => { gamePickerItems = voucherPickerItems(); });
+
+            refreshPromise
+                .then(() => {
                     renderGamePickerGrid(document.getElementById('game-picker-search').value);
                     window.showToast('G2Bulk list refreshed ✓', 'success');
                 })
                 .catch(error => {
-                    console.error("Refresh G2Bulk games list error:", error);
+                    console.error("Refresh G2Bulk list error:", error);
                     document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Refresh failed. Try again.</p>';
                 })
                 .finally(() => { btn.disabled = false; btn.innerText = originalText; });
@@ -9262,7 +9337,7 @@
             const gridEl = document.getElementById('game-picker-grid');
             const q = (term || '').trim().toLowerCase();
             const filtered = q ? gamePickerItems.filter(g => g.name.toLowerCase().includes(q)) : gamePickerItems;
-            const currentCode = document.getElementById(gamePickerProvider === 'g2bulk' ? 'edit-game-g2bulk-code' : 'edit-game-jcplays-code').value;
+            const currentCode = document.getElementById(gamePickerFieldId(gamePickerKind())).value;
 
             let html = `<div class="game-picker-card unlink-card${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">
                 <div class="game-picker-thumb"><svg class="ui-icon" style="width:20px;height:20px;"><use href="#icon-close"></use></svg></div>
@@ -9275,7 +9350,7 @@
                 html += filtered.map(g => `
                     <div class="game-picker-card${currentCode === g.code ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">
                         <div class="game-picker-thumb" style="${g.image ? '' : `background:${pickerColorFor(g.name)}`}">${pickerThumbHtml(g) || escapeHtml(pickerInitials(g.name))}</div>
-                        <span>${escapeHtml(g.name)}</span>
+                        <span>${escapeHtml(g.name)}${typeof g.count === 'number' ? ` <span style="opacity:.6;">(${g.count})</span>` : ''}</span>
                     </div>`).join('');
             }
             gridEl.innerHTML = html;
@@ -9291,19 +9366,21 @@
         });
 
         function selectGamePickerItem(code, name) {
-            const codeEl = document.getElementById(gamePickerProvider === 'g2bulk' ? 'edit-game-g2bulk-code' : 'edit-game-jcplays-code');
+            const kind = gamePickerKind();
+            const codeEl = document.getElementById(gamePickerFieldId(kind));
             codeEl.value = code;
-            // Linking a game also fills in the Game Name field, so there's no need
-            // to type the same name twice — but only if it's still empty, so an
-            // admin's already-typed custom name is never overwritten.
+            // Linking a game (or voucher category) also fills in the Game Name
+            // field, so there's no need to type the same name twice — but only
+            // if it's still empty, so an admin's already-typed custom name is
+            // never overwritten.
             const nameInput = document.getElementById('edit-game-name');
             if (code && !nameInput.value.trim()) nameInput.value = name;
 
-            // Linking a G2Bulk game also pulls in its cover image as the Game
-            // Image — the same "fill it in for you" treatment as the name field
-            // above — but only when no image has been set yet, so an admin's own
-            // uploaded photo is never overwritten.
-            if (gamePickerProvider === 'g2bulk' && code) {
+            // Linking a G2Bulk Direct game also pulls in its cover image as
+            // the Game Image — the same "fill it in for you" treatment as the
+            // name field above — but only when no image has been set yet, so
+            // an admin's own uploaded photo is never overwritten.
+            if (kind === 'g2bulk' && code) {
                 const match = gamePickerItems.find(g => g.code === code);
                 const preview = document.getElementById('edit-game-preview');
                 if (match && match.image && preview.style.display !== 'block') {
@@ -9316,8 +9393,16 @@
                 }
             }
 
-            refreshPickerButton(gamePickerProvider);
-            if (gamePickerProvider === 'g2bulk') onG2BulkGameChange();
+            refreshPickerButton(kind);
+            if (kind === 'g2bulk') onG2BulkGameChange();
+            if (kind === 'voucher') onVoucherCategoryChange();
+            // Whichever subtab the pick was made from, make sure the outer
+            // fulfillment-provider tab bar matches it - so the right section
+            // (and its own picker button) is showing once the modal closes,
+            // even if this modal was originally opened from the other one.
+            if (currentFulfillProvider !== (kind === 'voucher' ? 'g2bulk_voucher' : kind)) {
+                setFulfillProvider(kind === 'voucher' ? 'g2bulk_voucher' : kind);
+            }
             closeGamePicker();
         }
         window.selectGamePickerItem = selectGamePickerItem;
@@ -9411,39 +9496,9 @@
             return G2BULK_CATEGORIES_LIST;
         }
 
-        async function populateVoucherCategoryDropdown(forceRefresh = false) {
-            const select = document.getElementById('edit-game-voucher-category');
-            const currentValue = select.value || (select.dataset.pending || '');
-            const btn = document.getElementById('voucher-refresh-categories-btn');
-            if (btn) { btn.disabled = true; btn.innerText = 'Loading...'; }
-            try {
-                const categories = await fetchG2BulkCategoriesList(forceRefresh);
-                select.innerHTML = '<option value="">-- Not linked (manual fulfillment) --</option>' +
-                    categories.map(c => `<option value="${c.id}">${escapeHtml(c.title)} (${c.product_count})</option>`).join('');
-                if (currentValue) select.value = String(currentValue);
-                onVoucherCategoryChange();
-            } catch (error) {
-                console.error('Load G2Bulk categories error:', error);
-                select.innerHTML = '<option value="">Couldn\'t load categories — tap Refresh List to retry</option>';
-            } finally {
-                if (btn) { btn.disabled = false; btn.innerText = 'Refresh List'; }
-            }
-        }
-        window.populateVoucherCategoryDropdown = populateVoucherCategoryDropdown;
-
         function onVoucherCategoryChange() {
-            const select = document.getElementById('edit-game-voucher-category');
-            const importBtn = document.getElementById('voucher-import-btn');
-            const categoryId = select.value;
-            importBtn.style.display = categoryId ? '' : 'none';
-            // Fills in the Game Name for a first-time link, same "fill it in
-            // for you" treatment as linking a G2Bulk game/JCPlays product —
-            // only if the name field is still empty.
-            const nameInput = document.getElementById('edit-game-name');
-            if (categoryId && !nameInput.value.trim()) {
-                const opt = select.options[select.selectedIndex];
-                if (opt) nameInput.value = opt.textContent.replace(/\s*\(\d+\)$/, '');
-            }
+            const categoryId = document.getElementById('edit-game-voucher-category').value;
+            document.getElementById('voucher-import-btn').style.display = categoryId ? '' : 'none';
         }
         window.onVoucherCategoryChange = onVoucherCategoryChange;
 
@@ -10449,7 +10504,6 @@
             document.getElementById('edit-game-jcplays-code').value = '';
             document.getElementById('jcplays-denom-status').innerText = '';
             document.getElementById('edit-game-voucher-category').value = '';
-            document.getElementById('edit-game-voucher-category').dataset.pending = '';
             document.getElementById('voucher-import-status').innerText = '';
             setFulfillProvider('manual');
             document.getElementById('game-editor-title').innerText = 'Add New Game';
@@ -10458,7 +10512,9 @@
             addPackageRow();
             refreshPickerButton('g2bulk');
             refreshPickerButton('jcplays');
+            refreshPickerButton('voucher');
             onG2BulkGameChange();
+            onVoucherCategoryChange();
             document.getElementById('edit-game-server-name').focus();
             window.showToast('Now name this server and import its own packages');
         }
