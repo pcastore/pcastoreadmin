@@ -9235,7 +9235,18 @@
             const displayEl = document.getElementById(kind + '-picker-display');
             const thumbEl = document.getElementById(kind + '-picker-thumb');
             const code = codeEl.value;
-            const list = kind === 'g2bulk' ? (G2BULK_GAMES_LIST || []) : kind === 'voucher' ? voucherPickerItems() : JCPLAYS_CATALOGUE;
+            // G2BULK_GAMES_LIST is cached as G2Bulk's *raw* /v1/games response
+            // (image field is `image_url`, not `image`) - loadGamePickerList()
+            // only normalizes that shape into the local `gamePickerItems` used
+            // by the modal grid, it never writes the normalized shape back
+            // into G2BULK_GAMES_LIST. Reading it raw here meant `match.image`
+            // was always undefined for every G2Bulk-linked game, so this
+            // button's thumbnail silently fell back to colored initials even
+            // when G2Bulk had a real image for that game - normalize the same
+            // way here too.
+            const list = kind === 'g2bulk'
+                ? (G2BULK_GAMES_LIST || []).map(g => ({ code: g.code, name: g.name, image: g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : '' }))
+                : kind === 'voucher' ? voucherPickerItems() : JCPLAYS_CATALOGUE;
             const match = list.find(g => g.code === code);
 
             if (!code) {
