@@ -491,9 +491,8 @@
         #orders-container .oc-status .badge { font-size: 10px; padding: 3px 9px 3px 6px; gap: 3px; }
         #orders-container .oc-status .badge svg { width: 10px; height: 10px; }
         #orders-container .oc-status .badge-spinner { width: 9px; height: 9px; border-width: 1.5px; }
-        #orders-container .ac-body { padding-top: 8px !important; margin-top: 8px !important; }
-        #orders-container .ac-footer { margin-top: 8px; gap: 6px; }
-        #orders-container .ac-footer .btn { padding: 8px 10px; font-size: 12px; }
+        #orders-container .od-card-footer { margin-top: 8px; gap: 6px; }
+        #orders-container .od-card-footer .btn { padding: 8px 10px; font-size: 12px; }
 
         /* Order list sits in its own bounded, independently-scrollable box
            instead of stretching the whole page taller with every order -
@@ -604,6 +603,23 @@
         .od-value { font-size: 13.5px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
         .od-value.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--accent); }
         .od-value a { color: var(--accent); }
+
+        /* Order detail popup — clicking an order card opens its full detail as a
+           centered floating card overlay (same pattern as the package-row editor)
+           instead of expanding awkwardly in place inside the 2-column order grid. */
+        .od-overlay { display: none; }
+        .admin-card.oc-open .od-overlay { display: flex; position: fixed; inset: 0; z-index: 300; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); padding: 16px; }
+        .od-card { background: var(--surface-strong); width: 100%; max-width: 460px; max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; padding: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border-glass); }
+        .od-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 10px; margin-bottom: 2px; border-bottom: 1px solid var(--fill-soft); }
+        .od-card-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .od-card-title .oc-thumb { width: 38px; height: 38px; }
+        .od-card-title-text { min-width: 0; }
+        .od-card-title-text .oc-game-name { font-size: 14px; }
+        .od-card-title-text .oc-meta { font-size: 11.5px; }
+        .od-card-close { flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; background: var(--fill-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); }
+        .od-card-close:active { background: var(--bg-subtle); }
+        .od-card-footer { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+        .od-card-footer .btn { flex: 1; min-width: 0; }
 
         /* Tier Limits page */
         .tier-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
@@ -796,6 +812,10 @@
         .admin-search-wrap input { width: 100%; padding: 12px 14px 12px 38px; border: 1px solid var(--border-glass); border-radius: 12px; font-size: 14.5px; background: var(--surface); color: var(--text-primary); box-sizing: border-box; }
         .admin-search-wrap input:focus { outline: none; border-color: var(--accent); }
         .admin-search-wrap input::placeholder { color: var(--text-muted); }
+
+        .search-go-btn { flex-shrink: 0; width: 46px; height: 46px; border-radius: 12px; border: 1px solid var(--border-glass); background: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .search-go-btn svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .search-go-btn:active { opacity: 0.85; }
 
         /* Date range filter row — pairs with .admin-search-wrap on Orders/Top Ups */
         .drw-clear { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); }
@@ -1794,9 +1814,14 @@
                     <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button>
                 </span>
             </h2>
-            <div class="admin-search-wrap">
-                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="game-search" placeholder="Search games by name or server..." autocomplete="off" oninput="renderAdminGamesList()">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="game-search" placeholder="Search games by name or server..." autocomplete="off" oninput="renderAdminGamesList()" onkeydown="if(event.key==='Enter'){ event.preventDefault(); renderAdminGamesList(); }">
+                </div>
+                <button type="button" class="search-go-btn" onclick="renderAdminGamesList()" title="Search" aria-label="Search">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
             </div>
             <div id="admin-games-container">
                 <p class="empty-msg">Loading games...</p>
@@ -3453,12 +3478,10 @@
 
         function toggleOrderCard(orderId) {
             if (expandedOrders.has(orderId)) expandedOrders.delete(orderId); else expandedOrders.add(orderId);
-            const body = document.getElementById('body-' + orderId);
-            const footer = document.getElementById('footer-' + orderId);
+            const card = document.getElementById('card-' + orderId);
             const chevron = document.getElementById('chevron-' + orderId);
             const isOpen = expandedOrders.has(orderId);
-            if (body) body.style.display = isOpen ? 'block' : 'none';
-            if (footer) footer.style.display = isOpen ? 'flex' : 'none';
+            if (card) card.classList.toggle('oc-open', isOpen);
             if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
         }
         window.toggleOrderCard = toggleOrderCard;
@@ -3698,11 +3721,22 @@
                 if (clearBtn) clearBtn.style.display = 'none';
             }
         }
+        // Expose to global scope so the inline onclick/onchange attributes above
+        // (which run outside this module's scope) can find these functions.
+        window.openDateRangeModal = openDateRangeModal;
+        window.closeDateRangeModal = closeDateRangeModal;
+        window.calPrevMonth = calPrevMonth;
+        window.calNextMonth = calNextMonth;
+        window.calSelectDay = calSelectDay;
+        window.calApplyPreset = calApplyPreset;
+        window.calApply = calApply;
+        window.calClear = calClear;
 
         function renderOrdersList() {
             clearTimeout(ordersRenderScheduled);
             ordersRenderScheduled = setTimeout(renderOrdersListImpl, 60);
         }
+        window.renderOrdersList = renderOrdersList;
 
         // Renders from the ORDERS cache rather than a live snapshot, so it can also be
         // called from listenGames() to fill in thumbnails once game images arrive.
@@ -3803,7 +3837,7 @@
                     ? `<span class="order-select-box" onclick="event.stopPropagation()"><input type="checkbox" onclick="toggleOrderSelect('${orderId}', this.checked)" ${selectedOrderIds.has(orderId) ? 'checked' : ''} title="Select for bulk action"></span>`
                     : '';
                 return `
-                    <div class="admin-card" id="card-${orderId}" style="border-left:3px solid ${statusColor};">
+                    <div class="admin-card ${isOpen ? 'oc-open' : ''}" id="card-${orderId}" style="border-left:3px solid ${statusColor};">
                         <div class="oc-top" onclick="toggleOrderCard('${orderId}')">
                             ${selectBox}
                             <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
@@ -3816,52 +3850,66 @@
                                 <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
-                        <div class="ac-body" id="body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid var(--bg-subtle);">
-                            <div class="od-grid">
-                                <div class="od-cell span-2">
-                                    <div class="od-label">Customer</div>
-                                    <div class="od-value">${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}">${data.userPhone}</a>` : ''}</div>
+                        <div class="od-overlay" id="body-${orderId}" onclick="if(event.target===this) toggleOrderCard('${orderId}')">
+                            <div class="od-card" onclick="event.stopPropagation()">
+                                <div class="od-card-header">
+                                    <div class="od-card-title">
+                                        <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
+                                        <div class="od-card-title-text">
+                                            <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
+                                            <p class="oc-meta">${Number(data.price).toLocaleString()} MMK &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, data.status)}</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="od-card-close" onclick="toggleOrderCard('${orderId}')">
+                                        <svg class="ui-icon" style="width:16px;height:16px;"><use href="#icon-close"></use></svg>
+                                    </div>
                                 </div>
-                                <div class="od-cell">
-                                    <div class="od-label">In-Game Name</div>
-                                    <div class="od-value">${data.inGameName || 'N/A'}</div>
+                                <div class="od-grid">
+                                    <div class="od-cell span-2">
+                                        <div class="od-label">Customer</div>
+                                        <div class="od-value">${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}">${data.userPhone}</a>` : ''}</div>
+                                    </div>
+                                    <div class="od-cell">
+                                        <div class="od-label">In-Game Name</div>
+                                        <div class="od-value">${data.inGameName || 'N/A'}</div>
+                                    </div>
+                                    <div class="od-cell">
+                                        <div class="od-label">ID</div>
+                                        <div class="od-value mono">${data.playerId || 'N/A'}</div>
+                                    </div>
+                                    ${data.serverId ? `<div class="od-cell">
+                                        <div class="od-label">Server ID</div>
+                                        <div class="od-value mono">${data.serverId}</div>
+                                    </div>` : ''}
+                                    <div class="od-cell">
+                                        <div class="od-label">Order ID</div>
+                                        <div class="od-value mono">${orderId}</div>
+                                    </div>
+                                    ${data.g2bulkOrderId ? `<div class="od-cell">
+                                        <div class="od-label">G2Bulk Order ID</div>
+                                        <div class="od-value mono">${data.g2bulkOrderId}</div>
+                                    </div>` : ''}
+                                    <div class="od-cell">
+                                        <div class="od-label">Transaction ID</div>
+                                        <div class="od-value mono">${data.transactionId || 'N/A'}</div>
+                                    </div>
+                                    <div class="od-cell">
+                                        <div class="od-label">Paid Via</div>
+                                        <div class="od-value">${data.paymentMethod || 'N/A'}</div>
+                                    </div>
+                                    <div class="od-cell span-2">
+                                        <div class="od-label">Date</div>
+                                        <div class="od-value">${dateStr}</div>
+                                    </div>
                                 </div>
-                                <div class="od-cell">
-                                    <div class="od-label">ID</div>
-                                    <div class="od-value mono">${data.playerId || 'N/A'}</div>
-                                </div>
-                                ${data.serverId ? `<div class="od-cell">
-                                    <div class="od-label">Server ID</div>
-                                    <div class="od-value mono">${data.serverId}</div>
-                                </div>` : ''}
-                                <div class="od-cell">
-                                    <div class="od-label">Order ID</div>
-                                    <div class="od-value mono">${orderId}</div>
-                                </div>
-                                ${data.g2bulkOrderId ? `<div class="od-cell">
-                                    <div class="od-label">G2Bulk Order ID</div>
-                                    <div class="od-value mono">${data.g2bulkOrderId}</div>
-                                </div>` : ''}
-                                <div class="od-cell">
-                                    <div class="od-label">Transaction ID</div>
-                                    <div class="od-value mono">${data.transactionId || 'N/A'}</div>
-                                </div>
-                                <div class="od-cell">
-                                    <div class="od-label">Paid Via</div>
-                                    <div class="od-value">${data.paymentMethod || 'N/A'}</div>
-                                </div>
-                                <div class="od-cell span-2">
-                                    <div class="od-label">Date</div>
-                                    <div class="od-value">${dateStr}</div>
+                                ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
+                                ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);">View on Map</a></p>` : ''}
+                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                                ${durationLine}
+                                <div class="od-card-footer" id="footer-${orderId}">
+                                    ${actionButtons}
                                 </div>
                             </div>
-                            ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
-                            ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);">View on Map</a></p>` : ''}
-                            ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
-                            ${durationLine}
-                        </div>
-                        <div class="ac-footer" id="footer-${orderId}" style="display:${isOpen ? 'flex' : 'none'};">
-                            ${actionButtons}
                         </div>
                     </div>
                 `;
@@ -3878,6 +3926,7 @@
             updateDateTriggerLabel('order');
             renderOrdersList();
         }
+        window.clearOrderDateRange = clearOrderDateRange;
 
         async function startProcessing(orderId, btnElement) {
             const order = ORDERS[orderId];
@@ -4447,6 +4496,7 @@
             }).join('');
             initScrollReveal(container);
         }
+        window.renderTopupsList = renderTopupsList;
 
         function clearTopupDateRange() {
             const from = document.getElementById('topup-date-from');
@@ -4456,6 +4506,7 @@
             updateDateTriggerLabel('topup');
             renderTopupsList();
         }
+        window.clearTopupDateRange = clearTopupDateRange;
 
         async function setTopupProcessing(id, btnElement) {
             btnElement.innerText = "Updating...";
@@ -4920,6 +4971,7 @@
             clearTimeout(gamesRenderScheduled);
             gamesRenderScheduled = setTimeout(renderAdminGamesListImpl, 60);
         }
+        window.renderAdminGamesList = renderAdminGamesList;
         function renderAdminGamesListImpl() {
             const container = document.getElementById('admin-games-container');
             const searchTerm = (document.getElementById('game-search')?.value || '').trim().toLowerCase();
@@ -6477,6 +6529,7 @@
                 renderAdminUsersListImpl();
             });
         }
+        window.renderAdminUsersList = renderAdminUsersList;
         function renderAdminUsersListImpl() {
             const container = document.getElementById('admin-users-container');
             const searchTerm = (document.getElementById('user-search')?.value || '').trim().toLowerCase();
