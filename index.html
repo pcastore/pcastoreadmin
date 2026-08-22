@@ -852,13 +852,15 @@
         .pkg-tab-add-btn:active { color: var(--accent); border-color: var(--accent); }
         .pkg-tab-empty-msg { text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 18px 0; }
 
-        /* Package (currency grid) — drag-to-reorder card grid. Plain grid,
-           no wrapping box (no border/background/shadow/padding) — cards sit
-           directly on the modal body and its own scroll (already
+        /* Package list — drag-to-reorder, full-width single-column stack
+           (each .package-row is a horizontal flex row: order/move column +
+           wide summary, so it needs the full row width, not a 2-column
+           grid). No wrapping box (no border/background/shadow/padding) —
+           rows sit directly on the modal body and its own scroll (already
            overflow-y:auto) carries the list, so nothing constrains or
-           reflows the cards' own height. */
+           reflows the rows' own height. */
         #edit-packages-list {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; position: relative;
+            display: flex; flex-direction: column; gap: 8px; position: relative;
             min-height: 60px;
         }
         .package-row { display: flex; align-items: stretch; gap: 0; background: var(--surface-strong); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; min-width: 0; }
