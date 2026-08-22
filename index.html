@@ -5084,6 +5084,12 @@
         // Custom tabs are purely an admin-side organizational grouping.
         let currentPkgTab = 'package';
         let customPkgTabs = []; // extra tab names beyond the 2 built-ins, for the currently-open game
+        // Display names for the two built-in tabs - per game, so one game can
+        // call its Currency tab "Diamond" while another calls it "UC". The
+        // ids 'package'/'currency' never change (packages still store one of
+        // those two as their `type`/`tab`) - only the label shown in the tab
+        // bar and on the Store side is customizable.
+        let builtinPkgTabLabels = { package: 'Package', currency: 'Currency' };
 
         // Same rAF-coalescing trick as renderOrdersList: the games listener can
         // fire repeatedly in a burst (e.g. on first load), and rebuilding every
@@ -5326,24 +5332,57 @@
         function resetPackageTabs() {
             customPkgTabs = [];
             currentPkgTab = 'package';
+            builtinPkgTabLabels = { package: 'Package', currency: 'Currency' };
             renderPkgTabBar();
         }
 
         function pkgTabLabel(tabId) {
-            if (tabId === 'package') return 'Package';
-            if (tabId === 'currency') return 'Currency';
+            if (tabId === 'package') return builtinPkgTabLabels.package;
+            if (tabId === 'currency') return builtinPkgTabLabels.currency;
             return tabId;
         }
+
+        // Opens the app's input dialog to rename one of the two built-in
+        // tabs ('package'/'currency') - e.g. to "UC" or "Diamond". The tab's
+        // id never changes (packages still save `type`/`tab` as 'package' or
+        // 'currency'), only the label shown here and on the Store side.
+        function renameBuiltinPkgTab(tabId) {
+            window.showActionDialog({
+                type: 'success',
+                title: 'Rename Tab',
+                message: `"${pkgTabLabel(tabId)}" tab ကို နာမည်အသစ်ပေးပါ (ဥပမာ - "Diamond", "UC"):`,
+                confirmText: 'Rename',
+                cancelText: 'Cancel',
+                showNote: true,
+                notePlaceholder: pkgTabLabel(tabId),
+                onConfirm: (note) => {
+                    const name = (note || '').trim();
+                    if (!name) { window.showToast('Enter a tab name.', 'fail'); return; }
+                    const otherTabId = tabId === 'package' ? 'currency' : 'package';
+                    const takenNames = [pkgTabLabel(otherTabId), ...customPkgTabs].map(n => n.toLowerCase());
+                    if (takenNames.includes(name.toLowerCase())) {
+                        window.showToast('A tab with that name already exists.', 'fail');
+                        return;
+                    }
+                    builtinPkgTabLabels[tabId] = name;
+                    renderPkgTabBar();
+                    window.showToast(`Tab renamed to "${name}" ✓`, 'success');
+                }
+            });
+        }
+        window.renameBuiltinPkgTab = renameBuiltinPkgTab;
 
         function renderPkgTabBar() {
             const bar = document.getElementById('pkg-tab-bar');
             const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
             const countFor = (tabId) => rows.filter(r => r.dataset.tab === tabId).length;
-            const allTabs = ['package', 'currency', ...customPkgTabs];
+            const allTabs = ['currency', 'package', ...customPkgTabs];
             bar.innerHTML = allTabs.map(tabId => `
                 <button type="button" class="pkg-tab-btn ${tabId === currentPkgTab ? 'active' : ''}" data-tab="${tabId}" onclick="switchPackageTab('${tabId.replace(/'/g, "\\'")}')">
                     ${escapeHtml(pkgTabLabel(tabId))} <span class="pkg-tab-count">${countFor(tabId)}</span>
-                    ${!['package', 'currency'].includes(tabId) ? `<span class="pkg-tab-remove" onclick="event.stopPropagation(); removeCustomPkgTab('${tabId.replace(/'/g, "\\'")}')" title="Remove tab">&times;</span>` : ''}
+                    ${['package', 'currency'].includes(tabId)
+                        ? `<span class="pkg-tab-remove" onclick="event.stopPropagation(); renameBuiltinPkgTab('${tabId}')" title="Rename tab">✎</span>`
+                        : `<span class="pkg-tab-remove" onclick="event.stopPropagation(); removeCustomPkgTab('${tabId.replace(/'/g, "\\'")}')" title="Remove tab">&times;</span>`}
                 </button>
             `).join('') + `<button type="button" class="pkg-tab-add-btn" onclick="addCustomPackageTab()" title="Add a custom tab">+</button>`;
         }
@@ -5383,8 +5422,8 @@
                 onConfirm: (note) => {
                     const name = (note || '').trim();
                     if (!name) { window.showToast('Enter a tab name.', 'fail'); return; }
-                    const allTabs = ['package', 'currency', ...customPkgTabs];
-                    if (allTabs.some(t => t.toLowerCase() === name.toLowerCase())) {
+                    const allTabs = ['currency', 'package', ...customPkgTabs];
+                    if (allTabs.some(t => pkgTabLabel(t).toLowerCase() === name.toLowerCase())) {
                         window.showToast('A tab with that name already exists.', 'fail');
                         return;
                     }
@@ -5679,7 +5718,7 @@
             const select = row.querySelector('.pkg-tab-select');
             if (!select) return;
             const current = row.dataset.tab || 'currency';
-            const allTabs = ['package', 'currency', ...customPkgTabs];
+            const allTabs = ['currency', 'package', ...customPkgTabs];
             if (!allTabs.includes(current)) allTabs.push(current); // safety net for stray/legacy tab values
             select.innerHTML = allTabs.map(t => `<option value="${escapeHtml(t)}" ${t === current ? 'selected' : ''}>${escapeHtml(pkgTabLabel(t))}</option>`).join('');
         }
@@ -6074,6 +6113,10 @@
                 // any tab name referenced by a package that, for older saved data, isn't
                 // in this list yet.
                 customPkgTabs = Array.isArray(g.packageTabs) ? g.packageTabs.slice() : [];
+                builtinPkgTabLabels = {
+                    package: (g.packageTabLabels && g.packageTabLabels.package) || 'Package',
+                    currency: (g.packageTabLabels && g.packageTabLabels.currency) || 'Currency'
+                };
                 (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency'));
                 renderPkgTabBar();
                 switchPackageTab('package');
@@ -6232,7 +6275,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
