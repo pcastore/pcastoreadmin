@@ -1219,6 +1219,10 @@
             }
         })();
     </script>
+    <!-- QR code renderer for Authenticator (TOTP) enrollment — scanning a QR
+         avoids the manual-typo / cut-off-secret problem you get from typing
+         a long Base32 key into an authenticator app by hand. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -1296,8 +1300,12 @@
                 <!-- Step 3a: first-time TOTP enrollment -->
                 <div id="step-mfa-enroll" style="display:none;">
                     <h2>Set Up Authenticator</h2>
-                    <p class="sub">Scan or enter this key into Google Authenticator / Authy, then enter the 6-digit code it shows.</p>
-                    <div class="mfa-secret-box">
+                    <p class="sub">Scan this QR with Google Authenticator / Authy, then enter the 6-digit code it shows.</p>
+                    <div id="mfa-qr-box" style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:12px;margin:10px 0;">
+                        <div id="mfa-qr-code"></div>
+                    </div>
+                    <p class="login-msg-hint" style="text-align:center;">Can't scan? <button type="button" onclick="toggleMfaManualKey()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Enter key manually</button></p>
+                    <div class="mfa-secret-box" id="mfa-secret-box" style="display:none;">
                         <span id="mfa-secret-key">—</span>
                     </div>
                     <p class="login-msg-hint">Account name: <b id="mfa-account-name">—</b> · Issuer: PCA Store Admin</p>
@@ -1846,12 +1854,64 @@
                         </label>
                     </div>
                     <p id="admin-login-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 4px;"></p>
-                    <hr style="border:none;border-top:1px solid var(--border-glass);margin:14px 0;">
-                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Username</label>
-                    <input type="text" id="admin-login-username" placeholder="username" autocapitalize="none" autocorrect="off" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">New Password</label>
-                    <input type="password" id="admin-login-password" placeholder="At least 6 characters" autocomplete="new-password" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <button class="btn btn-primary" id="save-admin-login-btn" onclick="saveAdminLoginCredentials()">Save Username &amp; Password</button>
+                </div>
+            </div>
+
+            <!-- Admin Accounts: list every admin (username, email, 2FA status,
+                 last login) plus a count, and a way to add a new admin. -->
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-users"></use></svg>
+                        <span style="font-size:15px;font-weight: 600;">Admin Accounts</span>
+                        <span id="admin-accounts-count" style="font-size:11.5px;font-weight: 700;padding:2px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);">0</span>
+                    </div>
+                    <button class="btn btn-primary" style="flex:unset;padding:8px 14px;font-size:13px;" onclick="openAddAdminModal()">+ Add Admin</button>
+                </div>
+                <div id="admin-accounts-list" style="margin-top:12px;">
+                    <p class="empty-msg">Loading admins...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Admin Modal: create a new admin login (username + temp
+             password), then immediately show a scannable QR so their
+             Authenticator app is set up on the spot — no manual retyping of
+             a long secret, which is where truncated / wrong codes come from. -->
+        <div class="modal-overlay" id="add-admin-modal-overlay" onclick="if(event.target===this) closeAddAdminModal()">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Add Admin</h3>
+                    <div class="modal-close" onclick="closeAddAdminModal()">
+                        <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <!-- Step 1: details -->
+                    <div id="add-admin-step-form">
+                        <label>Username</label>
+                        <input type="text" id="new-admin-username" placeholder="username" autocapitalize="none" autocorrect="off" autocomplete="off">
+                        <label style="margin-top:14px;">Temporary Password</label>
+                        <input type="password" id="new-admin-password" placeholder="At least 6 characters" autocomplete="new-password">
+                        <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">The new admin can sign in with this username/password right away, and should scan the Authenticator QR shown next before sharing it.</p>
+                        <p id="add-admin-error" class="login-msg-error" style="display:none;"></p>
+                    </div>
+                    <!-- Step 2: QR to scan -->
+                    <div id="add-admin-step-qr" style="display:none;text-align:center;">
+                        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">Scan this with the new admin's Authenticator app (Google Authenticator / Authy) now, while their account is open on screen.</p>
+                        <div style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:12px;margin:10px 0;">
+                            <div id="new-admin-qr-code"></div>
+                        </div>
+                        <p class="login-msg-hint">Can't scan? <button type="button" onclick="toggleNewAdminManualKey()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Enter key manually</button></p>
+                        <div class="mfa-secret-box" id="new-admin-secret-box" style="display:none;">
+                            <span id="new-admin-secret-key">—</span>
+                        </div>
+                        <p style="font-size:12.5px;color:var(--text-secondary);margin-top:10px;">Username: <b id="new-admin-final-username">—</b></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="create-admin-btn" onclick="createNewAdmin()">Create Admin</button>
+                    <button class="btn btn-outline" id="done-admin-btn" style="display:none;" onclick="closeAddAdminModal()">Done</button>
                 </div>
             </div>
         </div>
@@ -2412,6 +2472,7 @@
                         <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
                         <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
                         <button type="button" class="pkg-type-tab" data-provider="jcplays" onclick="setFulfillProvider('jcplays')">JCPlays</button>
+                        <button type="button" class="pkg-type-tab" data-provider="g2bulk_voucher" onclick="setFulfillProvider('g2bulk_voucher')">Vouchers</button>
                     </div>
 
                     <div id="g2bulk-fulfill-section" style="display:none;margin-top:10px;">
@@ -2437,6 +2498,23 @@
                             <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
                         </div>
                         <p id="jcplays-denom-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
+                    </div>
+
+                    <!-- G2Bulk Giftcards & Vouchers: a different part of G2Bulk's
+                         catalog (GET /v1/category, /v1/category/:id) from the
+                         Game top-up list above. Each "product" here becomes a
+                         package row; fulfillment uses POST /v1/products/:id/purchase
+                         instead of the game order endpoint. -->
+                    <div id="g2bulk-voucher-fulfill-section" style="display:none;margin-top:10px;">
+                        <label style="margin-top:0;">G2Bulk Giftcard / Voucher Category</label>
+                        <select id="edit-game-voucher-category" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;" onchange="onVoucherCategoryChange()">
+                            <option value="">Loading categories...</option>
+                        </select>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <button type="button" class="btn btn-outline" id="voucher-refresh-categories-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="populateVoucherCategoryDropdown(true)">Refresh List</button>
+                            <button type="button" class="btn btn-outline" id="voucher-import-btn" style="display:none;" onclick="importG2BulkVoucherCatalogue()">Import Products</button>
+                        </div>
+                        <p id="voucher-import-status" style="font-size:11px;color:var(--text-muted);margin-top:6px;white-space:pre-wrap;"></p>
                     </div>
                 </div>
 
@@ -3154,41 +3232,174 @@
         }
         window.onAdminLoginToggle = onAdminLoginToggle;
 
-        // Sets/replaces the username + password used by the login gate above.
-        // Always creates a fresh Firebase Auth account behind the username (rather
-        // than trying to update a password we're not signed in to verify), so
-        // saving here also resets that username's 2FA — it re-enrolls next login.
-        async function saveAdminLoginCredentials() {
-            const usernameInput = document.getElementById('admin-login-username');
-            const passwordInput = document.getElementById('admin-login-password');
+        // ---------- Admin Accounts: list + add (Dashboard → Settings → Admin Accounts) ----------
+        // A second, independent Firebase App instance used ONLY for creating a
+        // new admin's Auth account. createUserWithEmailAndPassword() on the
+        // *main* auth instance would sign the browser in as that brand-new
+        // admin, kicking the currently signed-in admin out of their own
+        // session — using a separate app instance avoids that entirely.
+        const adminCreationApp = initializeApp(firebaseConfig, "AdminCreation");
+        const adminCreationAuth = getAuth(adminCreationApp);
+
+        let adminAccountsListenerAttached = false;
+        let ADMIN_ACCOUNTS = [];
+
+        function listenAdminAccounts() {
+            if (adminAccountsListenerAttached) return;
+            adminAccountsListenerAttached = true;
+            const q = query(collection(db, "adminUsernames"));
+            onSnapshot(q, (snap) => {
+                ADMIN_ACCOUNTS = snap.docs.map(d => ({ username: d.id, ...d.data() }));
+                renderAdminAccountsList();
+            }, (error) => {
+                console.error('Admin accounts listener error:', error);
+            });
+        }
+        window.listenAdminAccounts = listenAdminAccounts;
+
+        function renderAdminAccountsList() {
+            const container = document.getElementById('admin-accounts-list');
+            const countEl = document.getElementById('admin-accounts-count');
+            if (countEl) countEl.textContent = String(ADMIN_ACCOUNTS.length);
+            if (!container) return;
+            if (ADMIN_ACCOUNTS.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No admins yet — tap "+ Add Admin" to create one.</p>';
+                return;
+            }
+            const rows = [...ADMIN_ACCOUNTS].sort((a, b) => a.username.localeCompare(b.username));
+            container.innerHTML = rows.map(a => {
+                const has2fa = !!a.totpSecret;
+                const lastLogin = a.lastLoginAt?.toDate ? a.lastLoginAt.toDate().toLocaleString() : 'Never';
+                const isYou = a.username === currentAdminUsername;
+                return `
+                <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                        <div style="min-width:0;">
+                            <div style="font-size:14px;font-weight: 600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                                ${escapeHtml(a.username)}${isYou ? ' <span style="font-size:10.5px;font-weight:600;color:var(--accent);">(you)</span>' : ''}
+                            </div>
+                            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Last login: ${lastLogin}${a.lastLoginIp ? ' · IP: ' + escapeHtml(a.lastLoginIp) : ''}</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                            <span style="font-size:10.5px;font-weight: 600;padding:3px 8px;border-radius:6px;white-space:nowrap;background:${has2fa ? 'var(--accent-soft)' : 'var(--danger-soft)'};color:${has2fa ? 'var(--accent)' : 'var(--danger)'};">${has2fa ? '2FA enabled' : 'Not set up yet'}</span>
+                            ${!isYou ? `<button type="button" onclick="revokeAdmin('${a.username.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--danger);font-size:11px;font-weight:600;cursor:pointer;padding:0;">Revoke</button>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        window.renderAdminAccountsList = renderAdminAccountsList;
+
+        // Removes only the adminUsernames/{username} mapping doc, so that
+        // username can no longer sign in. The underlying Firebase Auth
+        // account isn't deleted (client SDKs can't delete other users'
+        // accounts — that needs the Admin SDK / a backend), but without the
+        // mapping doc, login can never resolve to it again.
+        function revokeAdmin(username) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Revoke admin access?',
+                message: `"${username}" will no longer be able to sign in.`,
+                confirmText: 'Revoke',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "adminUsernames", username));
+                        await logAdminActivity('Revoked admin', username);
+                        window.showToast('Admin access revoked ✓', 'success');
+                    } catch (e) {
+                        console.error('Revoke admin error:', e);
+                        window.showToast('Failed to revoke access.', 'fail');
+                    }
+                }
+            });
+        }
+        window.revokeAdmin = revokeAdmin;
+
+        function openAddAdminModal() {
+            document.getElementById('new-admin-username').value = '';
+            document.getElementById('new-admin-password').value = '';
+            document.getElementById('add-admin-error').style.display = 'none';
+            document.getElementById('add-admin-step-form').style.display = '';
+            document.getElementById('add-admin-step-qr').style.display = 'none';
+            document.getElementById('new-admin-secret-box').style.display = 'none';
+            document.getElementById('create-admin-btn').style.display = '';
+            document.getElementById('done-admin-btn').style.display = 'none';
+            document.getElementById('add-admin-modal-overlay').classList.add('show');
+        }
+        window.openAddAdminModal = openAddAdminModal;
+
+        function closeAddAdminModal() {
+            document.getElementById('add-admin-modal-overlay').classList.remove('show');
+            adminCreationAuth.signOut().catch(() => {});
+        }
+        window.closeAddAdminModal = closeAddAdminModal;
+
+        function toggleNewAdminManualKey() {
+            const box = document.getElementById('new-admin-secret-box');
+            if (box) box.style.display = box.style.display === 'none' ? '' : 'none';
+        }
+        window.toggleNewAdminManualKey = toggleNewAdminManualKey;
+
+        // Creates the new admin's Firebase Auth account (via the isolated
+        // adminCreationAuth instance) and their adminUsernames doc, with the
+        // TOTP secret generated and saved immediately — so the QR shown right
+        // after is already the real, final secret, not a placeholder.
+        async function createNewAdmin() {
+            const usernameInput = document.getElementById('new-admin-username');
+            const passwordInput = document.getElementById('new-admin-password');
+            const errEl = document.getElementById('add-admin-error');
+            const btn = document.getElementById('create-admin-btn');
             const username = usernameInput.value.trim().toLowerCase();
             const password = passwordInput.value;
-            const btn = document.getElementById('save-admin-login-btn');
+            errEl.style.display = 'none';
             if (!username || !/^[a-z0-9_.]{3,}$/.test(username)) {
-                window.showToast('Username: at least 3 characters, letters/numbers/._ only.', 'fail');
+                errEl.textContent = 'Username: at least 3 characters, letters/numbers/._ only.';
+                errEl.style.display = 'block';
                 return;
             }
             if (!password || password.length < 6) {
-                window.showToast('Password must be at least 6 characters.', 'fail');
+                errEl.textContent = 'Password must be at least 6 characters.';
+                errEl.style.display = 'block';
+                return;
+            }
+            const existing = ADMIN_ACCOUNTS.find(a => a.username === username);
+            if (existing) {
+                errEl.textContent = 'That username is already taken.';
+                errEl.style.display = 'block';
                 return;
             }
             btn.disabled = true;
-            btn.innerText = 'Saving...';
+            btn.innerText = 'Creating...';
             try {
                 const email = `${username}.${Date.now()}@admin.pcastore.local`;
-                await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, "adminUsernames", username), { email, totpSecret: null });
-                passwordInput.value = '';
-                window.showToast('Login credentials saved ✓', 'success');
+                await createUserWithEmailAndPassword(adminCreationAuth, email, password);
+                const totpSecret = randomBase32Secret();
+                await setDoc(doc(db, "adminUsernames", username), {
+                    email,
+                    totpSecret,
+                    createdBy: currentAdminUsername || 'unknown',
+                    createdAt: serverTimestamp()
+                });
+                await logAdminActivity('Added admin', username);
+                // Step 2: show the QR right away so it can be scanned on the spot.
+                document.getElementById('new-admin-secret-key').textContent = totpSecret;
+                document.getElementById('new-admin-final-username').textContent = username;
+                renderMfaQrCode(totpSecret, username, 'new-admin-qr-code');
+                document.getElementById('add-admin-step-form').style.display = 'none';
+                document.getElementById('add-admin-step-qr').style.display = '';
+                document.getElementById('create-admin-btn').style.display = 'none';
+                document.getElementById('done-admin-btn').style.display = '';
+                window.showToast('Admin created ✓', 'success');
             } catch (e) {
-                console.error('Failed to save admin credentials:', e);
-                window.showToast('Failed to save: ' + (e.code || e.message || 'unknown error'), 'fail');
+                console.error('Failed to create admin:', e);
+                errEl.textContent = 'Failed to create: ' + (e.code || e.message || 'unknown error');
+                errEl.style.display = 'block';
             } finally {
                 btn.disabled = false;
-                btn.innerText = 'Save Username & Password';
+                btn.innerText = 'Create Admin';
             }
         }
-        window.saveAdminLoginCredentials = saveAdminLoginCredentials;
+        window.createNewAdmin = createNewAdmin;
 
         // ---------- Blinking-dot obscurity gate ----------
         // The login form is invisible by default. A decoy arrow (does
@@ -3285,6 +3496,42 @@
             }
             return false;
         }
+
+        // Builds the standard otpauth:// URI that every authenticator app
+        // (Google Authenticator, Authy, etc.) understands, and renders it as
+        // a scannable QR code into the given container element. Scanning
+        // this avoids someone having to hand-type the long Base32 secret
+        // (which is exactly where truncated / mistyped codes come from).
+        const TOTP_ISSUER = 'PCA Store Admin';
+        let mfaQrInstance = null;
+        function buildOtpauthUri(secretBase32, accountName) {
+            const label = encodeURIComponent(`${TOTP_ISSUER}:${accountName || 'admin'}`);
+            const issuer = encodeURIComponent(TOTP_ISSUER);
+            return `otpauth://totp/${label}?secret=${secretBase32}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+        }
+        function renderMfaQrCode(secretBase32, accountName, containerId = 'mfa-qr-code') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            try {
+                new QRCode(container, {
+                    text: buildOtpauthUri(secretBase32, accountName),
+                    width: 180,
+                    height: 180,
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } catch (e) {
+                console.error('QR render error:', e);
+                container.innerHTML = '<p style="font-size:12px;color:var(--danger);">QR unavailable — use the manual key below.</p>';
+            }
+        }
+        window.renderMfaQrCode = renderMfaQrCode;
+
+        function toggleMfaManualKey() {
+            const box = document.getElementById('mfa-secret-box');
+            if (box) box.style.display = box.style.display === 'none' ? '' : 'none';
+        }
+        window.toggleMfaManualKey = toggleMfaManualKey;
 
         // ---------- Login form UI helpers: password eye-toggle, remember-me,
         // forgot-password ----------
@@ -3463,6 +3710,8 @@
                 pendingEnrollSecret = randomBase32Secret();
                 document.getElementById('mfa-secret-key').textContent = pendingEnrollSecret;
                 document.getElementById('mfa-account-name').textContent = pendingUsername || user.email || '—';
+                document.getElementById('mfa-secret-box').style.display = 'none';
+                renderMfaQrCode(pendingEnrollSecret, pendingUsername || user.email);
                 document.getElementById('step-mfa-challenge').style.display = 'none';
                 document.getElementById('step-mfa-enroll').style.display = '';
             }
@@ -3927,14 +4176,19 @@
                     actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})">Check G2Bulk Status (${data.g2bulkStatus || 'PENDING'})</button>
                                       <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself (e.g. via the G2Bulk Telegram bot) and don't want to wait on the API check">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else if (data.status === 'Processing' && data.g2bulkVoucherPollUrl) {
+                    actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkVoucherDeliveryStatus('${orderId}', '${data.g2bulkVoucherPollUrl}')">Check G2Bulk Status (Voucher)</button>
+                                      <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Processing') {
                     actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Pending') {
                     let startLabel = 'Start Processing';
-                    const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId;
+                    const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId || data.g2bulkVoucherProductId;
                     if (data.g2bulkGameCode && data.g2bulkCatalogueName) startLabel = 'Auto-Fulfill via G2Bulk';
                     else if (data.jcplaysProductId) startLabel = 'Auto-Fulfill via JCPlays';
+                    else if (data.g2bulkVoucherProductId) startLabel = 'Auto-Fulfill via G2Bulk (Voucher)';
                     // Auto-linked orders get a manual fallback button too, so if the
                     // API call fails (bad credentials, insufficient balance, JCPlays/
                     // G2Bulk downtime, etc.) the admin isn't stuck retrying the same
@@ -4040,6 +4294,11 @@
                                 ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
                                 ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);">View on Map</a></p>` : ''}
                                 ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                                ${Array.isArray(data.deliveredCodes) && data.deliveredCodes.length ? `<div style="margin-top:8px;padding:10px;background:var(--fill-soft);border-radius:8px;">
+                                    <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px;">Delivered Voucher Code${data.deliveredCodes.length > 1 ? 's' : ''} — copy &amp; send to customer</div>
+                                    ${data.deliveredCodes.map(c => `<div class="mono" style="font-size:13px;padding:4px 0;word-break:break-all;">${escapeHtml(String(c))}</div>`).join('')}
+                                    <button type="button" class="btn btn-outline" style="margin-top:6px;padding:6px 10px;font-size:12px;" onclick="navigator.clipboard.writeText('${data.deliveredCodes.map(c => String(c).replace(/'/g, "\\'")).join('\\n')}');window.showToast('Copied ✓','success')">Copy All</button>
+                                </div>` : ''}
                                 ${durationLine}
                                 <div class="od-card-footer" id="footer-${orderId}">
                                     ${actionButtons}
@@ -4069,6 +4328,12 @@
             // (see submitOrder in store.html) - route those through auto-fulfillment.
             if (order && order.g2bulkGameCode && order.g2bulkCatalogueName) {
                 return placeG2BulkOrder(orderId, order, btnElement);
+            }
+            // Orders placed against a G2Bulk voucher/giftcard-linked package
+            // carry g2bulkVoucherProductId - route those through the
+            // purchase/delivery flow instead of the game order endpoint.
+            if (order && order.g2bulkVoucherProductId) {
+                return placeG2BulkVoucherOrder(orderId, order, btnElement);
             }
             // Orders placed against a JCPlays-linked package carry jcplaysProductId -
             // route those through JCPlays auto-fulfillment (see note on placeJCPlaysOrder).
@@ -4320,6 +4585,138 @@
             const status = await checkG2BulkOrderStatus(orderId, g2bulkOrderId);
             if (status === 'COMPLETED' || status === 'FAILED' || status === 'REFUNDED') return;
             pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft - 1);
+        }
+
+        // ---------- G2Bulk Giftcards & Vouchers auto-fulfillment ----------
+        // Different endpoint from the game top-up flow above: buying a
+        // voucher/giftcard is POST /v1/products/:id/purchase, and it either
+        // comes back COMPLETED with the codes attached right away, or PENDING
+        // with a poll_url to check a few seconds later — there's no webhook
+        // for this side of the API, so polling is the only way to catch
+        // completion. Orders placed against a voucher-linked package need to
+        // carry `g2bulkVoucherProductId` (and optionally `voucherQuantity`,
+        // default 1) - the same way game top-up orders carry g2bulkGameCode /
+        // g2bulkCatalogueName (see submitOrder in the storefront).
+        async function placeG2BulkVoucherOrder(orderId, order, btnElement) {
+            if (!G2BULK_SETTINGS.enabled) {
+                window.showToast('G2Bulk is turned off (Dashboard → G2Bulk API Key → Settings). Fulfill this order manually or re-enable it.', 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+            if (!G2BULK_SETTINGS.apiKey) {
+                window.showToast('Add your G2Bulk API key first (Dashboard → G2Bulk API Key).', 'fail');
+                return 'error';
+            }
+            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
+
+            const idempotencyKey = order.g2bulkVoucherIdempotencyKey || crypto.randomUUID();
+            if (!order.g2bulkVoucherIdempotencyKey) {
+                try {
+                    await updateDoc(doc(db, "orders", orderId), { g2bulkVoucherIdempotencyKey: idempotencyKey });
+                } catch (error) {
+                    console.error("Save idempotency key error:", error);
+                }
+            }
+
+            let data;
+            try {
+                const res = await fetch(`https://api.g2bulk.com/v1/products/${encodeURIComponent(order.g2bulkVoucherProductId)}/purchase`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'X-Idempotency-Key': idempotencyKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity: order.voucherQuantity || 1 })
+                });
+                data = await res.json();
+                if (!res.ok || data.success === false) {
+                    throw new Error(data.message || 'G2Bulk rejected the order');
+                }
+            } catch (error) {
+                console.error("G2Bulk voucher purchase error:", error);
+                window.showToast('G2Bulk order failed: ' + error.message, 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+
+            if (data.status === 'COMPLETED') {
+                try {
+                    await updateDoc(doc(db, "orders", orderId), {
+                        status: "Success",
+                        confirmedAt: serverTimestamp(),
+                        g2bulkVoucherOrderId: data.order_id || null,
+                        deliveredCodes: data.delivery_items || []
+                    });
+                    window.showToast('Voucher delivered ✓', 'success');
+                    editTelegramOrderMessage(orderId, 'Success');
+                    return 'success';
+                } catch (error) {
+                    console.error("Voucher order completed but saving failed:", error);
+                    window.showInfoDialog('Order Completed, But Not Saved', `G2Bulk delivered this instantly (order_id: ${data.order_id || '—'}), but saving the codes to the order record failed: ${error.message}. Refresh the page — do not click again.`);
+                    return 'accepted_unsaved';
+                }
+            }
+
+            // PENDING - save the poll_url and keep checking every few seconds.
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "Processing",
+                    g2bulkVoucherOrderId: data.order_id || null,
+                    g2bulkVoucherPollUrl: data.poll_url || null,
+                    g2bulkStatus: 'PENDING'
+                });
+                window.showToast('Order placed with G2Bulk — checking for delivery...', 'success');
+                if (data.poll_url) pollG2BulkVoucherDelivery(orderId, data.poll_url, 5); // ~5 tries, 4s apart = 20s
+                return 'processing';
+            } catch (error) {
+                console.error("G2Bulk voucher order accepted but saving failed:", error);
+                window.showInfoDialog('Order Accepted, But Not Saved', `G2Bulk accepted this order${data.order_id ? ' (order_id: ' + data.order_id + ')' : ''}, but saving that failed: ${error.message}. Refresh the page instead of clicking again.`);
+                if (btnElement) btnElement.innerText = "Refresh Page";
+                return 'accepted_unsaved';
+            }
+        }
+        window.placeG2BulkVoucherOrder = placeG2BulkVoucherOrder;
+
+        // Checks delivery status for a PENDING voucher order once. The HTTP
+        // status code itself carries the meaning (200 ready / 202 still
+        // processing / 410 failed+refunded), per the /delivery endpoint docs.
+        async function checkG2BulkVoucherDeliveryStatus(orderId, pollUrl, silent = false) {
+            if (!G2BULK_SETTINGS.apiKey) {
+                if (!silent) window.showToast('Add your G2Bulk API key first.', 'fail');
+                return;
+            }
+            try {
+                const url = pollUrl.startsWith('http') ? pollUrl : `https://api.g2bulk.com${pollUrl}`;
+                const res = await fetch(url, { headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey } });
+                const data = await res.json().catch(() => ({}));
+
+                if (res.status === 200) {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), deliveredCodes: data.delivery_items || [] });
+                    window.showToast('Voucher delivered ✓', 'success');
+                    editTelegramOrderMessage(orderId, 'Success');
+                    return 'COMPLETED';
+                } else if (res.status === 410) {
+                    await markOrderFailedWithRefund(orderId, { g2bulkStatus: 'REFUNDED' });
+                    if (!silent) window.showToast('G2Bulk order failed/refunded.', 'fail');
+                    editTelegramOrderMessage(orderId, 'Fail');
+                    return 'REFUNDED';
+                } else if (res.status === 404) {
+                    if (!silent) window.showToast('Order not found on G2Bulk.', 'fail');
+                    return 'NOT_FOUND';
+                } else {
+                    if (!silent) window.showToast('Still processing on G2Bulk...');
+                    return 'PROCESSING';
+                }
+            } catch (error) {
+                console.error("G2Bulk voucher delivery check error:", error);
+                if (!silent) window.showToast('Could not reach G2Bulk to check status.', 'fail');
+            }
+        }
+        window.checkG2BulkVoucherDeliveryStatus = checkG2BulkVoucherDeliveryStatus;
+
+        async function pollG2BulkVoucherDelivery(orderId, pollUrl, triesLeft) {
+            if (triesLeft <= 0) return;
+            await new Promise(r => setTimeout(r, 4000));
+            const status = await checkG2BulkVoucherDeliveryStatus(orderId, pollUrl, true);
+            if (status === 'COMPLETED' || status === 'REFUNDED' || status === 'NOT_FOUND') return;
+            pollG2BulkVoucherDelivery(orderId, pollUrl, triesLeft - 1);
         }
 
         function markSuccess(orderId, btnElement) {
@@ -5486,7 +5883,7 @@
         }
         window.removeCustomPkgTab = removeCustomPkgTab;
 
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false) {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '') {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
             // name: a leading number ("100 Diamonds") → Currency, a plain name
@@ -5592,6 +5989,7 @@
                             </div>
                             <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk' ? 'block' : 'none'};">
                             <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'jcplays' ? 'block' : 'none'};">
+                            <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk_voucher' ? 'block' : 'none'};">
                             <div class="pkg-card-footer">
                                 <button type="button" class="pkg-card-save-btn" onclick="collapsePackageRow(this)">Save</button>
                             </div>
@@ -6144,7 +6542,7 @@
                     bannerChangeBadge.style.display = 'none';
                 }
 
-                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : 'manual');
+                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : (g.g2bulkVoucherCategory ? 'g2bulk_voucher' : 'manual'));
                 setFulfillProvider(initialProvider);
                 // Restore custom tabs up front (including any left empty) so they don't
                 // silently disappear on reload - addPackageRow below will also pick up
@@ -6155,12 +6553,17 @@
                     package: (g.packageTabLabels && g.packageTabLabels.package) || 'Package',
                     currency: (g.packageTabLabels && g.packageTabLabels.currency) || 'Currency'
                 };
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency'));
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency', false, p.voucherId || ''));
                 renderPkgTabBar();
                 switchPackageTab('package');
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
+                if (g.g2bulkVoucherCategory) {
+                    const catSelect = document.getElementById('edit-game-voucher-category');
+                    catSelect.dataset.pending = g.g2bulkVoucherCategory;
+                    populateVoucherCategoryDropdown(false);
+                }
                 deleteBtn.style.display = 'block';
                 document.getElementById('duplicate-game-btn').style.display = 'block';
             } else {
@@ -6175,6 +6578,10 @@
                 document.getElementById('edit-game-g2bulk-code').value = '';
                 document.getElementById('edit-game-jcplays-code').value = '';
                 document.getElementById('jcplays-denom-status').innerText = '';
+                document.getElementById('edit-game-voucher-category').dataset.pending = '';
+                document.getElementById('edit-game-voucher-category').value = '';
+                document.getElementById('voucher-import-status').innerText = '';
+                onVoucherCategoryChange();
                 setFulfillProvider('manual');
                 preview.src = '';
                 preview.style.display = 'none';
@@ -6264,6 +6671,7 @@
             // up ambiguous about which API should fulfill its orders.
             const g2bulkCode = currentFulfillProvider === 'g2bulk' ? document.getElementById('edit-game-g2bulk-code').value : '';
             const jcplaysProduct = currentFulfillProvider === 'jcplays' ? document.getElementById('edit-game-jcplays-code').value.trim() : '';
+            const g2bulkVoucherCategory = currentFulfillProvider === 'g2bulk_voucher' ? document.getElementById('edit-game-voucher-category').value : '';
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
@@ -6275,6 +6683,7 @@
                 price: Number(row.querySelector('.pkg-price').value) || 0,
                 g2bulk: currentFulfillProvider === 'g2bulk' ? row.querySelector('.pkg-g2bulk').value.trim() : '',
                 jcplays: currentFulfillProvider === 'jcplays' ? row.querySelector('.pkg-jcplays').value.trim() : '',
+                voucherId: currentFulfillProvider === 'g2bulk_voucher' ? row.querySelector('.pkg-voucher-id').value.trim() : '',
                 image: row.querySelector('.pkg-img-preview').dataset.url || '',
                 type: row.querySelector('.pkg-type').value || 'currency',
                 tab: row.dataset.tab || row.querySelector('.pkg-type').value || 'currency'
@@ -6313,7 +6722,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -8675,8 +9084,11 @@
             document.querySelectorAll('#fulfill-provider-tabs .pkg-type-tab').forEach(el => el.classList.toggle('active', el.dataset.provider === provider));
             document.getElementById('g2bulk-fulfill-section').style.display = provider === 'g2bulk' ? 'block' : 'none';
             document.getElementById('jcplays-fulfill-section').style.display = provider === 'jcplays' ? 'block' : 'none';
+            document.getElementById('g2bulk-voucher-fulfill-section').style.display = provider === 'g2bulk_voucher' ? 'block' : 'none';
             document.querySelectorAll('#edit-packages-list .pkg-g2bulk').forEach(el => el.style.display = provider === 'g2bulk' ? 'block' : 'none');
             document.querySelectorAll('#edit-packages-list .pkg-jcplays').forEach(el => el.style.display = provider === 'jcplays' ? 'block' : 'none');
+            document.querySelectorAll('#edit-packages-list .pkg-voucher-id').forEach(el => el.style.display = provider === 'g2bulk_voucher' ? 'block' : 'none');
+            if (provider === 'g2bulk_voucher') populateVoucherCategoryDropdown(false);
             refreshCheckPricesBtn();
         }
         window.setFulfillProvider = setFulfillProvider;
@@ -8982,6 +9394,121 @@
             }
         }
         window.importG2BulkCatalogue = importG2BulkCatalogue;
+
+        // ---------- G2Bulk Giftcards & Vouchers import ----------
+        // Separate part of G2Bulk's catalog from the Games list above:
+        // GET /v1/category (public) lists categories, GET /v1/category/:id
+        // (public) lists the live products (title, unit_price, face_value,
+        // stock) inside one. No API key needed for browsing - only the
+        // purchase call later needs it.
+        let G2BULK_CATEGORIES_LIST = null;
+        async function fetchG2BulkCategoriesList(forceRefresh = false) {
+            if (G2BULK_CATEGORIES_LIST && !forceRefresh) return G2BULK_CATEGORIES_LIST;
+            const res = await fetch('https://api.g2bulk.com/v1/category');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Failed to load G2Bulk categories');
+            G2BULK_CATEGORIES_LIST = data.categories || [];
+            return G2BULK_CATEGORIES_LIST;
+        }
+
+        async function populateVoucherCategoryDropdown(forceRefresh = false) {
+            const select = document.getElementById('edit-game-voucher-category');
+            const currentValue = select.value || (select.dataset.pending || '');
+            const btn = document.getElementById('voucher-refresh-categories-btn');
+            if (btn) { btn.disabled = true; btn.innerText = 'Loading...'; }
+            try {
+                const categories = await fetchG2BulkCategoriesList(forceRefresh);
+                select.innerHTML = '<option value="">-- Not linked (manual fulfillment) --</option>' +
+                    categories.map(c => `<option value="${c.id}">${escapeHtml(c.title)} (${c.product_count})</option>`).join('');
+                if (currentValue) select.value = String(currentValue);
+                onVoucherCategoryChange();
+            } catch (error) {
+                console.error('Load G2Bulk categories error:', error);
+                select.innerHTML = '<option value="">Couldn\'t load categories — tap Refresh List to retry</option>';
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'Refresh List'; }
+            }
+        }
+        window.populateVoucherCategoryDropdown = populateVoucherCategoryDropdown;
+
+        function onVoucherCategoryChange() {
+            const select = document.getElementById('edit-game-voucher-category');
+            const importBtn = document.getElementById('voucher-import-btn');
+            const categoryId = select.value;
+            importBtn.style.display = categoryId ? '' : 'none';
+            // Fills in the Game Name for a first-time link, same "fill it in
+            // for you" treatment as linking a G2Bulk game/JCPlays product —
+            // only if the name field is still empty.
+            const nameInput = document.getElementById('edit-game-name');
+            if (categoryId && !nameInput.value.trim()) {
+                const opt = select.options[select.selectedIndex];
+                if (opt) nameInput.value = opt.textContent.replace(/\s*\(\d+\)$/, '');
+            }
+        }
+        window.onVoucherCategoryChange = onVoucherCategoryChange;
+
+        // Fetches the live product list for the selected category and
+        // pre-fills package rows the same way importG2BulkCatalogue() does
+        // for game top-ups: matched by G2Bulk product id, only Cost is
+        // refreshed on re-import, Price/Image/order are left as the admin
+        // set them, and unmatched products get appended as new rows.
+        async function importG2BulkVoucherCatalogue() {
+            const categoryId = document.getElementById('edit-game-voucher-category').value;
+            if (!categoryId) return;
+            const statusEl = document.getElementById('voucher-import-status');
+            const btn = document.getElementById('voucher-import-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Importing...';
+            statusEl.innerText = '';
+
+            try {
+                const res = await fetch(`https://api.g2bulk.com/v1/category/${encodeURIComponent(categoryId)}`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Import failed');
+
+                const rate = G2BULK_SETTINGS.usdRate || 4500;
+                const products = data.products || (data.category ? data.category.products : []) || [];
+
+                const rowByVoucherId = new Map();
+                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
+                    const key = row.querySelector('.pkg-voucher-id').value.trim();
+                    if (key) rowByVoucherId.set(key, row);
+                });
+
+                let updatedCount = 0, addedCount = 0;
+                products.forEach(p => {
+                    const cost = Math.round(p.unit_price * rate);
+                    const idStr = String(p.id);
+                    const existingRow = rowByVoucherId.get(idStr);
+                    if (existingRow) {
+                        const costInput = existingRow.querySelector('.pkg-cost');
+                        costInput.value = cost;
+                        updatePackageProfit(costInput);
+                        updatedCount++;
+                    } else {
+                        const label = p.face_value ? `${p.title} ($${p.face_value})` : p.title;
+                        addPackageRow(label, cost, cost, '', '', p.image_url || '', 'currency', null, false, idStr);
+                        addedCount++;
+                    }
+                });
+
+                statusEl.style.color = 'var(--accent)';
+                statusEl.innerText = updatedCount
+                    ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Product အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
+                    : `Imported ${addedCount} products ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                window.showToast('Voucher catalogue imported ✓', 'success');
+            } catch (error) {
+                console.error('Import G2Bulk voucher catalogue error:', error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Import failed: ' + error.message;
+                window.showToast('Failed to import catalogue.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.importG2BulkVoucherCatalogue = importG2BulkVoucherCatalogue;
 
         // ---------- Live price-change check (G2Bulk + JCPlays) ----------
         // Unlike Import (which overwrites every matched row's Cost right
@@ -9921,6 +10448,10 @@
             document.getElementById('edit-game-g2bulk-code').value = '';
             document.getElementById('edit-game-jcplays-code').value = '';
             document.getElementById('jcplays-denom-status').innerText = '';
+            document.getElementById('edit-game-voucher-category').value = '';
+            document.getElementById('edit-game-voucher-category').dataset.pending = '';
+            document.getElementById('voucher-import-status').innerText = '';
+            setFulfillProvider('manual');
             document.getElementById('game-editor-title').innerText = 'Add New Game';
             document.getElementById('delete-game-btn').style.display = 'none';
             document.getElementById('duplicate-game-btn').style.display = 'none';
@@ -10174,6 +10705,7 @@
             listenTierSettings();
             listenFrames();
             listenActivityLog();
+            listenAdminAccounts();
             startAdminHeartbeat();
             startOrderArchiveScheduler();
             startDailySummaryScheduler();
