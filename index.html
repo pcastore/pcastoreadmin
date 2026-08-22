@@ -852,17 +852,14 @@
         .pkg-tab-add-btn:active { color: var(--accent); border-color: var(--accent); }
         .pkg-tab-empty-msg { text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 18px 0; }
 
-        /* Package (currency grid) — drag-to-reorder card grid. No inner
-           max-height/overflow box: cards lay out directly in this 2-column
-           grid and the modal-body's own scroll (already overflow-y:auto)
-           carries the rest, so a freshly-imported card lands visible in the
-           grid immediately instead of requiring a separate scroll-to-bottom
-           inside a boxed sub-list. */
+        /* Package (currency grid) — drag-to-reorder card grid. Plain grid,
+           no wrapping box (no border/background/shadow/padding) — cards sit
+           directly on the modal body and its own scroll (already
+           overflow-y:auto) carries the list, so nothing constrains or
+           reflows the cards' own height. */
         #edit-packages-list {
             display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; position: relative;
             min-height: 60px;
-            padding: 8px; border: 1px solid var(--border-glass); border-radius: 14px;
-            background: var(--bg-subtle-2); box-shadow: inset 0 1px 0 var(--border-glass);
         }
         .package-row { display: flex; align-items: stretch; gap: 0; background: var(--surface-strong); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; min-width: 0; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
@@ -2216,7 +2213,7 @@
 
                 <label>Top-up Packages</label>
                 <div class="pkg-tab-bar" id="pkg-tab-bar"></div>
-                <div id="edit-packages-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <div id="edit-packages-list"></div>
                 <p class="pkg-tab-empty-msg" id="pkg-tab-empty-msg" style="display:none;">No packages in this tab yet — tap "+ Add Package" to add one.</p>
                 <div class="pkg-actions-row">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
