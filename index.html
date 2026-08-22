@@ -822,8 +822,8 @@
         /* Package/Currency/Custom tabs — filters #edit-packages-list so the
            two package "types" (and any admin-defined custom groups) never
            show mixed together while editing. */
-        /* No backdrop-filter here on purpose: this bar is position:sticky
-           above a long scrollable package list (up to 50+ rows), so it gets
+        /* No backdrop-filter here on purpose: this bar used to be
+           position:sticky above a long scrollable package list, so it got
            recomposited on every scroll frame. Blurring it (like the old
            blur(10px) did) stacks on top of the modal's own blurred backdrop
            and is exactly the "blur a frequently-repainted element" case the
@@ -831,9 +831,15 @@
            showed up as the scrolled-past rows rendering as corrupted thin
            stripes instead of their real content once the list got long
            (reproduced on the 55-item Currency tab, not on the 4-item
-           Package tab). Solid background, no blur, same pattern already
-           used for .package-row and other repeated/scrolled elements. */
-        .pkg-tab-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; position: sticky; top: -1px; z-index: 8; background: var(--surface); padding: 6px 0; border-bottom: 1px solid var(--fill-soft); }
+           Package tab). Even with the blur removed, sticky positioning
+           itself is still a per-scroll-frame repaint trigger — once the
+           Package tab's rows grew to their real (taller) height, the same
+           low-power devices started showing the toolbar buttons below the
+           list ghosted/smeared onto mid-list rows. Dropped position:sticky
+           entirely (plain static flow) to remove that repaint trigger for
+           good — the tab bar no longer stays pinned while scrolling the
+           list, but nothing below it corrupts either. */
+        .pkg-tab-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; background: var(--surface); padding: 6px 0; border-bottom: 1px solid var(--fill-soft); }
         .pkg-tab-btn {
             display: flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 999px;
             border: 1px solid var(--fill-soft); background: var(--surface); color: var(--text-secondary);
@@ -855,13 +861,19 @@
         /* Package list — drag-to-reorder, full-width single-column stack
            (each .package-row is a horizontal flex row: order/move column +
            wide summary, so it needs the full row width, not a 2-column
-           grid). No wrapping box (no border/background/shadow/padding) —
-           rows sit directly on the modal body and its own scroll (already
-           overflow-y:auto) carries the list, so nothing constrains or
-           reflows the rows' own height. */
+           grid). Own bounded, independently-scrollable box — same pattern
+           as #admin-games-container / #orders-container — so scrolling a
+           long package list doesn't drag the rest of the Edit Game modal
+           (game name, banner, etc.) along with it. */
         #edit-packages-list {
             display: flex; flex-direction: column; gap: 8px; position: relative;
-            min-height: 60px;
+            min-height: 60px; max-height: 50vh; overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px;
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            background: var(--surface);
+            box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass);
         }
         .package-row { display: flex; align-items: stretch; gap: 0; flex-shrink: 0; background: var(--surface-strong); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; min-width: 0; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
