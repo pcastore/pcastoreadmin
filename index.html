@@ -852,14 +852,19 @@
         .pkg-tab-add-btn:active { color: var(--accent); border-color: var(--accent); }
         .pkg-tab-empty-msg { text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 18px 0; }
 
-        /* Package (currency grid) — drag-to-reorder card list */
+        /* Package (currency grid) — drag-to-reorder card grid. No inner
+           max-height/overflow box: cards lay out directly in this 2-column
+           grid and the modal-body's own scroll (already overflow-y:auto)
+           carries the rest, so a freshly-imported card lands visible in the
+           grid immediately instead of requiring a separate scroll-to-bottom
+           inside a boxed sub-list. */
         #edit-packages-list {
-            display: flex; flex-direction: column; gap: 6px; position: relative;
-            max-height: 50vh; min-height: 160px; flex-shrink: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; position: relative;
+            min-height: 60px;
             padding: 8px; border: 1px solid var(--border-glass); border-radius: 14px;
             background: var(--bg-subtle-2); box-shadow: inset 0 1px 0 var(--border-glass);
         }
-        .package-row { display: flex; align-items: stretch; gap: 0; background: var(--surface-strong); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; }
+        .package-row { display: flex; align-items: stretch; gap: 0; background: var(--surface-strong); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; min-width: 0; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
         .package-row.drag-over { border-color: var(--accent); }
         .pkg-order-col { flex-shrink: 0; width: 26px; display: flex; flex-direction: column; align-items: stretch; border-right: 1px solid var(--fill-soft); }
@@ -5234,19 +5239,20 @@
             handle.addEventListener('pointerdown', (downEvent) => {
                 downEvent.preventDefault();
                 const list = document.getElementById('edit-packages-list');
-                const rows = Array.from(list.querySelectorAll('.package-row'));
-                const startIndex = rows.indexOf(row);
                 const startRect = row.getBoundingClientRect();
+                const startX = downEvent.clientX;
                 const startY = downEvent.clientY;
 
-                // Placeholder keeps the row's slot in the layout while it floats.
+                // Placeholder keeps the row's grid cell reserved while it floats,
+                // so the 2-column grid doesn't reflow underneath the dragged card.
                 const placeholder = document.createElement('div');
+                placeholder.style.width = startRect.width + 'px';
                 placeholder.style.height = startRect.height + 'px';
-                placeholder.style.flexShrink = '0';
                 row.parentNode.insertBefore(placeholder, row.nextSibling);
 
                 row.classList.add('dragging');
                 row.style.width = startRect.width + 'px';
+                row.style.height = startRect.height + 'px';
                 row.style.position = 'fixed';
                 row.style.top = startRect.top + 'px';
                 row.style.left = startRect.left + 'px';
@@ -5255,44 +5261,47 @@
                 row.style.willChange = 'transform';
 
                 let currentOverRow = null;
+                let latestClientX = startX;
                 let latestClientY = startY;
                 let rafId = null;
 
-                // All the expensive work below (sibling hit-testing, DOM moves)
-                // runs at most once per animation frame, no matter how many
-                // pointermove events fire in between — pointermove can fire far
-                // faster than the screen can paint, and re-measuring every row's
-                // getBoundingClientRect() on every single event (as this used to
-                // do) is what caused the drag to feel stuck/stuttery.
+                // All the expensive work below (hit-testing, DOM moves) runs at
+                // most once per animation frame, no matter how many pointermove
+                // events fire in between. Since cards now sit in a 2-column
+                // grid (not a single vertical list), the target cell is found
+                // with elementFromPoint at the pointer's actual X/Y — a
+                // Y-only range check (the old approach) can't tell left column
+                // from right column.
                 function processFrame() {
                     rafId = null;
+                    const deltaX = latestClientX - startX;
                     const deltaY = latestClientY - startY;
                     // transform is compositor-only (no layout/paint), unlike
-                    // continuously rewriting `top`, so moving the floating row
-                    // itself no longer forces a reflow on every frame.
-                    row.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+                    // continuously rewriting `top`/`left`, so moving the
+                    // floating card itself doesn't force a reflow every frame.
+                    row.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
 
-                    const siblings = Array.from(list.querySelectorAll('.package-row')).filter(r => r !== row);
-                    let target = null;
-                    for (const sib of siblings) {
-                        const r = sib.getBoundingClientRect();
-                        if (latestClientY > r.top && latestClientY < r.bottom) { target = sib; break; }
-                    }
+                    row.style.pointerEvents = 'none';
+                    const under = document.elementFromPoint(latestClientX, latestClientY);
+                    const target = under ? under.closest('.package-row') : null;
 
                     if (currentOverRow && currentOverRow !== target) {
                         currentOverRow.classList.remove('drag-over');
                     }
 
-                    if (target) {
+                    if (target && target !== row) {
                         target.classList.add('drag-over');
                         currentOverRow = target;
                         const targetRect = target.getBoundingClientRect();
-                        const before = latestClientY < targetRect.top + targetRect.height / 2;
+                        const before = latestClientX < targetRect.left + targetRect.width / 2;
                         list.insertBefore(placeholder, before ? target : target.nextSibling);
+                    } else {
+                        currentOverRow = null;
                     }
                 }
 
                 function onMove(moveEvent) {
+                    latestClientX = moveEvent.clientX;
                     latestClientY = moveEvent.clientY;
                     if (rafId === null) rafId = requestAnimationFrame(processFrame);
                 }
@@ -5308,6 +5317,7 @@
                     row.style.top = '';
                     row.style.left = '';
                     row.style.width = '';
+                    row.style.height = '';
                     row.style.zIndex = '';
                     row.style.pointerEvents = '';
                     row.style.transform = '';
@@ -5316,10 +5326,12 @@
                     renumberPackageRows();
                     window.removeEventListener('pointermove', onMove);
                     window.removeEventListener('pointerup', onUp);
+                    window.removeEventListener('pointercancel', onUp);
                 }
 
                 window.addEventListener('pointermove', onMove);
                 window.addEventListener('pointerup', onUp);
+                window.addEventListener('pointercancel', onUp);
             });
         }
 
