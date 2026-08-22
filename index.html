@@ -2441,7 +2441,7 @@
                         <span class="switch-label">Requires Player ID</span>
                     </div>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="edit-game-playerid" checked onchange="onPlayerIdRequiredToggle()">
+                        <input type="checkbox" id="edit-game-playerid" onchange="onPlayerIdRequiredToggle()">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -6610,8 +6610,8 @@
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = '';
                 document.getElementById('edit-game-popular').checked = false;
-                document.getElementById('edit-game-playerid').checked = true;
-                document.getElementById('edit-game-serverid').checked = true;
+                document.getElementById('edit-game-playerid').checked = false;
+                document.getElementById('edit-game-serverid').checked = false;
                 onPlayerIdRequiredToggle();
                 document.getElementById('edit-game-g2bulk-code').value = '';
                 document.getElementById('edit-game-jcplays-code').value = '';
@@ -8678,22 +8678,33 @@
                 return;
             }
 
-            // Confirm on an order linked to G2Bulk/JCPlays must actually place the
-            // order with them - previously this just wrote status:"Success" onto
-            // the Firestore doc without ever calling the provider, so the order
-            // looked "confirmed" here while still sitting Pending in the admin
-            // panel and nothing was ever delivered to the customer.
+            // Confirm on an order linked to G2Bulk/JCPlays/voucher must actually
+            // place the order with them - previously this just wrote
+            // status:"Success" onto the Firestore doc without ever calling the
+            // provider, so the order looked "confirmed" here while still
+            // sitting Pending in the admin panel and nothing was ever
+            // delivered to the customer. Voucher orders had the same gap: they
+            // fell through to the generic branch below and got marked
+            // "Success" with no G2Bulk purchase call ever made and no
+            // deliveredCodes ever saved - so the customer's Transaction
+            // History showed the order as Success with no voucher code to
+            // show, since none was ever actually purchased.
             if (status === 'Success') {
                 const isG2BulkLinked = !!(order.g2bulkGameCode && order.g2bulkCatalogueName);
-                const isJCPlaysLinked = !!order.jcplaysProductId;
-                if (isG2BulkLinked || isJCPlaysLinked) {
-                    await answerTelegramCallback(cb.id, `Confirmed — placing with ${isG2BulkLinked ? 'G2Bulk' : 'JCPlays'}...`);
+                const isJCPlaysLinked = !isG2BulkLinked && !!order.jcplaysProductId;
+                const isVoucherLinked = !isG2BulkLinked && !isJCPlaysLinked && !!order.g2bulkVoucherProductId;
+                if (isG2BulkLinked || isJCPlaysLinked || isVoucherLinked) {
+                    const providerLabel = isG2BulkLinked ? 'G2Bulk' : isJCPlaysLinked ? 'JCPlays' : 'G2Bulk (Voucher)';
+                    await answerTelegramCallback(cb.id, `Confirmed — placing with ${providerLabel}...`);
                     const result = isG2BulkLinked
                         ? await placeG2BulkOrder(orderId, order, null)
-                        : await placeJCPlaysOrder(orderId, order, null);
-                    // 'success' = JCPlays completed it immediately; 'processing' = G2Bulk
-                    // accepted it and is finishing async; 'error'/'accepted_unsaved' means
-                    // it needs attention in the admin panel (bad key, no balance, etc.)
+                        : isJCPlaysLinked
+                        ? await placeJCPlaysOrder(orderId, order, null)
+                        : await placeG2BulkVoucherOrder(orderId, order, null);
+                    // 'success' = JCPlays/instant voucher delivery completed it
+                    // immediately; 'processing' = G2Bulk accepted it and is
+                    // finishing async; 'error'/'accepted_unsaved' means it
+                    // needs attention in the admin panel (bad key, no balance, etc.)
                     const telegramStatus = result === 'success' ? 'Success' : result === 'processing' ? 'Processing' : null;
                     if (telegramStatus) {
                         await editTelegramOrderMessage(orderId, telegramStatus);
@@ -9522,6 +9533,11 @@
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                // Newly-imported packages land at the end of the tab in whatever
+                // order the API returned them, not smallest-to-largest - same
+                // ordering pass as the manual "Sort" button, run automatically
+                // right after import instead of requiring an extra tap.
+                sortPackageRows();
                 window.showToast('Catalogue imported ✓', 'success');
             } catch (error) {
                 console.error("Import G2Bulk catalogue error:", error);
@@ -9618,6 +9634,9 @@
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Product အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} products ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                // Same auto-sort as the direct-games import above, so newly
+                // imported voucher rows land smallest-to-largest right away.
+                sortPackageRows();
                 window.showToast('Voucher catalogue imported ✓', 'success');
             } catch (error) {
                 console.error('Import G2Bulk voucher catalogue error:', error);
