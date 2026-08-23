@@ -1103,10 +1103,42 @@
         .pkg-cost-update-btn:active { transform: scale(0.97); animation: none; }
         @keyframes pkgUpdatePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,149,0,0.45); } 50% { box-shadow: 0 0 0 4px rgba(255,149,0,0); } }
 
-        /* Small "N cost update(s)" text next to a game card's Edit button —
-           filled in lazily once that game's live G2Bulk/JCPlays price has
-           been checked in the background (see queueGameCostScan). */
-        .game-cost-badge { font-size: 10.5px; font-weight: 600; color: #FF9500; align-self: center; white-space: nowrap; display: none; }
+        /* Live remaining-stock badge next to a voucher package row's G2Bulk
+           product ID field — auto-refreshed while the voucher game editor
+           is open (see refreshVoucherGameStock). Display-only, same color
+           tiers as the customer-facing badge in Store.html. */
+        .pkg-stock-badge { display: none; margin-top: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; align-self: flex-start; }
+        .pkg-stock-badge.stock-high { background: rgba(21,162,74,0.12); color: #15A24A; }
+        .pkg-stock-badge.stock-mid { background: rgba(24,119,242,0.12); color: #1877F2; }
+        .pkg-stock-badge.stock-low { background: rgba(225,29,46,0.12); color: #E11D2E; }
+        .pkg-stock-badge.stock-out { background: rgba(225,29,46,0.12); color: #E11D2E; text-transform: uppercase; }
+
+        /* "Pass" button next to a game card's Edit button in the list —
+           hidden until that game's live G2Bulk/JCPlays price has been
+           checked in the background and found to have pending cost
+           changes (see queueGameCostScan). Opens the game editor so the
+           admin can review/apply them. */
+        .game-cost-badge {
+            display: none; border: none; border-radius: 8px; padding: 6px 12px;
+            font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap;
+            cursor: pointer; background-color: var(--accent);
+            background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0));
+            box-shadow: 0 4px 12px -4px rgba(var(--accent-rgb, 24,119,242),0.6), inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+        .game-cost-badge:active { filter: brightness(0.94); }
+
+        /* Red "N out of stock" pill next to a voucher game's Edit button —
+           kept visually distinct from the blue "Pass" cost-update button
+           above so the two problems (stale cost vs sold-out package) never
+           get conflated into one signal. */
+        .game-stockout-badge {
+            display: none; border: none; border-radius: 8px; padding: 6px 12px;
+            font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap;
+            cursor: pointer; background-color: var(--danger);
+            background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0));
+            box-shadow: 0 4px 12px -4px rgba(250,62,62,0.55), inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+        .game-stockout-badge:active { filter: brightness(0.94); }
 
         /* Scroll-reveal: cards/items fade + slide up into place as they enter
            the viewport while scrolling (see initScrollReveal in JS). Respects
@@ -3063,6 +3095,20 @@
             scrollRevealObservers.set(key, observer);
             return observer;
         }
+        // Marks a scrollable container as "being touched" between touchstart and
+        // touchend/cancel, so a live re-render (Firestore onSnapshot) can wait
+        // until the admin's finger lifts instead of rebuilding the list mid-drag
+        // - rebuilding while dragging is what causes the list to visibly jump/
+        // catch under the finger, since the total scroll height can shift the
+        // instant the DOM is replaced.
+        function attachScrollTouchGuard(el) {
+            if (!el || el._touchGuardAttached) return;
+            el._touchGuardAttached = true;
+            el._isTouching = false;
+            el.addEventListener('touchstart', () => { el._isTouching = true; }, { passive: true });
+            el.addEventListener('touchend', () => { el._isTouching = false; }, { passive: true });
+            el.addEventListener('touchcancel', () => { el._isTouching = false; }, { passive: true });
+        }
         function initScrollReveal(container, selector = ':scope > .admin-card, :scope > .package-row') {
             if (!container) return;
             const cs = getComputedStyle(container);
@@ -4137,7 +4183,12 @@
 
         function renderOrdersList() {
             clearTimeout(ordersRenderScheduled);
-            ordersRenderScheduled = setTimeout(renderOrdersListImpl, 60);
+            attachScrollTouchGuard(ordersContainer);
+            const runWhenSettled = () => {
+                if (ordersContainer._isTouching) { ordersRenderScheduled = setTimeout(runWhenSettled, 150); return; }
+                renderOrdersListImpl();
+            };
+            ordersRenderScheduled = setTimeout(runWhenSettled, 60);
         }
         window.renderOrdersList = renderOrdersList;
 
@@ -5567,7 +5618,13 @@
         window.showGameListTab = showGameListTab;
         function renderAdminGamesList() {
             clearTimeout(gamesRenderScheduled);
-            gamesRenderScheduled = setTimeout(renderAdminGamesListImpl, 60);
+            const gamesContainerEl = document.getElementById('admin-games-container');
+            attachScrollTouchGuard(gamesContainerEl);
+            const runWhenSettled = () => {
+                if (gamesContainerEl && gamesContainerEl._isTouching) { gamesRenderScheduled = setTimeout(runWhenSettled, 150); return; }
+                renderAdminGamesListImpl();
+            };
+            gamesRenderScheduled = setTimeout(runWhenSettled, 60);
         }
         window.renderAdminGamesList = renderAdminGamesList;
         function renderAdminGamesListImpl() {
@@ -5612,7 +5669,8 @@
                             </div>
                         </div>
                         <div class="ac-footer">
-                            <span class="game-cost-badge" id="game-cost-badge-${id}"></span>
+                            <span class="game-stockout-badge" id="game-stockout-badge-${id}" onclick="openGameEditor('${id}')"></span>
+                            <span class="game-cost-badge" id="game-cost-badge-${id}" onclick="openGameEditor('${id}')"></span>
                             <button class="btn btn-outline" onclick="openGameEditor('${id}')">Edit</button>
                             <button class="btn btn-danger" onclick="deleteGame('${id}')">Delete</button>
                         </div>
@@ -5620,18 +5678,23 @@
                 `;
             }).join('');
             initScrollReveal(container);
-            ids.forEach(id => { updateGameCostBadge(id); queueGameCostScan(id); });
+            ids.forEach(id => { updateGameCostBadge(id); updateGameStockBadge(id); queueGameCostScan(id); });
         }
 
         // ---------- Background scan: pending cost updates per game (list view) ----------
         // Mirrors checkLivePriceChanges' comparison logic, but runs quietly in
         // the background for every game shown in the list (not just the one
         // currently open in the editor), so the admin can see which games
-        // need a cost refresh — as a small "N cost update(s)" text next to
-        // that game's Edit button — without opening each one. Results are
-        // cached in memory per session; a save/import/live-check inside the
-        // editor clears that game's cache entry so the list re-checks it.
-        let gameCostUpdateCounts = {};   // gameId -> pending count (0 = checked, none pending)
+        // need a cost refresh — as a small "Pass" button next to that game's
+        // Edit button — without opening each one. A voucher game's sold-out
+        // packages are counted and shown separately (a red "N out of stock"
+        // pill), never folded into the same "Pass" count/button, since a
+        // stale cost and a sold-out package call for different action.
+        // Results are cached in memory per session; a save/import/live-check
+        // inside the editor clears that game's cache entry so the list
+        // re-checks it.
+        let gameCostUpdateCounts = {};   // gameId -> pending cost-update count (0 = checked, none pending)
+        let gameStockOutCounts = {};     // gameId -> sold-out package count (0 = checked, none out)
         let gameCostScanQueue = [];
         let gameCostScanInFlight = new Set();
         const GAME_COST_SCAN_CONCURRENCY = 3;
@@ -5641,24 +5704,37 @@
             if (!el) return;
             const count = gameCostUpdateCounts[gameId];
             if (!count) { el.style.display = 'none'; el.innerText = ''; return; }
-            el.innerText = `${count} cost update${count > 1 ? 's' : ''}`;
-            el.style.display = 'inline';
+            el.innerText = 'Price Update';
+            el.title = `${count} cost update${count > 1 ? 's' : ''} pending`;
+            el.style.display = 'inline-block';
         }
         window.updateGameCostBadge = updateGameCostBadge;
+
+        function updateGameStockBadge(gameId) {
+            const el = document.getElementById(`game-stockout-badge-${gameId}`);
+            if (!el) return;
+            const count = gameStockOutCounts[gameId];
+            if (!count) { el.style.display = 'none'; el.innerText = ''; return; }
+            el.innerText = `${count} out of stock`;
+            el.style.display = 'inline-block';
+        }
+        window.updateGameStockBadge = updateGameStockBadge;
 
         // Clears one game's cached scan result (e.g. after its Cost data
         // changes) so the next list render re-checks it against live prices.
         function invalidateGameCostScan(gameId) {
             delete gameCostUpdateCounts[gameId];
+            delete gameStockOutCounts[gameId];
             updateGameCostBadge(gameId);
+            updateGameStockBadge(gameId);
         }
         window.invalidateGameCostScan = invalidateGameCostScan;
 
         function queueGameCostScan(gameId) {
             if (gameId in gameCostUpdateCounts || gameCostScanInFlight.has(gameId)) return;
             const g = GAMES[gameId];
-            const linked = g && ((g.fulfillProvider === 'g2bulk' && g.g2bulkCode) || (g.fulfillProvider === 'jcplays' && g.jcplaysProduct));
-            if (!linked) { gameCostUpdateCounts[gameId] = 0; return; }
+            const linked = g && ((g.fulfillProvider === 'g2bulk' && g.g2bulkCode) || (g.fulfillProvider === 'jcplays' && g.jcplaysProduct) || (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory));
+            if (!linked) { gameCostUpdateCounts[gameId] = 0; gameStockOutCounts[gameId] = 0; return; }
             if (!gameCostScanQueue.includes(gameId)) gameCostScanQueue.push(gameId);
             runGameCostScanQueue();
         }
@@ -5670,12 +5746,19 @@
                 const g = GAMES[gameId];
                 if (!g) continue;
                 gameCostScanInFlight.add(gameId);
-                computeGameCostUpdateCount(g)
-                    .then(count => { gameCostUpdateCounts[gameId] = count; })
-                    .catch(() => { gameCostUpdateCounts[gameId] = 0; })
+                // Both calls share the same GET /v1/category/:id response for
+                // a voucher game via fetchG2BulkCategoryLive's cache, so this
+                // never fires the request twice.
+                Promise.all([computeGameCostUpdateCount(g), computeGameStockOutCount(g)])
+                    .then(([costCount, stockOutCount]) => {
+                        gameCostUpdateCounts[gameId] = costCount;
+                        gameStockOutCounts[gameId] = stockOutCount;
+                    })
+                    .catch(() => { gameCostUpdateCounts[gameId] = 0; gameStockOutCounts[gameId] = 0; })
                     .finally(() => {
                         gameCostScanInFlight.delete(gameId);
                         updateGameCostBadge(gameId);
+                        updateGameStockBadge(gameId);
                         runGameCostScanQueue();
                     });
             }
@@ -5713,6 +5796,18 @@
                         if (liveById.get(key) !== (Number(p.cost) || 0)) changed++;
                     });
                     return changed;
+                } else if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
+                    const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
+                    if (!data.success) return 0;
+                    const products = data.products || (data.category ? data.category.products : []) || [];
+                    const liveById = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
+                    let changed = 0;
+                    packages.forEach(p => {
+                        const key = (p.voucherId || '').trim();
+                        if (!key || !liveById.has(key)) return;
+                        if (liveById.get(key) !== (Number(p.cost) || 0)) changed++;
+                    });
+                    return changed;
                 }
             } catch (error) {
                 console.error('Game cost scan error:', error);
@@ -5720,6 +5815,34 @@
             return 0;
         }
         window.computeGameCostUpdateCount = computeGameCostUpdateCount;
+
+        // Counts a voucher game's sold-out packages (live stock <= 0),
+        // shown as its own red pill in the list — separate from the "Pass"
+        // cost-update button, since these are two different problems that
+        // call for different action. Shares its G2Bulk response with
+        // computeGameCostUpdateCount above via fetchG2BulkCategoryLive's
+        // cache, so scanning both never doubles the request.
+        async function computeGameStockOutCount(g) {
+            if (g.fulfillProvider !== 'g2bulk_voucher' || !g.g2bulkVoucherCategory) return 0;
+            try {
+                const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
+                if (!data.success) return 0;
+                const products = data.products || (data.category ? data.category.products : []) || [];
+                const stockById = new Map(products.map(p => [String(p.id), Number(p.stock ?? 0)]));
+                const packages = g.packages || [];
+                let outCount = 0;
+                packages.forEach(p => {
+                    const key = (p.voucherId || '').trim();
+                    if (!key || !stockById.has(key)) return;
+                    if (stockById.get(key) <= 0) outCount++;
+                });
+                return outCount;
+            } catch (error) {
+                console.error('Stock-out scan error:', error);
+                return 0;
+            }
+        }
+        window.computeGameStockOutCount = computeGameStockOutCount;
         // Sort key mirrors store.html: explicit `order` field wins (ascending),
         // games without one yet fall to the end, alphabetically - so nothing
         // reshuffles until an admin actually uses "Reorder".
@@ -6027,6 +6150,7 @@
                             <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk' ? 'block' : 'none'};">
                             <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'jcplays' ? 'block' : 'none'};">
                             <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk_voucher' ? 'block' : 'none'};">
+                            <span class="pkg-stock-badge"></span>
                             <div class="pkg-card-footer">
                                 <button type="button" class="pkg-card-save-btn" onclick="collapsePackageRow(this)">Save</button>
                             </div>
@@ -6652,13 +6776,14 @@
             // Silently check the live API for price changes on this already-
             // linked game's packages, so an "Update" button appears on any
             // row whose Cost is now stale — no auto-overwrite, admin decides.
-            if (gameId && GAMES[gameId] && (GAMES[gameId].g2bulkCode || GAMES[gameId].jcplaysProduct)) {
+            if (gameId && GAMES[gameId] && (GAMES[gameId].g2bulkCode || GAMES[gameId].jcplaysProduct || GAMES[gameId].g2bulkVoucherCategory)) {
                 checkLivePriceChanges(true);
             }
         }
 
         function closeGameEditor() {
             document.getElementById('game-editor-modal-overlay').classList.remove('show');
+            stopVoucherEditorStockRefresh();
         }
 
         // Uploads a phone photo to a free image host (ImgBB) and resolves with its direct URL.
@@ -9161,7 +9286,8 @@
             if (!btn) return;
             const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value.trim();
             const jcplaysCode = document.getElementById('edit-game-jcplays-code').value.trim();
-            const linked = (currentFulfillProvider === 'g2bulk' && g2bulkCode) || (currentFulfillProvider === 'jcplays' && jcplaysCode);
+            const voucherCategory = document.getElementById('edit-game-voucher-category').value.trim();
+            const linked = (currentFulfillProvider === 'g2bulk' && g2bulkCode) || (currentFulfillProvider === 'jcplays' && jcplaysCode) || (currentFulfillProvider === 'g2bulk_voucher' && voucherCategory);
             btn.style.display = linked ? 'inline-flex' : 'none';
         }
         window.refreshCheckPricesBtn = refreshCheckPricesBtn;
@@ -9570,6 +9696,11 @@
         function onVoucherCategoryChange() {
             const categoryId = document.getElementById('edit-game-voucher-category').value;
             document.getElementById('voucher-import-btn').style.display = categoryId ? '' : 'none';
+            if (categoryId && currentFulfillProvider === 'g2bulk_voucher') {
+                startVoucherEditorStockRefresh();
+            } else {
+                stopVoucherEditorStockRefresh();
+            }
         }
         window.onVoucherCategoryChange = onVoucherCategoryChange;
 
@@ -9638,6 +9769,7 @@
                 // imported voucher rows land smallest-to-largest right away.
                 sortPackageRows();
                 window.showToast('Voucher catalogue imported ✓', 'success');
+                refreshVoucherGameStock();
             } catch (error) {
                 console.error('Import G2Bulk voucher catalogue error:', error);
                 statusEl.style.color = 'var(--danger-strong)';
@@ -9649,6 +9781,85 @@
             }
         }
         window.importG2BulkVoucherCatalogue = importG2BulkVoucherCatalogue;
+
+        // ---------- Voucher live stock auto-refresh (admin editor) ----------
+        // Mirrors the customer-side "X left" badge in Store.html: pulls each
+        // package's remaining stock from G2Bulk's public category endpoint
+        // and shows it as a small color-tiered badge next to that row's
+        // product ID field. Display-only (stock isn't a saved Firestore
+        // field) — refreshes as soon as a voucher game is opened for
+        // editing and every 15s afterward for as long as the editor stays
+        // open, so the admin never has to manually check remaining stock.
+        const VOUCHER_STOCK_HIGH = 100;
+        const VOUCHER_STOCK_LOW = 15;
+        let voucherEditorStockInterval = null;
+
+        // Short-lived cache + in-flight dedupe for GET /v1/category/:id.
+        // Opening a voucher game's editor triggers both this stock refresh
+        // and checkLivePriceChanges' cost-diff check, which used to each
+        // hit the same category endpoint independently - this collapses
+        // those into one shared request/response.
+        const g2bulkCategoryCache = new Map(); // categoryId -> { data, ts, promise }
+        const G2BULK_CATEGORY_CACHE_TTL_MS = 8000;
+
+        async function fetchG2BulkCategoryLive(categoryId) {
+            const cached = g2bulkCategoryCache.get(categoryId);
+            if (cached) {
+                if (cached.promise) return cached.promise;
+                if (Date.now() - cached.ts < G2BULK_CATEGORY_CACHE_TTL_MS) return cached.data;
+            }
+            const promise = fetch(`https://api.g2bulk.com/v1/category/${encodeURIComponent(categoryId)}`)
+                .then(res => res.json())
+                .then(data => {
+                    g2bulkCategoryCache.set(categoryId, { data, ts: Date.now() });
+                    return data;
+                })
+                .catch(error => {
+                    g2bulkCategoryCache.delete(categoryId);
+                    throw error;
+                });
+            g2bulkCategoryCache.set(categoryId, { promise });
+            return promise;
+        }
+
+        async function refreshVoucherGameStock() {
+            const categoryId = document.getElementById('edit-game-voucher-category').value;
+            if (!categoryId || currentFulfillProvider !== 'g2bulk_voucher') return;
+            try {
+                const data = await fetchG2BulkCategoryLive(categoryId);
+                if (!data.success) return;
+                const products = data.products || (data.category ? data.category.products : []) || [];
+                const stockById = new Map(products.map(p => [String(p.id), Number(p.stock ?? 0)]));
+                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
+                    const idInput = row.querySelector('.pkg-voucher-id');
+                    const badge = row.querySelector('.pkg-stock-badge');
+                    if (!idInput || !badge) return;
+                    const key = idInput.value.trim();
+                    if (!key || !stockById.has(key)) { badge.style.display = 'none'; return; }
+                    const stock = stockById.get(key);
+                    const outOfStock = stock <= 0;
+                    const tier = outOfStock ? 'stock-out' : stock > VOUCHER_STOCK_HIGH ? 'stock-high' : stock > VOUCHER_STOCK_LOW ? 'stock-mid' : 'stock-low';
+                    badge.className = `pkg-stock-badge ${tier}`;
+                    badge.innerText = outOfStock ? 'Out of stock' : `Stock: ${stock}`;
+                    badge.style.display = 'inline-block';
+                });
+            } catch (error) {
+                console.error('Voucher stock refresh error:', error);
+            }
+        }
+        window.refreshVoucherGameStock = refreshVoucherGameStock;
+
+        function startVoucherEditorStockRefresh() {
+            stopVoucherEditorStockRefresh();
+            refreshVoucherGameStock();
+            voucherEditorStockInterval = setInterval(refreshVoucherGameStock, 15000);
+        }
+        window.startVoucherEditorStockRefresh = startVoucherEditorStockRefresh;
+
+        function stopVoucherEditorStockRefresh() {
+            if (voucherEditorStockInterval) { clearInterval(voucherEditorStockInterval); voucherEditorStockInterval = null; }
+        }
+        window.stopVoucherEditorStockRefresh = stopVoucherEditorStockRefresh;
 
         // ---------- Live price-change check (G2Bulk + JCPlays) ----------
         // Unlike Import (which overwrites every matched row's Cost right
@@ -9708,6 +9919,26 @@
                     const liveById = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
                     rows.forEach(row => {
                         const key = row.querySelector('.pkg-jcplays').value.trim();
+                        if (!key || !liveById.has(key)) return;
+                        const liveCost = liveById.get(key);
+                        const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
+                        if (liveCost !== currentCost) {
+                            changed++;
+                            const u = row.querySelector('.pkg-cost-update-btn');
+                            u.dataset.newCost = liveCost;
+                            u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
+                            u.style.display = 'flex';
+                        }
+                    });
+                } else if (currentFulfillProvider === 'g2bulk_voucher') {
+                    const categoryId = document.getElementById('edit-game-voucher-category').value.trim();
+                    if (!categoryId) throw new Error('No voucher category linked.');
+                    const data = await fetchG2BulkCategoryLive(categoryId);
+                    if (!data.success) throw new Error(data.message || 'Check failed');
+                    const products = data.products || (data.category ? data.category.products : []) || [];
+                    const liveById = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
+                    rows.forEach(row => {
+                        const key = row.querySelector('.pkg-voucher-id').value.trim();
                         if (!key || !liveById.has(key)) return;
                         const liveCost = liveById.get(key);
                         const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
