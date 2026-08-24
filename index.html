@@ -634,8 +634,8 @@
            button to its own text instead of stretching to an equal share of
            the row, which was forcing labels like "+ Add Package" onto two
            lines. Buttons wrap onto a new row as needed, chip-style. */
-        .pkg-actions-row { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .pkg-actions-row .btn { display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 8px 6px; font-size: 12.5px; }
+        .pkg-actions-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pkg-actions-row .btn { flex: 0 1 auto; display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 8px 6px; font-size: 12.5px; }
         .btn:active { transform: scale(0.97); }
         .btn-primary { background-color: var(--accent); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(var(--accent-rgb),0.65), inset 0 1px 0 rgba(255,255,255,0.35); }
         .btn-primary:active { filter: brightness(0.94); }
@@ -644,10 +644,9 @@
         
         /* Side Nav (was a bottom nav; now a left sidebar) */
         .side-nav { width: 70px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border-glass); display: flex; flex-direction: column; position: sticky; top: 61px; height: calc(100vh - 61px); overflow-y: auto; z-index: 90; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 500; color: var(--text-secondary); cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; transition: background 0.15s ease, color 0.15s ease; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; font-weight: 500; color: var(--text-secondary); cursor: pointer; padding: 14px 2px; text-align: center; border-right: 3px solid transparent; transition: background 0.15s ease, color 0.15s ease; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; position: relative; }
         .nav-item.active { color: var(--accent); background: var(--accent-soft); border-right-color: var(--accent); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb),0.15); }
         .nav-item.active .ui-icon { stroke: var(--accent); }
-        .nav-item { position: relative; }
         .nav-item .nav-item-low-balance-dot {
             position: absolute; top: 9px; right: 14px; margin-left: 0;
         }
@@ -707,7 +706,7 @@
 
         /* Users list & details */
         .user-card { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .user-card:active { background: #F8FBFF; }
+        .user-card:active { background: var(--bg-subtle-2); }
 
         /* ---- User List: Grid card layout ---- */
         .users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
@@ -847,6 +846,19 @@
         .dialog-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; color: var(--text-strong); }
         .dialog-message { font-size: 14px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 20px; white-space: pre-line; }
         .dialog-actions { display: flex; gap: 8px; }
+        .dashboard-alert-banner {
+            display: flex; align-items: center; gap: 10px; cursor: pointer;
+            background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(225,29,46,0.25);
+            border-radius: 14px; padding: 11px 14px; margin-bottom: 14px; font-size: 12.5px; font-weight: 600;
+            line-height: 1.35;
+        }
+        .dashboard-alert-banner:active { filter: brightness(0.96); }
+        .dialog-template-chip {
+            font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 20px;
+            border: 1px solid var(--fill-soft); background: var(--surface); color: var(--text-secondary);
+            cursor: pointer; white-space: nowrap;
+        }
+        .dialog-template-chip:active { transform: scale(0.96); }
         .dialog-actions .btn { flex: 1; }
 
         /* Game Category chip-select (Moba / Battle Royale / Survival / Fun / Creative) —
@@ -871,7 +883,7 @@
         .picker-btn:hover { border-color: var(--accent); }
         .picker-btn-thumb { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; overflow: hidden; background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
         .picker-btn-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .picker-btn-label { flex: 1; font-size: 13px; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .picker-btn-label { flex: 1; min-width: 0; font-size: 13px; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .picker-btn-label.muted { color: var(--text-muted); }
         .picker-btn-chevron { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; }
 
@@ -1255,6 +1267,7 @@
          avoids the manual-typo / cut-off-secret problem you get from typing
          a long Base32 key into an authenticator app by hand. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -1498,6 +1511,9 @@
         <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
         <symbol id="icon-grip" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.6"></circle><circle cx="15" cy="5" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="19" r="1.6"></circle><circle cx="15" cy="19" r="1.6"></circle></symbol>
         <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></symbol>
+        <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></symbol>
+        <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></symbol>
+        <symbol id="icon-bar-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></symbol>
         <symbol id="icon-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></symbol>
         <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></symbol>
         <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></symbol>
@@ -1535,6 +1551,11 @@
                  with showNote:true (used by Mark Success / Mark Fail on orders so the
                  admin can record why, visible to the customer in their order detail). -->
             <div id="action-dialog-note-wrap" style="display:none;margin-top:2px;">
+                <!-- Quick-reply template chips (Burmese + English combined) — only
+                     shown when showActionDialog() is called with a templates[] array
+                     (order Reject/Fail and top-up Reject dialogs). Clicking one fills
+                     the note textarea below; admin can still edit before confirming. -->
+                <div id="action-dialog-templates" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
                 <textarea id="action-dialog-note" rows="3" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
             </div>
             <div class="dialog-actions">
@@ -1595,6 +1616,9 @@
         <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
             <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> Dash
         </div>
+        <div class="nav-item" id="btn-analytics" onclick="showPage('analytics')">
+            <svg class="ui-icon"><use href="#icon-bar-chart"></use></svg> Analytics
+        </div>
         <div class="nav-item" id="btn-g2bulk" onclick="showPage('g2bulk')">
             <svg class="ui-icon"><use href="#icon-g2bulk"></use></svg> G2Bulk
             <span class="nav-item-low-balance-dot" id="g2bulk-nav-low-dot" title="Low balance"></span>
@@ -1652,6 +1676,16 @@
                 <span>Overview</span>
                 <span style="font-size:11.5px;font-weight: 500;color:var(--text-muted);"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:5px;"></span><span id="dash-today-date">...</span></span>
             </h2>
+
+            <!-- Auto-flags games/packages needing attention: pending G2Bulk/JCPlays
+                 cost updates, sold-out voucher packages, or a package whose margin
+                 has slipped below LOW_MARGIN_THRESHOLD_PCT. Hidden when nothing
+                 needs attention. Tapping it jumps straight to the Games list. -->
+            <div id="dashboard-alert-banner" class="dashboard-alert-banner" style="display:none;" onclick="showPage('g2bulk')">
+                <svg class="ui-icon" style="width:17px;flex-shrink:0;"><use href="#icon-warning"></use></svg>
+                <span id="dashboard-alert-banner-text" style="flex:1;"></span>
+                <svg class="ui-icon" style="width:14px;flex-shrink:0;"><use href="#icon-chevron-right"></use></svg>
+            </div>
 
             <!-- Top stat cards, image-style -->
             <div class="stat-grid">
@@ -1763,6 +1797,56 @@
                 </div>
                 </div>
                 <button class="btn btn-outline" style="margin-top:2px;" id="dash-wallet-refresh-btn" onclick="refreshDashboardWallets()">Refresh Balances</button>
+            </div>
+        </div>
+
+        <!-- ANALYTICS PAGE — repeat-purchase rate, retention, churn, top spenders.
+             Computed client-side from the ORDERS/USERS caches already kept in sync
+             for the Orders/Users pages, so it needs no extra Firestore reads. -->
+        <div id="analytics" class="page-section">
+            <h2 class="title-header">
+                <span>Analytics</span>
+                <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="renderAnalytics()">Refresh</button>
+            </h2>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Repeat Purchase Rate</span>
+                        <div class="stat-card-icon" style="background:#8B5CF6;"><svg class="ui-icon"><use href="#icon-refresh"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-repeat-rate">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="an-repeat-rate-sub">Customers with 2+ orders</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">30-Day Retention</span>
+                        <div class="stat-card-icon" style="background:#34D399;"><svg class="ui-icon"><use href="#icon-users"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-retention-rate">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">Bought again within 30 days</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Churned Customers</span>
+                        <div class="stat-card-icon" style="background:#FB7185;"><svg class="ui-icon"><use href="#icon-x-circle"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-churn-count">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">No order in 60+ days</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Avg. Order Value</span>
+                        <div class="stat-card-icon" style="background:#3B82F6;"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-aov">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">Successful orders only</span></div>
+                </div>
+            </div>
+
+            <div class="dash-section-label">Top Spenders</div>
+            <div id="an-top-spenders-container" class="admin-card" style="margin-top:0;">
+                <p class="empty-msg">Loading analytics...</p>
             </div>
         </div>
 
@@ -2083,7 +2167,8 @@
         <div id="order-list" class="page-section">
             <h2 class="title-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                 <span>Active Orders</span>
-                <span style="display:flex;gap:6px;">
+                <span style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportOrdersCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
                     <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="cleanAllCompletedOrders()" title="Hide all Success/Fail orders from this list">Clean Completed</button>
                     <button class="btn btn-outline" id="toggle-cleaned-btn" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="toggleShowCleanedOrders(); this.innerText = showCleanedOrders ? 'Show Active' : 'Show Cleaned';">Show Cleaned</button>
                     <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button>
@@ -2154,6 +2239,7 @@
         <div id="topup-list" class="page-section">
             <h2 class="title-header">
                 <span>Wallet Top Ups</span>
+                <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportTopupsCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
             </h2>
 
             <div class="quick-topup-grid">
@@ -2265,7 +2351,10 @@
 
         <!-- USERS PAGE (Firebase Connected) -->
         <div id="user-list" class="page-section">
-            <h2 class="title-header">Manage Users</h2>
+            <h2 class="title-header">
+                <span>Manage Users</span>
+                <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportUsersCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
+            </h2>
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="user-search" placeholder="Search users by name, ID, or phone..." autocomplete="off" oninput="renderAdminUsersList()">
@@ -2930,11 +3019,6 @@
             try { return localStorage.getItem('pca-admin-theme') || 'auto'; } catch (e) { return 'auto'; }
         }
 
-        // What's actually painted right now (never 'auto' - always a real theme id).
-        function getCurrentTheme() {
-            return document.documentElement.getAttribute('data-theme') || 'light';
-        }
-
         function applyTheme(themeId, persist = true) {
             if (persist) {
                 try { localStorage.setItem('pca-admin-theme', themeId); } catch (e) {}
@@ -3023,6 +3107,7 @@
             document.getElementById(`btn-${pageId}`).classList.add('active');
             window.scrollTo(0,0);
             if ((pageId === 'dashboard' || pageId === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
+            if (pageId === 'analytics' && window.renderAnalytics) window.renderAnalytics();
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
         }
 
@@ -3132,7 +3217,7 @@
         // type: 'delete' (red, destructive) | 'warning' (amber, needs a decision) | 'info' (blue, OK-only notice)
         let actionDialogCallback = null;
 
-        function showActionDialog({ type = 'warning', title = '', message = '', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm = null, showNote = false, notePlaceholder = 'Reason (optional) — the customer will see this' }) {
+        function showActionDialog({ type = 'warning', title = '', message = '', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm = null, showNote = false, notePlaceholder = 'Reason (optional) — the customer will see this', templates = null }) {
             const iconEl = document.getElementById('action-dialog-icon');
             const iconUse = type === 'delete' ? '#icon-trash' : (type === 'info' ? '#icon-info' : (type === 'success' ? '#icon-check' : '#icon-warning'));
             iconEl.className = 'dialog-icon type-' + type;
@@ -3156,10 +3241,42 @@
             noteInput.value = '';
             noteInput.placeholder = notePlaceholder;
 
+            const templatesWrap = document.getElementById('action-dialog-templates');
+            if (showNote && templates && templates.length) {
+                templatesWrap.style.display = 'flex';
+                window._actionDialogTemplates = templates;
+                templatesWrap.innerHTML = templates.map((t, i) =>
+                    `<button type="button" class="dialog-template-chip" onclick="window.applyActionDialogTemplate(${i})">${t.label}</button>`
+                ).join('');
+            } else {
+                templatesWrap.style.display = 'none';
+                templatesWrap.innerHTML = '';
+                window._actionDialogTemplates = null;
+            }
+
             actionDialogCallback = onConfirm;
             document.getElementById('action-dialog-overlay').classList.add('show');
             if (showNote) setTimeout(() => noteInput.focus(), 50);
         }
+        function applyActionDialogTemplate(i) {
+            const t = (window._actionDialogTemplates || [])[i];
+            if (!t) return;
+            document.getElementById('action-dialog-note').value = t.text;
+        }
+        window.applyActionDialogTemplate = applyActionDialogTemplate;
+
+        // Quick-reply templates for order Reject/Fail and top-up Reject dialogs —
+        // each combines a Burmese line and an English line, since customers read
+        // either. Admin can still edit the note after picking one.
+        const ORDER_REJECT_TEMPLATES = [
+            { label: 'Receipt unclear', text: 'ပြေစာပုံ မှားနေပါသည် (သို့) မထင်ရှားပါ။ ပြန်လည်ပို့ပေးပါ။\nYour receipt screenshot is unclear or incorrect. Please resend it.' },
+            { label: 'Wrong amount', text: 'လွှဲထားသော ငွေပမာဏသည် Order ပမာဏနှင့် မကိုက်ညီပါ။\nThe amount transferred does not match the order amount.' },
+            { label: 'Payment not found', text: 'သင့်ငွေလွှဲမှုကို ရှာမတွေ့ပါ။ Transaction ID ကို ပြန်စစ်ပေးပါ။\nWe could not find your payment. Please double-check the transaction ID.' },
+            { label: 'Out of stock', text: 'ဤ item ပစ္စည်း ကုန်သွားပါပြီ။ ငွေကို သင့် Wallet ထဲသို့ ပြန်အမ်းပေးလိုက်ပါပြီ။\nThis item is currently out of stock. Your payment has been refunded to your wallet.' },
+            { label: 'Duplicate order', text: 'ဤ Order သည် ထပ်နေသော Order ဖြစ်ပါသည်။\nThis order appears to be a duplicate.' },
+            { label: 'Invalid Player ID', text: 'ထည့်သွင်းထားသော Player/Server ID မှားယွင်းနေပါသည်။\nThe Player ID / Server ID you entered is invalid.' }
+        ];
+        window.ORDER_REJECT_TEMPLATES = ORDER_REJECT_TEMPLATES;
 
         function closeActionDialog() {
             document.getElementById('action-dialog-overlay').classList.remove('show');
@@ -4372,6 +4489,7 @@
                                 ${durationLine}
                                 <div class="od-card-footer" id="footer-${orderId}">
                                     ${actionButtons}
+                                    <button type="button" class="btn btn-outline" onclick="downloadOrderInvoicePDF('${orderId}')" title="Download PDF invoice"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-file-text"></use></svg> Invoice</button>
                                 </div>
                             </div>
                         </div>
@@ -4832,6 +4950,7 @@
                 confirmText: 'Mark as Failed',
                 showNote: true,
                 notePlaceholder: 'Reason (optional) — e.g. "Wrong player ID, please recheck and reorder"',
+                templates: ORDER_REJECT_TEMPLATES,
                 onConfirm: (note) => doMarkFail(orderId, btnElement, note)
             });
         }
@@ -4956,6 +5075,7 @@
                 confirmText: `Reject ${ids.length} Order${ids.length > 1 ? 's' : ''}`,
                 showNote: true,
                 notePlaceholder: 'Reason (optional, applied to all selected) — e.g. "Wrong player ID, please recheck and reorder"',
+                templates: ORDER_REJECT_TEMPLATES,
                 onConfirm: (note) => doBulkReject(ids, note)
             });
         }
@@ -5227,6 +5347,7 @@
                 confirmText: 'Reject',
                 showNote: true,
                 notePlaceholder: 'Reason (optional) — e.g. "Receipt does not match amount"',
+                templates: ORDER_REJECT_TEMPLATES.filter(t => ['Receipt unclear', 'Wrong amount', 'Payment not found', 'Duplicate order'].includes(t.label)),
                 onConfirm: (note) => doRejectTopup(id, btnElement, note)
             });
         }
@@ -5497,6 +5618,80 @@
             if (window.refreshJCPlaysBalance) refreshJCPlaysBalance();
         }
 
+        // ---------- Analytics page ----------
+        // Everything here is computed client-side from the ORDERS/USERS caches
+        // (both are full-collection onSnapshot listeners, already kept live for
+        // the Orders/Users pages) — no extra Firestore reads needed.
+        function renderAnalytics() {
+            const successOrders = Object.values(ORDERS).filter(o => o.status === 'Success' && o.userId);
+            const now = Date.now();
+            const DAY = 24 * 60 * 60 * 1000;
+
+            // Per-customer: order count, total spend, and last purchase time.
+            const perCustomer = {};
+            successOrders.forEach(o => {
+                const t = o.timestamp ? o.timestamp.toMillis() : 0;
+                const rec = perCustomer[o.userId] || (perCustomer[o.userId] = { count: 0, spend: 0, last: 0 });
+                rec.count++;
+                rec.spend += Number(o.price) || 0;
+                if (t > rec.last) rec.last = t;
+            });
+            const customerIds = Object.keys(perCustomer);
+
+            // Repeat purchase rate: share of paying customers with 2+ successful orders.
+            const repeatCount = customerIds.filter(id => perCustomer[id].count >= 2).length;
+            const repeatRate = customerIds.length ? (repeatCount / customerIds.length * 100) : 0;
+            document.getElementById('an-repeat-rate').innerText = customerIds.length ? repeatRate.toFixed(1) + '%' : 'N/A';
+            document.getElementById('an-repeat-rate-sub').innerText = `${repeatCount} of ${customerIds.length} customers`;
+
+            // 30-day retention: of customers who last bought in the 30-60 day window,
+            // what share also bought again in the most recent 30 days.
+            const prevWindowIds = customerIds.filter(id => {
+                const last = perCustomer[id].last;
+                return last >= now - 60 * DAY && last < now - 30 * DAY;
+            });
+            const alsoRecentIds = prevWindowIds.filter(id => successOrders.some(o =>
+                o.userId === id && o.timestamp && (now - o.timestamp.toMillis()) <= 30 * DAY
+            ));
+            const retentionRate = prevWindowIds.length ? (alsoRecentIds.length / prevWindowIds.length * 100) : null;
+            document.getElementById('an-retention-rate').innerText = retentionRate === null ? 'N/A' : retentionRate.toFixed(1) + '%';
+
+            // Churn: customers with a purchase history whose most recent order is 60+ days old.
+            const churnCount = customerIds.filter(id => (now - perCustomer[id].last) >= 60 * DAY).length;
+            document.getElementById('an-churn-count').innerText = churnCount.toLocaleString();
+
+            // Average order value across all successful orders.
+            const totalRevenue = successOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+            const aov = successOrders.length ? (totalRevenue / successOrders.length) : 0;
+            document.getElementById('an-aov').innerText = Math.round(aov).toLocaleString() + ' MMK';
+
+            // Top 10 spenders leaderboard.
+            const topSpenders = customerIds
+                .map(id => ({ id, ...perCustomer[id] }))
+                .sort((a, b) => b.spend - a.spend)
+                .slice(0, 10);
+            const container = document.getElementById('an-top-spenders-container');
+            if (!container) return;
+            if (topSpenders.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No successful orders yet.</p>';
+                return;
+            }
+            container.innerHTML = topSpenders.map((c, i) => {
+                const u = USERS[c.id];
+                const displayName = (u && u.name && u.name.trim()) ? u.name.trim() : (u && u.guestId) || c.id;
+                return `
+                <div class="tx-row">
+                    <div class="tx-row-icon" style="background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;">#${i + 1}</div>
+                    <div class="tx-row-info">
+                        <div class="tx-row-title">${escapeHtml(displayName)}</div>
+                        <div class="tx-row-sub">${c.count} order${c.count === 1 ? '' : 's'}</div>
+                    </div>
+                    <div class="tx-row-amount" style="color:var(--accent);">${c.spend.toLocaleString()} MMK</div>
+                </div>`;
+            }).join('');
+        }
+        window.renderAnalytics = renderAnalytics;
+
         // Draws the 7-day revenue bar chart in the Overview page as simple
         // height-scaled divs (no charting library needed).
         function renderRevenueChart(dayKeys, revenueByDay) {
@@ -5707,6 +5902,7 @@
             el.innerText = 'Price Update';
             el.title = `${count} cost update${count > 1 ? 's' : ''} pending`;
             el.style.display = 'inline-block';
+            updateDashboardAlertBanner();
         }
         window.updateGameCostBadge = updateGameCostBadge;
 
@@ -5717,8 +5913,48 @@
             if (!count) { el.style.display = 'none'; el.innerText = ''; return; }
             el.innerText = `${count} out of stock`;
             el.style.display = 'inline-block';
+            updateDashboardAlertBanner();
         }
         window.updateGameStockBadge = updateGameStockBadge;
+
+        // A package's margin is considered "low" below this, including negative
+        // (selling at a loss). Only checked when a Cost has actually been set.
+        const LOW_MARGIN_THRESHOLD_PCT = 10;
+        function countLowMarginPackages() {
+            let count = 0;
+            Object.values(GAMES || {}).forEach(g => {
+                (g.packages || []).forEach(p => {
+                    const cost = Number(p.cost) || 0;
+                    const price = Number(p.price) || 0;
+                    if (cost <= 0 || price <= 0) return;
+                    const pct = ((price - cost) / cost) * 100;
+                    if (pct < LOW_MARGIN_THRESHOLD_PCT) count++;
+                });
+            });
+            return count;
+        }
+
+        // Recomputes the Dashboard's top alert banner from the same
+        // gameCostUpdateCounts / gameStockOutCounts maps the Games list badges
+        // use (see queueGameCostScan), plus a synchronous low-margin scan over
+        // GAMES (no API call needed - cost/price are already loaded). Called
+        // whenever a badge updates, so the banner fills in as scans complete.
+        function updateDashboardAlertBanner() {
+            const banner = document.getElementById('dashboard-alert-banner');
+            if (!banner) return;
+            const priceUpdateCount = Object.values(gameCostUpdateCounts).reduce((a, b) => a + (b || 0), 0);
+            const stockOutCount = Object.values(gameStockOutCounts).reduce((a, b) => a + (b || 0), 0);
+            const lowMarginCount = countLowMarginPackages();
+            const parts = [];
+            if (stockOutCount) parts.push(`${stockOutCount} out of stock`);
+            if (priceUpdateCount) parts.push(`${priceUpdateCount} price update${priceUpdateCount > 1 ? 's' : ''} pending`);
+            if (lowMarginCount) parts.push(`${lowMarginCount} low margin`);
+            if (!parts.length) { banner.style.display = 'none'; return; }
+            document.getElementById('dashboard-alert-banner-text').textContent =
+                `${parts.join(' · ')} — tap to review`;
+            banner.style.display = 'flex';
+        }
+        window.updateDashboardAlertBanner = updateDashboardAlertBanner;
 
         // Clears one game's cached scan result (e.g. after its Cost data
         // changes) so the next list render re-checks it against live prices.
@@ -6437,11 +6673,8 @@
 
                 // All the expensive work below (hit-testing, DOM moves) runs at
                 // most once per animation frame, no matter how many pointermove
-                // events fire in between. Since cards now sit in a 2-column
-                // grid (not a single vertical list), the target cell is found
-                // with elementFromPoint at the pointer's actual X/Y — a
-                // Y-only range check (the old approach) can't tell left column
-                // from right column.
+                // events fire in between. The target row is found with
+                // elementFromPoint at the pointer's actual X/Y.
                 function processFrame() {
                     rafId = null;
                     const deltaX = latestClientX - startX;
@@ -7401,6 +7634,187 @@
         let currentUserDetailsId = null;
 
         function fmtMoney(n) { return Number(n || 0).toLocaleString() + ' MMK'; }
+
+        // ---------- CSV export ----------
+        // Generic helper: builds a CSV string from headers + row arrays, then
+        // triggers a browser download via a throwaway Blob URL. Values are
+        // CSV-escaped (quoted, with internal quotes doubled) whenever they
+        // contain a comma, quote, or newline.
+        function csvEscape(value) {
+            const s = value === null || value === undefined ? '' : String(value);
+            return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }
+        function exportToCSV(filename, headers, rows) {
+            const lines = [headers.map(csvEscape).join(',')]
+                .concat(rows.map(row => row.map(csvEscape).join(',')));
+            // Leading BOM so Excel opens Burmese/Unicode text correctly instead of mojibake.
+            const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        // Exports whatever the Orders page's search + date filter currently
+        // matches (same logic as renderOrdersListImpl), not just what's visible
+        // after the Active/Cleaned toggle.
+        function exportOrdersCSV() {
+            const searchTerm = (document.getElementById('order-search')?.value || '').trim().toLowerCase();
+            const dateFrom = document.getElementById('order-date-from')?.value || '';
+            const dateTo = document.getElementById('order-date-to')?.value || '';
+            const rows = Object.values(ORDERS).filter(o => {
+                if (!isWithinDateRange(o.timestamp, dateFrom, dateTo)) return false;
+                if (!searchTerm) return true;
+                return (o.game || '').toLowerCase().includes(searchTerm)
+                    || (o.userName || '').toLowerCase().includes(searchTerm)
+                    || (o.userPhone || '').toLowerCase().includes(searchTerm)
+                    || (o.playerId || '').toLowerCase().includes(searchTerm)
+                    || (o.id || '').toLowerCase().includes(searchTerm);
+            }).sort((a, b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0));
+
+            if (rows.length === 0) { window.showToast('No orders to export.', 'warning'); return; }
+            const headers = ['Order ID', 'Date', 'Customer', 'Phone', 'Game', 'Server', 'Item Amount', 'Price (MMK)', 'Status', 'Payment Method'];
+            const csvRows = rows.map(o => [
+                o.id,
+                o.timestamp ? o.timestamp.toDate().toLocaleString() : '',
+                o.userName || 'Guest',
+                o.userPhone || '',
+                o.game || '',
+                o.serverRegion || '',
+                o.itemAmount || '',
+                Number(o.price) || 0,
+                o.status || '',
+                o.paymentMethod || ''
+            ]);
+            exportToCSV(`pca-orders-${Date.now()}.csv`, headers, csvRows);
+            logAdminActivity('Exported Orders CSV', `${rows.length} rows`);
+        }
+        window.exportOrdersCSV = exportOrdersCSV;
+
+        // ---------- Invoice PDF ----------
+        // Builds a simple one-page PDF invoice for a single order (jsPDF, loaded
+        // via CDN in <head>). Meant for accounting/record-keeping, separate from
+        // the customer-facing Canvas receipt drawn in store.html.
+        function downloadOrderInvoicePDF(orderId) {
+            const o = ORDERS[orderId];
+            if (!o) { window.showToast('Order not found.', 'fail'); return; }
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                window.showToast('PDF library failed to load — check your connection.', 'fail');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const marginX = 48;
+            let y = 56;
+
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+            doc.text('PCA Store', marginX, y);
+            doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
+            doc.text('INVOICE', pageWidth - marginX, y, { align: 'right' });
+            doc.setTextColor(0);
+
+            y += 28;
+            doc.setDrawColor(220); doc.line(marginX, y, pageWidth - marginX, y);
+            y += 26;
+
+            const dateStr = o.timestamp ? o.timestamp.toDate().toLocaleString() : '—';
+            const rows = [
+                ['Order ID', orderId],
+                ['Date', dateStr],
+                ['Customer', o.userName || 'Guest'],
+                ['Phone', o.userPhone || 'N/A'],
+                ['Game', o.game || 'N/A'],
+                ['Item / Amount', String(o.itemAmount || 'N/A')],
+                ['Payment Method', o.paymentMethod || 'N/A'],
+                ['Status', o.status || 'N/A']
+            ];
+            doc.setFontSize(11);
+            rows.forEach(([label, value]) => {
+                doc.setFont('helvetica', 'bold'); doc.text(label, marginX, y);
+                doc.setFont('helvetica', 'normal'); doc.text(String(value), marginX + 140, y);
+                y += 22;
+            });
+
+            y += 10;
+            doc.setDrawColor(220); doc.line(marginX, y, pageWidth - marginX, y);
+            y += 30;
+
+            doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+            doc.text('Total Paid', marginX, y);
+            doc.setFontSize(16);
+            doc.text(Number(o.price || 0).toLocaleString() + ' MMK', pageWidth - marginX, y, { align: 'right' });
+
+            y += 50;
+            doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(140);
+            doc.text('This is a computer-generated invoice from PCA Store.', marginX, y);
+
+            doc.save(`invoice-${orderId}.pdf`);
+            logAdminActivity('Downloaded invoice PDF', orderId);
+        }
+        window.downloadOrderInvoicePDF = downloadOrderInvoicePDF;
+
+        function exportUsersCSV() {
+            const ids = Object.keys(USERS);
+            if (ids.length === 0) { window.showToast('No users to export.', 'warning'); return; }
+            const headers = ['UID', 'Name', 'Phone', 'Wallet Balance (MMK)', 'Order Count', 'Total Spend (MMK)', 'Tier', 'Status', 'Google Verified', 'Last Seen'];
+            const csvRows = ids.map(id => {
+                const u = USERS[id];
+                const userOrders = Object.values(ORDERS).filter(o => o.userId === id);
+                const spend = userOrders.filter(o => o.status === 'Success').reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+                return [
+                    u.guestId || id,
+                    u.name || '',
+                    u.phone || '',
+                    Number(u.walletBalance) || 0,
+                    userOrders.length,
+                    spend,
+                    tierForSpendAdmin(spend),
+                    u.banned ? 'Banned' : 'Active',
+                    u.googleEmail ? 'Yes' : 'No',
+                    u.lastSeen ? u.lastSeen.toDate().toLocaleString() : ''
+                ];
+            });
+            exportToCSV(`pca-users-${Date.now()}.csv`, headers, csvRows);
+            logAdminActivity('Exported Users CSV', `${ids.length} rows`);
+        }
+        window.exportUsersCSV = exportUsersCSV;
+
+        // Exports transactions across ALL status tabs (Pending/Processing/Completed/
+        // Rejected) that match the current search + date filter — a full ledger,
+        // not just whichever tab is currently open.
+        function exportTopupsCSV() {
+            const searchTerm = (document.getElementById('topup-search')?.value || '').trim().toLowerCase();
+            const dateFrom = document.getElementById('topup-date-from')?.value || '';
+            const dateTo = document.getElementById('topup-date-to')?.value || '';
+            const rows = Object.values(WALLET_TOPUPS).filter(t => {
+                if (!isWithinDateRange(t.timestamp, dateFrom, dateTo)) return false;
+                if (!searchTerm) return true;
+                return (t.userName || '').toLowerCase().includes(searchTerm)
+                    || (t.userId || '').toLowerCase().includes(searchTerm)
+                    || (t.userPhone || '').toLowerCase().includes(searchTerm);
+            }).sort((a, b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0));
+
+            if (rows.length === 0) { window.showToast('No transactions to export.', 'warning'); return; }
+            const headers = ['Topup ID', 'Date', 'Customer', 'UID', 'Phone', 'Amount (MMK)', 'Payment Method', 'Status'];
+            const csvRows = rows.map(t => [
+                t.id,
+                t.timestamp ? t.timestamp.toDate().toLocaleString() : '',
+                t.userName || 'Guest',
+                t.userId || '',
+                t.userPhone || '',
+                Number(t.amount) || 0,
+                t.paymentMethod || '',
+                t.status || ''
+            ]);
+            exportToCSV(`pca-transactions-${Date.now()}.csv`, headers, csvRows);
+            logAdminActivity('Exported Transactions CSV', `${rows.length} rows`);
+        }
+        window.exportTopupsCSV = exportTopupsCSV;
 
         // Debounced the same way as Orders/Games: the Users list can also get
         // re-rendered from the orders/games listeners (to refresh order counts),
@@ -9802,22 +10216,50 @@
         const g2bulkCategoryCache = new Map(); // categoryId -> { data, ts, promise }
         const G2BULK_CATEGORY_CACHE_TTL_MS = 8000;
 
+        // Second layer, shared across sessions via Firestore: the store front
+        // polls this same endpoint every 15s, so if a customer and the admin
+        // panel are both open at once, each was hitting G2Bulk on its own
+        // schedule for the same category. Before calling G2Bulk directly,
+        // check a small Firestore doc first - if another session (admin or
+        // store) already fetched this category recently, reuse that instead.
+        // Best-effort only: any Firestore read/write failure here just falls
+        // through to the normal direct fetch below.
+        const G2BULK_SHARED_CACHE_TTL_MS = 12000;
+        async function readSharedG2BulkCache(categoryId) {
+            try {
+                const snap = await getDoc(doc(db, 'g2bulk_cache', 'cat_' + categoryId));
+                if (!snap.exists()) return null;
+                const { data, fetchedAt } = snap.data();
+                if (!data || !fetchedAt || Date.now() - fetchedAt >= G2BULK_SHARED_CACHE_TTL_MS) return null;
+                return data;
+            } catch (e) { return null; }
+        }
+        function writeSharedG2BulkCache(categoryId, data) {
+            setDoc(doc(db, 'g2bulk_cache', 'cat_' + categoryId), { data, fetchedAt: Date.now() }).catch(() => {});
+        }
+
         async function fetchG2BulkCategoryLive(categoryId) {
             const cached = g2bulkCategoryCache.get(categoryId);
             if (cached) {
                 if (cached.promise) return cached.promise;
                 if (Date.now() - cached.ts < G2BULK_CATEGORY_CACHE_TTL_MS) return cached.data;
             }
-            const promise = fetch(`https://api.g2bulk.com/v1/category/${encodeURIComponent(categoryId)}`)
-                .then(res => res.json())
-                .then(data => {
-                    g2bulkCategoryCache.set(categoryId, { data, ts: Date.now() });
-                    return data;
-                })
-                .catch(error => {
-                    g2bulkCategoryCache.delete(categoryId);
-                    throw error;
-                });
+            const promise = readSharedG2BulkCache(categoryId).then(sharedData => {
+                if (sharedData) {
+                    g2bulkCategoryCache.set(categoryId, { data: sharedData, ts: Date.now() });
+                    return sharedData;
+                }
+                return fetch(`https://api.g2bulk.com/v1/category/${encodeURIComponent(categoryId)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        g2bulkCategoryCache.set(categoryId, { data, ts: Date.now() });
+                        writeSharedG2BulkCache(categoryId, data);
+                        return data;
+                    });
+            }).catch(error => {
+                g2bulkCategoryCache.delete(categoryId);
+                throw error;
+            });
             g2bulkCategoryCache.set(categoryId, { promise });
             return promise;
         }
@@ -10209,91 +10651,10 @@
         // already supports CORS so it's still called directly, unchanged.
         const JCPLAYS_PROXY_URL = 'https://raspy-salad-b6ba.linpyaesone130.workers.dev/jcplays-proxy';
 
-        // ---------- MD5 (pure JS, no external dependency) ----------
-        // Small self-contained MD5 implementation, used only to replicate
-        // JCPlays' documented signature formula (sign = md5(md5(str))).
-        function md5(input) {
-            function rotl(x, c) { return (x << c) | (x >>> (32 - c)); }
-            const K = [];
-            for (let i = 0; i < 64; i++) K[i] = (Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296)) | 0;
-            const S = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-                       5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
-                       4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-                       6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21];
-
-            const bytes = Array.from(new TextEncoder().encode(input));
-            const len = bytes.length;
-            const words = [];
-            for (let i = 0; i < len; i++) words[i >> 2] = (words[i >> 2] || 0) | (bytes[i] << ((i % 4) * 8));
-
-            const bitLen = len * 8;
-            words[len >> 2] = (words[len >> 2] || 0) | (0x80 << ((len % 4) * 8));
-            const wLen = (((len + 8) >> 6) + 1) * 16;
-            for (let i = 0; i < wLen; i++) if (words[i] === undefined) words[i] = 0;
-            words[wLen - 2] = bitLen >>> 0;
-            words[wLen - 1] = Math.floor(bitLen / 4294967296) >>> 0;
-
-            let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
-
-            for (let chunk = 0; chunk < wLen; chunk += 16) {
-                let A = a0, B = b0, C = c0, D = d0;
-                for (let i = 0; i < 64; i++) {
-                    let F, g;
-                    if (i < 16) { F = (B & C) | (~B & D); g = i; }
-                    else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
-                    else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
-                    else { F = C ^ (B | ~D); g = (7 * i) % 16; }
-                    F = (F + A + K[i] + (words[chunk + g] | 0)) | 0;
-                    A = D; D = C; C = B;
-                    B = (B + rotl(F, S[i])) | 0;
-                }
-                a0 = (a0 + A) | 0; b0 = (b0 + B) | 0; c0 = (c0 + C) | 0; d0 = (d0 + D) | 0;
-            }
-
-            const toHex = (n) => [n & 0xff, (n >>> 8) & 0xff, (n >>> 16) & 0xff, (n >>> 24) & 0xff]
-                .map(b => b.toString(16).padStart(2, '0')).join('');
-            return toHex(a0) + toHex(b0) + toHex(c0) + toHex(d0);
-        }
-
-        // Builds the full signed parameter set for a JCPlays request, per their
-        // documented algorithm:
-        //   1. collect all params (uid, email, api=M_KEY, time, + endpoint-specific ones)
-        //   2. sort by key, build key1=value1&key2=value2&...
-        //   3. append '&' + raw M_KEY
-        //   4. sign = md5(md5(that string))
-        // `settings` defaults to the saved JCPLAYS_SETTINGS but can be overridden
-        // (e.g. by verifyJCPlaysKey, which checks the values currently in the
-        // form before they're saved).
-        // PHP's http_build_query() encodes like encodeURIComponent but additionally
-        // turns spaces into '+' and percent-encodes ! * ' ( ) too (RFC1738/urlencode),
-        // which encodeURIComponent alone leaves untouched. Must match this exactly or
-        // the signature won't match what jcplays computes server-side (e.g. an email's
-        // '@' has to become '%40' in the string that gets signed).
-        function phpUrlEncode(value) {
-            return encodeURIComponent(String(value))
-                .replace(/%20/g, '+')
-                .replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
-        }
-
-        function jcplaysBuildSignedParams(extraParams, settings) {
-            const s = settings || JCPLAYS_SETTINGS;
-            const params = Object.assign({
-                uid: s.uid,
-                email: s.email,
-                api: s.mKey,
-                time: Math.floor(Date.now() / 1000)
-            }, extraParams);
-
-            // Per JCPlays' docs: sort by key, build a PHP http_build_query()-style
-            // (URL-encoded) key=value string, append '&' + raw M_KEY, then double-md5.
-            // The actual POST body sent by jcplaysRequest() is still form-encoded via
-            // URLSearchParams as normal — this only affects the string that gets signed.
-            const sortedKeys = Object.keys(params).sort();
-            const queryStr = sortedKeys.map(k => `${phpUrlEncode(k)}=${phpUrlEncode(params[k])}`).join('&');
-            const sign = md5(md5(queryStr + '&' + s.mKey));
-            params.sign = sign;
-            return params;
-        }
+        // NOTE: request signing (md5(md5(...)) per JCPlays' documented formula)
+        // happens server-side in the Cloudflare Worker proxy below — the client
+        // only sends raw credentials over HTTPS to the Worker, which builds and
+        // signs the request itself. There is no client-side signing code here.
 
         // Low-level helper: signs + POSTs to a JCPlays endpoint and returns the
         // parsed JSON body. Throws if credentials are missing or the response
