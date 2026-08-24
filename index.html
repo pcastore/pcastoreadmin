@@ -268,6 +268,27 @@
         .login-secondary-btn { background: rgba(255,255,255,0.08) !important; color: #F3F6FF !important; margin-top: 8px; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.1) !important; }
         .mfa-secret-box { background: rgba(255,255,255,0.055); border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
         .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 600; letter-spacing: 1px; color: #6FA3FF; }
+        /* Segmented 6-digit OTP input — replaces the old single free-text field.
+           Bigger tap targets and auto-advance make entry far less error-prone
+           on mobile than a single 6-char box, and it accepts a full paste
+           dropped into any of the boxes. */
+        .otp-group { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
+        .otp-box {
+            width: 15%; max-width: 46px; aspect-ratio: 1 / 1; padding: 0; text-align: center;
+            font-size: 20px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 0;
+            border: 1.5px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.055);
+            color: #F3F6FF; border-radius: 11px; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .otp-box:focus { outline: none; border-color: var(--accent, #4C6FFF); background: rgba(255,255,255,0.08); box-shadow: 0 0 0 3px rgba(76,154,255,0.18), 0 0 18px -4px rgba(76,154,255,0.55); }
+        .otp-box.otp-filled { border-color: rgba(111,163,255,0.5); }
+        .otp-paste-btn {
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+            padding: 10px; margin-bottom: 16px; border-radius: 10px; font-weight: 600; font-size: 13px;
+            border: 1px solid rgba(111,163,255,0.35); background: rgba(111,163,255,0.1); color: #6FA3FF; cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .otp-paste-btn:hover { background: rgba(111,163,255,0.18); }
+        .otp-paste-btn svg { width: 15px; height: 15px; }
         #resend-verify-btn { width: 100%; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 15px; border: none; background: var(--accent, #4C6FFF); color: #fff; cursor: pointer; margin-bottom: 8px; box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6); }
 
         /* ---- Right-panel illustration: a small orbiting-atom graphic (glowing
@@ -1356,8 +1377,19 @@
                     </div>
                     <p class="login-msg-hint">Account name: <b id="mfa-account-name">—</b> · Issuer: PCA Store Admin</p>
                     <p id="mfa-enroll-error" class="login-msg-error"></p>
-                    <label for="mfa-enroll-code">6-digit code</label>
-                    <input type="text" id="mfa-enroll-code" inputmode="numeric" maxlength="6" placeholder="123456" style="margin-bottom:16px;">
+                    <label>6-digit code</label>
+                    <div class="otp-group" id="mfa-enroll-otp">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    </div>
+                    <input type="hidden" id="mfa-enroll-code">
+                    <button type="button" class="otp-paste-btn" onclick="pasteOtpCode('mfa-enroll-otp','mfa-enroll-code')">
+                        <svg class="ui-icon"><use href="#icon-copy"></use></svg> Paste code
+                    </button>
                     <button type="button" id="mfa-enroll-btn" onclick="confirmMfaEnrollment()">Confirm &amp; Enable</button>
                     <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
                 </div>
@@ -1367,8 +1399,19 @@
                     <h2>Enter Authenticator Code</h2>
                     <p class="sub">Open your authenticator app and enter the current 6-digit code.</p>
                     <p id="mfa-challenge-error" class="login-msg-error"></p>
-                    <label for="mfa-challenge-code">6-digit code</label>
-                    <input type="text" id="mfa-challenge-code" inputmode="numeric" maxlength="6" placeholder="123456" style="margin-bottom:16px;">
+                    <label>6-digit code</label>
+                    <div class="otp-group" id="mfa-challenge-otp">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                        <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    </div>
+                    <input type="hidden" id="mfa-challenge-code">
+                    <button type="button" class="otp-paste-btn" onclick="pasteOtpCode('mfa-challenge-otp','mfa-challenge-code')">
+                        <svg class="ui-icon"><use href="#icon-copy"></use></svg> Paste code
+                    </button>
                     <button type="button" id="mfa-challenge-btn" onclick="confirmMfaChallenge()">Verify &amp; Sign In</button>
                     <button type="button" class="login-secondary-btn" onclick="backToLogin()">Cancel</button>
                 </div>
@@ -3737,6 +3780,62 @@
             }
         }
         window.copyMfaSecret = copyMfaSecret;
+
+        // ---------- Segmented 6-digit OTP input (enroll + challenge screens) ----------
+        function fillOtpBoxes(boxes, digits) {
+            boxes.forEach((b, i) => { b.value = digits[i] || ''; b.classList.toggle('otp-filled', !!digits[i]); });
+        }
+        function setupOtpGroup(groupId, hiddenId) {
+            const group = document.getElementById(groupId);
+            const hidden = document.getElementById(hiddenId);
+            if (!group || !hidden) return;
+            const boxes = [...group.querySelectorAll('.otp-box')];
+            const sync = () => { hidden.value = boxes.map(b => b.value).join(''); };
+            boxes.forEach((box, i) => {
+                box.addEventListener('input', () => {
+                    box.value = box.value.replace(/[^0-9]/g, '').slice(-1);
+                    box.classList.toggle('otp-filled', !!box.value);
+                    if (box.value && boxes[i + 1]) boxes[i + 1].focus();
+                    sync();
+                });
+                box.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !box.value && boxes[i - 1]) boxes[i - 1].focus();
+                });
+                // Pasting into any box distributes the whole code across all six.
+                box.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+                    if (!text) return;
+                    fillOtpBoxes(boxes, text);
+                    sync();
+                    (boxes[Math.min(text.length, 6) - 1] || boxes[5]).focus();
+                });
+            });
+        }
+        // Explicit "Paste code" button — reads the clipboard directly, for when
+        // the person would rather tap once than paste into a tiny digit box.
+        async function pasteOtpCode(groupId, hiddenId) {
+            const group = document.getElementById(groupId);
+            const boxes = [...group.querySelectorAll('.otp-box')];
+            try {
+                const text = await navigator.clipboard.readText();
+                const digits = text.replace(/[^0-9]/g, '').slice(0, 6);
+                if (!digits) return;
+                fillOtpBoxes(boxes, digits);
+                document.getElementById(hiddenId).value = digits;
+                (boxes[Math.min(digits.length, 6) - 1] || boxes[0]).focus();
+            } catch (e) {
+                // Clipboard read blocked (permissions / non-HTTPS) — focus the first
+                // box so the person can paste manually with a long-press or Ctrl/Cmd+V.
+                boxes[0]?.focus();
+            }
+        }
+        window.setupOtpGroup = setupOtpGroup;
+        window.pasteOtpCode = pasteOtpCode;
+        document.addEventListener('DOMContentLoaded', () => {
+            setupOtpGroup('mfa-enroll-otp', 'mfa-enroll-code');
+            setupOtpGroup('mfa-challenge-otp', 'mfa-challenge-code');
+        });
 
         function toggleMfaManualKey() {
             const box = document.getElementById('mfa-secret-box');
