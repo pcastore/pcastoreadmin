@@ -1082,6 +1082,13 @@
            a plain price/name line. */
         .pkg-summary { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; min-height: 48px; cursor: pointer; }
         .pkg-summary:active { background: var(--bg-subtle); }
+        /* Price card turns red while its margin sits below the 4% floor
+           (MIN_PROFIT_MARGIN_PCT, see updatePackageProfit) — reverts to the
+           normal look automatically once Cost/Price clears 4% again. */
+        .pkg-summary.pkg-summary-low-margin { background: var(--danger-soft); }
+        .pkg-summary.pkg-summary-low-margin .pkg-summary-value { background: rgba(250,62,62,0.16); }
+        .pkg-summary.pkg-summary-low-margin .pkg-summary-price-text,
+        .pkg-summary.pkg-summary-low-margin .pkg-summary-price-unit { color: var(--danger-strong); }
         .pkg-summary-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .pkg-summary-label { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; }
         .pkg-summary-thumb { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; overflow: hidden; background: var(--accent-soft); border: 1px solid var(--fill-soft); display: flex; align-items: center; justify-content: center; }
@@ -1172,6 +1179,17 @@
             box-shadow: 0 4px 12px -4px rgba(250,62,62,0.55), inset 0 1px 0 rgba(255,255,255,0.35);
         }
         .game-stockout-badge:active { filter: brightness(0.94); }
+
+        /* Small red dot on a game card, next to the Pass/stockout badges —
+           lights up when any saved package on that game sits below the 4%
+           minimum-margin floor (see gameHasLowMarginPackage). Tap opens the
+           editor to review/fix the offending package(s). */
+        .game-margin-dot {
+            display: none; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+            background: var(--danger);
+            box-shadow: 0 0 0 3px var(--danger-soft);
+            cursor: pointer;
+        }
 
         /* Scroll-reveal: cards/items fade + slide up into place as they enter
            the viewport while scrolling (see initScrollReveal in JS). Respects
@@ -3790,6 +3808,20 @@
             const hidden = document.getElementById(hiddenId);
             if (!group || !hidden) return;
             const boxes = [...group.querySelectorAll('.otp-box')];
+            // Auto-submit: once all 6 boxes are filled, click the matching submit
+            // button automatically so the person doesn't have to tap it themselves.
+            // Maps each OTP group id to the id of the button that should fire.
+            const AUTO_SUBMIT_BTN = {
+                'mfa-enroll-otp': 'mfa-enroll-btn',
+                'mfa-challenge-otp': 'mfa-challenge-btn'
+            };
+            const maybeAutoSubmit = () => {
+                const code = boxes.map(b => b.value).join('');
+                if (code.length !== 6 || !/^\d{6}$/.test(code)) return;
+                const btnId = AUTO_SUBMIT_BTN[groupId];
+                const btn = btnId && document.getElementById(btnId);
+                if (btn && !btn.disabled) btn.click();
+            };
             const sync = () => { hidden.value = boxes.map(b => b.value).join(''); };
             boxes.forEach((box, i) => {
                 box.addEventListener('input', () => {
@@ -3797,6 +3829,7 @@
                     box.classList.toggle('otp-filled', !!box.value);
                     if (box.value && boxes[i + 1]) boxes[i + 1].focus();
                     sync();
+                    maybeAutoSubmit();
                 });
                 box.addEventListener('keydown', (e) => {
                     if (e.key === 'Backspace' && !box.value && boxes[i - 1]) boxes[i - 1].focus();
@@ -3809,6 +3842,7 @@
                     fillOtpBoxes(boxes, text);
                     sync();
                     (boxes[Math.min(text.length, 6) - 1] || boxes[5]).focus();
+                    maybeAutoSubmit();
                 });
             });
         }
@@ -5992,8 +6026,9 @@
                             </div>
                         </div>
                         <div class="ac-footer">
+                            <span class="game-margin-dot" id="game-margin-dot-${id}" title="Contains a package below ${MIN_PROFIT_MARGIN_PCT}% margin" onclick="openGameEditor('${id}')"></span>
                             <span class="game-stockout-badge" id="game-stockout-badge-${id}" onclick="openGameEditor('${id}')"></span>
-                            <span class="game-cost-badge" id="game-cost-badge-${id}" onclick="openGameEditor('${id}')"></span>
+                            <span class="game-cost-badge" id="game-cost-badge-${id}" onclick="applyGameCostUpdatesFromList('${id}', this)"></span>
                             <button class="btn btn-outline" onclick="openGameEditor('${id}')">Edit</button>
                             <button class="btn btn-danger" onclick="deleteGame('${id}')">Delete</button>
                         </div>
@@ -6001,8 +6036,33 @@
                 `;
             }).join('');
             initScrollReveal(container);
-            ids.forEach(id => { updateGameCostBadge(id); updateGameStockBadge(id); queueGameCostScan(id); });
+            ids.forEach(id => { updateGameCostBadge(id); updateGameStockBadge(id); updateGameMarginDot(id); queueGameCostScan(id); });
         }
+
+        // Small red dot on a game card (next to the Pass/stockout badges) that
+        // lights up the moment ANY of that game's saved packages sit below the
+        // MIN_PROFIT_MARGIN_PCT (4%) floor — a plain, synchronous read of the
+        // already-loaded GAMES data (no live API call needed, unlike the cost
+        // scan above). Games/packages with no Cost set are skipped, since
+        // margin is meaningless without one. Hidden again (back to "normal")
+        // once every package is at or above the floor.
+        function gameHasLowMarginPackage(g) {
+            return (g.packages || []).some(p => {
+                const cost = Number(p.cost) || 0;
+                const price = Number(p.price) || 0;
+                if (cost <= 0 || price <= 0) return false;
+                return ((price - cost) / cost) * 100 < MIN_PROFIT_MARGIN_PCT;
+            });
+        }
+        window.gameHasLowMarginPackage = gameHasLowMarginPackage;
+
+        function updateGameMarginDot(gameId) {
+            const el = document.getElementById(`game-margin-dot-${gameId}`);
+            const g = GAMES[gameId];
+            if (!el || !g) return;
+            el.style.display = gameHasLowMarginPackage(g) ? 'inline-block' : 'none';
+        }
+        window.updateGameMarginDot = updateGameMarginDot;
 
         // ---------- Background scan: pending cost updates per game (list view) ----------
         // Mirrors checkLivePriceChanges' comparison logic, but runs quietly in
@@ -6207,6 +6267,154 @@
             }
         }
         window.computeGameStockOutCount = computeGameStockOutCount;
+
+        // ---------- Auto-fix loss-making packages (Price <= Cost) ----------
+        // Separate from the live-cost scan above (that one only reacts when the
+        // SUPPLIER's price changes). This one quietly watches the already-saved
+        // GAMES data for any package whose Price has sat at or below its Cost
+        // (margin <= 0%, i.e. a straight loss on every sale) and bumps that
+        // package's Price up by LOSS_MARGIN_MARKUP_PCT (1%), rounded to the
+        // nearest clean tier via roundUpToPriceTier — the same rounding the 4%
+        // floor logic uses. Writes straight to Firestore per game; no admin
+        // click required. Runs once whenever the games list refreshes (see
+        // listenGames) and again on a fixed interval as a safety net, guarded
+        // by lossFixInFlight so overlapping runs never double-write the same
+        // game while an earlier write is still in flight.
+        const LOSS_MARGIN_MARKUP_PCT = 1;
+        const LOSS_FIX_INTERVAL_MS = 5 * 60 * 1000; // safety-net re-check every 5 minutes
+        let lossFixSchedulerStarted = false;
+        let lossFixInFlight = false;
+
+        async function autoFixLossMakingPackages() {
+            if (lossFixInFlight) return;
+            lossFixInFlight = true;
+            try {
+                for (const [gameId, g] of Object.entries(GAMES || {})) {
+                    const packages = g.packages || [];
+                    let changed = false;
+                    const updated = packages.map(p => {
+                        const cost = Number(p.cost) || 0;
+                        const price = Number(p.price) || 0;
+                        if (cost <= 0 || price <= 0) return p; // margin meaningless without both set
+                        if (price > cost) return p; // already above cost — not a loss
+                        const newPrice = roundUpToPriceTier(price * (1 + LOSS_MARGIN_MARKUP_PCT / 100));
+                        if (newPrice === price) return p;
+                        changed = true;
+                        return { ...p, price: newPrice };
+                    });
+                    if (!changed) continue;
+                    try {
+                        await updateDoc(doc(db, "games", gameId), { packages: updated });
+                        logAdminActivity('Auto-fixed loss-making price(s)', `${g.name || gameId}: Price raised ${LOSS_MARGIN_MARKUP_PCT}% above Cost`);
+                        invalidateGameCostScan(gameId);
+                    } catch (error) {
+                        console.error('autoFixLossMakingPackages write error:', gameId, error);
+                    }
+                }
+            } catch (error) {
+                console.error('autoFixLossMakingPackages error:', error);
+            } finally {
+                lossFixInFlight = false;
+            }
+        }
+        window.autoFixLossMakingPackages = autoFixLossMakingPackages;
+
+        function startLossFixScheduler() {
+            if (lossFixSchedulerStarted) return;
+            lossFixSchedulerStarted = true;
+            autoFixLossMakingPackages(); // catch up immediately
+            setInterval(autoFixLossMakingPackages, LOSS_FIX_INTERVAL_MS);
+        }
+        window.startLossFixScheduler = startLossFixScheduler;
+
+        // ---------- Apply a game's pending cost updates straight from the list ----------
+        // Triggered by tapping the "Pass" (game-cost-badge) button next to a
+        // game card — no longer opens the editor first. Re-fetches the same
+        // live catalogue computeGameCostUpdateCount already checked, writes
+        // the new Cost onto every changed package, and — exactly like
+        // applyCostUpdate does inside the open editor — raises that
+        // package's Price up to the MIN_PROFIT_MARGIN_PCT (4%) floor via
+        // minPriceForCost/roundUpToPriceTier if the new cost would otherwise
+        // leave it underwater. Writes straight to Firestore; listenGames'
+        // onSnapshot picks up the change and re-renders the list/badges —
+        // nothing here touches the editor DOM at all.
+        async function applyGameCostUpdatesFromList(gameId, badgeEl) {
+            const g = GAMES[gameId];
+            if (!g || badgeEl.dataset.busy === '1') return;
+            badgeEl.dataset.busy = '1';
+            const originalText = badgeEl.innerText;
+            badgeEl.innerText = 'Updating...';
+            badgeEl.style.pointerEvents = 'none';
+            try {
+                const rate = G2BULK_SETTINGS.usdRate || 4500;
+                const packages = (g.packages || []).map(p => ({ ...p }));
+                let liveByKey = null;
+                let keyField = null;
+
+                if (g.fulfillProvider === 'g2bulk' && g.g2bulkCode) {
+                    const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g.g2bulkCode)}/catalogue`);
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.message || 'Check failed');
+                    liveByKey = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
+                    keyField = 'g2bulk';
+                } else if (g.fulfillProvider === 'jcplays' && g.jcplaysProduct) {
+                    if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) throw new Error('Add your JCPlays credentials first.');
+                    const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
+                    if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
+                    liveByKey = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
+                    keyField = 'jcplays';
+                } else if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
+                    const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
+                    if (!data.success) throw new Error(data.message || 'Check failed');
+                    const products = data.products || (data.category ? data.category.products : []) || [];
+                    liveByKey = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
+                    keyField = 'voucherId';
+                } else {
+                    throw new Error('No live source linked.');
+                }
+
+                let changed = 0, raised = 0;
+                packages.forEach(p => {
+                    const key = (p[keyField] || '').trim();
+                    if (!key || !liveByKey.has(key)) return;
+                    const liveCost = liveByKey.get(key);
+                    const currentCost = Number(p.cost) || 0;
+                    if (liveCost === currentCost) return;
+                    changed++;
+                    p.cost = liveCost;
+                    if (liveCost > 0) {
+                        const floor = minPriceForCost(liveCost);
+                        if ((Number(p.price) || 0) < floor) { p.price = floor; raised++; }
+                    }
+                });
+
+                if (changed === 0) {
+                    badgeEl.innerText = originalText;
+                    invalidateGameCostScan(gameId);
+                    window.showToast('Prices are already up to date', 'success');
+                    return;
+                }
+
+                await updateDoc(doc(db, "games", gameId), { packages });
+                logAdminActivity('Updated live costs', g.name);
+                invalidateGameCostScan(gameId);
+                window.showToast(
+                    raised
+                        ? `${changed} cost(s) updated — ${raised} price(s) raised to keep ${MIN_PROFIT_MARGIN_PCT}%+ margin`
+                        : `${changed} cost(s) updated`,
+                    'success'
+                );
+            } catch (error) {
+                console.error('Inline cost update error:', error);
+                badgeEl.innerText = originalText;
+                window.showToast(error.message || 'Update failed.', 'fail');
+            } finally {
+                badgeEl.dataset.busy = '';
+                badgeEl.style.pointerEvents = '';
+            }
+        }
+        window.applyGameCostUpdatesFromList = applyGameCostUpdatesFromList;
+
         // Sort key mirrors store.html: explicit `order` field wins (ascending),
         // games without one yet fall to the end, alphabetically - so nothing
         // reshuffles until an admin actually uses "Reorder".
@@ -6230,6 +6438,7 @@
                 GAMES = newGames;
                 renderAdminGamesList();
                 if (ordersListenerAttached) renderOrdersList();
+                if (lossFixSchedulerStarted) autoFixLossMakingPackages();
             }, (error) => {
                 console.error("Games listener error:", error);
                 document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
@@ -6603,6 +6812,7 @@
             const badge = row.querySelector('.pkg-profit-badge');
             const cost = Number(row.querySelector('.pkg-cost').value) || 0;
             const price = Number(row.querySelector('.pkg-price').value) || 0;
+            let lowMargin = false;
             if (cost <= 0) {
                 badge.className = 'pkg-profit-badge';
                 badge.innerText = '--';
@@ -6610,7 +6820,12 @@
                 const pct = ((price - cost) / cost) * 100;
                 badge.className = 'pkg-profit-badge ' + (pct > 0 ? 'positive' : (pct < 0 ? 'negative' : ''));
                 badge.innerText = (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
+                lowMargin = price > 0 && pct < MIN_PROFIT_MARGIN_PCT;
             }
+            // Price card (the collapsed summary row) turns red while its margin
+            // sits below the MIN_PROFIT_MARGIN_PCT (4%) floor, and reverts to
+            // normal the moment Cost/Price puts it back at or above 4%.
+            row.querySelector('.pkg-summary').classList.toggle('pkg-summary-low-margin', lowMargin);
             syncPkgSummary(row);
         }
         window.updatePackageProfit = updatePackageProfit;
@@ -11570,6 +11785,7 @@
             startAdminHeartbeat();
             startOrderArchiveScheduler();
             startDailySummaryScheduler();
+            startLossFixScheduler();
             runLoginSecurityCheck();
         }
 
