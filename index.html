@@ -1352,6 +1352,7 @@
                     <p class="login-msg-hint" style="text-align:center;">Can't scan? <button type="button" onclick="toggleMfaManualKey()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Enter key manually</button></p>
                     <div class="mfa-secret-box" id="mfa-secret-box" style="display:none;">
                         <span id="mfa-secret-key">—</span>
+                        <button type="button" class="login-secondary-btn" style="margin-top:8px;padding:6px 14px;font-size:12px;" onclick="copyMfaSecret('mfa-secret-key', this)">Copy key</button>
                     </div>
                     <p class="login-msg-hint">Account name: <b id="mfa-account-name">—</b> · Issuer: PCA Store Admin</p>
                     <p id="mfa-enroll-error" class="login-msg-error"></p>
@@ -2025,6 +2026,7 @@
                         <p class="login-msg-hint">Can't scan? <button type="button" onclick="toggleNewAdminManualKey()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Enter key manually</button></p>
                         <div class="mfa-secret-box" id="new-admin-secret-box" style="display:none;">
                             <span id="new-admin-secret-key">—</span>
+                            <button type="button" class="login-secondary-btn" style="margin-top:8px;padding:6px 14px;font-size:12px;" onclick="copyMfaSecret('new-admin-secret-key', this)">Copy key</button>
                         </div>
                         <p style="font-size:12.5px;color:var(--text-secondary);margin-top:10px;">Username: <b id="new-admin-final-username">—</b></p>
                     </div>
@@ -3708,6 +3710,33 @@
             }
         }
         window.renderMfaQrCode = renderMfaQrCode;
+
+        // Copies the exact secret text so it can be pasted into an authenticator
+        // app instead of hand-typed — hand-typing a 16-char Base32 string is
+        // where dropped/duplicated characters (and "key too short" errors) come from.
+        async function copyMfaSecret(spanId, btnEl) {
+            const text = document.getElementById(spanId)?.textContent?.trim();
+            if (!text || text === '—') return;
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (e) {
+                // Clipboard API unavailable (non-HTTPS/old browser) — fallback via a temp textarea.
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); } catch (e2) {}
+                document.body.removeChild(ta);
+            }
+            if (btnEl) {
+                const original = btnEl.textContent;
+                btnEl.textContent = 'Copied!';
+                setTimeout(() => { btnEl.textContent = original; }, 1500);
+            }
+        }
+        window.copyMfaSecret = copyMfaSecret;
 
         function toggleMfaManualKey() {
             const box = document.getElementById('mfa-secret-box');
