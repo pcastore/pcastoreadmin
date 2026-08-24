@@ -6330,14 +6330,13 @@
         // ---------- Apply a game's pending cost updates straight from the list ----------
         // Triggered by tapping the "Pass" (game-cost-badge) button next to a
         // game card — no longer opens the editor first. Re-fetches the same
-        // live catalogue computeGameCostUpdateCount already checked, writes
-        // the new Cost onto every changed package, and — exactly like
-        // applyCostUpdate does inside the open editor — raises that
-        // package's Price up to the MIN_PROFIT_MARGIN_PCT (4%) floor via
-        // minPriceForCost/roundUpToPriceTier if the new cost would otherwise
-        // leave it underwater. Writes straight to Firestore; listenGames'
-        // onSnapshot picks up the change and re-renders the list/badges —
-        // nothing here touches the editor DOM at all.
+        // live catalogue computeGameCostUpdateCount already checked and writes
+        // the new Cost onto every changed package. Price is left untouched —
+        // the MIN_PROFIT_MARGIN_PCT (4%) floor is a readout only (profit
+        // badge / summary grid), never an auto-adjustment to Price. Writes
+        // straight to Firestore; listenGames' onSnapshot picks up the change
+        // and re-renders the list/badges — nothing here touches the editor
+        // DOM at all.
         async function applyGameCostUpdatesFromList(gameId, badgeEl) {
             const g = GAMES[gameId];
             if (!g || badgeEl.dataset.busy === '1') return;
@@ -6373,7 +6372,7 @@
                     throw new Error('No live source linked.');
                 }
 
-                let changed = 0, raised = 0;
+                let changed = 0;
                 packages.forEach(p => {
                     const key = (p[keyField] || '').trim();
                     if (!key || !liveByKey.has(key)) return;
@@ -6382,10 +6381,6 @@
                     if (liveCost === currentCost) return;
                     changed++;
                     p.cost = liveCost;
-                    if (liveCost > 0) {
-                        const floor = minPriceForCost(liveCost);
-                        if ((Number(p.price) || 0) < floor) { p.price = floor; raised++; }
-                    }
                 });
 
                 if (changed === 0) {
@@ -6398,12 +6393,7 @@
                 await updateDoc(doc(db, "games", gameId), { packages });
                 logAdminActivity('Updated live costs', g.name);
                 invalidateGameCostScan(gameId);
-                window.showToast(
-                    raised
-                        ? `${changed} cost(s) updated — ${raised} price(s) raised to keep ${MIN_PROFIT_MARGIN_PCT}%+ margin`
-                        : `${changed} cost(s) updated`,
-                    'success'
-                );
+                window.showToast(`${changed} cost(s) updated`, 'success');
             } catch (error) {
                 console.error('Inline cost update error:', error);
                 badgeEl.innerText = originalText;
@@ -10790,87 +10780,55 @@
         }
         window.minPriceForCost = minPriceForCost;
 
-        // Bound to the Price field's onblur (not oninput, so the admin can
-        // still type freely mid-edit). If what they typed leaves less than
-        // the 4% floor above Cost, bump it up to the nearest clean tier that
-        // clears it and let them know why it moved.
+        // Bound to the Price field's onblur. Price is never auto-changed here —
+        // the 4% floor is purely a readout (the profit badge / summary grid
+        // turns red below it via updatePackageProfit). Whatever the admin
+        // types into Price is always left exactly as entered.
         function enforceMinPriceMargin(fieldEl) {
-            const row = fieldEl.closest('.package-row');
-            const cost = Number(row.querySelector('.pkg-cost').value) || 0;
-            const price = Number(fieldEl.value) || 0;
-            if (cost <= 0 || price <= 0) return;
-            const floor = minPriceForCost(cost);
-            if (price < floor) {
-                fieldEl.value = floor;
-                updatePackageProfit(fieldEl);
-                window.showToast(`Min ${MIN_PROFIT_MARGIN_PCT}% margin ရှိရမှာမို့ Price ကို ${floor.toLocaleString()} MMK အထိ auto တင်ပေးလိုက်ပါတယ်`, 'success');
-            }
+            // Intentionally a no-op: Price is admin-entered only and is never
+            // auto-raised based on Cost. Kept as a function (rather than
+            // removing every call site) so existing onblur bindings still
+            // resolve harmlessly.
         }
         window.enforceMinPriceMargin = enforceMinPriceMargin;
 
         // Applies one row's pending live-price update (set by checkLivePriceChanges)
         // to its Cost field, refreshes the profit badge, and hides the button.
-        // If the new cost would leave Price below the 4% minimum margin floor
-        // (including going all the way to a loss), Price is auto-raised to
-        // the nearest clean tier that clears 4% again. Rows still comfortably
-        // above the floor after the cost change are left untouched.
+        // Price is left exactly as-is — the 4% floor only affects the profit
+        // badge / summary grid color (red when below it), it never changes
+        // the actual Price value. Admin can raise Price by hand if they want.
         function applyCostUpdate(btn, silent = false) {
             const newCost = btn.dataset.newCost;
             if (newCost === undefined) return;
             const row = btn.closest('.package-row');
             const costInput = row.querySelector('.pkg-cost');
-            const priceInput = row.querySelector('.pkg-price');
             costInput.value = newCost;
-
-            const cost = Number(newCost) || 0;
-            const price = Number(priceInput.value) || 0;
-            let priceRaised = false;
-            if (cost > 0) {
-                const floor = minPriceForCost(cost);
-                if (price < floor) {
-                    priceInput.value = floor;
-                    priceRaised = true;
-                }
-            }
 
             updatePackageProfit(costInput);
             btn.style.display = 'none';
             delete btn.dataset.newCost;
-            if (!silent) window.showToast(priceRaised ? `Cost updated — price raised to keep ${MIN_PROFIT_MARGIN_PCT}%+ margin` : 'Cost updated', 'success');
+            if (!silent) window.showToast('Cost updated', 'success');
         }
         window.applyCostUpdate = applyCostUpdate;
 
         // Applies every row's pending live-price update in one tap, instead
         // of tapping "Update Cost" on each row one by one. Reuses
-        // applyCostUpdate per row so the profit badge stays in sync, and so
-        // any row that would dip below the 4% floor gets its price bumped up
-        // the same way a single-row update does. Each row is applied
+        // applyCostUpdate per row so the profit badge stays in sync. Price
+        // values are never touched — only Cost updates and the profit badge
+        // / summary grid color (red below 4%) refresh. Each row is applied
         // silently so only the single summary toast below shows, instead of
         // queuing up one toast per row.
         function applyAllCostUpdates() {
             const buttons = Array.from(document.querySelectorAll('.pkg-cost-update-btn'))
                 .filter(u => u.dataset.newCost !== undefined && u.style.display !== 'none');
             if (buttons.length === 0) return;
-            let raisedCount = 0;
-            buttons.forEach(u => {
-                const row = u.closest('.package-row');
-                const priceInput = row.querySelector('.pkg-price');
-                const cost = Number(u.dataset.newCost) || 0;
-                const priceBefore = Number(priceInput.value) || 0;
-                if (cost > 0 && priceBefore < minPriceForCost(cost)) raisedCount++;
-                applyCostUpdate(u, true);
-            });
+            buttons.forEach(u => applyCostUpdate(u, true));
 
             const allBtn = document.getElementById('pkg-apply-all-cost-btn');
             if (allBtn) allBtn.style.display = 'none';
             const statusEl = document.getElementById('pkg-price-check-status');
             if (statusEl) { statusEl.style.color = 'var(--text-muted)'; statusEl.innerText = 'All costs updated.'; }
-            window.showToast(
-                raisedCount
-                    ? `${buttons.length} cost(s) updated — ${raisedCount} price(s) raised to keep ${MIN_PROFIT_MARGIN_PCT}%+ margin`
-                    : `${buttons.length} cost(s) updated`,
-                'success'
-            );
+            window.showToast(`${buttons.length} cost(s) updated`, 'success');
         }
         window.applyAllCostUpdates = applyAllCostUpdates;
 
