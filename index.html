@@ -1045,10 +1045,14 @@
            grid). Own bounded, independently-scrollable box — same pattern
            as #admin-games-container / #orders-container — so scrolling a
            long package list doesn't drag the rest of the Edit Game modal
-           (game name, banner, etc.) along with it. */
+           (game name, banner, etc.) along with it. Height now sizes to
+           content (flex-basis:auto) instead of always reserving a fixed
+           50vh, so a tab with only 1-4 packages doesn't leave a wall of
+           empty space below it; max-height:50vh still caps it once there
+           are enough rows to need scrolling (~5-6+). */
         #edit-packages-list {
             display: flex; flex-direction: column; gap: 8px; position: relative;
-            flex-shrink: 0; flex-basis: 50vh;
+            flex-shrink: 0; flex-basis: auto;
             min-height: 60px; max-height: 50vh; overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 10px;
@@ -2194,12 +2198,12 @@
         <div id="game-list" class="page-section">
             <h2 class="title-header">
                 <span id="game-list-title">Direct Games</span>
-                <span style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameReorder()">↕ Reorder</button>
-                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openAddServerPicker()">+ Add Server</button>
-                    <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button>
-                </span>
             </h2>
+            <div class="pkg-actions-row" style="margin:-8px 0 14px;">
+                <button class="btn btn-outline" onclick="openGameReorder()">↕ Reorder</button>
+                <button class="btn btn-outline" onclick="openAddServerPicker()">+ Add Server</button>
+                <button class="btn btn-primary" onclick="openGameEditor()">+ Add</button>
+            </div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
                 <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -2653,8 +2657,8 @@
                     </label>
                 </div>
 
-                <div style="display:flex;gap:10px;">
-                    <div style="flex:1;min-width:0;">
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                    <div style="flex:0 0 36%;min-width:0;">
                         <label>Game Image <span style="font-weight:400;color:var(--text-muted);">(1:1)</span></label>
                         <label class="img-update-box ratio-square" id="game-img-update-box" for="edit-game-file">
                             <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
