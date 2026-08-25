@@ -851,8 +851,19 @@
         .img-update-label { font-size: 13px; font-weight: 500; color: var(--text-strong); }
         .img-update-hint { font-size: 11px; color: var(--text-muted); }
         .img-update-box img { width: 100%; max-height: 220px; object-fit: contain; background: var(--bg-subtle); display: block; }
+        .img-update-box.ratio-square { aspect-ratio: 1 / 1; padding: 10px; }
+        .img-update-box.ratio-banner { aspect-ratio: 16 / 9; padding: 10px; }
+        .img-update-box.ratio-square.has-image, .img-update-box.ratio-banner.has-image { padding: 0; }
+        .img-update-box.ratio-square img, .img-update-box.ratio-banner img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
         .img-update-change { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
         .img-update-change svg { width: 13px; height: 13px; }
+        #server-variant-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
+        #server-variant-thumbs .svt-label { width: 100%; font-size: 11px; color: var(--text-muted); margin: 0 0 2px; }
+        .server-variant-thumb { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 52px; cursor: pointer; }
+        .server-variant-thumb img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; display: block; border: 2px solid var(--fill-soft); background: var(--bg-subtle); }
+        .server-variant-thumb.active img { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+        .server-variant-thumb span { font-size: 9.5px; color: var(--text-muted); text-align: center; line-height: 1.15; max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .server-variant-thumb.active span { color: var(--accent); font-weight: 600; }
 
         /* Custom Delete / Warning / Information dialog (replaces browser confirm()/alert()) */
         .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; padding: 24px; }
@@ -2603,6 +2614,7 @@
 
                 <label>Server / Region <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
                 <input type="text" id="edit-game-server-name" placeholder="e.g. Malaysia Server (leave blank if only one server)">
+                <div id="server-variant-thumbs" style="display:none;"></div>
 
                 <label>Game Category</label>
                 <input type="hidden" id="edit-game-category" value="">
@@ -2641,29 +2653,34 @@
                     </label>
                 </div>
 
-                <label>Game Image</label>
-                <label class="img-update-box" id="game-img-update-box" for="edit-game-file">
-                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
-                    <span class="img-update-label">Image Update</span>
-                    <img id="edit-game-preview" src="" alt="Preview" style="display:none;">
-                    <span class="img-update-change" id="game-img-update-change" style="display:none;">
-                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
-                    </span>
-                </label>
-                <input type="file" id="edit-game-file" class="img-update-input" accept="image/*" onchange="previewGameImage(event)">
-                <p id="upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
-
-                <label>Banner Image</label>
-                <label class="img-update-box" id="game-banner-update-box" for="edit-game-banner-file">
-                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
-                    <span class="img-update-label">Banner Update</span>
-                    <img id="edit-game-banner-preview" src="" alt="Banner preview" style="display:none;">
-                    <span class="img-update-change" id="game-banner-update-change" style="display:none;">
-                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
-                    </span>
-                </label>
-                <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
-                <p id="banner-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+                <div style="display:flex;gap:10px;">
+                    <div style="flex:1;min-width:0;">
+                        <label>Game Image <span style="font-weight:400;color:var(--text-muted);">(1:1)</span></label>
+                        <label class="img-update-box ratio-square" id="game-img-update-box" for="edit-game-file">
+                            <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                            <span class="img-update-label">Image Update</span>
+                            <img id="edit-game-preview" src="" alt="Preview" style="display:none;">
+                            <span class="img-update-change" id="game-img-update-change" style="display:none;">
+                                <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                            </span>
+                        </label>
+                        <input type="file" id="edit-game-file" class="img-update-input" accept="image/*" onchange="previewGameImage(event)">
+                        <p id="upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <label>Banner Image <span style="font-weight:400;color:var(--text-muted);">(16:9)</span></label>
+                        <label class="img-update-box ratio-banner" id="game-banner-update-box" for="edit-game-banner-file">
+                            <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                            <span class="img-update-label">Banner Update</span>
+                            <img id="edit-game-banner-preview" src="" alt="Banner preview" style="display:none;">
+                            <span class="img-update-change" id="game-banner-update-change" style="display:none;">
+                                <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                            </span>
+                        </label>
+                        <input type="file" id="edit-game-banner-file" class="img-update-input" accept="image/*" onchange="previewGameBanner(event)">
+                        <p id="banner-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+                    </div>
+                </div>
 
                 <div style="margin:4px 0 2px;padding:12px;background:var(--fill-soft);border-radius:12px;border:1px solid var(--fill-soft);">
                     <p style="font-size:11px;font-weight: 600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional)</p>
@@ -2735,7 +2752,6 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-game-btn" style="display:none;" onclick="deleteCurrentGame()">Delete</button>
-                <button class="btn btn-outline" id="duplicate-game-btn" style="display:none;" onclick="duplicateGameAsNewServer()" title="Keeps the Game Name, Image, Category and toggles, but clears the Server name, the G2Bulk/JCPlays link, and all packages so this server's own Import stays completely separate">+ New Server</button>
                 <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
             </div>
         </div>
@@ -6009,6 +6025,31 @@
             gamesRenderScheduled = setTimeout(runWhenSettled, 60);
         }
         window.renderAdminGamesList = renderAdminGamesList;
+        // Fixed, high-contrast colors per server name so "Malaysia" and
+        // "Global" (and any other server) are visually distinguishable at a
+        // glance in the games list — not just readable via badge text.
+        // Unrecognized/custom server names fall back to a stable hashed color
+        // from the palette so they're still consistent across renders.
+        const SERVER_BADGE_COLORS = {
+            'global': { bg: '#E2E8F0', fg: '#334155' },
+            'malaysia': { bg: '#D1FAE5', fg: '#065F46' },
+            'myanmar': { bg: '#FEF3C7', fg: '#92400E' },
+            'singapore': { bg: '#FCE7F3', fg: '#9D174D' },
+            'thailand': { bg: '#E0E7FF', fg: '#3730A3' },
+            'indonesia': { bg: '#FFE4E6', fg: '#9F1239' },
+            'philippines': { bg: '#CFFAFE', fg: '#155E75' },
+        };
+        const SERVER_BADGE_FALLBACK_PALETTE = [
+            { bg: '#DBEAFE', fg: '#1E40AF' }, { bg: '#EDE9FE', fg: '#5B21B6' },
+            { bg: '#FEE2E2', fg: '#991B1B' }, { bg: '#D1FAE5', fg: '#065F46' },
+        ];
+        function serverBadgeColor(serverLabel) {
+            const key = (serverLabel || '').trim().toLowerCase();
+            if (SERVER_BADGE_COLORS[key]) return SERVER_BADGE_COLORS[key];
+            let hash = 0;
+            for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+            return SERVER_BADGE_FALLBACK_PALETTE[hash % SERVER_BADGE_FALLBACK_PALETTE.length];
+        }
         function renderAdminGamesListImpl() {
             const container = document.getElementById('admin-games-container');
             const searchTerm = (document.getElementById('game-search')?.value || '').trim().toLowerCase();
@@ -6031,14 +6072,28 @@
                     : `<p class="empty-msg">No ${gameListTab === 'voucher' ? 'Gift Card & Voucher' : 'Direct'} games yet. Tap + Add to create one.</p>`;
                 return;
             }
+            // Count how many entries share each game name, so multi-server
+            // groups (e.g. "Free Fire" as both Global and Malaysia) get an
+            // explicit, color-coded server badge on every card — including
+            // the blank/default one, which is now labeled "Global" instead of
+            // showing no badge at all and looking identical to a single,
+            // unsplit game.
+            const nameCounts = {};
+            ids.forEach(id => { const n = GAMES[id].name; nameCounts[n] = (nameCounts[n] || 0) + 1; });
             container.innerHTML = ids.map(id => {
                 const g = GAMES[id];
+                const isGrouped = nameCounts[g.name] > 1;
+                const serverLabel = g.serverName || (isGrouped ? 'Global' : '');
+                const serverBadge = serverLabel ? (() => {
+                    const c = serverBadgeColor(serverLabel);
+                    return `<span class="badge" style="background:${c.bg};color:${c.fg};">🌐 ${serverLabel}</span>`;
+                })() : '';
                 return `
-                    <div class="admin-card" id="game-card-${id}">
+                    <div class="admin-card${isGrouped ? ' admin-card-grouped' : ''}" id="game-card-${id}"${isGrouped ? ` style="border-left:3px solid ${serverBadgeColor(serverLabel).fg};"` : ''}>
                         <div class="ac-header">
                             <span class="ac-id">${g.name}</span>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
-                                ${g.serverName ? `<span class="badge" style="background:#DBEAFE;color:#1E40AF;">🌐 ${g.serverName}</span>` : ''}
+                                ${serverBadge}
                                 ${categoryBadgeHtml(g.category)}
                                 ${g.popular ? `<span class="badge" style="background:#FFF3CD;color:#856404;">★ Popular</span>` : ''}
                                 ${g.playerIdRequired === false ? `<span class="badge" style="background:var(--fill-soft);color:var(--text-secondary);">No Player ID</span>` : (g.serverIdRequired === false ? `<span class="badge" style="background:var(--fill-soft);color:var(--text-secondary);">No Server ID</span>` : '')}
@@ -7244,6 +7299,32 @@
             });
         }
 
+        // Small square thumbnail row shown under Server/Region inside the
+        // Edit Game modal whenever this game has more than one server
+        // variant — lets the admin see at a glance how many servers exist
+        // and jump straight into any one's price cards without leaving the
+        // modal or hunting through the games list.
+        function renderServerVariantThumbs(currentId) {
+            const wrap = document.getElementById('server-variant-thumbs');
+            if (!wrap) return;
+            const g = currentId && GAMES[currentId];
+            if (!g) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+            const siblings = Object.entries(GAMES).filter(([, og]) => og.name === g.name);
+            if (siblings.length <= 1) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+            siblings.sort((a, b) => (a[1].serverName || '').localeCompare(b[1].serverName || ''));
+            wrap.style.display = 'flex';
+            wrap.innerHTML = `<p class="svt-label">${siblings.length} servers for this game — tap to switch</p>` +
+                siblings.map(([id, og]) => {
+                    const label = og.serverName || 'Global';
+                    const active = id === currentId;
+                    return `<div class="server-variant-thumb${active ? ' active' : ''}" onclick="openGameEditor('${id}')" title="${escapeHtml(label)}">
+                        <img src="${og.image || ''}" loading="lazy">
+                        <span>${escapeHtml(label)}</span>
+                    </div>`;
+                }).join('');
+        }
+        window.renderServerVariantThumbs = renderServerVariantThumbs;
+
         function openGameEditor(gameId = null) {
             editingImageFile = null;
             editingBannerImageFile = null;
@@ -7267,7 +7348,13 @@
 
             if (gameId && GAMES[gameId]) {
                 const g = GAMES[gameId];
-                document.getElementById('game-editor-title').innerText = 'Edit Game';
+                // If this game name has more than one server variant, show
+                // which one is currently open right in the title — makes it
+                // obvious you're editing Malaysia's prices and not Global's
+                // (or vice versa) before touching anything below.
+                const sameNameCount = Object.values(GAMES).filter(og => og.name === g.name).length;
+                const editorServerLabel = g.serverName || (sameNameCount > 1 ? 'Global' : '');
+                document.getElementById('game-editor-title').innerText = editorServerLabel ? `Edit Game — 🌐 ${editorServerLabel}` : 'Edit Game';
                 document.getElementById('edit-game-name').value = g.name;
                 document.getElementById('edit-game-server-name').value = g.serverName || '';
                 document.getElementById('edit-game-category').value = g.category || '';
@@ -7316,7 +7403,7 @@
                 document.getElementById('edit-game-voucher-category').value = g.g2bulkVoucherCategory || '';
                 onVoucherCategoryChange();
                 deleteBtn.style.display = 'block';
-                document.getElementById('duplicate-game-btn').style.display = 'block';
+                renderServerVariantThumbs(gameId);
             } else {
                 document.getElementById('game-editor-title').innerText = 'Add New Game';
                 document.getElementById('edit-game-name').value = '';
@@ -7347,7 +7434,7 @@
 
                 addPackageRow();
                 deleteBtn.style.display = 'none';
-                document.getElementById('duplicate-game-btn').style.display = 'none';
+                renderServerVariantThumbs(null);
             }
             refreshPickerButton('g2bulk');
             refreshPickerButton('jcplays');
@@ -11491,44 +11578,16 @@
         window.previewGameImage = previewGameImage;
         window.previewGameBanner = previewGameBanner;
         window.addPackageRow = addPackageRow;
-        // Quick way to add another server for a game that's already set up.
-        // Keeps the shared basics (Game Name, Image, Banner, Category, Popular,
-        // Requires Server ID) since those are usually identical across servers,
-        // but wipes everything server-specific: the Server name field, the
-        // G2Bulk/JCPlays provider link, and the whole package list. That way
-        // each server always gets its own fresh Import — packages from one
-        // server can never leak into another's list.
-        function duplicateGameAsNewServer() {
-            document.getElementById('edit-game-id').value = '';
-            document.getElementById('edit-game-server-name').value = '';
-            document.getElementById('edit-packages-list').innerHTML = '';
-            resetPackageTabs();
-            document.getElementById('edit-game-g2bulk-code').value = '';
-            document.getElementById('edit-game-jcplays-code').value = '';
-            document.getElementById('jcplays-denom-status').innerText = '';
-            document.getElementById('edit-game-voucher-category').value = '';
-            document.getElementById('voucher-import-status').innerText = '';
-            setFulfillProvider('manual');
-            document.getElementById('game-editor-title').innerText = 'Add New Game';
-            document.getElementById('delete-game-btn').style.display = 'none';
-            document.getElementById('duplicate-game-btn').style.display = 'none';
-            addPackageRow();
-            refreshPickerButton('g2bulk');
-            refreshPickerButton('jcplays');
-            refreshPickerButton('voucher');
-            onG2BulkGameChange();
-            onVoucherCategoryChange();
-            document.getElementById('edit-game-server-name').focus();
-            window.showToast('Now name this server and import its own packages');
-        }
-        window.duplicateGameAsNewServer = duplicateGameAsNewServer;
+        // The old "+ New Server" duplicate button/flow inside the Edit Game
+        // modal was removed — adding a server now only happens via the
+        // "+ Add Server" picker below, so there's a single, unambiguous
+        // entry point instead of two different ways to start one.
 
         // ---------- "+ Add Server" quick-start from the games list ----------
-        // Same end result as duplicateGameAsNewServer() above (a fresh game
-        // doc that shares the picked game's Name/Image/Category so it groups
-        // together in the storefront as another server/variant option), but
-        // reachable directly from the games list instead of requiring the
-        // admin to first open that exact game's editor. Tab-aware: on the
+        // Opens a fresh game doc that shares the picked game's Name/Image/
+        // Category so it groups together in the storefront as another
+        // server/variant option — reachable directly from the games list.
+        // Tab-aware: on the
         // Direct Games tab it only offers Direct games and starts the new
         // entry as Direct (manual, ready for a G2Bulk/JCPlays link); on the
         // Voucher tab it only offers Voucher games and starts the new entry
@@ -11602,10 +11661,9 @@
         // openGameEditor()'s reset logic) and then pre-fills the shared
         // basics from the picked game's representative doc: Name, Image,
         // Banner, Category, Popular, and the Requires Player/Server ID
-        // toggles. Server name, provider link and packages are left blank —
-        // exactly like duplicateGameAsNewServer() — so the admin names this
-        // server and imports its own packages without touching any other
-        // server's data. Provider starts as g2bulk_voucher or manual
+        // toggles. Server name, provider link and packages are left blank so
+        // the admin names this server and imports its own packages without
+        // touching any other server's data. Provider starts as g2bulk_voucher or manual
         // depending on which tab the game was picked from.
         function startAddServerForGame(name) {
             const base = addServerPickerGroups.find(g => g.name === name);
