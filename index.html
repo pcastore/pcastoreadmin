@@ -2185,6 +2185,7 @@
                 <span id="game-list-title">Direct Games</span>
                 <span style="display:flex;gap:6px;flex-wrap:wrap;">
                     <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameReorder()">↕ Reorder</button>
+                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openAddServerPicker()">+ Add Server</button>
                     <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openGameEditor()">+ Add</button>
                 </span>
             </h2>
@@ -2888,6 +2889,30 @@
                 <button type="button" class="btn btn-outline" id="game-picker-update-btn" onclick="refreshGamePickerList()" style="flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Update</button>
             </div>
             <div class="game-picker-grid" id="game-picker-grid"></div>
+        </div>
+    </div>
+
+    <!-- Add Server Picker Modal: reached from "+ Add Server" in the games
+         list, opened BEFORE the Game Editor - lets the admin pick which
+         existing Direct game they're adding another server for. Only
+         Direct-fulfillment games are listed (Voucher games don't have a
+         server concept). Picking one jumps into a blank "Add New Game"
+         editor pre-filled with that game's shared basics - see
+         startAddServerForGame(). -->
+    <div class="modal-overlay" id="add-server-picker-overlay" onclick="if(event.target===this) closeAddServerPicker()">
+        <div class="modal-box" style="max-height:82vh;">
+            <div class="modal-header">
+                <h3 id="add-server-picker-title">Add Server — Choose Game</h3>
+                <div class="modal-close" onclick="closeAddServerPicker()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <p id="add-server-picker-hint" style="font-size:12.5px;color:var(--text-muted);margin:-4px 0 12px;">Pick the Direct game to add another server for. It opens a fresh entry with the same Name/Image/Category — name the server, then Import its packages from G2Bulk.</p>
+            <div class="game-picker-search-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="add-server-picker-search" placeholder="Search game name..." autocomplete="off" oninput="filterAddServerPicker(this.value)">
+            </div>
+            <div class="game-picker-grid" id="add-server-picker-grid"></div>
         </div>
     </div>
 
@@ -11497,6 +11522,140 @@
             window.showToast('Now name this server and import its own packages');
         }
         window.duplicateGameAsNewServer = duplicateGameAsNewServer;
+
+        // ---------- "+ Add Server" quick-start from the games list ----------
+        // Same end result as duplicateGameAsNewServer() above (a fresh game
+        // doc that shares the picked game's Name/Image/Category so it groups
+        // together in the storefront as another server/variant option), but
+        // reachable directly from the games list instead of requiring the
+        // admin to first open that exact game's editor. Tab-aware: on the
+        // Direct Games tab it only offers Direct games and starts the new
+        // entry as Direct (manual, ready for a G2Bulk/JCPlays link); on the
+        // Voucher tab it only offers Voucher games and starts the new entry
+        // as g2bulk_voucher (ready for a G2Bulk voucher-category link) — see
+        // gameListTab / showGameListTab().
+        let addServerPickerGroups = [];
+
+        function addServerGameGroupsForCurrentTab() {
+            const wantVoucher = gameListTab === 'voucher';
+            const seen = new Map(); // game name -> one representative doc for its basics
+            Object.values(GAMES || {}).forEach(g => {
+                const isVoucher = g.fulfillProvider === 'g2bulk_voucher';
+                if (isVoucher !== wantVoucher) return;
+                if (!seen.has(g.name)) seen.set(g.name, g);
+            });
+            return Array.from(seen.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        }
+
+        function openAddServerPicker() {
+            addServerPickerGroups = addServerGameGroupsForCurrentTab();
+            document.getElementById('add-server-picker-search').value = '';
+            document.getElementById('add-server-picker-title').innerText = gameListTab === 'voucher' ? 'Add Server — Choose Voucher' : 'Add Server — Choose Game';
+            document.getElementById('add-server-picker-hint').innerText = gameListTab === 'voucher'
+                ? 'Pick the Voucher/Gift Card to add another server for. It opens a fresh entry with the same Name/Image/Category — name the server, then import its packages from a G2Bulk voucher category.'
+                : 'Pick the Direct game to add another server for. It opens a fresh entry with the same Name/Image/Category — name the server, then Import its packages from G2Bulk.';
+            renderAddServerPickerGrid('');
+            document.getElementById('add-server-picker-overlay').classList.add('show');
+        }
+        window.openAddServerPicker = openAddServerPicker;
+
+        function closeAddServerPicker() {
+            document.getElementById('add-server-picker-overlay').classList.remove('show');
+        }
+        window.closeAddServerPicker = closeAddServerPicker;
+
+        function filterAddServerPicker(term) {
+            renderAddServerPickerGrid(term);
+        }
+        window.filterAddServerPicker = filterAddServerPicker;
+
+        function renderAddServerPickerGrid(term) {
+            const gridEl = document.getElementById('add-server-picker-grid');
+            const kindLabel = gameListTab === 'voucher' ? 'Voucher' : 'Direct';
+            if (!addServerPickerGroups.length) {
+                gridEl.innerHTML = `<p class="game-picker-empty-msg">No ${kindLabel} games yet — add one with "+ Add" first.</p>`;
+                return;
+            }
+            const q = (term || '').trim().toLowerCase();
+            const filtered = q ? addServerPickerGroups.filter(g => (g.name || '').toLowerCase().includes(q)) : addServerPickerGroups;
+            if (!filtered.length) {
+                gridEl.innerHTML = `<p class="game-picker-empty-msg">No games match "${escapeHtml(term)}"</p>`;
+                return;
+            }
+            gridEl.innerHTML = filtered.map(g => `
+                <div class="game-picker-card" data-name="${escapeHtml(g.name)}">
+                    <div class="game-picker-thumb" style="${g.image ? '' : `background:${pickerColorFor(g.name)}`}">${pickerThumbHtml(g) || escapeHtml(pickerInitials(g.name))}</div>
+                    <span>${escapeHtml(g.name)}</span>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('add-server-picker-grid').addEventListener('click', (e) => {
+            const card = e.target.closest('.game-picker-card');
+            if (!card) return;
+            const name = card.dataset.name;
+            closeAddServerPicker();
+            startAddServerForGame(name);
+        });
+
+        // Opens the Game Editor in blank "Add New Game" mode (reusing
+        // openGameEditor()'s reset logic) and then pre-fills the shared
+        // basics from the picked game's representative doc: Name, Image,
+        // Banner, Category, Popular, and the Requires Player/Server ID
+        // toggles. Server name, provider link and packages are left blank —
+        // exactly like duplicateGameAsNewServer() — so the admin names this
+        // server and imports its own packages without touching any other
+        // server's data. Provider starts as g2bulk_voucher or manual
+        // depending on which tab the game was picked from.
+        function startAddServerForGame(name) {
+            const base = addServerPickerGroups.find(g => g.name === name);
+            if (!base) return;
+            const wantVoucher = gameListTab === 'voucher';
+            openGameEditor();
+            // openGameEditor() already defaults the provider from gameListTab,
+            // but set it explicitly here too so this stays correct even if
+            // that default logic changes later.
+            setFulfillProvider(wantVoucher ? 'g2bulk_voucher' : 'manual');
+            document.getElementById('edit-game-name').value = base.name || '';
+            document.getElementById('edit-game-category').value = base.category || '';
+            renderGameCategorySelect();
+            document.getElementById('edit-game-description').value = base.description || '';
+            document.getElementById('edit-game-popular').checked = !!base.popular;
+            document.getElementById('edit-game-playerid').checked = base.playerIdRequired !== false;
+            document.getElementById('edit-game-serverid').checked = base.serverIdRequired !== false;
+            onPlayerIdRequiredToggle();
+
+            if (base.image) {
+                const preview = document.getElementById('edit-game-preview');
+                const updateBox = document.getElementById('game-img-update-box');
+                const changeBadge = document.getElementById('game-img-update-change');
+                preview.src = base.image;
+                preview.style.display = 'block';
+                updateBox.classList.add('has-image');
+                changeBadge.style.display = 'flex';
+                editingImageRemoteUrl = base.image; // save reuses this URL, no re-upload needed
+            }
+
+            const bannerSrc = base.banner || base.image;
+            if (bannerSrc) {
+                const bannerPreview = document.getElementById('edit-game-banner-preview');
+                const bannerUpdateBox = document.getElementById('game-banner-update-box');
+                const bannerChangeBadge = document.getElementById('game-banner-update-change');
+                bannerPreview.src = bannerSrc;
+                bannerPreview.style.display = 'block';
+                bannerUpdateBox.classList.add('has-image');
+                bannerChangeBadge.style.display = 'flex';
+            }
+
+            document.getElementById('edit-game-server-name').focus();
+            window.showToast(
+                wantVoucher
+                    ? `Adding a server for ${base.name} — name it, then import from a G2Bulk voucher category`
+                    : `Adding a server for ${base.name} — name it, then Import from G2Bulk`,
+                'success'
+            );
+        }
+        window.startAddServerForGame = startAddServerForGame;
         window.saveGame = saveGame;
 
 
