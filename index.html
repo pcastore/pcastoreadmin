@@ -4747,6 +4747,12 @@
                                         <div class="od-label">Server ID</div>
                                         <div class="od-value mono">${data.serverId}</div>
                                     </div>` : ''}
+                                    ${data.jcplaysProductId ? `<div class="od-cell span-2" id="jcplays-role-cell-${orderId}">
+                                        <div class="od-label">JCPlays Username</div>
+                                        <div class="od-value" id="jcplays-role-value-${orderId}">${data.jcplaysVerifiedName
+                                            ? `<span style="color:#28a745;">${escapeHtml(data.jcplaysVerifiedName)} ✓ verified</span>`
+                                            : `<button type="button" class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="verifyJCPlaysPlayerId('${orderId}', this)">Verify Player ID</button>`}</div>
+                                    </div>` : ''}
                                     <div class="od-cell">
                                         <div class="od-label">Order ID</div>
                                         <div class="od-value mono">${orderId}</div>
@@ -12095,6 +12101,68 @@
             }
         }
         window.placeJCPlaysOrder = placeJCPlaysOrder;
+
+        // Calls JCPlays' getrole endpoint to confirm the Player/Server ID
+        // resolves to a real in-game account and shows the admin the actual
+        // username before they commit to Start Processing (which — per the
+        // note on placeJCPlaysOrder — can't be safely retried once JCPlays
+        // has charged the balance). This is advisory only: a failed check
+        // doesn't block manual fulfillment, and a successful check is saved
+        // onto the order doc (jcplaysVerifiedName) so it isn't re-checked
+        // on every render.
+        async function verifyJCPlaysPlayerId(orderId, btnElement) {
+            const order = ORDERS[orderId];
+            if (!order || !order.jcplaysProduct || !order.jcplaysProductId) {
+                window.showToast('This order is missing its JCPlays Product Code or Product ID.', 'fail');
+                return;
+            }
+            if (!order.playerId) {
+                window.showToast('This order has no Player ID to verify.', 'fail');
+                return;
+            }
+            const valueEl = document.getElementById(`jcplays-role-value-${orderId}`);
+            const originalText = btnElement ? btnElement.innerText : '';
+            if (btnElement) { btnElement.disabled = true; btnElement.innerText = 'Checking...'; }
+
+            let data;
+            try {
+                data = await jcplaysRequest('getrole', {
+                    product: order.jcplaysProduct,
+                    productid: order.jcplaysProductId,
+                    userid: order.playerId,
+                    ...(order.serverId ? { zoneid: order.serverId } : {})
+                });
+            } catch (error) {
+                console.error("JCPlays getrole error:", error);
+                window.showToast('Could not verify: ' + error.message, 'fail');
+                if (btnElement) { btnElement.disabled = false; btnElement.innerText = originalText; }
+                return;
+            }
+
+            if (data.status !== 200 || !data.username) {
+                window.showInfoDialog(
+                    'Player ID Verification Failed',
+                    `JCPlays could not find an account for this Player ID${order.serverId ? '/Server ID' : ''} (status ${data.status}): ${data.message || 'unknown error'}. Double-check with the customer before processing this order.`
+                );
+                if (btnElement) { btnElement.disabled = false; btnElement.innerText = originalText; }
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { jcplaysVerifiedName: data.username });
+                order.jcplaysVerifiedName = data.username;
+                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(data.username)} ✓ verified</span>`;
+                window.showToast('Player ID verified ✓', 'success');
+            } catch (error) {
+                console.error("Save jcplaysVerifiedName error:", error);
+                // Verification itself succeeded — show it locally even though
+                // saving the result failed, so the admin isn't blocked from
+                // seeing it (it'll just re-prompt "Verify" next render).
+                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(data.username)} ✓ verified</span> <span style="color:var(--text-muted);font-size:11px;">(not saved)</span>`;
+                window.showToast('Verified, but failed to save: ' + error.message, 'fail');
+            }
+        }
+        window.verifyJCPlaysPlayerId = verifyJCPlaysPlayerId;
 
         function openPaymentEditor(paymentId = null) {
             editingPaymentImageFile = null;
