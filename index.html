@@ -10529,10 +10529,33 @@
             return G2BULK_GAMES_LIST;
         }
 
+        // ---------- JCPlays product code list ----------
+        // POST /product returns the account's real public product codes —
+        // either as a bare array of code strings, or wrapped the same way
+        // /productlist is ({status, data:{product:[...]}}) depending on
+        // account/contract tier, so both shapes are accepted here. Codes are
+        // matched against JCPLAYS_KNOWN_NAMES for a friendly display name;
+        // anything not in that lookup still shows up, labeled with its raw
+        // code, so the picker never hides a code just because it's unrecognized.
+        async function fetchJCPlaysProductsList(forceRefresh = false) {
+            if (JCPLAYS_PRODUCTS_LIST && !forceRefresh) return JCPLAYS_PRODUCTS_LIST;
+            const data = await jcplaysRequest('product', {});
+            let codes = Array.isArray(data) ? data
+                : (data && data.data && Array.isArray(data.data.product)) ? data.data.product
+                : (data && Array.isArray(data.product)) ? data.product
+                : [];
+            if (!codes.length) throw new Error((data && data.message) || 'JCPlays returned no product codes for this account.');
+            JCPLAYS_PRODUCTS_LIST = codes.map(code => {
+                const known = JCPLAYS_KNOWN_NAMES.find(g => g.code === code);
+                return { code, name: known ? known.name : code };
+            });
+            return JCPLAYS_PRODUCTS_LIST;
+        }
+
         // ---------- FazerCards game top-up catalogue import ----------
         // GET /api/v2/topups returns { category_id, name } rows — no cover
         // images like G2Bulk's /v1/games, so the picker falls back to
-        // colored initials (same treatment as JCPLAYS_CATALOGUE).
+        // colored initials (same fallback used for unrecognized JCPlays codes).
         let FAZERCARD_TOPUPS_LIST = null;
         let pendingFazerCardFields = [];
         async function fetchFazerCardTopupsList(forceRefresh = false) {
@@ -10685,11 +10708,13 @@
         // ---------- Shared Game Picker (grid with images + search) ----------
         // One modal, used for both "G2Bulk Game" and "JCPlays Game" — G2Bulk's
         // list (with real cover images) comes live from their /v1/games endpoint;
-        // JCPlays has no public "list all games" endpoint, so JCPLAYS_CATALOGUE
-        // below is a curated starting list of common SmileOne-compatible product
-        // codes. Add more rows to it any time — or an admin can always fall back
-        // to typing a custom code in the field under the picker button.
-        const JCPLAYS_CATALOGUE = [
+        // JCPlays' account-specific codes come live from its own POST /product
+        // endpoint (fetchJCPlaysProductsList below) — that's the account's real
+        // product codes, so it can't drift out of sync or contain a typo the way
+        // a hand-typed code could. JCPLAYS_KNOWN_NAMES is just a friendly-name
+        // lookup for codes we recognize; anything the account has that isn't in
+        // it still shows up in the picker, just labeled with its raw code.
+        const JCPLAYS_KNOWN_NAMES = [
             { code: 'mobilelegends', name: 'Mobile Legends: Bang Bang' },
             { code: 'mobilelegendsph', name: 'Mobile Legends (PH)' },
             { code: 'pubgmobilecoin', name: 'PUBG Mobile UC' },
@@ -10712,6 +10737,7 @@
         let gamePickerProvider = null;     // 'g2bulk' | 'jcplays'
         let gamePickerSubtab = 'direct';   // 'direct' | 'voucher' — only meaningful when provider === 'g2bulk'
         let gamePickerItems = [];          // [{code, name, image?, count?}] for the active provider/subtab
+        let JCPLAYS_PRODUCTS_LIST = null;  // cached live result of fetchJCPlaysProductsList()
 
         // Which "kind" is actually active right now - folds provider +
         // subtab into a single key so every other picker helper below can
@@ -10778,7 +10804,7 @@
                 ? (G2BULK_GAMES_LIST || []).map(g => ({ code: g.code, name: g.name, image: g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : '' }))
                 : kind === 'voucher' ? voucherPickerItems()
                 : kind === 'fazercard' ? (FAZERCARD_TOPUPS_LIST || [])
-                : JCPLAYS_CATALOGUE;
+                : (JCPLAYS_PRODUCTS_LIST || []);
             const match = list.find(g => g.code === code);
 
             if (!code) {
@@ -10880,9 +10906,15 @@
                         document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Couldn\'t load FazerCards\' game list. Close and try again.</p>';
                     });
             } else {
-                document.getElementById('game-picker-update-btn').style.display = 'none';
-                gamePickerItems = JCPLAYS_CATALOGUE;
-                renderGamePickerGrid('');
+                fetchJCPlaysProductsList()
+                    .then(items => {
+                        gamePickerItems = items;
+                        renderGamePickerGrid('');
+                    })
+                    .catch(error => {
+                        console.error("Load JCPlays product codes error:", error);
+                        document.getElementById('game-picker-grid').innerHTML = `<p class="game-picker-empty-msg">Couldn't load JCPlays' product codes: ${escapeHtml(error.message)}</p>`;
+                    });
             }
         }
 
@@ -10892,7 +10924,7 @@
         // immediately, instead of only after a full page reload.
         function refreshGamePickerList() {
             const kind = gamePickerKind();
-            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'fazercard') return;
+            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'fazercard' && kind !== 'jcplays') return;
             const btn = document.getElementById('game-picker-update-btn');
             const originalText = btn.innerText;
             btn.disabled = true;
@@ -10909,16 +10941,18 @@
                 })
                 : kind === 'fazercard'
                 ? fetchFazerCardTopupsList(true).then(items => { gamePickerItems = items; })
+                : kind === 'jcplays'
+                ? fetchJCPlaysProductsList(true).then(items => { gamePickerItems = items; })
                 : fetchG2BulkCategoriesList(true).then(() => { gamePickerItems = voucherPickerItems(); });
 
             refreshPromise
                 .then(() => {
                     renderGamePickerGrid(document.getElementById('game-picker-search').value);
-                    window.showToast((kind === 'fazercard' ? 'FazerCards' : 'G2Bulk') + ' list refreshed ✓', 'success');
+                    window.showToast((kind === 'fazercard' ? 'FazerCards' : kind === 'jcplays' ? 'JCPlays' : 'G2Bulk') + ' list refreshed ✓', 'success');
                 })
                 .catch(error => {
-                    console.error("Refresh G2Bulk list error:", error);
-                    document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Refresh failed. Try again.</p>';
+                    console.error("Refresh game picker list error:", error);
+                    document.getElementById('game-picker-grid').innerHTML = `<p class="game-picker-empty-msg">Refresh failed: ${escapeHtml(error.message)}</p>`;
                 })
                 .finally(() => { btn.disabled = false; btn.innerText = originalText; });
         }
