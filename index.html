@@ -10537,8 +10537,27 @@
         let pendingFazerCardFields = [];
         async function fetchFazerCardTopupsList(forceRefresh = false) {
             if (FAZERCARD_TOPUPS_LIST && !forceRefresh) return FAZERCARD_TOPUPS_LIST;
-            const data = await fazercardRequest('/topups', { params: { limit: 200 } });
-            FAZERCARD_TOPUPS_LIST = (data.items || []).map(g => ({ code: g.category_id, name: g.name }));
+            // /api/v2/topups is cursor-paginated (NOT offset/page): each response's
+            // meta.next_cursor feeds the next request's `cursor` param, and
+            // meta.has_more tells us when to stop. Using the max limit (500)
+            // keeps the number of round trips as low as possible.
+            const allItems = [];
+            let cursor = null;
+            let hasMore = true;
+            let guard = 0; // safety cap in case the API ever misreports has_more
+            while (hasMore && guard < 50) {
+                guard++;
+                const params = { limit: 500 };
+                if (cursor) params.cursor = cursor;
+                const data = await fazercardRequest('/topups', { params });
+                allItems.push(...(data.items || []));
+                console.log(`[FazerCards] page ${guard}: got ${data.items ? data.items.length : 0} items, meta =`, data.meta);
+                hasMore = !!(data.meta && data.meta.has_more);
+                cursor = data.meta ? data.meta.next_cursor : null;
+                if (!cursor) hasMore = false; // no cursor to continue with
+            }
+            console.log(`[FazerCards] finished after ${guard} page(s), total items: ${allItems.length}`);
+            FAZERCARD_TOPUPS_LIST = allItems.map(g => ({ code: g.category_id, name: g.name }));
             return FAZERCARD_TOPUPS_LIST;
         }
 
