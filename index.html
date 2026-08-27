@@ -996,6 +996,12 @@
         .game-picker-thumb { width: 54px; height: 54px; border-radius: 14px; overflow: hidden; background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; color: #fff; }
         .game-picker-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .game-picker-card.unlink-card .game-picker-thumb { background: var(--bg-subtle); color: var(--text-muted); }
+        .game-picker-card.bulk-pickable { position: relative; }
+        .game-picker-card.bulk-pickable .game-picker-check { position: absolute; top: 4px; right: 4px; width: 19px; height: 19px; border-radius: 50%; border: 1.5px solid var(--fill-soft); background: var(--surface); display: flex; align-items: center; justify-content: center; }
+        .game-picker-card.bulk-pickable .game-picker-check svg { width: 12px; height: 12px; opacity: 0; }
+        .game-picker-card.bulk-pickable.bulk-selected { border-color: var(--accent); background: #F0F6FF; }
+        .game-picker-card.bulk-pickable.bulk-selected .game-picker-check { background: var(--accent); border-color: var(--accent); }
+        .game-picker-card.bulk-pickable.bulk-selected .game-picker-check svg { opacity: 1; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
         .game-picker-empty-msg, .game-picker-loading { grid-column: 1 / -1; text-align: center; font-size: 12.5px; color: var(--text-muted); padding: 28px 0; }
 
         /* Toggle switches (Mark as Popular / Requires Server ID) */
@@ -2721,12 +2727,18 @@
                 <div style="margin:4px 0 2px;padding:12px;background:var(--fill-soft);border-radius:12px;border:1px solid var(--fill-soft);">
                     <p style="font-size:11px;font-weight: 600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional)</p>
 
+                    <!-- Grouped left-to-right: Manual, then Direct (player-ID
+                         top-up: G2Bulk, FazerCards), then Voucher/Redeem-code
+                         (no player ID: G2Bulk Vouchers, JCPlays) - JCPlays
+                         moved out of the Direct group since it only ever
+                         returns a redeem/PIN code, never a player-ID top-up
+                         (see placeJCPlaysOrder). -->
                     <div class="pkg-type-tabs" id="fulfill-provider-tabs">
                         <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
                         <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
-                        <button type="button" class="pkg-type-tab" data-provider="jcplays" onclick="setFulfillProvider('jcplays')">JCPlays</button>
-                        <button type="button" class="pkg-type-tab" data-provider="g2bulk_voucher" onclick="setFulfillProvider('g2bulk_voucher')">Vouchers</button>
                         <button type="button" class="pkg-type-tab" data-provider="fazercard" onclick="setFulfillProvider('fazercard')">FazerCards</button>
+                        <button type="button" class="pkg-type-tab" data-provider="g2bulk_voucher" onclick="setFulfillProvider('g2bulk_voucher')">Vouchers</button>
+                        <button type="button" class="pkg-type-tab" data-provider="jcplays" onclick="setFulfillProvider('jcplays')">JCPlays (Code)</button>
                     </div>
 
                     <div id="g2bulk-fulfill-section" style="display:none;margin-top:10px;">
@@ -2741,7 +2753,7 @@
                     </div>
 
                     <div id="jcplays-fulfill-section" style="display:none;margin-top:10px;">
-                        <label style="margin-top:0;">JCPlays Game</label>
+                        <label style="margin-top:0;">JCPlays Product</label>
                         <div class="picker-btn" id="jcplays-picker-btn" onclick="openGamePicker('jcplays')">
                             <div class="picker-btn-thumb" id="jcplays-picker-thumb"></div>
                             <span class="picker-btn-label muted" id="jcplays-picker-display">-- Not linked (manual fulfillment) --</span>
@@ -2752,6 +2764,7 @@
                             <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
                         </div>
                         <p id="jcplays-denom-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
+                        <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">JCPlays ကထွက်လာတဲ့ Redeem/PIN code ကို Order Detail ထဲမှာ ပြပေးပြီး admin ကနေ customer ဆီ ကိုယ်တိုင်ပို့ပေးရမယ် — Player ID/Server ID မလိုပါဘူး။ ဒီဂိမ်းက JCPlays package ချည်းပဲဆိုရင် "Requires Player ID" ကို ပိတ်ထားလို့ရပါတယ်.</p>
                     </div>
 
                     <!-- G2Bulk Giftcards & Vouchers: a different part of G2Bulk's
@@ -2968,8 +2981,16 @@
                 </div>
                 <span id="game-picker-count" style="font-size:12.5px;font-weight:600;color:var(--text-muted);background:var(--fill-soft);padding:9px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0;"></span>
                 <button type="button" class="btn btn-outline" id="game-picker-update-btn" onclick="refreshGamePickerList()" style="flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Update</button>
+                <button type="button" class="btn btn-outline" id="game-picker-bulk-toggle-btn" onclick="toggleFazerCardBulkMode()" style="display:none;flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Select Multiple</button>
             </div>
             <div class="game-picker-grid" id="game-picker-grid"></div>
+            <div id="fazercard-bulk-bar" style="display:none;flex-shrink:0;margin-top:10px;padding-top:10px;border-top:1px solid var(--fill-soft);align-items:center;justify-content:space-between;gap:10px;">
+                <span id="fazercard-bulk-count" style="font-size:12.5px;color:var(--text-muted);">0 selected</span>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" class="btn btn-outline" onclick="toggleFazerCardBulkMode()" style="padding:9px 12px;font-size:13px;">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="fazercard-bulk-import-btn" onclick="importSelectedFazerCardGames()" disabled style="padding:9px 14px;font-size:13px;">Import Selected</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -4687,7 +4708,7 @@
                     let startLabel = 'Start Processing';
                     const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId || data.g2bulkVoucherProductId || (data.fazercardCategoryId && data.fazercardOfferId);
                     if (data.g2bulkGameCode && data.g2bulkCatalogueName) startLabel = 'Auto-Fulfill via G2Bulk';
-                    else if (data.jcplaysProductId) startLabel = 'Auto-Fulfill via JCPlays';
+                    else if (data.jcplaysProductId) startLabel = 'Get Redeem Code via JCPlays';
                     else if (data.g2bulkVoucherProductId) startLabel = 'Auto-Fulfill via G2Bulk (Voucher)';
                     else if (data.fazercardCategoryId && data.fazercardOfferId) startLabel = 'Auto-Fulfill via FazerCards';
                     // Auto-linked orders get a manual fallback button too, so if the
@@ -4774,10 +4795,12 @@
                                         <div class="od-value mono">${data.serverId}</div>
                                     </div>` : ''}
                                     ${data.jcplaysProductId ? `<div class="od-cell span-2" id="jcplays-role-cell-${orderId}">
-                                        <div class="od-label">JCPlays Username</div>
-                                        <div class="od-value" id="jcplays-role-value-${orderId}">${data.jcplaysVerifiedName
-                                            ? `<span style="color:#28a745;">${escapeHtml(data.jcplaysVerifiedName)} ✓ verified</span>`
-                                            : `<button type="button" class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="verifyJCPlaysPlayerId('${orderId}', this)">Verify Player ID</button>`}</div>
+                                        <div class="od-label">JCPlays Redeem Code</div>
+                                        <div class="od-value" id="jcplays-role-value-${orderId}">${data.jcplaysRedeemCode
+                                            ? `<span class="mono" style="color:#28a745;">${escapeHtml(data.jcplaysRedeemCode)}</span> <button type="button" class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="copyJCPlaysRedeemCode('${orderId}')">Copy</button>`
+                                            : data.status === 'Success'
+                                            ? `<span style="color:var(--danger-strong);">No code field recognized</span> <button type="button" class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="copyJCPlaysRedeemCode('${orderId}')">Copy Raw Response</button>`
+                                            : `<span style="color:var(--text-muted);">Appears here once fulfilled</span>`}</div>
                                     </div>` : ''}
                                     ${data.fazercardCategoryId ? `<div class="od-cell span-2" id="fazercard-role-cell-${orderId}">
                                         <div class="od-label">FazerCards Name Check</div>
@@ -5239,10 +5262,10 @@
 
         // Calls FazerCards' /topups/validate-id to confirm the Player/Server ID
         // resolves to a real in-game account and shows the admin the actual
-        // in-game name before they commit to Start Processing (same rationale
-        // as verifyJCPlaysPlayerId — advisory only, doesn't block manual
-        // fulfillment). Only meaningful for categories FazerCards supports
-        // validation for; an unsupported category just returns valid:false.
+        // in-game name before they commit to Start Processing (advisory
+        // only - doesn't block manual fulfillment). Only meaningful for
+        // categories FazerCards supports validation for; an unsupported
+        // category just returns valid:false.
         // Uses the same per-game fazercardFields key mapping as
         // placeFazerCardOrder, and saves a successful result onto the order
         // doc (fazercardVerifiedName) so it isn't re-checked on every render.
@@ -7286,7 +7309,7 @@
                                 <select class="pkg-provider" onchange="refreshPackageRowProviderVisibility()" style="flex:1;padding:6px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text-primary);">
                                     <option value="manual" ${resolvedProvider === 'manual' ? 'selected' : ''}>Manual (no auto-fulfill)</option>
                                     <option value="g2bulk" ${resolvedProvider === 'g2bulk' ? 'selected' : ''}>G2Bulk</option>
-                                    <option value="jcplays" ${resolvedProvider === 'jcplays' ? 'selected' : ''}>JCPlays</option>
+                                    <option value="jcplays" ${resolvedProvider === 'jcplays' ? 'selected' : ''}>JCPlays (Redeem Code)</option>
                                     <option value="fazercard" ${resolvedProvider === 'fazercard' ? 'selected' : ''}>FazerCards</option>
                                 </select>
                             </div>
@@ -11052,6 +11075,16 @@
             { code: 'smilecoinph', name: 'SmileCoin (Philippines)' }
         ];
 
+        // Bulk-add state for the FazerCards picker only - lets the admin tick
+        // several catalogue entries (e.g. every "Free Fire (XX)" region) and
+        // import them as separate new games in one go, each with its own
+        // imported packages (see importSelectedFazerCardGames below), instead
+        // of repeating Add New Game -> pick -> import -> save per region.
+        // Only offered when the picker is opened for a brand-new game (no
+        // edit-game-id yet) - see loadGamePickerList.
+        let fazerCardBulkMode = false;
+        let fazerCardBulkSelected = new Set();
+
         let gamePickerProvider = null;     // 'g2bulk' | 'jcplays'
         let gamePickerSubtab = 'direct';   // 'direct' | 'voucher' — only meaningful when provider === 'g2bulk'
         let gamePickerItems = [];          // [{code, name, image?, count?}] for the active provider/subtab
@@ -11189,6 +11222,18 @@
             document.getElementById('game-picker-modal-overlay').classList.add('show');
             document.getElementById('game-picker-update-btn').style.display = 'block';
 
+            // Bulk add only makes sense for FazerCards, and only while
+            // creating a brand-new game (an existing game is already tied to
+            // one category - bulk-creating siblings from inside its editor
+            // would be confusing). Always starts closed on a fresh open.
+            fazerCardBulkMode = false;
+            fazerCardBulkSelected = new Set();
+            document.getElementById('fazercard-bulk-bar').style.display = 'none';
+            const bulkToggleBtn = document.getElementById('game-picker-bulk-toggle-btn');
+            const isNewGame = !document.getElementById('edit-game-id').value;
+            bulkToggleBtn.style.display = (kind === 'fazercard' && isNewGame) ? 'block' : 'none';
+            bulkToggleBtn.innerText = 'Select Multiple';
+
             if (kind === 'g2bulk') {
                 fetchG2BulkGamesList()
                     .then(games => {
@@ -11291,8 +11336,13 @@
             const q = (term || '').trim().toLowerCase();
             const filtered = q ? gamePickerItems.filter(g => g.name.toLowerCase().includes(q)) : gamePickerItems;
             const currentCode = document.getElementById(gamePickerFieldId(gamePickerKind())).value;
+            const bulk = fazerCardBulkMode && gamePickerKind() === 'fazercard';
 
-            let html = `<div class="game-picker-card unlink-card${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">
+            // In bulk mode there's no single "current" link to highlight and
+            // no "Not linked" option (bulk add only ever creates new games),
+            // so skip that card entirely and render a checkbox on every tile
+            // instead of the usual single-select border.
+            let html = bulk ? '' : `<div class="game-picker-card unlink-card${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">
                 <div class="game-picker-thumb"><svg class="ui-icon" style="width:20px;height:20px;"><use href="#icon-close"></use></svg></div>
                 <span>Not linked</span>
             </div>`;
@@ -11301,8 +11351,9 @@
                 html += `<div class="game-picker-empty-msg">No games match "${escapeHtml(term)}"</div>`;
             } else {
                 html += filtered.map(g => `
-                    <div class="game-picker-card${currentCode === g.code ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">
+                    <div class="game-picker-card${bulk ? ' bulk-pickable' + (fazerCardBulkSelected.has(g.code) ? ' bulk-selected' : '') : (currentCode === g.code ? ' selected' : '')}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">
                         <div class="game-picker-thumb" style="${g.image ? '' : `background:${pickerColorFor(g.name)}`}">${pickerThumbHtml(g) || escapeHtml(pickerInitials(g.name))}</div>
+                        ${bulk ? `<div class="game-picker-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>` : ''}
                         <span>${escapeHtml(g.name)}${typeof g.count === 'number' ? ` <span style="opacity:.6;">(${g.count})</span>` : ''}</span>
                     </div>`).join('');
             }
@@ -11315,8 +11366,43 @@
         document.getElementById('game-picker-grid').addEventListener('click', (e) => {
             const card = e.target.closest('.game-picker-card');
             if (!card) return;
+            if (fazerCardBulkMode && gamePickerKind() === 'fazercard') {
+                toggleFazerCardBulkSelection(card);
+                return;
+            }
             selectGamePickerItem(card.dataset.code || '', card.dataset.name || '');
         });
+
+        // Flips one card's checkbox state in place (no full grid re-render,
+        // so the scroll position holds on a long catalogue like FazerCards'
+        // 300+ regions) and keeps the footer's count/button in sync.
+        function toggleFazerCardBulkSelection(card) {
+            const code = card.dataset.code || '';
+            if (!code) return;
+            if (fazerCardBulkSelected.has(code)) {
+                fazerCardBulkSelected.delete(code);
+                card.classList.remove('bulk-selected');
+            } else {
+                fazerCardBulkSelected.add(code);
+                card.classList.add('bulk-selected');
+            }
+            const n = fazerCardBulkSelected.size;
+            document.getElementById('fazercard-bulk-count').innerText = n === 1 ? '1 selected' : `${n} selected`;
+            document.getElementById('fazercard-bulk-import-btn').disabled = n === 0;
+        }
+
+        // Toggles the FazerCards picker between its normal single-pick mode
+        // and bulk-select mode (checkboxes + an "Import Selected" footer).
+        function toggleFazerCardBulkMode() {
+            fazerCardBulkMode = !fazerCardBulkMode;
+            fazerCardBulkSelected = new Set();
+            document.getElementById('game-picker-bulk-toggle-btn').innerText = fazerCardBulkMode ? 'Cancel Multiple' : 'Select Multiple';
+            document.getElementById('fazercard-bulk-bar').style.display = fazerCardBulkMode ? 'flex' : 'none';
+            document.getElementById('fazercard-bulk-count').innerText = '0 selected';
+            document.getElementById('fazercard-bulk-import-btn').disabled = true;
+            renderGamePickerGrid(document.getElementById('game-picker-search').value);
+        }
+        window.toggleFazerCardBulkMode = toggleFazerCardBulkMode;
 
         function selectGamePickerItem(code, name) {
             const kind = gamePickerKind();
@@ -11544,6 +11630,116 @@
             }
         }
         window.importFazerCardCatalogue = importFazerCardCatalogue;
+
+        // FazerCards names region/server variants of the same game as
+        // separate catalogue items with the region in parentheses - e.g.
+        // "Free Fire (BD)". Splits that into { gameName: "Free Fire",
+        // serverName: "BD" } so bulk-imported games line up with the
+        // existing server-variant grouping; returns null when the name has
+        // no trailing "(...)" to split. Same regex as the single-pick flow
+        // in selectGamePickerItem, pulled out so the bulk importer can use
+        // it too.
+        function splitFazerCardRegionName(name) {
+            const m = (name || '').match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+            return m ? { gameName: m[1].trim(), serverName: m[2].trim() } : null;
+        }
+
+        // Confirms and kicks off a bulk import for every FazerCards
+        // catalogue entry currently ticked in the picker (see
+        // toggleFazerCardBulkMode / toggleFazerCardBulkSelection). Skips any
+        // selection already linked to an existing game so re-running this
+        // after a partial manual add never creates a duplicate.
+        function importSelectedFazerCardGames() {
+            if (fazerCardBulkSelected.size === 0) return;
+            const items = gamePickerItems.filter(g => fazerCardBulkSelected.has(g.code));
+            const alreadyLinked = new Set(Object.values(GAMES).map(g => g.fazercardCategoryId).filter(Boolean));
+            const toImport = items.filter(g => !alreadyLinked.has(g.code));
+            const skippedLinked = items.length - toImport.length;
+
+            if (toImport.length === 0) {
+                window.showToast('All selected games are already linked.', 'fail');
+                return;
+            }
+
+            window.showActionDialog({
+                type: 'warning',
+                title: `Import ${toImport.length} Game${toImport.length === 1 ? '' : 's'}?`,
+                message: `Each becomes its own new game with packages imported from FazerCards at cost (no markup yet, no price cards shared between them) — set Price and check each game's image before it goes live.${skippedLinked ? ` ${skippedLinked} already-linked selection${skippedLinked === 1 ? '' : 's'} will be skipped.` : ''}`,
+                confirmText: 'Import',
+                onConfirm: () => runFazerCardBulkImport(toImport)
+            });
+        }
+        window.importSelectedFazerCardGames = importSelectedFazerCardGames;
+
+        // Creates one new "games" doc per selected FazerCards catalogue
+        // entry, each with its own freshly-imported packages (Price defaults
+        // to Cost, same as the single-game importFazerCardCatalogue above) -
+        // sequential with a short stagger so it doesn't hammer FazerCards'
+        // API, and each game's packages stay in that game's own doc so nothing
+        // gets mixed between games.
+        async function runFazerCardBulkImport(items) {
+            const btn = document.getElementById('fazercard-bulk-import-btn');
+            const countEl = document.getElementById('fazercard-bulk-count');
+            btn.disabled = true;
+            const rate = FAZERCARD_SETTINGS.usdRate || 4500;
+            let added = 0, failed = 0;
+            const failedNames = [];
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                countEl.innerText = `Importing ${i + 1}/${items.length}: ${item.name}`;
+                try {
+                    const data = await fazercardRequest('/topups/offers', { params: { category_id: item.code } });
+                    const offers = data.offers || [];
+                    if (offers.length === 0) { failed++; failedNames.push(item.name + ' (no offers)'); continue; }
+                    if (!item.image) { failed++; failedNames.push(item.name + ' (no image)'); continue; }
+
+                    const packages = offers.map(o => {
+                        const cost = Math.round(Number(o.price_usd) * rate);
+                        return { amount: o.name, cost, price: cost, g2bulk: '', jcplays: '', voucherId: '', fazercardOfferId: o.offer_id, image: '', type: 'currency', tab: 'currency' };
+                    });
+                    const fieldKeys = (data.fields || []).map(f => f.key);
+                    const split = splitFazerCardRegionName(item.name);
+
+                    const gameData = {
+                        name: split ? split.gameName : item.name,
+                        serverName: split ? split.serverName : '',
+                        image: item.image,
+                        banner: item.image,
+                        packages,
+                        packageTabs: [],
+                        packageTabLabels: { package: 'Package', currency: 'Currency' },
+                        g2bulkCode: '', jcplaysProduct: '', g2bulkVoucherCategory: '',
+                        fazercardCategoryId: item.code,
+                        fazercardFields: fieldKeys,
+                        g2bulkIdCheckCode: '',
+                        fulfillProvider: 'fazercard',
+                        category: '', description: '', popular: false,
+                        playerIdRequired: true,
+                        serverIdRequired: fieldKeys.some(k => /server|zone/i.test(k))
+                    };
+
+                    await addDoc(collection(db, "games"), gameData);
+                    logAdminActivity('Added game', gameData.name + (gameData.serverName ? ` (${gameData.serverName})` : ''));
+                    added++;
+                } catch (error) {
+                    console.error('Bulk FazerCards import error for', item.name, error);
+                    failed++;
+                    failedNames.push(item.name);
+                }
+                await new Promise(r => setTimeout(r, 400)); // stagger calls, don't hammer FazerCards' API
+            }
+
+            countEl.innerText = `${added} imported${failed ? `, ${failed} failed` : ''}`;
+            window.showToast(`Imported ${added} game${added === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''} ✓`, (failed && !added) ? 'fail' : 'success');
+            if (failedNames.length) console.warn('FazerCards bulk import failures:', failedNames);
+
+            fazerCardBulkSelected = new Set();
+            toggleFazerCardBulkMode();
+            closeGamePicker();
+            if (added > 0) closeGameEditor();
+        }
+        window.runFazerCardBulkImport = runFazerCardBulkImport;
 
         // ---------- G2Bulk Giftcards & Vouchers import ----------
         // Separate part of G2Bulk's catalog from the Games list above:
@@ -12367,12 +12563,15 @@
         }
         window.importJCPlaysCatalogue = importJCPlaysCatalogue;
 
-        // Places a top-up order with JCPlays. Called from startProcessing()
+        // Places a redeem-code order with JCPlays. Called from startProcessing()
         // whenever an order carries both a game-level jcplaysProduct code and
         // a package-level jcplaysProductId (i.e. the game + package were
         // linked to JCPlays in the game editor). JCPlays' createorder
-        // endpoint is synchronous — a 200 means the top-up is already done,
-        // there's no separate async status-check step like G2Bulk has.
+        // endpoint is synchronous and hands back a PIN/redeem code directly —
+        // it does NOT top up a player's in-game account, so no player_id/
+        // zone_id is sent. The admin still has to copy that code to the
+        // customer by hand (chat, Telegram, etc.) - there's no delivery
+        // channel here, this just gets the code and saves it on the order.
         async function placeJCPlaysOrder(orderId, order, btnElement) {
             if (!JCPLAYS_SETTINGS.enabled) {
                 window.showToast('JCPlays is turned off (Dashboard → JCPlays API Credentials → Settings). Fulfill this order manually or re-enable it.', 'fail');
@@ -12393,15 +12592,13 @@
                 return 'error';
             }
 
-            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
+            if (btnElement) { btnElement.innerText = "Getting code..."; btnElement.disabled = true; }
 
             let data;
             try {
                 data = await jcplaysRequest('createorder', {
                     product: order.jcplaysProduct,
-                    productid: order.jcplaysProductId,
-                    userid: order.playerId,
-                    ...(order.serverId ? { zoneid: order.serverId } : {})
+                    productid: order.jcplaysProductId
                 });
             } catch (error) {
                 // Failed before JCPlays confirmed anything (network/credential
@@ -12417,13 +12614,22 @@
                 // balance, etc.) - nothing was charged, safe to retry.
                 window.showInfoDialog(
                     'JCPlays Order Failed',
-                    `JCPlays rejected the order (status ${data.status}): ${data.message || 'unknown error'}. The order stays Pending — fix the issue (e.g. balance, player ID) and try again, or fulfill manually.`
+                    `JCPlays rejected the order (status ${data.status}): ${data.message || 'unknown error'}. The order stays Pending — fix the issue (e.g. balance) and try again, or fulfill manually.`
                 );
                 if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
                 return 'error';
             }
 
-            // JCPlays confirmed the top-up and charged the balance. From this
+            // The exact field JCPlays puts the code under isn't confirmed for
+            // every product, so try the common shapes and always keep the
+            // full raw response too - the code (or the raw JSON as a
+            // fallback) is what actually needs to reach the customer, so it
+            // must never be silently lost here even if this list is missing
+            // a key.
+            const redeemCode = data.code || data.pin || data.serial || data.voucher_code || data.card_code
+                || (data.data && (data.data.code || data.data.pin || data.data.serial)) || '';
+
+            // JCPlays confirmed the order and charged the balance. From this
             // point on we must NOT let the admin click "Start Processing" again
             // for this order — JCPlays' API has no idempotency key, so a retry
             // here would place a second real, paid order. If saving the result
@@ -12433,15 +12639,17 @@
                 await updateDoc(doc(db, "orders", orderId), {
                     status: "Success",
                     confirmedAt: serverTimestamp(),
-                    jcplaysOrderId: data.order_id || null
+                    jcplaysOrderId: data.order_id || null,
+                    jcplaysRedeemCode: redeemCode || '',
+                    jcplaysRedeemRaw: JSON.stringify(data).slice(0, 2000)
                 });
-                window.showToast('JCPlays order placed — top-up completed ✓', 'success');
+                window.showToast(redeemCode ? 'JCPlays code received ✓ — copy it to the customer' : 'JCPlays confirmed, but no code field was recognized — check Raw Response on the order', redeemCode ? 'success' : 'fail');
                 return 'success';
             } catch (error) {
                 console.error("JCPlays order succeeded but saving the result failed:", error);
                 window.showInfoDialog(
-                    'Top-up Completed, But Not Saved',
-                    `JCPlays confirmed this top-up (order_id: ${data.order_id || 'n/a'}) and your balance was charged, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order (it would charge a second time) — refresh the page and mark it Success manually instead.`
+                    'Code Received, But Not Saved',
+                    `JCPlays confirmed this order${redeemCode ? ` (code: ${redeemCode})` : ''} and your balance was charged, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order (it would charge a second time) — refresh the page and mark it Success manually instead${redeemCode ? ', and note the code above somewhere safe' : ''}.`
                 );
                 if (btnElement) btnElement.innerText = "Refresh Page";
                 // Left disabled on purpose - see note above.
@@ -12450,67 +12658,23 @@
         }
         window.placeJCPlaysOrder = placeJCPlaysOrder;
 
-        // Calls JCPlays' getrole endpoint to confirm the Player/Server ID
-        // resolves to a real in-game account and shows the admin the actual
-        // username before they commit to Start Processing (which — per the
-        // note on placeJCPlaysOrder — can't be safely retried once JCPlays
-        // has charged the balance). This is advisory only: a failed check
-        // doesn't block manual fulfillment, and a successful check is saved
-        // onto the order doc (jcplaysVerifiedName) so it isn't re-checked
-        // on every render.
-        async function verifyJCPlaysPlayerId(orderId, btnElement) {
+        // Copies the JCPlays redeem code (or, if no known code field was
+        // recognized on the response, the raw JSON as a fallback so nothing
+        // is lost) to the clipboard so the admin can paste it straight to
+        // the customer.
+        function copyJCPlaysRedeemCode(orderId) {
             const order = ORDERS[orderId];
-            if (!order || !order.jcplaysProduct || !order.jcplaysProductId) {
-                window.showToast('This order is missing its JCPlays Product Code or Product ID.', 'fail');
-                return;
-            }
-            if (!order.playerId) {
-                window.showToast('This order has no Player ID to verify.', 'fail');
-                return;
-            }
-            const valueEl = document.getElementById(`jcplays-role-value-${orderId}`);
-            const originalText = btnElement ? btnElement.innerText : '';
-            if (btnElement) { btnElement.disabled = true; btnElement.innerText = 'Checking...'; }
-
-            let data;
-            try {
-                data = await jcplaysRequest('getrole', {
-                    product: order.jcplaysProduct,
-                    productid: order.jcplaysProductId,
-                    userid: order.playerId,
-                    ...(order.serverId ? { zoneid: order.serverId } : {})
-                });
-            } catch (error) {
-                console.error("JCPlays getrole error:", error);
-                window.showToast('Could not verify: ' + error.message, 'fail');
-                if (btnElement) { btnElement.disabled = false; btnElement.innerText = originalText; }
-                return;
-            }
-
-            if (data.status !== 200 || !data.username) {
-                window.showInfoDialog(
-                    'Player ID Verification Failed',
-                    `JCPlays could not find an account for this Player ID${order.serverId ? '/Server ID' : ''} (status ${data.status}): ${data.message || 'unknown error'}. Double-check with the customer before processing this order.`
-                );
-                if (btnElement) { btnElement.disabled = false; btnElement.innerText = originalText; }
-                return;
-            }
-
-            try {
-                await updateDoc(doc(db, "orders", orderId), { jcplaysVerifiedName: data.username });
-                order.jcplaysVerifiedName = data.username;
-                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(data.username)} ✓ verified</span>`;
-                window.showToast('Player ID verified ✓', 'success');
-            } catch (error) {
-                console.error("Save jcplaysVerifiedName error:", error);
-                // Verification itself succeeded — show it locally even though
-                // saving the result failed, so the admin isn't blocked from
-                // seeing it (it'll just re-prompt "Verify" next render).
-                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(data.username)} ✓ verified</span> <span style="color:var(--text-muted);font-size:11px;">(not saved)</span>`;
-                window.showToast('Verified, but failed to save: ' + error.message, 'fail');
+            if (!order) return;
+            const text = order.jcplaysRedeemCode || order.jcplaysRedeemRaw || '';
+            if (!text) { window.showToast('No code to copy yet.', 'fail'); return; }
+            const done = () => window.showToast('Copied ✓', 'success');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopyText(text, done));
+            } else {
+                fallbackCopyText(text, done);
             }
         }
-        window.verifyJCPlaysPlayerId = verifyJCPlaysPlayerId;
+        window.copyJCPlaysRedeemCode = copyJCPlaysRedeemCode;
 
         function openPaymentEditor(paymentId = null) {
             editingPaymentImageFile = null;
