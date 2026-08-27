@@ -2760,7 +2760,14 @@
                          /api/v2/topups/order. Player ID validation (where
                          supported) is admin-side only via /topups/validate-id —
                          see the note on placeFazerCardOrder for why the public
-                         store never calls FazerCards directly. -->
+                         store never calls FazerCards directly. Not every
+                         FazerCards category supports validate-id (and the
+                         customer-facing check goes through our own Worker,
+                         which can itself be down) - the G2Bulk ID-Check Code
+                         field below lets the store fall back to G2Bulk's
+                         public checkPlayerId (same game, different provider)
+                         purely to show the player's name; the order itself
+                         still fulfills through FazerCards regardless. -->
                     <div id="fazercard-fulfill-section" style="display:none;margin-top:10px;">
                         <label style="margin-top:0;">FazerCards Game</label>
                         <input type="hidden" id="edit-game-fazercard-category" value="">
@@ -2770,6 +2777,9 @@
                             <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
                         </div>
                         <p id="fazercard-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
+                        <label style="margin-top:10px;">G2Bulk ID-Check Code <span style="font-weight:400;color:var(--text-muted);">(optional fallback)</span></label>
+                        <input type="text" id="edit-game-g2bulk-idcheck-code" placeholder="e.g. mobile-legends" style="text-transform:none;">
+                        <p style="font-size:11px;color:var(--text-muted);margin-top:-4px;">FazerCards ID check ခ်လုပ်မရရင် (unsupported or down) ဒီ G2Bulk code ကို အသုံးပြုပြီး player name ကိုပဲ ပြပေးမယ် — order ကတော့ FazerCards ကနေပဲ ဆက်ဆောင်ရွက်ပါမယ်။</p>
                     </div>
                 </div>
 
@@ -4753,6 +4763,12 @@
                                             ? `<span style="color:#28a745;">${escapeHtml(data.jcplaysVerifiedName)} ✓ verified</span>`
                                             : `<button type="button" class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="verifyJCPlaysPlayerId('${orderId}', this)">Verify Player ID</button>`}</div>
                                     </div>` : ''}
+                                    ${data.fazercardCategoryId ? `<div class="od-cell span-2" id="fazercard-role-cell-${orderId}">
+                                        <div class="od-label">FazerCards Name Check</div>
+                                        <div class="od-value" id="fazercard-role-value-${orderId}">${data.fazercardVerifiedName
+                                            ? `<span style="color:#28a745;">${escapeHtml(data.fazercardVerifiedName)} ✓ verified</span>`
+                                            : `<button type="button" class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="verifyFazerCardPlayerId('${orderId}', this)">Verify Player ID</button>`}</div>
+                                    </div>` : ''}
                                     <div class="od-cell">
                                         <div class="od-label">Order ID</div>
                                         <div class="od-value mono">${orderId}</div>
@@ -5204,6 +5220,100 @@
             }
         }
         setInterval(autoPollFazerCardOrders, 25000);
+
+        // Calls FazerCards' /topups/validate-id to confirm the Player/Server ID
+        // resolves to a real in-game account and shows the admin the actual
+        // in-game name before they commit to Start Processing (same rationale
+        // as verifyJCPlaysPlayerId — advisory only, doesn't block manual
+        // fulfillment). Only meaningful for categories FazerCards supports
+        // validation for; an unsupported category just returns valid:false.
+        // Uses the same per-game fazercardFields key mapping as
+        // placeFazerCardOrder, and saves a successful result onto the order
+        // doc (fazercardVerifiedName) so it isn't re-checked on every render.
+        async function verifyFazerCardPlayerId(orderId, btnElement) {
+            const order = ORDERS[orderId];
+            if (!order || !order.fazercardCategoryId) {
+                window.showToast('This order is not linked to a FazerCards category.', 'fail');
+                return;
+            }
+            if (!order.playerId) {
+                window.showToast('This order has no Player ID to verify.', 'fail');
+                return;
+            }
+            const valueEl = document.getElementById(`fazercard-role-value-${orderId}`);
+            const originalText = btnElement ? btnElement.innerText : '';
+            if (btnElement) { btnElement.disabled = true; btnElement.innerText = 'Checking...'; }
+
+            const linkedGame = Object.values(GAMES).find(g => g.fazercardCategoryId === order.fazercardCategoryId);
+            const fieldKeys = (linkedGame && linkedGame.fazercardFields && linkedGame.fazercardFields.length) ? linkedGame.fazercardFields : ['player_id'];
+            const fields = {};
+            fieldKeys.forEach(key => {
+                if (/server|zone/i.test(key)) fields[key] = order.serverId || undefined;
+                else fields[key] = order.playerId || undefined;
+            });
+
+            // Try FazerCards' own validate-id first (only if we have a key to
+            // call it with) - not every category supports it, and our own
+            // Worker/API key setup can itself be down, so a failure here
+            // isn't necessarily a bad ID. Falls through to the G2Bulk
+            // fallback below rather than giving up immediately.
+            let playerName = null;
+            if (FAZERCARD_SETTINGS.apiKey) {
+                try {
+                    const data = await fazercardRequest('/topups/validate-id', {
+                        method: 'POST',
+                        body: { category_id: order.fazercardCategoryId, fields }
+                    });
+                    if (data.valid && data.player_name) playerName = data.player_name;
+                } catch (error) {
+                    console.error("FazerCards validate-id error:", error);
+                }
+            }
+
+            // Fallback: same game, checked via G2Bulk's public checkPlayerId
+            // instead - admin set this up (Game editor → G2Bulk ID-Check Code)
+            // specifically for categories FazerCards can't verify, or for
+            // whenever the FazerCards check above didn't come back. This is
+            // informational only - the order still fulfills through
+            // FazerCards regardless of which provider resolved the name.
+            if (!playerName && linkedGame && linkedGame.g2bulkIdCheckCode) {
+                try {
+                    const res = await fetch('https://api.g2bulk.com/v1/games/checkPlayerId', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ game: linkedGame.g2bulkIdCheckCode, user_id: order.playerId, server_id: order.serverId || undefined })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.valid === 'valid' && data.name) playerName = data.name;
+                } catch (error) {
+                    console.error("G2Bulk fallback checkPlayerId error:", error);
+                }
+            }
+
+            if (!playerName) {
+                window.showInfoDialog(
+                    'Player ID Verification Failed',
+                    `Could not find an account for this Player ID${order.serverId ? '/Server ID' : ''} via FazerCards${linkedGame && linkedGame.g2bulkIdCheckCode ? ' or the G2Bulk fallback' : ''}. Double-check with the customer before processing this order.`
+                );
+                if (btnElement) { btnElement.disabled = false; btnElement.innerText = originalText; }
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { fazercardVerifiedName: playerName });
+                order.fazercardVerifiedName = playerName;
+                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(playerName)} ✓ verified</span>`;
+                window.showToast('Player ID verified ✓', 'success');
+            } catch (error) {
+                console.error("Save fazercardVerifiedName error:", error);
+                // Verification itself succeeded — show it locally even though
+                // saving the result failed, so the admin isn't blocked from
+                // seeing it (it'll just re-prompt "Verify" next render).
+                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(playerName)} ✓ verified</span> <span style="color:var(--text-muted);font-size:11px;">(not saved)</span>`;
+                window.showToast('Verified, but failed to save: ' + error.message, 'fail');
+            }
+        }
+        window.verifyFazerCardPlayerId = verifyFazerCardPlayerId;
 
         // ---------- Background auto-sync for orders sent to G2Bulk (fallback) ----------
         // Every ~25s (while this admin panel tab is open), quietly re-checks every
@@ -7733,6 +7843,7 @@
                 onVoucherCategoryChange();
                 document.getElementById('edit-game-fazercard-category').value = g.fazercardCategoryId || '';
                 document.getElementById('fazercard-import-status').innerText = '';
+                document.getElementById('edit-game-g2bulk-idcheck-code').value = g.g2bulkIdCheckCode || '';
                 pendingFazerCardFields = Array.isArray(g.fazercardFields) ? g.fazercardFields.slice() : [];
                 onFazerCardGameChange();
                 deleteBtn.style.display = 'block';
@@ -7756,6 +7867,7 @@
                 onVoucherCategoryChange();
                 document.getElementById('edit-game-fazercard-category').value = '';
                 document.getElementById('fazercard-import-status').innerText = '';
+                document.getElementById('edit-game-g2bulk-idcheck-code').value = '';
                 pendingFazerCardFields = [];
                 onFazerCardGameChange();
                 setFulfillProvider(gameListTab === 'voucher' ? 'g2bulk_voucher' : 'manual');
@@ -7854,6 +7966,11 @@
             const jcplaysProduct = currentFulfillProvider === 'jcplays' ? document.getElementById('edit-game-jcplays-code').value.trim() : '';
             const g2bulkVoucherCategory = currentFulfillProvider === 'g2bulk_voucher' ? document.getElementById('edit-game-voucher-category').value : '';
             const fazercardCategoryId = currentFulfillProvider === 'fazercard' ? document.getElementById('edit-game-fazercard-category').value : '';
+            // Independent of currentFulfillProvider (unlike the codes above) -
+            // only meaningful when fazercard is the provider, but kept even if
+            // the admin is just previewing another tab, since blanking it on
+            // every tab switch would lose it before Save is even pressed.
+            const g2bulkIdCheckCode = document.getElementById('edit-game-g2bulk-idcheck-code').value.trim();
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
@@ -7906,7 +8023,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: currentFulfillProvider === 'fazercard' ? pendingFazerCardFields.slice() : [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: currentFulfillProvider === 'fazercard' ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -11085,7 +11202,24 @@
             // if it's still empty, so an admin's already-typed custom name is
             // never overwritten.
             const nameInput = document.getElementById('edit-game-name');
-            if (code && !nameInput.value.trim()) nameInput.value = name;
+            const serverNameInput = document.getElementById('edit-game-server-name');
+            // FazerCards' catalogue names region/server variants of the same
+            // game as separate items with the region in parentheses - e.g.
+            // "Free Fire (BD)", "Free Fire (MY/SG)". Splitting that into
+            // Game Name "Free Fire" + Server Name "BD"/"MY/SG" (instead of
+            // dumping the whole "Free Fire (BD)" string into Game Name) lets
+            // these line up with the existing server-variant grouping (same
+            // Game Name -> shown as one card in the store, servers picked
+            // inside) instead of each region becoming its own separate game
+            // card. Only applies when both fields are still empty, same
+            // don't-overwrite rule as the plain fill below.
+            const regionMatch = kind === 'fazercard' && name ? name.match(/^(.*?)\s*\(([^)]+)\)\s*$/) : null;
+            if (code && regionMatch && !nameInput.value.trim() && serverNameInput && !serverNameInput.value.trim()) {
+                nameInput.value = regionMatch[1].trim();
+                serverNameInput.value = regionMatch[2].trim();
+            } else if (code && !nameInput.value.trim()) {
+                nameInput.value = name;
+            }
 
             // Linking a G2Bulk Direct game (or now, a Voucher category) also
             // pulls in its cover image as the Game Image — the same "fill it
