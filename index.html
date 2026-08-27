@@ -649,6 +649,7 @@
         .pkg-type-tabs { display: flex; gap: 4px; background: var(--fill-soft); border-radius: 14px; padding: 4px; }
         .pkg-type-tab { flex: 1; padding: 9px 4px; border: none; background: transparent; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: 0.15s; }
         .pkg-type-tab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-soft); }
+        .fulfill-group-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 0 0 5px 2px; }
         .btn { padding: 9px 12px; border-radius: 8px; font-weight: 500; font-size: 13.5px; cursor: pointer; border: 1px solid transparent; text-align: center; flex: 1; transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease; }
         .btn svg { flex-shrink: 0; }
         /* Multi-button toolbar rows (e.g. Package editor actions): size each
@@ -2727,19 +2728,34 @@
                 <div style="margin:4px 0 2px;padding:12px;background:var(--fill-soft);border-radius:12px;border:1px solid var(--fill-soft);">
                     <p style="font-size:11px;font-weight: 600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional)</p>
 
-                    <!-- Grouped left-to-right: Manual, then Direct (player-ID
-                         top-up: G2Bulk, FazerCards), then Voucher/Redeem-code
-                         (no player ID: G2Bulk Vouchers, JCPlays) - JCPlays
-                         moved out of the Direct group since it only ever
-                         returns a redeem/PIN code, never a player-ID top-up
-                         (see placeJCPlaysOrder). -->
-                    <div class="pkg-type-tabs" id="fulfill-provider-tabs">
-                        <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
-                        <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
-                        <button type="button" class="pkg-type-tab" data-provider="fazercard" onclick="setFulfillProvider('fazercard')">FazerCards</button>
-                        <button type="button" class="pkg-type-tab" data-provider="g2bulk_voucher" onclick="setFulfillProvider('g2bulk_voucher')">Vouchers</button>
-                        <button type="button" class="pkg-type-tab" data-provider="jcplays" onclick="setFulfillProvider('jcplays')">JCPlays (Code)</button>
+                    <!-- Split into two clearly separate groups so Direct
+                         (player-ID top-up: G2Bulk, FazerCards, Manual) never
+                         visually mixes with Voucher/Redeem-code (no player
+                         ID: JCPlays, G2Bulk Vouchers, Manual) - mirrors the
+                         Direct/Voucher split already used for game & server
+                         import elsewhere in the app. Only the group matching
+                         which sidebar page (Direct Games / Gift Card &
+                         Vouchers) the admin opened "+ Add" from is shown -
+                         see refreshFulfillGroupVisibility(). -->
+                    <div id="fulfill-provider-tabs">
+                        <div id="fulfill-group-direct">
+                            <p class="fulfill-group-label">Direct (needs Player ID)</p>
+                            <div class="pkg-type-tabs">
+                                <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
+                                <button type="button" class="pkg-type-tab" data-provider="fazercard" onclick="setFulfillProvider('fazercard')">FazerCards</button>
+                                <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
+                            </div>
+                        </div>
+                        <div id="fulfill-group-voucher" style="display:none;">
+                            <p class="fulfill-group-label">Voucher / Code (no Player ID)</p>
+                            <div class="pkg-type-tabs">
+                                <button type="button" class="pkg-type-tab" data-provider="g2bulk_voucher" onclick="setFulfillProvider('g2bulk_voucher')">Vouchers</button>
+                                <button type="button" class="pkg-type-tab" data-provider="jcplays" onclick="setFulfillProvider('jcplays')">JCPlays (Code)</button>
+                                <button type="button" class="pkg-type-tab" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
+                            </div>
+                        </div>
                     </div>
+
 
                     <div id="g2bulk-fulfill-section" style="display:none;margin-top:10px;">
                         <label style="margin-top:0;">G2Bulk Game</label>
@@ -8014,6 +8030,7 @@
                 deleteBtn.style.display = 'none';
                 renderServerVariantThumbs(null);
             }
+            refreshFulfillGroupVisibility();
             refreshPickerButton('g2bulk');
             refreshPickerButton('jcplays');
             refreshPickerButton('voucher');
@@ -11003,6 +11020,19 @@
             refreshCheckPricesBtn();
         }
         window.setFulfillProvider = setFulfillProvider;
+
+        // Shows only the fulfillment tab group that matches which sidebar
+        // page ("Direct Games" vs "Gift Card & Vouchers", tracked in
+        // gameListTab) the admin had open when they hit "+ Add" / "Edit" -
+        // so a Direct-side game never gets offered JCPlays/Vouchers and a
+        // Voucher-side game never gets offered G2Bulk/FazerCards. Manual
+        // stays available on both sides.
+        function refreshFulfillGroupVisibility() {
+            const isVoucherSide = gameListTab === 'voucher';
+            document.getElementById('fulfill-group-direct').style.display = isVoucherSide ? 'none' : 'block';
+            document.getElementById('fulfill-group-voucher').style.display = isVoucherSide ? 'block' : 'none';
+        }
+        window.refreshFulfillGroupVisibility = refreshFulfillGroupVisibility;
 
         function onG2BulkGameChange() {
             const code = document.getElementById('edit-game-g2bulk-code').value;
