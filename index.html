@@ -10611,10 +10611,12 @@
         }
 
         // ---------- FazerCards game top-up catalogue import ----------
-        // GET /api/v2/topups returns { category_id, name } rows — no cover
-        // images of its own, so borrowed G2Bulk images (see attachG2BulkImages
-        // above) are used where a name match exists; unmatched games still
-        // fall back to colored initials.
+        // GET /api/v2/topups?include_ui=1 returns a real cover image per
+        // category (`imageurl`) - without include_ui it's just
+        // { category_id, name } with nothing to show, which is why this used
+        // to fall back to a borrowed G2Bulk image (see attachG2BulkImages
+        // above) by name match. That fallback stays in place for the rare
+        // category FazerCards itself has no image for.
         let FAZERCARD_TOPUPS_LIST = null;
         let pendingFazerCardFields = [];
         async function fetchFazerCardTopupsList(forceRefresh = false) {
@@ -10622,14 +10624,17 @@
             // /api/v2/topups is cursor-paginated (NOT offset/page): each response's
             // meta.next_cursor feeds the next request's `cursor` param, and
             // meta.has_more tells us when to stop. Using the max limit (500)
-            // keeps the number of round trips as low as possible.
+            // keeps the number of round trips as low as possible. `limit` caps
+            // items per page, not the account's total category count - a
+            // smaller total (e.g. 316) than the limit just means everything
+            // fit on the first page.
             const allItems = [];
             let cursor = null;
             let hasMore = true;
             let guard = 0; // safety cap in case the API ever misreports has_more
             while (hasMore && guard < 50) {
                 guard++;
-                const params = { limit: 500 };
+                const params = { limit: 500, include_ui: 1 };
                 if (cursor) params.cursor = cursor;
                 const data = await fazercardRequest('/topups', { params });
                 allItems.push(...(data.items || []));
@@ -10639,7 +10644,7 @@
                 if (!cursor) hasMore = false; // no cursor to continue with
             }
             console.log(`[FazerCards] finished after ${guard} page(s), total items: ${allItems.length}`);
-            FAZERCARD_TOPUPS_LIST = await attachG2BulkImages(allItems.map(g => ({ code: g.category_id, name: g.name })));
+            FAZERCARD_TOPUPS_LIST = await attachG2BulkImages(allItems.map(g => ({ code: g.category_id, name: g.name, image: g.imageurl || '' })));
             return FAZERCARD_TOPUPS_LIST;
         }
 
