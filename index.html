@@ -825,6 +825,17 @@
         .modal-body > * { flex-shrink: 0; }
         .modal-body label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
         .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; }
+        /* Soft-lock style for the Game Name field once FazerCards' region
+           split ("Free Fire (BD)" -> Name "Free Fire" + Server "BD") has
+           filled it in — greyed out + readonly so a stray edit can't break
+           the name-matching the store's server-variant grouping relies on.
+           Not a hard disable: the unlock button next to the label removes
+           it if the admin genuinely needs to change the name by hand. */
+        .modal-body input[type="text"].field-locked { background: var(--fill-soft, #eee); color: var(--text-muted); cursor: not-allowed; }
+        .field-lock-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .field-lock-btn { display: none; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; color: var(--accent); background: none; border: none; padding: 2px 4px; cursor: pointer; white-space: nowrap; }
+        .field-lock-btn svg { width: 12px; height: 12px; }
+        .field-lock-btn.visible { display: inline-flex; }
         /* Secret fields (API keys/tokens) — rendered as type="text" + CSS masking so Chrome/Firefox never
            detect them as real login password fields and offer to save them in the browser's password manager. */
         .secret-field-wrap { position: relative; }
@@ -2629,7 +2640,12 @@
             <div class="modal-body">
                 <input type="hidden" id="edit-game-id">
 
-                <label>Game Name</label>
+                <div class="field-lock-row">
+                    <label>Game Name</label>
+                    <button type="button" class="field-lock-btn" id="edit-game-name-unlock-btn" onclick="unlockGameNameField()">
+                        <svg class="ui-icon"><use href="#icon-lock"></use></svg> Unlock to edit
+                    </button>
+                </div>
                 <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
 
                 <label>Server / Region <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
@@ -6641,7 +6657,7 @@
         function queueGameCostScan(gameId) {
             if (gameId in gameCostUpdateCounts || gameCostScanInFlight.has(gameId)) return;
             const g = GAMES[gameId];
-            const linked = g && ((g.fulfillProvider === 'g2bulk' && g.g2bulkCode) || (g.fulfillProvider === 'jcplays' && g.jcplaysProduct) || (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory));
+            const linked = g && (g.g2bulkCode || g.jcplaysProduct || (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory));
             if (!linked) { gameCostUpdateCounts[gameId] = 0; gameStockOutCounts[gameId] = 0; return; }
             if (!gameCostScanQueue.includes(gameId)) gameCostScanQueue.push(gameId);
             runGameCostScanQueue();
@@ -6679,48 +6695,54 @@
         async function computeGameCostUpdateCount(g) {
             const rate = G2BULK_SETTINGS.usdRate || 4500;
             const packages = g.packages || [];
+            // A game can now carry more than one linked provider at once
+            // (e.g. some packages via G2Bulk, others via FazerCards) since
+            // Auto-Fulfill Provider became a per-package choice instead of a
+            // single game-wide one — so each linked provider is checked
+            // independently (by whether its code/product is actually saved,
+            // not by which tab was last open) and counts are summed, instead
+            // of stopping at the first match.
+            let changed = 0;
             try {
-                if (g.fulfillProvider === 'g2bulk' && g.g2bulkCode) {
+                if (g.g2bulkCode) {
                     const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g.g2bulkCode)}/catalogue`);
                     const data = await res.json();
-                    if (!data.success) return 0;
-                    const liveByName = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
-                    let changed = 0;
-                    packages.forEach(p => {
-                        const key = (p.g2bulk || '').trim();
-                        if (!key || !liveByName.has(key)) return;
-                        if (liveByName.get(key) !== (Number(p.cost) || 0)) changed++;
-                    });
-                    return changed;
-                } else if (g.fulfillProvider === 'jcplays' && g.jcplaysProduct) {
-                    if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) return 0;
+                    if (data.success) {
+                        const liveByName = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
+                        packages.forEach(p => {
+                            const key = (p.g2bulk || '').trim();
+                            if (!key || !liveByName.has(key)) return;
+                            if (liveByName.get(key) !== (Number(p.cost) || 0)) changed++;
+                        });
+                    }
+                }
+                if (g.jcplaysProduct && JCPLAYS_SETTINGS.uid && JCPLAYS_SETTINGS.email && JCPLAYS_SETTINGS.mKey) {
                     const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
-                    if (data.status !== 200) return 0;
-                    const liveById = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
-                    let changed = 0;
-                    packages.forEach(p => {
-                        const key = (p.jcplays || '').trim();
-                        if (!key || !liveById.has(key)) return;
-                        if (liveById.get(key) !== (Number(p.cost) || 0)) changed++;
-                    });
-                    return changed;
-                } else if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
+                    if (data.status === 200) {
+                        const liveById = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
+                        packages.forEach(p => {
+                            const key = (p.jcplays || '').trim();
+                            if (!key || !liveById.has(key)) return;
+                            if (liveById.get(key) !== (Number(p.cost) || 0)) changed++;
+                        });
+                    }
+                }
+                if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
                     const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
-                    if (!data.success) return 0;
-                    const products = data.products || (data.category ? data.category.products : []) || [];
-                    const liveById = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
-                    let changed = 0;
-                    packages.forEach(p => {
-                        const key = (p.voucherId || '').trim();
-                        if (!key || !liveById.has(key)) return;
-                        if (liveById.get(key) !== (Number(p.cost) || 0)) changed++;
-                    });
-                    return changed;
+                    if (data.success) {
+                        const products = data.products || (data.category ? data.category.products : []) || [];
+                        const liveById = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
+                        packages.forEach(p => {
+                            const key = (p.voucherId || '').trim();
+                            if (!key || !liveById.has(key)) return;
+                            if (liveById.get(key) !== (Number(p.cost) || 0)) changed++;
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Game cost scan error:', error);
             }
-            return 0;
+            return changed;
         }
         window.computeGameCostUpdateCount = computeGameCostUpdateCount;
 
@@ -6740,48 +6762,51 @@
         // needs to know before a customer's order fails against it.
         async function computeGameStockOutCount(g) {
             const packages = g.packages || [];
+            // Same reasoning as computeGameCostUpdateCount above: check every
+            // linked provider independently (by saved code/product presence)
+            // and sum the results, since one game can now mix providers
+            // across its packages instead of being tied to a single one.
+            let outCount = 0;
             try {
-                if (g.fulfillProvider === 'g2bulk' && g.g2bulkCode) {
+                if (g.g2bulkCode) {
                     const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g.g2bulkCode)}/catalogue`);
                     const data = await res.json();
-                    if (!data.success) return 0;
-                    const liveNames = new Set((data.catalogues || []).map(c => c.name));
-                    let outCount = 0;
-                    packages.forEach(p => {
-                        const key = (p.g2bulk || '').trim();
-                        if (!key) return;
-                        if (!liveNames.has(key)) outCount++;
-                    });
-                    return outCount;
-                } else if (g.fulfillProvider === 'jcplays' && g.jcplaysProduct) {
-                    if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) return 0;
-                    const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
-                    if (data.status !== 200) return 0;
-                    const liveIds = new Set(((data.data && data.data.product) || []).map(r => String(r.id)));
-                    let outCount = 0;
-                    packages.forEach(p => {
-                        const key = (p.jcplays || '').trim();
-                        if (!key) return;
-                        if (!liveIds.has(key)) outCount++;
-                    });
-                    return outCount;
-                } else if (g.fulfillProvider !== 'g2bulk_voucher' || !g.g2bulkVoucherCategory) {
-                    return 0;
+                    if (data.success) {
+                        const liveNames = new Set((data.catalogues || []).map(c => c.name));
+                        packages.forEach(p => {
+                            const key = (p.g2bulk || '').trim();
+                            if (!key) return;
+                            if (!liveNames.has(key)) outCount++;
+                        });
+                    }
                 }
-                const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
-                if (!data.success) return 0;
-                const products = data.products || (data.category ? data.category.products : []) || [];
-                const stockById = new Map(products.map(p => [String(p.id), Number(p.stock ?? 0)]));
-                let outCount = 0;
-                packages.forEach(p => {
-                    const key = (p.voucherId || '').trim();
-                    if (!key || !stockById.has(key)) return;
-                    if (stockById.get(key) <= 0) outCount++;
-                });
+                if (g.jcplaysProduct && JCPLAYS_SETTINGS.uid && JCPLAYS_SETTINGS.email && JCPLAYS_SETTINGS.mKey) {
+                    const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
+                    if (data.status === 200) {
+                        const liveIds = new Set(((data.data && data.data.product) || []).map(r => String(r.id)));
+                        packages.forEach(p => {
+                            const key = (p.jcplays || '').trim();
+                            if (!key) return;
+                            if (!liveIds.has(key)) outCount++;
+                        });
+                    }
+                }
+                if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
+                    const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
+                    if (data.success) {
+                        const products = data.products || (data.category ? data.category.products : []) || [];
+                        const stockById = new Map(products.map(p => [String(p.id), Number(p.stock ?? 0)]));
+                        packages.forEach(p => {
+                            const key = (p.voucherId || '').trim();
+                            if (!key || !stockById.has(key)) return;
+                            if (stockById.get(key) <= 0) outCount++;
+                        });
+                    }
+                }
                 return outCount;
             } catch (error) {
                 console.error('Stock-out scan error:', error);
-                return 0;
+                return outCount;
             }
         }
         window.computeGameStockOutCount = computeGameStockOutCount;
@@ -6865,40 +6890,56 @@
             try {
                 const rate = G2BULK_SETTINGS.usdRate || 4500;
                 const packages = (g.packages || []).map(p => ({ ...p }));
-                let liveByKey = null;
-                let keyField = null;
+                // A game can now have more than one live source linked at once
+                // (per-package Auto-Fulfill Provider) — collect every source
+                // this game actually has linked instead of just the first
+                // match, and apply cost updates from each against the
+                // packages that key into it. One source's failure (e.g.
+                // missing JCPlays credentials) no longer blocks updating the
+                // others.
+                const sources = [];
+                const sourceErrors = [];
 
-                if (g.fulfillProvider === 'g2bulk' && g.g2bulkCode) {
-                    const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g.g2bulkCode)}/catalogue`);
-                    const data = await res.json();
-                    if (!data.success) throw new Error(data.message || 'Check failed');
-                    liveByKey = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
-                    keyField = 'g2bulk';
-                } else if (g.fulfillProvider === 'jcplays' && g.jcplaysProduct) {
-                    if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) throw new Error('Add your JCPlays credentials first.');
-                    const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
-                    if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
-                    liveByKey = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
-                    keyField = 'jcplays';
-                } else if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
-                    const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
-                    if (!data.success) throw new Error(data.message || 'Check failed');
-                    const products = data.products || (data.category ? data.category.products : []) || [];
-                    liveByKey = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
-                    keyField = 'voucherId';
-                } else {
-                    throw new Error('No live source linked.');
+                if (g.g2bulkCode) {
+                    try {
+                        const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g.g2bulkCode)}/catalogue`);
+                        const data = await res.json();
+                        if (!data.success) throw new Error(data.message || 'Check failed');
+                        sources.push({ keyField: 'g2bulk', liveByKey: new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)])) });
+                    } catch (err) { sourceErrors.push(`G2Bulk: ${err.message}`); }
+                }
+                if (g.jcplaysProduct) {
+                    try {
+                        if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) throw new Error('Add your JCPlays credentials first.');
+                        const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
+                        if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
+                        sources.push({ keyField: 'jcplays', liveByKey: new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)])) });
+                    } catch (err) { sourceErrors.push(`JCPlays: ${err.message}`); }
+                }
+                if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
+                    try {
+                        const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
+                        if (!data.success) throw new Error(data.message || 'Check failed');
+                        const products = data.products || (data.category ? data.category.products : []) || [];
+                        sources.push({ keyField: 'voucherId', liveByKey: new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)])) });
+                    } catch (err) { sourceErrors.push(`Voucher: ${err.message}`); }
+                }
+
+                if (sources.length === 0) {
+                    throw new Error(sourceErrors[0] || 'No live source linked.');
                 }
 
                 let changed = 0;
                 packages.forEach(p => {
-                    const key = (p[keyField] || '').trim();
-                    if (!key || !liveByKey.has(key)) return;
-                    const liveCost = liveByKey.get(key);
-                    const currentCost = Number(p.cost) || 0;
-                    if (liveCost === currentCost) return;
-                    changed++;
-                    p.cost = liveCost;
+                    sources.forEach(({ keyField, liveByKey }) => {
+                        const key = (p[keyField] || '').trim();
+                        if (!key || !liveByKey.has(key)) return;
+                        const liveCost = liveByKey.get(key);
+                        const currentCost = Number(p.cost) || 0;
+                        if (liveCost === currentCost) return;
+                        changed++;
+                        p.cost = liveCost;
+                    });
                 });
 
                 if (changed === 0) {
@@ -7124,7 +7165,7 @@
         }
         window.removeCustomPkgTab = removeCustomPkgTab;
 
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '') {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', provider = null) {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
             // name: a leading number ("100 Diamonds") → Currency, a plain name
@@ -7134,6 +7175,18 @@
                 type = detectPkgTypeFromName(amount);
                 tab = type;
             }
+            // Auto-Fulfill Provider is per-package, not tied to whichever
+            // outer tab happens to be open (see the "mixing G2Bulk +
+            // FazerCards in one game" fix) — an explicit provider argument
+            // (used by each Import function) always wins; otherwise it's
+            // inferred from whichever ID field actually has a saved value,
+            // falling back to the currently open tab for a brand new row
+            // (so "+ Add Package" still defaults sensibly), and to Manual
+            // for anything else (including while the Vouchers tab is open,
+            // since vouchers use their own separate voucherId field below).
+            const resolvedProvider = provider
+                || (g2bulkName ? 'g2bulk' : jcplaysProductId ? 'jcplays' : fazercardOfferId ? 'fazercard'
+                    : (['g2bulk', 'jcplays', 'fazercard'].includes(currentFulfillProvider) ? currentFulfillProvider : 'manual'));
             const resolvedTab = tab || currentPkgTab;
             // A tab we haven't seen yet on this game (e.g. loaded from saved
             // data) gets auto-registered as a custom tab so it shows in the bar.
@@ -7228,10 +7281,19 @@
                                 </div>
                                 <div class="pkg-profit-badge" title="Profit margin = (Price − Cost) / Cost">--</div>
                             </div>
-                            <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk' ? 'block' : 'none'};">
-                            <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'jcplays' ? 'block' : 'none'};">
-                            <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'g2bulk_voucher' ? 'block' : 'none'};">
-                            <input type="text" class="pkg-fazercard" placeholder="FazerCards offer_id" value="${fazercardOfferId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:${currentFulfillProvider === 'fazercard' ? 'block' : 'none'};">
+                            <div class="pkg-provider-row" style="display:flex;align-items:center;gap:8px;">
+                                <label style="margin:0;font-size:11px;color:var(--text-muted);white-space:nowrap;">Auto-Fulfill</label>
+                                <select class="pkg-provider" onchange="refreshPackageRowProviderVisibility()" style="flex:1;padding:6px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text-primary);">
+                                    <option value="manual" ${resolvedProvider === 'manual' ? 'selected' : ''}>Manual (no auto-fulfill)</option>
+                                    <option value="g2bulk" ${resolvedProvider === 'g2bulk' ? 'selected' : ''}>G2Bulk</option>
+                                    <option value="jcplays" ${resolvedProvider === 'jcplays' ? 'selected' : ''}>JCPlays</option>
+                                    <option value="fazercard" ${resolvedProvider === 'fazercard' ? 'selected' : ''}>FazerCards</option>
+                                </select>
+                            </div>
+                            <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-fazercard" placeholder="FazerCards offer_id" value="${fazercardOfferId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <span class="pkg-stock-badge"></span>
                             <div class="pkg-card-footer">
                                 <button type="button" class="pkg-card-save-btn" onclick="collapsePackageRow(this)">Save</button>
@@ -7245,7 +7307,43 @@
             renderPkgTabBar();
             applyPackageTabFilter();
             updatePackageProfit(row.querySelector('.pkg-price'));
+            refreshPackageRowProviderVisibility();
         }
+
+        // Shows/hides each package row's provider-specific ID field based on
+        // that row's OWN "Auto-Fulfill" select — not the outer tab bar —
+        // since a single game can now mix providers across its packages
+        // (e.g. some via G2Bulk, others via FazerCards). The one exception
+        // is Vouchers: that's still a whole-game "kind" switch (a
+        // completely different catalogue/import flow), so while the
+        // Vouchers tab is open every row falls back to the single shared
+        // voucherId field instead, exactly as before.
+        function refreshPackageRowProviderVisibility() {
+            const isVoucherGame = currentFulfillProvider === 'g2bulk_voucher';
+            document.querySelectorAll('#edit-packages-list .package-row').forEach(row => {
+                const providerRow = row.querySelector('.pkg-provider-row');
+                const g2 = row.querySelector('.pkg-g2bulk');
+                const jc = row.querySelector('.pkg-jcplays');
+                const fc = row.querySelector('.pkg-fazercard');
+                const vc = row.querySelector('.pkg-voucher-id');
+                if (!providerRow) return;
+                if (isVoucherGame) {
+                    providerRow.style.display = 'none';
+                    g2.style.display = 'none';
+                    jc.style.display = 'none';
+                    fc.style.display = 'none';
+                    vc.style.display = 'block';
+                } else {
+                    providerRow.style.display = 'flex';
+                    vc.style.display = 'none';
+                    const rowProvider = row.querySelector('.pkg-provider').value;
+                    g2.style.display = rowProvider === 'g2bulk' ? 'block' : 'none';
+                    jc.style.display = rowProvider === 'jcplays' ? 'block' : 'none';
+                    fc.style.display = rowProvider === 'fazercard' ? 'block' : 'none';
+                }
+            });
+        }
+        window.refreshPackageRowProviderVisibility = refreshPackageRowProviderVisibility;
 
         // Uploads a package's card image to ImgBB the moment it's picked, showing
         // an instant local preview while the real upload happens in the
@@ -7769,6 +7867,7 @@
             editingBannerImageFile = null;
             editingImageRemoteUrl = null;
             document.getElementById('edit-game-id').value = gameId || '';
+            unlockGameNameField();
             document.getElementById('edit-packages-list').innerHTML = '';
             resetPackageTabs();
             document.getElementById('edit-game-file').value = '';
@@ -7839,6 +7938,13 @@
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
+                // refreshPickerButton/refreshCheckPricesBtn read these two
+                // fields directly, but setting .value above doesn't fire an
+                // onchange — refresh both explicitly now that they're loaded
+                // (matters more now that a game can have both linked at once).
+                refreshPickerButton('g2bulk');
+                refreshPickerButton('jcplays');
+                refreshCheckPricesBtn();
                 document.getElementById('edit-game-voucher-category').value = g.g2bulkVoucherCategory || '';
                 onVoucherCategoryChange();
                 document.getElementById('edit-game-fazercard-category').value = g.fazercardCategoryId || '';
@@ -7958,14 +8064,19 @@
             if (!name) { window.showToast('Please enter a game name', 'fail'); return; }
             const serverName = document.getElementById('edit-game-server-name').value.trim();
 
-            // Only the currently selected provider's links are kept - the
-            // other one is force-blanked here even if a value is still
-            // sitting in its (hidden) input, so a saved game can never end
-            // up ambiguous about which API should fulfill its orders.
-            const g2bulkCode = currentFulfillProvider === 'g2bulk' ? document.getElementById('edit-game-g2bulk-code').value : '';
-            const jcplaysProduct = currentFulfillProvider === 'jcplays' ? document.getElementById('edit-game-jcplays-code').value.trim() : '';
+            // Each provider's link is now saved independently of which tab is
+            // currently open — a game can have both a G2Bulk game code and a
+            // FazerCards category linked at once (e.g. Mobile Legends
+            // Diamonds via G2Bulk + a Weekly Pass via FazerCards), since
+            // Auto-Fulfill Provider moved to a per-package choice below.
+            // Vouchers stays the one exception: it's still a whole-game kind
+            // switch (a different catalogue/import flow entirely), so its
+            // category is only kept while that tab is the one open — exactly
+            // as before.
+            const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
+            const jcplaysProduct = document.getElementById('edit-game-jcplays-code').value.trim();
             const g2bulkVoucherCategory = currentFulfillProvider === 'g2bulk_voucher' ? document.getElementById('edit-game-voucher-category').value : '';
-            const fazercardCategoryId = currentFulfillProvider === 'fazercard' ? document.getElementById('edit-game-fazercard-category').value : '';
+            const fazercardCategoryId = document.getElementById('edit-game-fazercard-category').value;
             // Independent of currentFulfillProvider (unlike the codes above) -
             // only meaningful when fazercard is the provider, but kept even if
             // the admin is just previewing another tab, since blanking it on
@@ -7977,18 +8088,27 @@
             const playerIdRequired = document.getElementById('edit-game-playerid').checked;
             const serverIdRequired = playerIdRequired && document.getElementById('edit-game-serverid').checked;
 
-            const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => ({
-                amount: row.querySelector('.pkg-amount').value.trim(),
-                cost: Number(row.querySelector('.pkg-cost').value) || 0,
-                price: Number(row.querySelector('.pkg-price').value) || 0,
-                g2bulk: currentFulfillProvider === 'g2bulk' ? row.querySelector('.pkg-g2bulk').value.trim() : '',
-                jcplays: currentFulfillProvider === 'jcplays' ? row.querySelector('.pkg-jcplays').value.trim() : '',
-                voucherId: currentFulfillProvider === 'g2bulk_voucher' ? row.querySelector('.pkg-voucher-id').value.trim() : '',
-                fazercardOfferId: currentFulfillProvider === 'fazercard' ? row.querySelector('.pkg-fazercard').value.trim() : '',
-                image: row.querySelector('.pkg-img-preview').dataset.url || '',
-                type: row.querySelector('.pkg-type').value || 'currency',
-                tab: row.dataset.tab || row.querySelector('.pkg-type').value || 'currency'
-            })).filter(p => p.amount && p.price > 0);
+            const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => {
+                // Voucher rows (Vouchers tab) still use the single shared
+                // voucherId field; every other row saves whichever of the
+                // three provider ID fields matches ITS OWN "Auto-Fulfill"
+                // select, not the outer tab — so switching tabs to link a
+                // different provider can never blank out another package's
+                // already-saved id.
+                const rowProvider = row.querySelector('.pkg-provider') ? row.querySelector('.pkg-provider').value : 'manual';
+                return {
+                    amount: row.querySelector('.pkg-amount').value.trim(),
+                    cost: Number(row.querySelector('.pkg-cost').value) || 0,
+                    price: Number(row.querySelector('.pkg-price').value) || 0,
+                    g2bulk: rowProvider === 'g2bulk' ? row.querySelector('.pkg-g2bulk').value.trim() : '',
+                    jcplays: rowProvider === 'jcplays' ? row.querySelector('.pkg-jcplays').value.trim() : '',
+                    voucherId: currentFulfillProvider === 'g2bulk_voucher' ? row.querySelector('.pkg-voucher-id').value.trim() : '',
+                    fazercardOfferId: rowProvider === 'fazercard' ? row.querySelector('.pkg-fazercard').value.trim() : '',
+                    image: row.querySelector('.pkg-img-preview').dataset.url || '',
+                    type: row.querySelector('.pkg-type').value || 'currency',
+                    tab: row.dataset.tab || row.querySelector('.pkg-type').value || 'currency'
+                };
+            }).filter(p => p.amount && p.price > 0);
 
             if (packages.length === 0) { window.showToast('Add at least one valid package', 'fail'); return; }
 
@@ -8023,7 +8143,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: currentFulfillProvider === 'fazercard' ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -10848,10 +10968,12 @@
             document.getElementById('jcplays-fulfill-section').style.display = provider === 'jcplays' ? 'block' : 'none';
             document.getElementById('g2bulk-voucher-fulfill-section').style.display = provider === 'g2bulk_voucher' ? 'block' : 'none';
             document.getElementById('fazercard-fulfill-section').style.display = provider === 'fazercard' ? 'block' : 'none';
-            document.querySelectorAll('#edit-packages-list .pkg-g2bulk').forEach(el => el.style.display = provider === 'g2bulk' ? 'block' : 'none');
-            document.querySelectorAll('#edit-packages-list .pkg-jcplays').forEach(el => el.style.display = provider === 'jcplays' ? 'block' : 'none');
-            document.querySelectorAll('#edit-packages-list .pkg-voucher-id').forEach(el => el.style.display = provider === 'g2bulk_voucher' ? 'block' : 'none');
-            document.querySelectorAll('#edit-packages-list .pkg-fazercard').forEach(el => el.style.display = provider === 'fazercard' ? 'block' : 'none');
+            // Package rows no longer follow this tab (each has its own
+            // Auto-Fulfill Provider select now) — this tab only decides
+            // which game-level link section is visible below, and which
+            // provider a brand-new row defaults to. See
+            // refreshPackageRowProviderVisibility for the per-row logic.
+            refreshPackageRowProviderVisibility();
             document.getElementById('fazercard-import-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
             if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
             if (provider === 'fazercard') { refreshPickerButton('fazercard'); }
@@ -10881,7 +11003,10 @@
             const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value.trim();
             const jcplaysCode = document.getElementById('edit-game-jcplays-code').value.trim();
             const voucherCategory = document.getElementById('edit-game-voucher-category').value.trim();
-            const linked = (currentFulfillProvider === 'g2bulk' && g2bulkCode) || (currentFulfillProvider === 'jcplays' && jcplaysCode) || (currentFulfillProvider === 'g2bulk_voucher' && voucherCategory);
+            // g2bulkCode/jcplaysCode can now both be set at once (mixed
+            // per-package providers) — show the button if either is linked,
+            // not just whichever tab happens to be open.
+            const linked = (currentFulfillProvider === 'g2bulk_voucher' && voucherCategory) || g2bulkCode || jcplaysCode;
             btn.style.display = linked ? 'inline-flex' : 'none';
         }
         window.refreshCheckPricesBtn = refreshCheckPricesBtn;
@@ -11217,6 +11342,13 @@
             if (code && regionMatch && !nameInput.value.trim() && serverNameInput && !serverNameInput.value.trim()) {
                 nameInput.value = regionMatch[1].trim();
                 serverNameInput.value = regionMatch[2].trim();
+                // Soft-lock: the split above only works because Game Name
+                // exactly matches every sibling region's split name — an
+                // accidental retype here would silently break the store's
+                // server-variant grouping for this game, so lock it as
+                // readonly right after the auto-fill (unlock button stays
+                // available for a deliberate manual change).
+                lockGameNameField();
             } else if (code && !nameInput.value.trim()) {
                 nameInput.value = name;
             }
@@ -11253,6 +11385,22 @@
             closeGamePicker();
         }
         window.selectGamePickerItem = selectGamePickerItem;
+
+        function lockGameNameField() {
+            const nameInput = document.getElementById('edit-game-name');
+            nameInput.readOnly = true;
+            nameInput.classList.add('field-locked');
+            document.getElementById('edit-game-name-unlock-btn').classList.add('visible');
+        }
+        window.lockGameNameField = lockGameNameField;
+
+        function unlockGameNameField() {
+            const nameInput = document.getElementById('edit-game-name');
+            nameInput.readOnly = false;
+            nameInput.classList.remove('field-locked');
+            document.getElementById('edit-game-name-unlock-btn').classList.remove('visible');
+        }
+        window.unlockGameNameField = unlockGameNameField;
 
         // Keeps the JCPlays picker button's label/thumb in sync whenever the
         // admin types a custom code directly into the field instead of picking
@@ -11637,69 +11785,65 @@
             try {
                 let changed = 0;
                 const rate = G2BULK_SETTINGS.usdRate || 4500;
+                const markRowChanged = (row, liveCost) => {
+                    const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
+                    if (liveCost === currentCost) return false;
+                    const u = row.querySelector('.pkg-cost-update-btn');
+                    u.dataset.newCost = liveCost;
+                    u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
+                    u.style.display = 'flex';
+                    return true;
+                };
 
-                if (currentFulfillProvider === 'g2bulk') {
-                    const code = document.getElementById('edit-game-g2bulk-code').value;
-                    if (!code) throw new Error('No G2Bulk game linked.');
-                    const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(code)}/catalogue`);
-                    const data = await res.json();
-                    if (!data.success) throw new Error(data.message || 'Check failed');
-                    const liveByName = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
-                    rows.forEach(row => {
-                        const key = row.querySelector('.pkg-g2bulk').value.trim();
-                        if (!key || !liveByName.has(key)) return;
-                        const liveCost = liveByName.get(key);
-                        const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
-                        if (liveCost !== currentCost) {
-                            changed++;
-                            const u = row.querySelector('.pkg-cost-update-btn');
-                            u.dataset.newCost = liveCost;
-                            u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
-                            u.style.display = 'flex';
-                        }
-                    });
-                } else if (currentFulfillProvider === 'jcplays') {
-                    const product = document.getElementById('edit-game-jcplays-code').value.trim();
-                    if (!product) throw new Error('No JCPlays product code linked.');
-                    if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) throw new Error('Add your JCPlays credentials first.');
-                    const data = await jcplaysRequest('productlist', { product });
-                    if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
-                    const liveById = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
-                    rows.forEach(row => {
-                        const key = row.querySelector('.pkg-jcplays').value.trim();
-                        if (!key || !liveById.has(key)) return;
-                        const liveCost = liveById.get(key);
-                        const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
-                        if (liveCost !== currentCost) {
-                            changed++;
-                            const u = row.querySelector('.pkg-cost-update-btn');
-                            u.dataset.newCost = liveCost;
-                            u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
-                            u.style.display = 'flex';
-                        }
-                    });
-                } else if (currentFulfillProvider === 'g2bulk_voucher') {
-                    const categoryId = document.getElementById('edit-game-voucher-category').value.trim();
-                    if (!categoryId) throw new Error('No voucher category linked.');
-                    const data = await fetchG2BulkCategoryLive(categoryId);
+                // Checks every provider this game actually has linked (by
+                // saved code, not by which tab happens to be open) since a
+                // game can now mix G2Bulk/JCPlays packages together — each
+                // row's own value is only ever checked against the source it
+                // actually belongs to, so a G2Bulk row is never compared
+                // against the JCPlays catalogue or vice versa.
+                const g2bulkCodeVal = document.getElementById('edit-game-g2bulk-code').value;
+                const jcplaysCodeVal = document.getElementById('edit-game-jcplays-code').value.trim();
+                const voucherCategoryVal = document.getElementById('edit-game-voucher-category').value.trim();
+                let anyChecked = false;
+
+                if (currentFulfillProvider === 'g2bulk_voucher') {
+                    if (!voucherCategoryVal) throw new Error('No voucher category linked.');
+                    const data = await fetchG2BulkCategoryLive(voucherCategoryVal);
                     if (!data.success) throw new Error(data.message || 'Check failed');
                     const products = data.products || (data.category ? data.category.products : []) || [];
                     const liveById = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
+                    anyChecked = true;
                     rows.forEach(row => {
                         const key = row.querySelector('.pkg-voucher-id').value.trim();
                         if (!key || !liveById.has(key)) return;
-                        const liveCost = liveById.get(key);
-                        const currentCost = Number(row.querySelector('.pkg-cost').value) || 0;
-                        if (liveCost !== currentCost) {
-                            changed++;
-                            const u = row.querySelector('.pkg-cost-update-btn');
-                            u.dataset.newCost = liveCost;
-                            u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
-                            u.style.display = 'flex';
-                        }
+                        if (markRowChanged(row, liveById.get(key))) changed++;
                     });
                 } else {
-                    return;
+                    if (g2bulkCodeVal) {
+                        const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g2bulkCodeVal)}/catalogue`);
+                        const data = await res.json();
+                        if (!data.success) throw new Error(data.message || 'Check failed');
+                        const liveByName = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
+                        anyChecked = true;
+                        rows.forEach(row => {
+                            const key = row.querySelector('.pkg-g2bulk').value.trim();
+                            if (!key || !liveByName.has(key)) return;
+                            if (markRowChanged(row, liveByName.get(key))) changed++;
+                        });
+                    }
+                    if (jcplaysCodeVal) {
+                        if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) throw new Error('Add your JCPlays credentials first.');
+                        const data = await jcplaysRequest('productlist', { product: jcplaysCodeVal });
+                        if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
+                        const liveById = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
+                        anyChecked = true;
+                        rows.forEach(row => {
+                            const key = row.querySelector('.pkg-jcplays').value.trim();
+                            if (!key || !liveById.has(key)) return;
+                            if (markRowChanged(row, liveById.get(key))) changed++;
+                        });
+                    }
+                    if (!anyChecked) throw new Error('No G2Bulk or JCPlays game linked.');
                 }
 
                 if (statusEl) {
@@ -12609,6 +12753,10 @@
             // that default logic changes later.
             setFulfillProvider(wantVoucher ? 'g2bulk_voucher' : 'manual');
             document.getElementById('edit-game-name').value = base.name || '';
+            // Same soft-lock as the FazerCards region split: this flow only
+            // works if Game Name matches the base game exactly, so lock it
+            // right after pre-filling to prevent an accidental retype.
+            lockGameNameField();
             document.getElementById('edit-game-category').value = base.category || '';
             renderGameCategorySelect();
             document.getElementById('edit-game-description').value = base.description || '';
