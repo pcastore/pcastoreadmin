@@ -338,20 +338,16 @@
             100% { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
         }
 
-        /* Header clock — compact split-flap ("flip clock") style, mirroring
-           the retro flip-clock reference: dark rounded frame, chrome axle
-           bar across the middle, cream flap cards with a crease line, bold
-           orange digits. Fixed hex colors here (not theme tokens) since the
-           flip-clock look is a deliberate, theme-independent accent piece —
-           like a little desk gadget bolted onto the header. */
-        #header-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 8px; border-radius: 10px; background: linear-gradient(180deg, #5c2f2f, #3f1f1f); border: 1.5px solid #FF6A3D; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.25); }
-        .flip-clock { display: flex; align-items: center; gap: 3px; position: relative; }
-        .flip-clock::before { content: ''; position: absolute; top: 42%; left: 3px; right: 3px; height: 3px; background: linear-gradient(180deg, #d8d8d8, #8a8a8a); border-radius: 2px; z-index: 2; pointer-events: none; }
-        .flip-flap { position: relative; width: 25px; height: 24px; border-radius: 4px; background: linear-gradient(180deg, #f7f3ea 0%, #e4ded0 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 3px rgba(0,0,0,0.35); }
-        .flip-flap::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(0,0,0,0.22); }
-        .flip-flap-digit { font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 700; font-size: 12.5px; color: #E8531F; line-height: 1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
-        #header-clock-date { font-size: 8px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.4px; }
-        @media (max-width: 380px) { #header-clock-date { display: none; } #header-clock { padding: 3px 6px; } }
+        /* Header clock — simple flat digital readout next to the store name:
+           a single pill showing HH:MM (colon blinks via animation) plus a
+           small date line underneath. Replaces the old retro flip-flap
+           widget with a plain, minimal look that sits quietly in the header. */
+        #header-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px 10px; border-radius: 10px; background: var(--fill-soft); border: 1px solid var(--border-glass); }
+        .digital-clock-time { font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-weight: 700; font-size: 14px; color: var(--accent); line-height: 1.1; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
+        .digital-clock-time .clock-colon { animation: clockColonBlink 2s steps(1) infinite; }
+        @keyframes clockColonBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.25; } }
+        #header-clock-date { font-size: 8px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
+        @media (max-width: 380px) { #header-clock-date { display: none; } #header-clock { padding: 3px 8px; } }
 
         /* Connection status dot — small always-visible indicator next to the
            clock. Green + "Online" normally; flips red + "Offline" together
@@ -1610,7 +1606,7 @@
         <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></symbol>
         <symbol id="icon-bar-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></symbol>
         <symbol id="icon-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></symbol>
-        <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="3" x2="12" y2="4.5"></line><line x1="12" y1="19.5" x2="12" y2="21"></line><line x1="3" y1="12" x2="4.5" y2="12"></line><line x1="19.5" y1="12" x2="21" y2="12"></line><polyline points="12 7 12 12.5 16 15"></polyline></symbol>
         <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></symbol>
         <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
         <symbol id="icon-trending-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></symbol>
@@ -1674,10 +1670,7 @@
             PCA Store
         </div>
         <div id="header-clock" title="Local time">
-            <div class="flip-clock">
-                <div class="flip-flap"><span class="flip-flap-digit" id="header-clock-hh">--</span></div>
-                <div class="flip-flap"><span class="flip-flap-digit" id="header-clock-mm">--</span></div>
-            </div>
+            <div class="digital-clock-time"><span id="header-clock-hh">--</span><span class="clock-colon">:</span><span id="header-clock-mm">--</span></div>
             <span id="header-clock-date">--</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -3052,7 +3045,7 @@
                 <label>Account Name</label>
                 <input type="text" id="edit-payment-accountname" placeholder="e.g. Mg Mg Aung">
 
-                <label>Logo / QR Image (optional)</label>
+                <label>Logo Image (optional)</label>
                 <label class="img-update-box" id="payment-img-update-box" for="edit-payment-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Image Update</span>
@@ -3063,6 +3056,24 @@
                 </label>
                 <input type="file" id="edit-payment-file" class="img-update-input" accept="image/*" onchange="previewPaymentImage(event)">
                 <p id="payment-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+
+                <!-- Separate from the small round Logo above: this is the
+                     scannable QR code shown to the customer next to the
+                     phone number/name once they pick this method at
+                     checkout, so they can scan-to-pay instead of typing the
+                     number into their banking app. Optional - stored as its
+                     own qrImage field so it never overwrites the logo. -->
+                <label style="margin-top:14px;">QR Code Image (optional)</label>
+                <label class="img-update-box" id="payment-qr-update-box" for="edit-payment-qr-file">
+                    <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                    <span class="img-update-label">QR Update</span>
+                    <img id="edit-payment-qr-preview" src="" alt="Preview" style="display:none;">
+                    <span class="img-update-change" id="payment-qr-update-change" style="display:none;">
+                        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                    </span>
+                </label>
+                <input type="file" id="edit-payment-qr-file" class="img-update-input" accept="image/*" onchange="previewPaymentQrImage(event)">
+                <p id="payment-qr-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
@@ -6437,6 +6448,7 @@
         // their own file, so a manual upload always wins.
         let editingImageRemoteUrl = null;
         let editingPaymentImageFile = null;
+        let editingPaymentQrImageFile = null;
 
         // ---------- Package tab system (Package / Currency / custom) ----------
         // Keeps the two package "types" — and any admin-defined custom groups —
@@ -8094,6 +8106,21 @@
                 img.style.display = 'block';
                 document.getElementById('payment-img-update-box').classList.add('has-image');
                 document.getElementById('payment-img-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function previewPaymentQrImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingPaymentQrImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-payment-qr-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('payment-qr-update-box').classList.add('has-image');
+                document.getElementById('payment-qr-update-change').style.display = 'flex';
             };
             reader.readAsDataURL(file);
         }
@@ -12708,13 +12735,19 @@
 
         function openPaymentEditor(paymentId = null) {
             editingPaymentImageFile = null;
+            editingPaymentQrImageFile = null;
             document.getElementById('edit-payment-id').value = paymentId || '';
             document.getElementById('edit-payment-file').value = '';
+            document.getElementById('edit-payment-qr-file').value = '';
             document.getElementById('payment-upload-status').style.display = 'none';
+            document.getElementById('payment-qr-upload-status').style.display = 'none';
             const preview = document.getElementById('edit-payment-preview');
             const deleteBtn = document.getElementById('delete-payment-btn');
             const updateBox = document.getElementById('payment-img-update-box');
             const changeBadge = document.getElementById('payment-img-update-change');
+            const qrPreview = document.getElementById('edit-payment-qr-preview');
+            const qrUpdateBox = document.getElementById('payment-qr-update-box');
+            const qrChangeBadge = document.getElementById('payment-qr-update-change');
             if (paymentId && PAYMENT_METHODS[paymentId]) {
                 const p = PAYMENT_METHODS[paymentId];
                 document.getElementById('payment-editor-title').innerText = 'Edit Payment Method';
@@ -12728,6 +12761,13 @@
                     preview.src = ''; preview.style.display = 'none';
                     updateBox.classList.remove('has-image'); changeBadge.style.display = 'none';
                 }
+                if (p.qrImage) {
+                    qrPreview.src = p.qrImage; qrPreview.style.display = 'block';
+                    qrUpdateBox.classList.add('has-image'); qrChangeBadge.style.display = 'flex';
+                } else {
+                    qrPreview.src = ''; qrPreview.style.display = 'none';
+                    qrUpdateBox.classList.remove('has-image'); qrChangeBadge.style.display = 'none';
+                }
                 deleteBtn.style.display = 'block';
             } else {
                 document.getElementById('payment-editor-title').innerText = 'Add Payment Method';
@@ -12738,6 +12778,10 @@
                 preview.style.display = 'none';
                 updateBox.classList.remove('has-image');
                 changeBadge.style.display = 'none';
+                qrPreview.src = '';
+                qrPreview.style.display = 'none';
+                qrUpdateBox.classList.remove('has-image');
+                qrChangeBadge.style.display = 'none';
                 deleteBtn.style.display = 'none';
             }
             document.getElementById('payment-editor-modal-overlay').classList.add('show');
@@ -12765,8 +12809,12 @@
                 if (editingPaymentImageFile) {
                     imageUrl = await uploadImageToImgBB(editingPaymentImageFile, 'payment-upload-status');
                 }
+                let qrImageUrl = (paymentId && PAYMENT_METHODS[paymentId]) ? (PAYMENT_METHODS[paymentId].qrImage || '') : '';
+                if (editingPaymentQrImageFile) {
+                    qrImageUrl = await uploadImageToImgBB(editingPaymentQrImageFile, 'payment-qr-upload-status');
+                }
 
-                const data = { name, number, accountName, image: imageUrl };
+                const data = { name, number, accountName, image: imageUrl, qrImage: qrImageUrl };
                 if (paymentId) {
                     await updateDoc(doc(db, "paymentMethods", paymentId), data);
                     logAdminActivity('Edited payment method', name);
@@ -12832,6 +12880,7 @@
         window.openPaymentEditor = openPaymentEditor;
         window.closePaymentEditor = closePaymentEditor;
         window.previewPaymentImage = previewPaymentImage;
+        window.previewPaymentQrImage = previewPaymentQrImage;
         window.savePaymentMethod = savePaymentMethod;
         window.deletePaymentMethod = deletePaymentMethod;
         window.deleteCurrentPaymentMethod = deleteCurrentPaymentMethod;
