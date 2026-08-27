@@ -1940,6 +1940,25 @@
                 </div>
             </div>
 
+            <div class="dash-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>API Balances</span>
+                <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="refreshAllApiBalances()">Refresh</button>
+            </div>
+            <div class="details-grid" style="margin-top:0;">
+                <div class="details-grid-item">
+                    <span>G2Bulk</span>
+                    <b id="an-g2bulk-balance-display" style="color:var(--accent);">—</b>
+                </div>
+                <div class="details-grid-item">
+                    <span>JCPlays</span>
+                    <b id="an-jcplays-balance-display" style="color:var(--accent);">—</b>
+                </div>
+                <div class="details-grid-item">
+                    <span>FazerCards</span>
+                    <b id="an-fazercard-balance-display" style="color:var(--accent);">—</b>
+                </div>
+            </div>
+
             <div class="dash-section-label">Top Spenders</div>
             <div id="an-top-spenders-container" class="admin-card" style="margin-top:0;">
                 <p class="empty-msg">Loading analytics...</p>
@@ -2773,7 +2792,7 @@
                             <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
                         </div>
                         <p id="jcplays-denom-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
-                        <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">JCPlays ကထွက်လာတဲ့ Redeem/PIN code ကို Order Detail ထဲမှာ ပြပေးပြီး admin ကနေ customer ဆီ ကိုယ်တိုင်ပို့ပေးရမယ် — Player ID/Server ID မလိုပါဘူး။ ဒီဂိမ်းက JCPlays package ချည်းပဲဆိုရင် "Requires Player ID" ကို ပိတ်ထားလို့ရပါတယ်.</p>
+                        <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">JCPlays ကထွက်လာတဲ့ Redeem/PIN code ကို Order Detail ထဲမှာ ပြပေးပြီး customer ရဲ့ Transaction History မှာလည်း auto ပေါ်ပေးပါတယ် — admin က လှမ်းမပို့ရတော့ပါ (Player ID/Server ID မလိုပါဘူး)။ ဒီဂိမ်းက JCPlays package ချည်းပဲဆိုရင် "Requires Player ID" ကို ပိတ်ထားလို့ရပါတယ်.</p>
                     </div>
 
                     <!-- G2Bulk Giftcards & Vouchers: a different part of G2Bulk's
@@ -6296,6 +6315,7 @@
         // (both are full-collection onSnapshot listeners, already kept live for
         // the Orders/Users pages) — no extra Firestore reads needed.
         function renderAnalytics() {
+            if (window.refreshAllApiBalances) window.refreshAllApiBalances();
             const successOrders = Object.values(ORDERS).filter(o => o.status === 'Success' && o.userId);
             const now = Date.now();
             const DAY = 24 * 60 * 60 * 1000;
@@ -10344,6 +10364,40 @@
         }
         window.verifyFazerCardKey = verifyFazerCardKey;
 
+        // Balance refresh for the saved FazerCards key (mirrors refreshG2BulkBalance /
+        // refreshJCPlaysBalance) - used by the Analytics page's API Balances grid.
+        let fazercardLastBalance = null;
+        async function refreshFazerCardBalance() {
+            const displayEls = [document.getElementById('an-fazercard-balance-display')].filter(Boolean);
+            if (displayEls.length === 0) return;
+            if (!FAZERCARD_SETTINGS.apiKey) {
+                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = 'var(--text-muted)'; });
+                return;
+            }
+            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+            try {
+                const bal = await fazercardRequest('/balance', { settings: FAZERCARD_SETTINGS });
+                const balanceNum = Number(bal.balance) || 0;
+                const text = `$${balanceNum.toLocaleString()}`;
+                displayEls.forEach(el => { el.innerText = text; el.style.color = 'var(--accent)'; });
+                fazercardLastBalance = balanceNum;
+            } catch (error) {
+                console.error("FazerCards balance error:", error);
+                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = 'var(--danger-strong)'; });
+                fazercardLastBalance = null;
+            }
+        }
+        window.refreshFazerCardBalance = refreshFazerCardBalance;
+
+        // Combined refresher for the Analytics "API Balances" grid - fires all
+        // three provider balance checks in parallel.
+        function refreshAllApiBalances() {
+            if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
+            if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
+            if (window.refreshFazerCardBalance) window.refreshFazerCardBalance();
+        }
+        window.refreshAllApiBalances = refreshAllApiBalances;
+
         // ---------- Telegram Order Bot ----------
         // Sends every new Pending order to Telegram (full details + Confirm/Reject
         // inline buttons) and long-polls getUpdates for the button presses, since
@@ -10672,7 +10726,7 @@
             // right now (the G2Bulk tab's own display, plus the Dashboard's
             // wallet card) - either one may be absent depending on which page
             // is active, so both lookups are optional.
-            const displayEls = [document.getElementById('g2bulk-balance-display'), document.getElementById('dash-g2bulk-balance-display')].filter(Boolean);
+            const displayEls = [document.getElementById('g2bulk-balance-display'), document.getElementById('dash-g2bulk-balance-display'), document.getElementById('an-g2bulk-balance-display')].filter(Boolean);
             const btn = document.getElementById('g2bulk-balance-refresh-btn');
             if (displayEls.length === 0) return;
             if (!G2BULK_SETTINGS.apiKey) {
@@ -12494,7 +12548,7 @@
         async function refreshJCPlaysBalance() {
             // Mirrors the balance onto every display el that exists right now
             // (the JCPlays tab's own display, plus the Dashboard's wallet card).
-            const displayEls = [document.getElementById('jcplays-balance-display'), document.getElementById('dash-jcplays-balance-display')].filter(Boolean);
+            const displayEls = [document.getElementById('jcplays-balance-display'), document.getElementById('dash-jcplays-balance-display'), document.getElementById('an-jcplays-balance-display')].filter(Boolean);
             const btn = document.getElementById('jcplays-balance-refresh-btn');
             if (displayEls.length === 0) return;
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
@@ -12626,9 +12680,12 @@
         // linked to JCPlays in the game editor). JCPlays' createorder
         // endpoint is synchronous and hands back a PIN/redeem code directly —
         // it does NOT top up a player's in-game account, so no player_id/
-        // zone_id is sent. The admin still has to copy that code to the
-        // customer by hand (chat, Telegram, etc.) - there's no delivery
-        // channel here, this just gets the code and saves it on the order.
+        // zone_id is sent. The code is saved onto both jcplaysRedeemCode
+        // (shown in this admin panel) and deliveredCodes (the same field
+        // G2Bulk vouchers use) — index.html's voucherCodeBlockHTML reads
+        // deliveredCodes, so the customer sees the code automatically on
+        // their Success screen / Transaction History without the admin
+        // needing to send it by hand.
         async function placeJCPlaysOrder(orderId, order, btnElement) {
             if (!JCPLAYS_SETTINGS.enabled) {
                 window.showToast('JCPlays is turned off (Dashboard → JCPlays API Credentials → Settings). Fulfill this order manually or re-enable it.', 'fail');
@@ -12698,9 +12755,15 @@
                     confirmedAt: serverTimestamp(),
                     jcplaysOrderId: data.order_id || null,
                     jcplaysRedeemCode: redeemCode || '',
-                    jcplaysRedeemRaw: JSON.stringify(data).slice(0, 2000)
+                    jcplaysRedeemRaw: JSON.stringify(data).slice(0, 2000),
+                    // Also written under the same deliveredCodes field the
+                    // customer-facing app (index.html → voucherCodeBlockHTML)
+                    // already reads for G2Bulk vouchers, so the code shows up
+                    // automatically on the customer's Success screen / Order
+                    // Detail without the admin needing to copy/paste it by hand.
+                    deliveredCodes: redeemCode ? [redeemCode] : []
                 });
-                window.showToast(redeemCode ? 'JCPlays code received ✓ — copy it to the customer' : 'JCPlays confirmed, but no code field was recognized — check Raw Response on the order', redeemCode ? 'success' : 'fail');
+                window.showToast(redeemCode ? 'JCPlays code delivered ✓ — customer can see it now' : 'JCPlays confirmed, but no code field was recognized — check Raw Response on the order', redeemCode ? 'success' : 'fail');
                 return 'success';
             } catch (error) {
                 console.error("JCPlays order succeeded but saving the result failed:", error);
