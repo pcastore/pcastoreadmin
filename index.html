@@ -10543,6 +10543,9 @@
         // matched against JCPLAYS_KNOWN_NAMES for a friendly display name;
         // anything not in that lookup still shows up, labeled with its raw
         // code, so the picker never hides a code just because it's unrecognized.
+        // Cover images have no source of their own here either, so borrowed
+        // G2Bulk images (see attachG2BulkImages above) are used where a name
+        // match exists.
         async function fetchJCPlaysProductsList(forceRefresh = false) {
             if (JCPLAYS_PRODUCTS_LIST && !forceRefresh) return JCPLAYS_PRODUCTS_LIST;
             const data = await jcplaysRequest('product', {});
@@ -10551,17 +10554,67 @@
                 : (data && Array.isArray(data.product)) ? data.product
                 : [];
             if (!codes.length) throw new Error((data && data.message) || 'JCPlays returned no product codes for this account.');
-            JCPLAYS_PRODUCTS_LIST = codes.map(code => {
+            const mapped = codes.map(code => {
                 const known = JCPLAYS_KNOWN_NAMES.find(g => g.code === code);
                 return { code, name: known ? known.name : code };
             });
+            JCPLAYS_PRODUCTS_LIST = await attachG2BulkImages(mapped);
             return JCPLAYS_PRODUCTS_LIST;
+        }
+
+        // Neither JCPlays' /product nor FazerCards' /topups return a cover
+        // image for their games (unlike G2Bulk's /v1/games) — so instead of
+        // always falling back to colored initials, borrow G2Bulk's real
+        // cover image for any JCPlays/FazerCards entry whose name matches a
+        // G2Bulk game closely enough. Purely a display nicety: matching is
+        // name-based (these three catalogues share no common game ID) and
+        // never affects which code actually gets linked/saved.
+        function normalizeGameName(name) {
+            return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+        let G2BULK_IMAGE_INDEX = null; // normalized name -> image url, built lazily from G2BULK_GAMES_LIST
+        function buildG2BulkImageIndex(games) {
+            const index = new Map();
+            (games || []).forEach(g => {
+                const key = normalizeGameName(g.name);
+                if (!key) return;
+                const image = g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : '';
+                if (image && !index.has(key)) index.set(key, image);
+            });
+            G2BULK_IMAGE_INDEX = index;
+            return index;
+        }
+        function imageForGameName(name) {
+            if (!G2BULK_IMAGE_INDEX) return '';
+            const key = normalizeGameName(name);
+            if (!key) return '';
+            if (G2BULK_IMAGE_INDEX.has(key)) return G2BULK_IMAGE_INDEX.get(key);
+            // Fallback: substring containment either way, guarded to at
+            // least 4 characters so short codes (e.g. "A9") don't grab an
+            // unrelated game's icon.
+            if (key.length >= 4) {
+                for (const [gKey, image] of G2BULK_IMAGE_INDEX) {
+                    if (gKey.length >= 4 && (gKey.includes(key) || key.includes(gKey))) return image;
+                }
+            }
+            return '';
+        }
+        async function attachG2BulkImages(items) {
+            try {
+                const games = await fetchG2BulkGamesList();
+                if (!G2BULK_IMAGE_INDEX) buildG2BulkImageIndex(games);
+            } catch (error) {
+                console.error("Couldn't load G2Bulk's game list to borrow cover images:", error);
+                return items; // no images to borrow — falls back to colored initials as before
+            }
+            return items.map(item => item.image ? item : { ...item, image: imageForGameName(item.name) });
         }
 
         // ---------- FazerCards game top-up catalogue import ----------
         // GET /api/v2/topups returns { category_id, name } rows — no cover
-        // images like G2Bulk's /v1/games, so the picker falls back to
-        // colored initials (same fallback used for unrecognized JCPlays codes).
+        // images of its own, so borrowed G2Bulk images (see attachG2BulkImages
+        // above) are used where a name match exists; unmatched games still
+        // fall back to colored initials.
         let FAZERCARD_TOPUPS_LIST = null;
         let pendingFazerCardFields = [];
         async function fetchFazerCardTopupsList(forceRefresh = false) {
@@ -10586,7 +10639,7 @@
                 if (!cursor) hasMore = false; // no cursor to continue with
             }
             console.log(`[FazerCards] finished after ${guard} page(s), total items: ${allItems.length}`);
-            FAZERCARD_TOPUPS_LIST = allItems.map(g => ({ code: g.category_id, name: g.name }));
+            FAZERCARD_TOPUPS_LIST = await attachG2BulkImages(allItems.map(g => ({ code: g.category_id, name: g.name })));
             return FAZERCARD_TOPUPS_LIST;
         }
 
@@ -10723,11 +10776,13 @@
         const JCPLAYS_KNOWN_NAMES = [
             { code: 'mobilelegends', name: 'Mobile Legends: Bang Bang' },
             { code: 'mobilelegendsph', name: 'Mobile Legends (PH)' },
+            { code: 'pubgmobile', name: 'PUBG Mobile' },
             { code: 'pubgmobilecoin', name: 'PUBG Mobile UC' },
             { code: 'pubgmobileone', name: 'PUBG Mobile (Starlight)' },
             { code: 'freefire', name: 'Free Fire' },
             { code: 'freefirethailand', name: 'Free Fire (Thailand)' },
             { code: 'honorofkings', name: 'Honor of Kings' },
+            { code: 'hokbr', name: 'Honor of Kings (Brazil)' },
             { code: 'genshinimpact', name: 'Genshin Impact' },
             { code: 'honkaistarrail', name: 'Honkai: Star Rail' },
             { code: 'higgsdomino', name: 'Higgs Domino' },
@@ -10737,7 +10792,17 @@
             { code: 'arenaofvalor', name: 'Arena of Valor' },
             { code: 'valorant', name: 'Valorant' },
             { code: 'zepeto', name: 'ZEPETO' },
-            { code: 'lifeafter', name: 'LifeAfter' }
+            { code: 'lifeafter', name: 'LifeAfter' },
+            // These four aren't single games - they're SmileOne/SmileCode/
+            // SmileCoin's own generic multi-game voucher buckets (the actual
+            // game is picked later via /productlist's denomination rows), so
+            // there's no one cover image to borrow for them and they'll keep
+            // showing colored initials in the picker - that's expected, not
+            // a bug. Named here only so they read clearly instead of raw codes.
+            { code: 'smileonecode', name: 'SmileOne Voucher Code' },
+            { code: 'smilecodeph', name: 'SmileCode (Philippines)' },
+            { code: 'smilecoinbr', name: 'SmileCoin (Brazil)' },
+            { code: 'smilecoinph', name: 'SmileCoin (Philippines)' }
         ];
 
         let gamePickerProvider = null;     // 'g2bulk' | 'jcplays'
