@@ -2678,6 +2678,10 @@
                 <label>Description <span style="font-weight:400;color:var(--text-muted);">(optional — shown to customers under the game banner)</span></label>
                 <textarea id="edit-game-description" rows="4" placeholder="e.g. Mobile Legends: Bang Bang is a 5v5 MOBA. Diamonds are delivered instantly to your in-game ID after payment is confirmed." style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border-glass);background:var(--fill-soft);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
 
+                <label>Redeem Link <span style="font-weight:400;color:var(--text-muted);">(optional — adds a "Redeem Now" button on the Description card so customers can tap straight through to redeem instead of searching for the page themselves)</span></label>
+                <input type="text" id="edit-game-redeem-link" placeholder="e.g. https://play.google.com/redeem or https://www.midasbuy.com/redeem">
+
+
                 <div class="switch-row">
                     <div>
                         <span class="switch-label">Mark as Popular</span>
@@ -7969,6 +7973,7 @@
                 document.getElementById('edit-game-category').value = g.category || '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = g.description || '';
+                document.getElementById('edit-game-redeem-link').value = g.redeemLink || '';
                 document.getElementById('edit-game-popular').checked = !!g.popular;
                 // Missing field on older games defaults to "required" so nothing changes for them.
                 document.getElementById('edit-game-playerid').checked = g.playerIdRequired !== false;
@@ -8032,6 +8037,7 @@
                 document.getElementById('edit-game-category').value = '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = '';
+                document.getElementById('edit-game-redeem-link').value = '';
                 document.getElementById('edit-game-popular').checked = false;
                 document.getElementById('edit-game-playerid').checked = false;
                 document.getElementById('edit-game-serverid').checked = false;
@@ -8171,6 +8177,7 @@
             const g2bulkIdCheckCode = document.getElementById('edit-game-g2bulk-idcheck-code').value.trim();
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
+            const redeemLink = document.getElementById('edit-game-redeem-link').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
             const playerIdRequired = document.getElementById('edit-game-playerid').checked;
             const serverIdRequired = playerIdRequired && document.getElementById('edit-game-serverid').checked;
@@ -8230,7 +8237,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', redeemLink: redeemLink || '', popular, playerIdRequired, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -13066,6 +13073,7 @@
             document.getElementById('edit-game-category').value = base.category || '';
             renderGameCategorySelect();
             document.getElementById('edit-game-description').value = base.description || '';
+            document.getElementById('edit-game-redeem-link').value = base.redeemLink || '';
             document.getElementById('edit-game-popular').checked = !!base.popular;
             document.getElementById('edit-game-playerid').checked = base.playerIdRequired !== false;
             document.getElementById('edit-game-serverid').checked = base.serverIdRequired !== false;
