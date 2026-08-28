@@ -1662,12 +1662,13 @@
     </div>
 
     <header class="header">
-        <div class="logo">
+        <div class="logo" id="store-switcher-btn" onclick="openStoreSwitcherSheet()" style="cursor:pointer;">
             <div class="logo-icon" id="header-logo-icon">
                 <svg class="ui-icon" id="header-logo-default-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg>
                 <img id="header-logo-img" src="" alt="PCA Store" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
             </div>
-            PCA Store
+            <span id="store-switcher-label">PCA Store 1</span>
+            <svg class="ui-icon" style="width:13px;height:13px;flex-shrink:0;color:var(--text-muted);"><use href="#icon-chevron-down"></use></svg>
         </div>
         <div id="header-clock" title="Local time">
             <div class="digital-clock-time"><span id="header-clock-hh">--</span><span class="clock-colon">:</span><span id="header-clock-mm">--</span></div>
@@ -1698,61 +1699,62 @@
         </div>
     </div>
 
+    <!-- Nav Group Sheet: tapping a grouped side-nav icon (Dashboard / API /
+         Game / Userlist / Setting) opens this list of the pages bundled
+         under it, in place of jumping straight to a page. Picking an item
+         calls the same showPage()/showGameListTab() the old individual nav
+         buttons used, then closes the sheet - see NAV_GROUPS in the script. -->
+    <div class="modal-overlay" id="nav-group-sheet-overlay" onclick="if(event.target===this) closeNavGroupSheet()">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header">
+                <h3 id="nav-group-sheet-title">Section</h3>
+                <div class="modal-close" onclick="closeNavGroupSheet()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+            </div>
+            <div class="modal-body">
+                <div id="nav-group-sheet-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Switcher Sheet: tapping the logo/store name in the header opens
+         this to pick which store's data (Orders/Users/Payment/Branding -
+         added in a later pass) the admin is currently viewing. Games,
+         Packages, and the G2Bulk/JCPlays/FazerCards API credentials stay
+         shared across both stores and are unaffected by this switch. -->
+    <div class="modal-overlay" id="store-switcher-sheet-overlay" onclick="if(event.target===this) closeStoreSwitcherSheet()">
+        <div class="modal-box" style="max-width:380px;">
+            <div class="modal-header">
+                <h3>Switch Store</h3>
+                <div class="modal-close" onclick="closeStoreSwitcherSheet()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px;color:var(--text-secondary);margin:-4px 0 12px;">Games, Packages, and API credentials are shared — only Orders/Users/Payment/Branding will follow the selected store.</p>
+                <div id="store-switcher-sheet-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="app-layout">
     <!-- Side Navigation -->
     <nav class="side-nav">
-        <div class="nav-item active" id="btn-dashboard" onclick="showPage('dashboard')">
-            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> Dash
+        <!-- Grouped side-nav: each icon now bundles several related pages.
+             Tapping one opens a picker sheet (#nav-group-sheet-overlay) instead
+             of jumping straight to a page - see openNavGroupSheet() / NAV_GROUPS. -->
+        <div class="nav-item active" id="group-dashboard" onclick="openNavGroupSheet('dashboard')">
+            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> Dashboard
         </div>
-        <div class="nav-item" id="btn-analytics" onclick="showPage('analytics')">
-            <svg class="ui-icon"><use href="#icon-bar-chart"></use></svg> Analytics
-        </div>
-        <div class="nav-item" id="btn-g2bulk" onclick="showPage('g2bulk')">
-            <svg class="ui-icon"><use href="#icon-g2bulk"></use></svg> G2Bulk
-            <span class="nav-item-low-balance-dot" id="g2bulk-nav-low-dot" title="Low balance"></span>
-        </div>
-        <div class="nav-item" id="btn-jcplays" onclick="showPage('jcplays')">
-            <svg class="ui-icon"><use href="#icon-key"></use></svg> JCPlays
-            <span class="nav-item-low-balance-dot" id="jcplays-nav-low-dot" title="Low balance"></span>
-        </div>
-        <div class="nav-item" id="btn-api-docs" onclick="showPage('api-docs')">
+        <div class="nav-item" id="group-api" onclick="openNavGroupSheet('api')">
             <svg class="ui-icon"><use href="#icon-plug"></use></svg> API
+            <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
-        <div class="nav-item" id="btn-game-list-direct" onclick="showGameListTab('direct')">
-            <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> Direct
+        <div class="nav-item" id="group-game" onclick="openNavGroupSheet('game')">
+            <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> Game
         </div>
-        <div class="nav-item" id="btn-game-list-voucher" onclick="showGameListTab('voucher')">
-            <svg class="ui-icon"><use href="#icon-gift"></use></svg> Gift Cards
+        <div class="nav-item" id="group-userlist" onclick="openNavGroupSheet('userlist')">
+            <svg class="ui-icon"><use href="#icon-users"></use></svg> Userlist
         </div>
-        <div class="nav-item" id="btn-order-list" onclick="showPage('order-list')">
-            <svg class="ui-icon"><use href="#icon-cart"></use></svg> Orders
-        </div>
-        <div class="nav-item" id="btn-topup-list" onclick="showPage('topup-list')">
-            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Top Up
-        </div>
-        <div class="nav-item" id="btn-notify-list" onclick="showPage('notify-list')">
-            <svg class="ui-icon"><use href="#icon-bell"></use></svg> Notify
-        </div>
-        <div class="nav-item" id="btn-ticker-list" onclick="showPage('ticker-list')">
-            <svg class="ui-icon"><use href="#icon-megaphone"></use></svg> Ticker
-        </div>
-        <div class="nav-item" id="btn-payment-list" onclick="showPage('payment-list')">
-            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Payment
-        </div>
-        <div class="nav-item" id="btn-user-list" onclick="showPage('user-list')">
-            <svg class="ui-icon"><use href="#icon-users"></use></svg> Users
-        </div>
-        <div class="nav-item" id="btn-tier-list" onclick="showPage('tier-list')">
-            <svg class="ui-icon"><use href="#icon-trophy"></use></svg> Tiers
-        </div>
-        <div class="nav-item" id="btn-frames" onclick="showPage('frames')">
-            <svg class="ui-icon"><use href="#icon-frame"></use></svg> Frames
-        </div>
-        <div class="nav-item" id="btn-activity-log" onclick="showPage('activity-log')">
-            <svg class="ui-icon"><use href="#icon-shield"></use></svg> Activity
-        </div>
-        <div class="nav-item" id="btn-settings" onclick="showPage('settings')">
-            <svg class="ui-icon"><use href="#icon-gear"></use></svg> Settings
+        <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
+            <svg class="ui-icon"><use href="#icon-gear"></use></svg> Setting
         </div>
     </nav>
 
@@ -2678,10 +2680,6 @@
                 <label>Description <span style="font-weight:400;color:var(--text-muted);">(optional — shown to customers under the game banner)</span></label>
                 <textarea id="edit-game-description" rows="4" placeholder="e.g. Mobile Legends: Bang Bang is a 5v5 MOBA. Diamonds are delivered instantly to your in-game ID after payment is confirmed." style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border-glass);background:var(--fill-soft);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
 
-                <label>Redeem Link <span style="font-weight:400;color:var(--text-muted);">(optional — adds a "Redeem Now" button on the Description card so customers can tap straight through to redeem instead of searching for the page themselves)</span></label>
-                <input type="text" id="edit-game-redeem-link" placeholder="e.g. https://play.google.com/redeem or https://www.midasbuy.com/redeem">
-
-
                 <div class="switch-row">
                     <div>
                         <span class="switch-label">Mark as Popular</span>
@@ -3381,16 +3379,165 @@
         window.addEventListener('offline', updateConnectionStatus);
         updateConnectionStatus();
 
+        // Maps each page-section id to the grouped side-nav icon it now lives
+        // under, so showPage() can highlight the right icon (see NAV_GROUPS /
+        // openNavGroupSheet() below for the picker sheet itself).
+        const PAGE_TO_NAV_GROUP = {
+            'dashboard': 'group-dashboard', 'analytics': 'group-dashboard', 'order-list': 'group-dashboard',
+            'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
+            'payment-list': 'group-game', 'topup-list': 'group-game',
+            'user-list': 'group-userlist', 'tier-list': 'group-userlist', 'frames': 'group-userlist', 'activity-log': 'group-userlist',
+            'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
+        };
         function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            document.getElementById(`btn-${pageId}`).classList.add('active');
+            const groupBtn = document.getElementById(PAGE_TO_NAV_GROUP[pageId] || `btn-${pageId}`);
+            if (groupBtn) groupBtn.classList.add('active');
             window.scrollTo(0,0);
             if ((pageId === 'dashboard' || pageId === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
             if (pageId === 'analytics' && window.renderAnalytics) window.renderAnalytics();
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
         }
+
+        // ---------- Grouped Side-Nav Picker Sheet ----------
+        // Each group icon in .side-nav bundles several pages that used to be
+        // separate top-level icons. Tapping the icon renders this list (reusing
+        // the same bottom-sheet look as the theme picker) instead of navigating
+        // directly; picking an item runs the original page-switch call.
+        const NAV_GROUPS = {
+            dashboard: { title: 'Dashboard', items: [
+                { label: 'Dashboard', icon: '#icon-trending-up', run: () => showPage('dashboard') },
+                { label: 'Analytics', icon: '#icon-bar-chart', run: () => showPage('analytics') },
+                { label: 'Orders', icon: '#icon-cart', run: () => showPage('order-list') }
+            ]},
+            api: { title: 'API', items: [
+                { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
+                { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
+                { label: 'Fazercards', icon: '#icon-plug', run: () => showPage('api-docs') }
+            ]},
+            game: { title: 'Game', items: [
+                { label: 'Direct', icon: '#icon-gamepad', run: () => showGameListTab('direct') },
+                { label: 'Voucher', icon: '#icon-gift', run: () => showGameListTab('voucher') },
+                { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
+                { label: 'Top Up', icon: '#icon-wallet', run: () => showPage('topup-list') }
+            ]},
+            userlist: { title: 'Userlist', items: [
+                { label: 'Userlist', icon: '#icon-users', run: () => showPage('user-list') },
+                { label: 'Tiers', icon: '#icon-trophy', run: () => showPage('tier-list') },
+                { label: 'Frame', icon: '#icon-frame', run: () => showPage('frames') },
+                { label: 'Activity', icon: '#icon-shield', run: () => showPage('activity-log') }
+            ]},
+            setting: { title: 'Setting', items: [
+                { label: 'General', icon: '#icon-gear', run: () => showPage('settings') },
+                { label: 'Notify', icon: '#icon-bell', run: () => showPage('notify-list') },
+                { label: 'Ticker', icon: '#icon-megaphone', run: () => showPage('ticker-list') }
+            ]}
+        };
+        function renderNavGroupSheet(groupKey) {
+            const group = NAV_GROUPS[groupKey];
+            if (!group) return;
+            document.getElementById('nav-group-sheet-title').innerText = group.title;
+            const list = document.getElementById('nav-group-sheet-list');
+            list.innerHTML = '';
+            group.items.forEach(it => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;border:1px solid var(--fill-soft);border-radius:12px;background:var(--surface);cursor:pointer;font-size:14px;font-weight:600;color:var(--text-primary);text-align:left;';
+                btn.innerHTML = `<svg class="ui-icon" style="width:19px;height:19px;flex-shrink:0;"><use href="${it.icon}"></use></svg><span>${it.label}</span>` +
+                    (it.dotId ? `<span class="nav-item-low-balance-dot" id="${it.dotId}" style="position:static;margin-left:auto;"></span>` : '');
+                btn.onclick = () => { closeNavGroupSheet(); it.run(); };
+                list.appendChild(btn);
+            });
+            // Re-sync the low-balance dots now that they exist again inside this
+            // freshly-rendered sheet (they get wiped/rebuilt every time it opens).
+            if (window.checkLowBalanceAlerts) window.checkLowBalanceAlerts();
+        }
+        function openNavGroupSheet(groupKey) {
+            renderNavGroupSheet(groupKey);
+            document.getElementById('nav-group-sheet-overlay').classList.add('show');
+        }
+        function closeNavGroupSheet() {
+            document.getElementById('nav-group-sheet-overlay').classList.remove('show');
+        }
+        window.openNavGroupSheet = openNavGroupSheet;
+        window.closeNavGroupSheet = closeNavGroupSheet;
+
+        // ---------- Store Switcher (Store 1 / Store 2) ----------
+        // Tracks which store's data the admin is currently viewing. This is
+        // step 1 of the multi-store setup: just the switcher UI + persisted
+        // selection. Games, Packages, and the G2Bulk/JCPlays/FazerCards API
+        // credentials are shared across both stores and don't change with
+        // this. A later pass wires Orders/Users/Payment/Branding to actually
+        // filter/save by whichever store is selected here (getCurrentStoreId()
+        // is the hook those changes will read from).
+        const STORES = [
+            { id: 'store1', label: 'Store 1' },
+            { id: 'store2', label: 'Store 2' }
+        ];
+        let currentStoreId = 'store1';
+        try { currentStoreId = localStorage.getItem('pca-admin-store') || 'store1'; } catch (e) {}
+
+        function getCurrentStoreId() { return currentStoreId; }
+        window.getCurrentStoreId = getCurrentStoreId;
+
+        function renderStoreSwitcherLabel() {
+            const store = STORES.find(s => s.id === currentStoreId) || STORES[0];
+            const label = document.getElementById('store-switcher-label');
+            if (label) label.innerText = `PCA ${store.label}`;
+        }
+
+        function renderStoreSwitcherSheet() {
+            const list = document.getElementById('store-switcher-sheet-list');
+            list.innerHTML = '';
+            STORES.forEach(s => {
+                const isActive = s.id === currentStoreId;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.style.cssText = `display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border:1.5px solid ${isActive ? 'var(--accent)' : 'var(--fill-soft)'};border-radius:12px;background:${isActive ? 'var(--accent-soft)' : 'var(--surface)'};cursor:pointer;font-size:14px;font-weight:600;color:var(--text-primary);text-align:left;`;
+                btn.innerHTML = `<span>${s.label}</span>` + (isActive ? `<svg class="ui-icon" style="width:16px;height:16px;margin-left:auto;stroke:var(--accent);"><use href="#icon-check"></use></svg>` : '');
+                btn.onclick = () => selectStore(s.id);
+                list.appendChild(btn);
+            });
+        }
+
+        function openStoreSwitcherSheet() {
+            renderStoreSwitcherSheet();
+            document.getElementById('store-switcher-sheet-overlay').classList.add('show');
+        }
+        function closeStoreSwitcherSheet() {
+            document.getElementById('store-switcher-sheet-overlay').classList.remove('show');
+        }
+        function selectStore(storeId) {
+            if (storeId === currentStoreId) { closeStoreSwitcherSheet(); return; }
+            currentStoreId = storeId;
+            try { localStorage.setItem('pca-admin-store', storeId); } catch (e) {}
+            renderStoreSwitcherLabel();
+            closeStoreSwitcherSheet();
+            window.showToast(`Switched to ${STORES.find(s => s.id === storeId).label}`, 'success');
+            // Refresh whichever store-scoped page is currently open so the
+            // switch is reflected immediately, without needing to navigate
+            // away and back.
+            const activePage = document.querySelector('.page-section.active')?.id;
+            if (activePage === 'order-list' || activePage === 'dashboard') { if (window.loadDashboardStats) window.loadDashboardStats(); }
+            if (activePage === 'order-list') { if (window.renderOrdersList) window.renderOrdersList(); }
+            if (activePage === 'analytics') { if (window.renderAnalytics) window.renderAnalytics(); }
+            if (activePage === 'topup-list') { if (window.renderTopupsList) window.renderTopupsList(); }
+        }
+        window.openStoreSwitcherSheet = openStoreSwitcherSheet;
+        window.closeStoreSwitcherSheet = closeStoreSwitcherSheet;
+        window.selectStore = selectStore;
+        document.addEventListener('DOMContentLoaded', renderStoreSwitcherLabel);
+
+        // An order "belongs" to whichever store its storeId field says. Orders
+        // with no storeId at all (anything saved before the store front(s)
+        // start tagging it) are treated as Store 1's, so existing/legacy data
+        // doesn't just disappear from view once this switch exists.
+        function matchesCurrentStore(order) {
+            return (order && order.storeId ? order.storeId : 'store1') === currentStoreId;
+        }
+        window.matchesCurrentStore = matchesCurrentStore;
 
         let toastQueue = [];
         let toastBusy = false;
@@ -4696,6 +4843,7 @@
             const dateFrom = document.getElementById('order-date-from')?.value || '';
             const dateTo = document.getElementById('order-date-to')?.value || '';
             const allOrders = Object.values(ORDERS).filter(o => {
+                if (!matchesCurrentStore(o)) return false;
                 if (!isWithinDateRange(o.timestamp, dateFrom, dateTo)) return false;
                 if (!searchTerm) return true;
                 return (o.game || '').toLowerCase().includes(searchTerm)
@@ -5832,6 +5980,7 @@
             const dateTo = document.getElementById('topup-date-to')?.value || '';
             const all = Object.values(WALLET_TOPUPS);
             const visible = all.filter(t => {
+                if (!matchesCurrentStore(t)) return false;
                 if (t.status !== currentTopupTab) return false;
                 if (!isWithinDateRange(t.timestamp, dateFrom, dateTo)) return false;
                 if (!searchTerm) return true;
@@ -6249,6 +6398,7 @@
 
                 snap.forEach((docSnap) => {
                     const data = docSnap.data();
+                    if (!matchesCurrentStore(data)) return;
                     const price = Number(data.price) || 0;
                     const dayStr = data.timestamp ? data.timestamp.toDate().toDateString() : null;
                     const isToday = dayStr === todayStr;
@@ -6320,7 +6470,7 @@
         // the Orders/Users pages) — no extra Firestore reads needed.
         function renderAnalytics() {
             if (window.refreshAllApiBalances) window.refreshAllApiBalances();
-            const successOrders = Object.values(ORDERS).filter(o => o.status === 'Success' && o.userId);
+            const successOrders = Object.values(ORDERS).filter(o => o.status === 'Success' && o.userId && matchesCurrentStore(o));
             const now = Date.now();
             const DAY = 24 * 60 * 60 * 1000;
 
@@ -6503,7 +6653,7 @@
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
             document.getElementById('game-list').classList.add('active');
-            document.getElementById(tab === 'voucher' ? 'btn-game-list-voucher' : 'btn-game-list-direct').classList.add('active');
+            document.getElementById('group-game')?.classList.add('active');
             document.getElementById('game-list-title').innerText = tab === 'voucher' ? 'Gift Card & Vouchers' : 'Direct Games';
             window.scrollTo(0, 0);
             renderAdminGamesList();
@@ -7777,11 +7927,16 @@
             return parseLeadingNumber(name) !== null ? 'currency' : 'package';
         }
 
-        // Auto-sorts the *current tab's* package rows by the leading number in
-        // their Currency name (e.g. "100 Diamonds" → 100, "50 Diamonds" → 50)
-        // ascending — rows in other tabs are left untouched. Rows whose name
-        // has no leading number (e.g. "Weekly Pass") are grouped after the
-        // numeric ones and sorted alphabetically among themselves.
+        // Auto-sorts the *current tab's* package rows smallest-to-largest.
+        // Prefers the leading number in the Currency name ("100 Diamonds" →
+        // 100), same as before, since that reads as the denomination at a
+        // glance. But G2Bulk is the only provider whose names are reliably
+        // formatted that way - FazerCards offer names, JCPlays SPU names, and
+        // voucher titles ("Steam Wallet ($10)") don't start with a number, so
+        // those fall back to sorting by the row's actual currency amount
+        // (Price if it's set, otherwise Cost) instead of silently landing in
+        // alphabetical order. Only rows with neither a leading number nor any
+        // price/cost yet go last, sorted alphabetically among themselves.
         function sortPackageRows() {
             const list = document.getElementById('edit-packages-list');
             const rows = Array.from(list.querySelectorAll('.package-row')).filter(r => r.dataset.tab === currentPkgTab);
@@ -7789,13 +7944,20 @@
 
             const decorated = rows.map(row => {
                 const amount = row.querySelector('.pkg-amount').value;
-                return { row, amount, num: parseLeadingNumber(amount) };
+                const num = parseLeadingNumber(amount);
+                let sortVal = num;
+                if (sortVal === null) {
+                    const priceVal = parseFloat(row.querySelector('.pkg-price').value);
+                    const costVal = parseFloat(row.querySelector('.pkg-cost').value);
+                    sortVal = (!isNaN(priceVal) && priceVal > 0) ? priceVal : (!isNaN(costVal) && costVal > 0 ? costVal : null);
+                }
+                return { row, amount, sortVal };
             });
 
             decorated.sort((a, b) => {
-                if (a.num !== null && b.num !== null) return a.num - b.num;
-                if (a.num !== null) return -1; // numbered items first
-                if (b.num !== null) return 1;
+                if (a.sortVal !== null && b.sortVal !== null) return a.sortVal - b.sortVal;
+                if (a.sortVal !== null) return -1; // priced/numbered items first
+                if (b.sortVal !== null) return 1;
                 return a.amount.trim().localeCompare(b.amount.trim(), undefined, { sensitivity: 'base' });
             });
 
@@ -7973,7 +8135,6 @@
                 document.getElementById('edit-game-category').value = g.category || '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = g.description || '';
-                document.getElementById('edit-game-redeem-link').value = g.redeemLink || '';
                 document.getElementById('edit-game-popular').checked = !!g.popular;
                 // Missing field on older games defaults to "required" so nothing changes for them.
                 document.getElementById('edit-game-playerid').checked = g.playerIdRequired !== false;
@@ -8037,7 +8198,6 @@
                 document.getElementById('edit-game-category').value = '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = '';
-                document.getElementById('edit-game-redeem-link').value = '';
                 document.getElementById('edit-game-popular').checked = false;
                 document.getElementById('edit-game-playerid').checked = false;
                 document.getElementById('edit-game-serverid').checked = false;
@@ -8177,7 +8337,6 @@
             const g2bulkIdCheckCode = document.getElementById('edit-game-g2bulk-idcheck-code').value.trim();
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
-            const redeemLink = document.getElementById('edit-game-redeem-link').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
             const playerIdRequired = document.getElementById('edit-game-playerid').checked;
             const serverIdRequired = playerIdRequired && document.getElementById('edit-game-serverid').checked;
@@ -8237,7 +8396,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', redeemLink: redeemLink || '', popular, playerIdRequired, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -8782,6 +8941,7 @@
             const dateFrom = document.getElementById('order-date-from')?.value || '';
             const dateTo = document.getElementById('order-date-to')?.value || '';
             const rows = Object.values(ORDERS).filter(o => {
+                if (!matchesCurrentStore(o)) return false;
                 if (!isWithinDateRange(o.timestamp, dateFrom, dateTo)) return false;
                 if (!searchTerm) return true;
                 return (o.game || '').toLowerCase().includes(searchTerm)
@@ -8907,6 +9067,7 @@
             const dateFrom = document.getElementById('topup-date-from')?.value || '';
             const dateTo = document.getElementById('topup-date-to')?.value || '';
             const rows = Object.values(WALLET_TOPUPS).filter(t => {
+                if (!matchesCurrentStore(t)) return false;
                 if (!isWithinDateRange(t.timestamp, dateFrom, dateTo)) return false;
                 if (!searchTerm) return true;
                 return (t.userName || '').toLowerCase().includes(searchTerm)
@@ -10790,9 +10951,11 @@
             const bellBtn = document.getElementById('low-balance-alert-btn');
             const g2bulkDot = document.getElementById('g2bulk-nav-low-dot');
             const jcplaysDot = document.getElementById('jcplays-nav-low-dot');
+            const apiGroupDot = document.getElementById('api-nav-low-dot');
 
             if (g2bulkDot) g2bulkDot.style.display = g2bulkLow ? 'block' : 'none';
             if (jcplaysDot) jcplaysDot.style.display = jcplaysLow ? 'block' : 'none';
+            if (apiGroupDot) apiGroupDot.style.display = (g2bulkLow || jcplaysLow) ? 'block' : 'none';
 
             if (bellBtn) {
                 const anyLow = g2bulkLow || jcplaysLow;
@@ -12669,6 +12832,9 @@
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                // Same auto-sort as G2Bulk/FazerCards/Voucher imports above, so
+                // newly-imported denominations land smallest-to-largest too.
+                sortPackageRows();
                 window.showToast('JCPlays denominations imported ✓', 'success');
             } catch (error) {
                 console.error("JCPlays productlist error:", error);
@@ -13073,7 +13239,6 @@
             document.getElementById('edit-game-category').value = base.category || '';
             renderGameCategorySelect();
             document.getElementById('edit-game-description').value = base.description || '';
-            document.getElementById('edit-game-redeem-link').value = base.redeemLink || '';
             document.getElementById('edit-game-popular').checked = !!base.popular;
             document.getElementById('edit-game-playerid').checked = base.playerIdRequired !== false;
             document.getElementById('edit-game-serverid').checked = base.serverIdRequired !== false;
