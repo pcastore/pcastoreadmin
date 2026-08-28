@@ -5595,9 +5595,10 @@
         // with a poll_url to check a few seconds later — there's no webhook
         // for this side of the API, so polling is the only way to catch
         // completion. Orders placed against a voucher-linked package need to
-        // carry `g2bulkVoucherProductId` (and optionally `voucherQuantity`,
-        // default 1) - the same way game top-up orders carry g2bulkGameCode /
-        // g2bulkCatalogueName (see submitOrder in the storefront).
+        // carry `g2bulkVoucherProductId` and `quantity` (from the storefront's
+        // Quantity stepper, default 1 - same generic `quantity` field every
+        // order type carries, see submitOrder in the storefront) - the same
+        // way game top-up orders carry g2bulkGameCode / g2bulkCatalogueName.
         async function placeG2BulkVoucherOrder(orderId, order, btnElement) {
             if (!G2BULK_SETTINGS.enabled) {
                 window.showToast('G2Bulk is turned off (Dashboard → G2Bulk API Key → Settings). Fulfill this order manually or re-enable it.', 'fail');
@@ -5624,7 +5625,7 @@
                 const res = await fetch(`https://api.g2bulk.com/v1/products/${encodeURIComponent(order.g2bulkVoucherProductId)}/purchase`, {
                     method: 'POST',
                     headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'X-Idempotency-Key': idempotencyKey, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ quantity: order.voucherQuantity || 1 })
+                    body: JSON.stringify({ quantity: order.quantity || 1 })
                 });
                 data = await res.json();
                 if (!res.ok || data.success === false) {
