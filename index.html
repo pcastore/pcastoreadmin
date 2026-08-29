@@ -3265,8 +3265,10 @@
                 <div style="display:flex;gap:8px;margin-top:8px;">
                     <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="save-fazercard-webhook-btn" onclick="saveFazerCardWebhook()">Save Webhook</button>
                     <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="delete-fazercard-webhook-btn" onclick="deleteFazerCardWebhook()">Remove Webhook</button>
+                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="check-fazercard-webhook-status-btn" onclick="loadFazerCardWebhookStatus()">Check Live Status</button>
                 </div>
                 <p id="fazercard-webhook-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:6px;"></p>
+                <div id="fazercard-webhook-health" style="display:none;margin-top:6px;font-size:12px;color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
 
                 <label style="margin-top:14px;">Webhook HMAC Secret</label>
                 <div class="secret-field-wrap">
@@ -5453,8 +5455,12 @@
         // Checks FazerCards' order status once and applies it to the local order
         // doc. silent=true is used by the background auto-poller, same pattern
         // as checkG2BulkOrderStatus above. FazerCards' public order ids look
-        // like "ord-123" - GET /orders/:orderId returns the full order,
-        // status one of created/processing/completed/failed (kind-dependent).
+        // like "ord-123" - GET /orders/:orderId returns the full order. The
+        // /topups/order docs describe the lifecycle only as "processing until
+        // completed/refund" (balance is charged immediately, so there may be
+        // no separate 'created' state) - GET /orders/{id}'s own status enum
+        // isn't documented yet, so both 'refund' and 'refunded' are matched
+        // defensively below until that's confirmed.
         async function checkFazerCardOrderStatus(orderId, fazercardOrderId, silent = false) {
             if (!FAZERCARD_SETTINGS.apiKey) {
                 if (!silent) window.showToast('Add your FazerCards API key first.', 'fail');
@@ -5468,7 +5474,14 @@
                     await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), fazercardStatus: status });
                     window.showToast('FazerCards order completed ✓', 'success');
                     editTelegramOrderMessage(orderId, 'Success');
-                } else if (status === 'failed' || status === 'cancelled' || status === 'refunded') {
+                } else if (status === 'failed' || status === 'cancelled' || status === 'refund' || status === 'refunded') {
+                    // /topups/order's docs describe the lifecycle as
+                    // "processing until completed/refund" (that exact
+                    // wording - no confirmed 'failed'/'created' states seen
+                    // yet), but GET /orders/{id}'s own status enum isn't
+                    // documented, so both 'refund' and 'refunded' are
+                    // accepted here rather than guessing which one the API
+                    // actually returns.
                     await markOrderFailedWithRefund(orderId, { fazercardStatus: status });
                     if (!silent) window.showToast('FazerCards order failed/refunded.', 'fail');
                     editTelegramOrderMessage(orderId, 'Fail');
@@ -5628,6 +5641,30 @@
         // Uses the same per-game fazercardFields key mapping as
         // placeFazerCardOrder, and saves a successful result onto the order
         // doc (fazercardVerifiedName) so it isn't re-checked on every render.
+        // GET /topups/validate-id: the list of categories that support ID
+        // validation, each with its own `fields` array. POST /topups/validate-id's
+        // docs say its `fields` body must match "that game's fields" -
+        // referring back to this list, which may not be identical to the
+        // order-time fields from /topups/offers (e.g. validate-id might only
+        // need player_id while ordering also needs a server_id). Cached by
+        // category_id so verifyFazerCardPlayerId can look up the right keys
+        // instead of assuming the order fields apply here too.
+        let FAZERCARD_VALIDATEID_FIELDS = null;
+        async function fetchFazerCardValidateIdFields() {
+            if (FAZERCARD_VALIDATEID_FIELDS) return FAZERCARD_VALIDATEID_FIELDS;
+            FAZERCARD_VALIDATEID_FIELDS = new Map();
+            try {
+                const data = await fazercardRequest('/topups/validate-id');
+                (data.items || []).forEach(item => {
+                    FAZERCARD_VALIDATEID_FIELDS.set(item.category_id, (item.fields || []).map(f => f.key));
+                });
+            } catch (error) {
+                console.error("FazerCards GET /topups/validate-id error:", error);
+                // leave the Map empty - callers fall back to order fields
+            }
+            return FAZERCARD_VALIDATEID_FIELDS;
+        }
+
         async function verifyFazerCardPlayerId(orderId, btnElement) {
             const order = ORDERS[orderId];
             if (!order || !order.fazercardCategoryId) {
@@ -5642,8 +5679,14 @@
             const originalText = btnElement ? btnElement.innerText : '';
             if (btnElement) { btnElement.disabled = true; btnElement.innerText = 'Checking...'; }
 
+            // Prefer validate-id's own field list for this category; fall back
+            // to the order-time fields (then 'player_id') if this category
+            // isn't in the validate-id list at all (unsupported) or the fetch
+            // failed.
+            const validateIdFields = await fetchFazerCardValidateIdFields();
             const linkedGame = Object.values(GAMES).find(g => g.fazercardCategoryId === order.fazercardCategoryId);
-            const fieldKeys = (linkedGame && linkedGame.fazercardFields && linkedGame.fazercardFields.length) ? linkedGame.fazercardFields : ['player_id'];
+            const fieldKeys = validateIdFields.get(order.fazercardCategoryId)
+                || ((linkedGame && linkedGame.fazercardFields && linkedGame.fazercardFields.length) ? linkedGame.fazercardFields : ['player_id']);
             const fields = {};
             fieldKeys.forEach(key => {
                 if (/server|zone/i.test(key)) fields[key] = order.serverId || undefined;
@@ -10683,8 +10726,40 @@
         }
         window.fazercardRequest = fazercardRequest;
 
-        // ---------- FazerCards Account webhook (PUT/DELETE /account/webhook,
+        // ---------- FazerCards Account webhook (PUT/GET/DELETE /account/webhook,
         // POST /account/webhook/secret/regenerate, GET /account/webhook/deliveries) ----------
+        async function loadFazerCardWebhookStatus() {
+            const healthEl = document.getElementById('fazercard-webhook-health');
+            const btn = document.getElementById('check-fazercard-webhook-status-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true; btn.innerText = 'Checking...';
+            healthEl.style.display = 'block';
+            healthEl.innerText = 'Checking live status with FazerCards...';
+            try {
+                const data = await fazercardRequest('/account/webhook', { settings: FAZERCARD_SETTINGS });
+                const wh = data.webhook;
+                if (!wh || !wh.url) {
+                    healthEl.innerText = 'No webhook configured on FazerCards\' side.';
+                    return;
+                }
+                const fails = wh.consecutive_failures || 0;
+                const lastSuccess = wh.last_success_at ? new Date(wh.last_success_at).toLocaleString() : 'never';
+                const lastFailure = wh.last_failure_at ? new Date(wh.last_failure_at).toLocaleString() : 'never';
+                healthEl.innerHTML = `
+                    <div><b>Enabled:</b> ${wh.enabled ? 'Yes' : 'No'}</div>
+                    <div><b>Consecutive failures:</b> <span style="color:${fails > 0 ? 'var(--fail)' : 'inherit'}">${fails}</span></div>
+                    <div><b>Last success:</b> ${lastSuccess}</div>
+                    <div><b>Last failure:</b> ${lastFailure}${wh.last_failure_reason ? ' — ' + wh.last_failure_reason : ''}</div>
+                `;
+            } catch (error) {
+                console.error("FazerCards webhook status error:", error);
+                healthEl.innerText = error.message || 'Could not reach FazerCards to check webhook status.';
+            } finally {
+                btn.disabled = false; btn.innerText = originalText;
+            }
+        }
+        window.loadFazerCardWebhookStatus = loadFazerCardWebhookStatus;
+
         async function saveFazerCardWebhook() {
             const url = document.getElementById('fazercard-webhook-url').value.trim();
             const enabled = document.getElementById('fazercard-webhook-enabled').checked;
