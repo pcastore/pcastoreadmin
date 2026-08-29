@@ -5492,7 +5492,7 @@
                 return status;
             } catch (error) {
                 console.error("FazerCards status check error:", error);
-                if (!silent) window.showToast('Could not reach FazerCards to check status.', 'fail');
+                if (!silent) window.showToast(error.message || 'Could not reach FazerCards to check status.', 'fail');
             }
         }
         window.checkFazerCardOrderStatus = checkFazerCardOrderStatus;
@@ -6177,7 +6177,26 @@
             });
         }
 
+        // Same fix as Orders (renderOrdersList/renderOrdersListImpl above): a
+        // Firestore onSnapshot fires repeatedly in quick bursts, and this list
+        // previously rebuilt its entire innerHTML on every single one of
+        // them - including mid-scroll/mid-touch, which is what caused the
+        // catching/stutter feeling here specifically (this tab had no
+        // debounce or touch guard at all, unlike Orders/Games). This now
+        // matters even more with FazerCards crypto top-ups, which can touch
+        // this same collection every few seconds while a payment is polled.
+        let topupsRenderScheduled = null;
         function renderTopupsList() {
+            const container = document.getElementById('topups-container');
+            clearTimeout(topupsRenderScheduled);
+            attachScrollTouchGuard(container);
+            const runWhenSettled = () => {
+                if (container && container._isTouching) { topupsRenderScheduled = setTimeout(runWhenSettled, 150); return; }
+                renderTopupsListImpl();
+            };
+            topupsRenderScheduled = setTimeout(runWhenSettled, 60);
+        }
+        function renderTopupsListImpl() {
             const container = document.getElementById('topups-container');
             if (!container) return;
             const searchTerm = (document.getElementById('topup-search')?.value || '').trim().toLowerCase();
@@ -6229,7 +6248,7 @@
                             ${walletThumb}
                             <div class="oc-info">
                                 <span class="oc-game-name">+${Number(t.amount || 0).toLocaleString()} MMK</span>
-                                <p class="oc-meta">${t.userName || t.userId || 'Guest'} &middot; ${t.paymentMethod || 'N/A'}</p>
+                                <p class="oc-meta">${t.userName || t.userId || 'Guest'} &middot; ${t.paymentMethod || 'N/A'}${t.fazercardPaymentId ? ' &middot; <span style="color:var(--accent);">Auto-verified</span>' : ''}</p>
                             </div>
                             <div class="oc-status">
                                 <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, t.status)}</span>
@@ -9318,12 +9337,18 @@
         // Debounced the same way as Orders/Games: the Users list can also get
         // re-rendered from the orders/games listeners (to refresh order counts),
         // so coalescing avoids rebuilding every user card multiple times a second.
+        // Also touch-guarded like Orders/Games/Topups now, so a live Firestore
+        // update (which fires very often - every order/status change re-renders
+        // this list to refresh order counts) can't rebuild the grid mid-scroll.
         let usersRenderScheduled = false;
         function renderAdminUsersList() {
             if (usersRenderScheduled) return;
             usersRenderScheduled = true;
+            const container = document.getElementById('admin-users-container');
+            attachScrollTouchGuard(container);
             requestAnimationFrame(() => {
                 usersRenderScheduled = false;
+                if (container && container._isTouching) { renderAdminUsersList(); return; }
                 renderAdminUsersListImpl();
             });
         }
@@ -9354,12 +9379,26 @@
                 const tb = USERS[b].lastSeen ? USERS[b].lastSeen.toMillis() : 0;
                 return tb - ta;
             });
+            // One pass over ORDERS instead of filtering the whole orders list
+            // again for every single user (that was O(users × orders) on every
+            // render - with a few hundred users and a few thousand orders this
+            // alone was enough to visibly stutter the tab, and it re-ran on
+            // every single order update since the Orders listener triggers
+            // this render too).
+            const orderStatsByUser = new Map();
+            for (const o of Object.values(ORDERS)) {
+                if (!o.userId) continue;
+                let agg = orderStatsByUser.get(o.userId);
+                if (!agg) { agg = { count: 0, spend: 0 }; orderStatsByUser.set(o.userId, agg); }
+                agg.count++;
+                if (o.status === 'Success') agg.spend += Number(o.price) || 0;
+            }
             container.innerHTML = ids.map(id => {
                 const u = USERS[id];
                 const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
-                const userOrders = Object.values(ORDERS).filter(o => o.userId === id);
-                const orderCount = userOrders.length;
-                const spend = userOrders.filter(o => o.status === 'Success').reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+                const agg = orderStatsByUser.get(id) || { count: 0, spend: 0 };
+                const orderCount = agg.count;
+                const spend = agg.spend;
                 const tier = tierForSpendAdmin(spend);
                 return `
                     <div class="user-grid-card">
