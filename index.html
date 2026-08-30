@@ -12406,7 +12406,12 @@
                     const image = aluuImageUrl(absImage);
                     return { code, name, image };
                 });
-            ALUU_GAMES_LIST = await attachG2BulkImages(items);
+            // No longer borrowing a G2Bulk cover image when Aluu.in doesn't
+            // have one (attachG2BulkImages) - per request, Aluu-linked games
+            // should only ever show Aluu.in's own image (via the proxy above)
+            // or fall back to the colored-initials placeholder, never a
+            // G2Bulk-sourced picture.
+            ALUU_GAMES_LIST = items;
             return ALUU_GAMES_LIST;
         }
         // ---------- Mobile-friendly debug peek ----------
