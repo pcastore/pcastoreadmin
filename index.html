@@ -3082,6 +3082,7 @@
                 </div>
                 <span id="game-picker-count" style="font-size:12.5px;font-weight:600;color:var(--text-muted);background:var(--fill-soft);padding:9px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0;"></span>
                 <button type="button" class="btn btn-outline" id="game-picker-update-btn" onclick="refreshGamePickerList()" style="flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Update</button>
+                <button type="button" class="btn btn-outline" id="game-picker-debug-btn" onclick="showAluuDebugInfo()" style="display:none;flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Debug</button>
                 <button type="button" class="btn btn-outline" id="game-picker-bulk-toggle-btn" onclick="toggleFazerCardBulkMode()" style="display:none;flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Select Multiple</button>
             </div>
             <div class="game-picker-grid" id="game-picker-grid"></div>
@@ -12193,17 +12194,49 @@
             G2BULK_IMAGE_INDEX = index;
             return index;
         }
+        // Splits a name into lowercase word tokens (3+ chars), ignoring
+        // punctuation/underscores - used by the fuzzy fallback below so
+        // reordered or partial-word names still match (e.g. Aluu's
+        // "arena_breakout" against a G2Bulk listing titled "Breakout Arena").
+        function gameNameTokens(name) {
+            return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(w => w.length >= 3);
+        }
+        function g2bulkImageUrl(g) {
+            return g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : '';
+        }
         function imageForGameName(name) {
             if (!G2BULK_IMAGE_INDEX) return '';
             const key = normalizeGameName(name);
             if (!key) return '';
             if (G2BULK_IMAGE_INDEX.has(key)) return G2BULK_IMAGE_INDEX.get(key);
-            // Fallback: substring containment either way, guarded to at
+            // Fallback 1: substring containment either way, guarded to at
             // least 4 characters so short codes (e.g. "A9") don't grab an
             // unrelated game's icon.
             if (key.length >= 4) {
                 for (const [gKey, image] of G2BULK_IMAGE_INDEX) {
                     if (gKey.length >= 4 && (gKey.includes(key) || key.includes(gKey))) return image;
+                }
+            }
+            // Fallback 2: word-overlap fuzzy match against the raw G2Bulk
+            // games list. Catches cases fallback 1 misses because the words
+            // are in a different order or only partially shared.
+            const tokens = gameNameTokens(name);
+            if (tokens.length && G2BULK_GAMES_LIST && G2BULK_GAMES_LIST.length) {
+                let best = null, bestScore = 0;
+                for (const g of G2BULK_GAMES_LIST) {
+                    const gTokens = gameNameTokens(g.name);
+                    if (!gTokens.length) continue;
+                    const overlap = tokens.filter(t => gTokens.some(gt => gt === t || gt.includes(t) || t.includes(gt))).length;
+                    if (!overlap) continue;
+                    const score = overlap / Math.max(tokens.length, gTokens.length);
+                    if (score > bestScore) { bestScore = score; best = g; }
+                }
+                // Require at least half the words to line up before trusting
+                // this as "the same game" - anything looser risks pairing
+                // unrelated titles just because they share one short word.
+                if (best && bestScore >= 0.5) {
+                    const image = g2bulkImageUrl(best);
+                    if (image) return image;
                 }
             }
             return '';
@@ -12268,28 +12301,102 @@
         }
 
         // ---------- Aluu.in game catalogue import ----------
-        // GET /api/v.1/games returns the account's available game list (not
-        // shown with a full example response in Aluu.in's docs, so this
-        // normalizes defensively — accepting either `gamecode`/`code` and
-        // `name`/`title` — and treats `data` as the array per the shape
-        // every other Aluu.in endpoint uses). BGMI is filtered out here per
-        // request, by code or name, so it never appears in the picker.
+        // GET /api/v.1/store/games returns the account's full supported-game
+        // list (Game Name + code + which order params each title needs -
+        // characterId / server_code / charname). This was previously called
+        // as /games, a path that doesn't actually exist in Aluu.in's docs -
+        // that mismatch is why names/images never loaded. Field names are
+        // still normalized defensively (accepting a few possible key spellings
+        // for both code and display name) since the exact JSON keys aren't
+        // shown in a full example response anywhere in the docs. BGMI is
+        // filtered out here per request, by code or name, so it never
+        // appears in the picker.
         let ALUU_GAMES_LIST = null;
         function isBgmiEntry(item) {
             const code = (item.gamecode || item.code || '').toLowerCase();
-            const name = (item.name || item.title || '').toLowerCase();
+            const name = (item.name || item.title || item.gamename || item.game_name || item.display_name || item.label || '').toLowerCase();
             return code.includes('bgmi') || name.includes('bgmi') || name.includes('battlegrounds mobile india');
+        }
+        // Turns a raw slug/code like "8_ball_pool" or "arena-breakout" into
+        // "8 Ball Pool" / "Arena Breakout" for display. Only applied when the
+        // "name" we got back is actually just the code repeated (see below) -
+        // real names from the API are left untouched.
+        function looksLikeRawCode(name) {
+            return !!name && /[_-]/.test(name) && /^[a-z0-9]+([_-][a-z0-9]+)*$/i.test(name);
+        }
+        function prettifyGameName(name) {
+            return (name || '')
+                .replace(/[_-]+/g, ' ')
+                .trim()
+                .split(/\s+/)
+                .map(w => w ? w[0].toUpperCase() + w.slice(1) : w)
+                .join(' ');
         }
         async function fetchAluuGamesList(forceRefresh = false) {
             if (ALUU_GAMES_LIST && !forceRefresh) return ALUU_GAMES_LIST;
-            const data = await aluuRequest('/games');
-            const raw = data.data || [];
+            let data;
+            try {
+                // The real endpoint is /store/games, per Aluu.in's own docs
+                // ("Check the required params from the Supported Games table
+                // or directly from /store/games") - NOT /games. Hitting the
+                // wrong path is why names/images never came through before.
+                // /games is kept as a fallback in case that changes again.
+                try {
+                    data = await aluuRequest('/store/games');
+                } catch (primaryError) {
+                    data = await aluuRequest('/games');
+                }
+            } catch (error) {
+                // Capture the exact failure so showAluuDebugInfo() can show
+                // it on screen even though this function is about to throw
+                // and the caller's .catch() only sees a generic message.
+                ALUU_DEBUG_INFO = { count: 0, sample: [], error: (error && error.message) || String(error) };
+                throw error;
+            }
+            const raw = data.data || data.games || data.list || (Array.isArray(data) ? data : []);
+            // Keep the first few raw entries around (and the exact request
+            // error, if any) so showAluuDebugInfo() below can put them on
+            // screen for a phone user who has no devtools access - console
+            // logging alone is useless from a mobile browser.
+            ALUU_DEBUG_INFO = { count: raw.length, sample: raw.slice(0, 3), error: null };
+            if (raw.length) console.log('[Aluu.in] sample /store/games entry:', raw[0]);
             const items = raw
                 .filter(g => !isBgmiEntry(g))
-                .map(g => ({ code: g.gamecode || g.code || '', name: g.name || g.title || (g.gamecode || g.code || ''), image: g.image || '' }));
+                .map(g => {
+                    const code = g.gamecode || g.code || '';
+                    const rawName = g.name || g.title || g.gamename || g.game_name || g.display_name || g.label || code;
+                    const name = looksLikeRawCode(rawName) ? prettifyGameName(rawName) : rawName;
+                    const image = g.image || g.image_url || g.icon || g.icon_url || g.logo || '';
+                    return { code, name, image };
+                });
             ALUU_GAMES_LIST = await attachG2BulkImages(items);
             return ALUU_GAMES_LIST;
         }
+        // ---------- Mobile-friendly debug peek ----------
+        // Screenshots of a devtools console aren't realistic to get from a
+        // phone, so this puts the same information directly on screen: what
+        // Aluu.in's /games actually sent back (or the exact error if the
+        // request itself failed), tap-to-reveal from the picker modal.
+        let ALUU_DEBUG_INFO = null;
+        async function showAluuDebugInfo() {
+            if (!ALUU_DEBUG_INFO) {
+                try {
+                    await fetchAluuGamesList(true);
+                } catch (error) {
+                    ALUU_DEBUG_INFO = { count: 0, sample: [], error: error.message || String(error) };
+                }
+            }
+            if (!ALUU_DEBUG_INFO) { alert('No debug info available yet.'); return; }
+            if (ALUU_DEBUG_INFO.error) {
+                alert('Aluu.in /store/games request FAILED:\n\n' + ALUU_DEBUG_INFO.error);
+                return;
+            }
+            const text = 'Aluu.in /store/games returned ' + ALUU_DEBUG_INFO.count + ' entries.\n\n'
+                + 'First entries (raw, exactly as received):\n\n'
+                + ALUU_DEBUG_INFO.sample.map((g, i) => (i + 1) + '. ' + JSON.stringify(g, null, 2)).join('\n\n');
+            alert(text);
+        }
+        window.showAluuDebugInfo = showAluuDebugInfo;
 
         // ---------- FazerCards Gift Cards ----------
         // A separate FazerCards catalog from the Game Top-ups list above -
@@ -12671,6 +12778,7 @@
             document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-loading">Loading…</p>';
             document.getElementById('game-picker-modal-overlay').classList.add('show');
             document.getElementById('game-picker-update-btn').style.display = 'block';
+            document.getElementById('game-picker-debug-btn').style.display = (kind === 'aluu') ? 'block' : 'none';
 
             // Bulk add only makes sense for FazerCards, and only while
             // creating a brand-new game (an existing game is already tied to
