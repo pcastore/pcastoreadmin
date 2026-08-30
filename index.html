@@ -13032,12 +13032,12 @@
                 nameInput.value = name;
             }
 
-            // Linking a G2Bulk Direct game (or now, a Voucher category) also
-            // pulls in its cover image as the Game Image — the same "fill it
-            // in for you" treatment as the name field above — but only when
-            // no image has been set yet, so an admin's own uploaded photo is
-            // never overwritten.
-            if ((kind === 'g2bulk' || kind === 'voucher' || kind === 'fazercard_giftcard') && code) {
+            // Linking a G2Bulk Direct game (or a Voucher category, or now an
+            // Aluu.in game) also pulls in its cover image as the Game Image —
+            // the same "fill it in for you" treatment as the name field
+            // above — but only when no image has been set yet, so an admin's
+            // own uploaded photo is never overwritten.
+            if ((kind === 'g2bulk' || kind === 'voucher' || kind === 'fazercard_giftcard' || kind === 'aluu') && code) {
                 const match = gamePickerItems.find(g => g.code === code);
                 const preview = document.getElementById('edit-game-preview');
                 if (match && match.image && preview.style.display !== 'block') {
