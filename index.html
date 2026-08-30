@@ -12563,7 +12563,7 @@
         }
         function pickerThumbHtml(item, sizeClass) {
             if (item.image) {
-                return `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" onerror="this.parentElement.style.background='${pickerColorFor(item.name)}';this.remove();this.parentElement.innerText='${escapeHtml(pickerInitials(item.name))}';">`;
+                return `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" onerror="const p=this.parentElement;this.remove();p.style.background='${pickerColorFor(item.name)}';p.innerText='${escapeHtml(pickerInitials(item.name))}';">`;
             }
             return '';
         }
