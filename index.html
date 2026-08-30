@@ -2080,6 +2080,23 @@
             </div>
 
             <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:15px;font-weight: 600;">Auto Price Update</span>
+                </div>
+                <div class="switch-row" style="margin-top:12px;">
+                    <div>
+                        <span class="switch-label">Auto-apply price updates</span>
+                        <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် admin panel ဝင်တိုင်း G2Bulk/JCPlays/Voucher ရဲ့ ဈေးနှုန်း update ရှိနေတဲ့ package တွေရဲ့ Cost ကို auto update လုပ်ပေးမှာဖြစ်ပါတယ် (Price ကိုတော့ မထိပါ)။ ပိတ်ထားရင် Games list ထဲက "Pass" ခလုတ်ကို manual နှိပ်ပြီးမှ update လုပ်ရပါမယ်။</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoupdate-prices-toggle" onchange="onAutoUpdatePricesToggle(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <p id="autoupdate-prices-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAdminLoginSettings()">
                     <span style="font-size:15px;font-weight: 600;">Admin Login</span>
                     <svg class="ui-icon" id="admin-login-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
@@ -7859,6 +7876,121 @@
         }
         window.applyGameCostUpdatesFromList = applyGameCostUpdatesFromList;
 
+        // ---------- Auto Price Update (Dashboard → Auto Price Update toggle) ----------
+        // Same live-source collection + apply logic as applyGameCostUpdatesFromList
+        // above, but silent (no badge element, no per-game toast) and returns the
+        // changed count instead - used by the bulk auto-run below so re-opening
+        // the admin panel doesn't spam a toast per game. Kept as its own function
+        // rather than refactoring applyGameCostUpdatesFromList to share code, so
+        // the existing manual "Pass" badge flow stays exactly as it was.
+        async function applyLiveCostUpdatesForGame(gameId, g) {
+            const rate = G2BULK_SETTINGS.usdRate || 4500;
+            const packages = (g.packages || []).map(p => ({ ...p }));
+            const sources = [];
+            if (g.g2bulkCode) {
+                try {
+                    const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g.g2bulkCode)}/catalogue`);
+                    const data = await res.json();
+                    if (data.success) sources.push({ keyField: 'g2bulk', liveByKey: new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)])) });
+                } catch (error) { console.error('Auto price update — G2Bulk fetch error:', gameId, error); }
+            }
+            if (g.jcplaysProduct && JCPLAYS_SETTINGS.uid && JCPLAYS_SETTINGS.email && JCPLAYS_SETTINGS.mKey) {
+                try {
+                    const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
+                    if (data.status === 200) sources.push({ keyField: 'jcplays', liveByKey: new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)])) });
+                } catch (error) { console.error('Auto price update — JCPlays fetch error:', gameId, error); }
+            }
+            if (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory) {
+                try {
+                    const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
+                    if (data.success) {
+                        const products = data.products || (data.category ? data.category.products : []) || [];
+                        sources.push({ keyField: 'voucherId', liveByKey: new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)])) });
+                    }
+                } catch (error) { console.error('Auto price update — Voucher fetch error:', gameId, error); }
+            }
+            if (!sources.length) return 0;
+
+            let changed = 0;
+            packages.forEach(p => {
+                sources.forEach(({ keyField, liveByKey }) => {
+                    const key = (p[keyField] || '').trim();
+                    if (!key || !liveByKey.has(key)) return;
+                    const liveCost = liveByKey.get(key);
+                    if (liveCost === (Number(p.cost) || 0)) return;
+                    changed++;
+                    p.cost = liveCost;
+                });
+            });
+            if (changed > 0) {
+                await updateDoc(doc(db, "games", gameId), { packages });
+                logAdminActivity('Auto price update', `${g.name || gameId}: ${changed} cost(s) updated`);
+                invalidateGameCostScan(gameId);
+            }
+            return changed;
+        }
+
+        // Loops every linked game once and applies pending Cost updates -
+        // Price is never touched, same as the manual "Pass" badge. Runs once
+        // per admin session when the "Auto-apply price updates" toggle
+        // (Dashboard → Auto Price Update) is on, right after games finish
+        // loading. The toggle only controls whether this runs automatically;
+        // the manual "Pass" badge in the games list still works either way.
+        async function runAutoPriceUpdateForAllGames() {
+            let updatedGames = 0, updatedPackages = 0;
+            for (const [gameId, g] of Object.entries(GAMES || {})) {
+                const linked = g.g2bulkCode || g.jcplaysProduct || (g.fulfillProvider === 'g2bulk_voucher' && g.g2bulkVoucherCategory);
+                if (!linked) continue;
+                try {
+                    const changed = await applyLiveCostUpdatesForGame(gameId, g);
+                    if (changed > 0) { updatedGames++; updatedPackages += changed; }
+                } catch (error) {
+                    console.error('Auto price update error for', gameId, error);
+                }
+            }
+            if (updatedPackages > 0) window.showToast(`Auto price update: ${updatedGames} game(s), ${updatedPackages} price(s) updated ✓`, 'success');
+        }
+        window.runAutoPriceUpdateForAllGames = runAutoPriceUpdateForAllGames;
+
+        let AUTO_UPDATE_PRICES_ENABLED = false;
+        let autoUpdatePricesRanThisSession = false;
+
+        function maybeRunAutoPriceUpdateOnLoad() {
+            if (!AUTO_UPDATE_PRICES_ENABLED || autoUpdatePricesRanThisSession) return;
+            if (!GAMES || !Object.keys(GAMES).length) return; // wait until games have actually loaded
+            autoUpdatePricesRanThisSession = true;
+            runAutoPriceUpdateForAllGames();
+        }
+
+        function listenAutoUpdatePricesSetting() {
+            onSnapshot(doc(db, "settings", "pricing"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                AUTO_UPDATE_PRICES_ENABLED = !!data.autoApplyOnLoad;
+                const toggle = document.getElementById('autoupdate-prices-toggle');
+                if (toggle) toggle.checked = AUTO_UPDATE_PRICES_ENABLED;
+                maybeRunAutoPriceUpdateOnLoad();
+            }, (error) => console.error('Auto Price Update setting listener error:', error));
+        }
+        window.listenAutoUpdatePricesSetting = listenAutoUpdatePricesSetting;
+
+        async function onAutoUpdatePricesToggle(checked) {
+            const statusEl = document.getElementById('autoupdate-prices-status');
+            try {
+                await setDoc(doc(db, "settings", "pricing"), { autoApplyOnLoad: checked }, { merge: true });
+                statusEl.style.color = 'var(--text-secondary)';
+                statusEl.innerText = checked
+                    ? 'Admin panel ဖွင့်တိုင်း ဈေးနှုန်း update ကို auto ဆွဲပြီး Cost update လုပ်ပေးပါမယ်။'
+                    : 'Auto update ပိတ်ထားပါပြီ — Games list ထဲက "Pass" ခလုတ်ကို manual နှိပ်ပြီးမှ update လုပ်ရပါမယ်။';
+                logAdminActivity('Auto Price Update setting changed', checked ? 'Enabled' : 'Disabled');
+            } catch (error) {
+                console.error('Auto Price Update toggle save error:', error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Save failed: ' + error.message;
+                window.showToast('Failed to save setting.', 'fail');
+            }
+        }
+        window.onAutoUpdatePricesToggle = onAutoUpdatePricesToggle;
+
         // Sort key mirrors store.html: explicit `order` field wins (ascending),
         // games without one yet fall to the end, alphabetically - so nothing
         // reshuffles until an admin actually uses "Reorder".
@@ -7883,6 +8015,7 @@
                 renderAdminGamesList();
                 if (ordersListenerAttached) renderOrdersList();
                 if (lossFixSchedulerStarted) autoFixLossMakingPackages();
+                maybeRunAutoPriceUpdateOnLoad();
             }, (error) => {
                 console.error("Games listener error:", error);
                 document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
@@ -8858,7 +8991,20 @@
                     package: (g.packageTabLabels && g.packageTabLabels.package) || 'Package',
                     currency: (g.packageTabLabels && g.packageTabLabels.currency) || 'Currency'
                 };
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency', false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.aluuProductId || ''));
+                // Existing packages saved before/without name-based Package vs
+                // Currency classification (only catalogue import ever applied
+                // detectPkgTypeFromName - manual "+ Add Package" and older
+                // imports just kept whatever tab was open) can sit under the
+                // wrong built-in tab indefinitely, since editing never used to
+                // recompute it. Re-run the same name check here for anything
+                // still in a built-in tab, so it lands in the right one as
+                // soon as the editor opens - an admin-made custom tab (e.g. a
+                // "VIP" tab) is left exactly as saved.
+                (g.packages || []).forEach(p => {
+                    const savedTab = p.tab || p.type || 'currency';
+                    const effectiveTab = ['package', 'currency'].includes(savedTab) ? detectPkgTypeFromName(p.amount) : savedTab;
+                    addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', effectiveTab, effectiveTab, false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.aluuProductId || '');
+                });
                 renderPkgTabBar();
                 switchPackageTab('package');
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
@@ -8892,6 +9038,8 @@
                 pendingAluuServerOptions = Array.isArray(g.aluuServerOptions) ? g.aluuServerOptions.slice() : null;
                 refreshPickerButton('aluu');
                 document.getElementById('aluu-import-btn').style.display = g.aluuCode ? 'block' : 'none';
+                pendingG2BulkServerMode = g.g2bulkServerMode || null;
+                pendingG2BulkServerOptions = Array.isArray(g.g2bulkServerOptions) ? g.g2bulkServerOptions.slice() : null;
                 deleteBtn.style.display = 'block';
                 renderServerVariantThumbs(gameId);
             } else {
@@ -8924,6 +9072,8 @@
                 document.getElementById('aluu-import-btn').style.display = 'none';
                 pendingAluuServerMode = null;
                 pendingAluuServerOptions = null;
+                pendingG2BulkServerMode = null;
+                pendingG2BulkServerOptions = null;
                 onFazerCardGiftCardCategoryChange();
                 setFulfillProvider(gameListTab === 'voucher' ? 'g2bulk_voucher' : 'manual');
                 preview.src = '';
@@ -9118,7 +9268,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -12271,6 +12421,17 @@
         // that side is built, without needing a second research pass.
         let pendingAluuServerMode = null;
         let pendingAluuServerOptions = null;
+        // G2Bulk: POST /v1/games/fields (body {game}) returns which fields a
+        // game needs (e.g. ["userid","serverid"]); POST /v1/games/servers
+        // returns the server list for games that have one, or a 403 meaning
+        // "no server needed" (not an error - see G2Bulk's docs at
+        // https://api.g2bulk.com/docs#games). Fetched during
+        // importG2BulkCatalogue and saved onto the game doc as
+        // g2bulkServerMode/g2bulkServerOptions, same shape as the Aluu.in
+        // pair above, so store.html's renderServerIdField already knows how
+        // to render a select for either provider without extra changes.
+        let pendingG2BulkServerMode = null;
+        let pendingG2BulkServerOptions = null;
         async function fetchFazerCardTopupsList(forceRefresh = false) {
             if (FAZERCARD_TOPUPS_LIST && !forceRefresh) return FAZERCARD_TOPUPS_LIST;
             // /api/v2/topups is cursor-paginated (NOT offset/page): each response's
@@ -13174,13 +13335,59 @@
                 });
 
                 statusEl.style.color = 'var(--accent)';
-                statusEl.innerText = updatedCount
+                let statusMsg = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
-                // Newly-imported packages land at the end of the tab in whatever
-                // order the API returned them, not smallest-to-largest - same
-                // ordering pass as the manual "Sort" button, run automatically
-                // right after import instead of requiring an extra tap.
+
+                // Check /v1/games/fields for whether this game needs a
+                // server id, and auto-set "Requires Server ID" from the
+                // answer instead of leaving it to the admin - same
+                // on-when-needed/off-when-not behavior as the FazerCards and
+                // Aluu.in imports above.
+                try {
+                    const fieldsRes = await fetch('https://api.g2bulk.com/v1/games/fields', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: code })
+                    });
+                    const fieldsData = await fieldsRes.json();
+                    const g2bulkFields = (fieldsData.info && Array.isArray(fieldsData.info.fields)) ? fieldsData.info.fields : [];
+                    const needsG2BulkServerId = g2bulkFields.some(k => /server/i.test(k));
+                    document.getElementById('edit-game-serverid').checked = needsG2BulkServerId;
+                    statusMsg += needsG2BulkServerId
+                        ? '\n✓ "Requires Server ID" auto-enabled for this game.'
+                        : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.';
+
+                    if (needsG2BulkServerId) {
+                        // A 403 here means "no server needed" per G2Bulk's own
+                        // docs, not a real error - falls back to a free-text
+                        // Server ID field (pendingG2BulkServerMode stays null)
+                        // if that ever happens despite /fields saying otherwise.
+                        try {
+                            const serversRes = await fetch('https://api.g2bulk.com/v1/games/servers', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: code })
+                            });
+                            const serversData = await serversRes.json();
+                            if (serversRes.ok && serversData.servers) {
+                                pendingG2BulkServerMode = 'select';
+                                pendingG2BulkServerOptions = Object.entries(serversData.servers).map(([label, value]) => ({ label, value }));
+                            } else {
+                                pendingG2BulkServerMode = null;
+                                pendingG2BulkServerOptions = null;
+                            }
+                        } catch (serversError) {
+                            console.error("G2Bulk /games/servers fetch error:", serversError);
+                            pendingG2BulkServerMode = null;
+                            pendingG2BulkServerOptions = null;
+                        }
+                    } else {
+                        pendingG2BulkServerMode = null;
+                        pendingG2BulkServerOptions = null;
+                    }
+                } catch (fieldsError) {
+                    console.error("G2Bulk /games/fields fetch error:", fieldsError);
+                    statusMsg += '\n⚠ Could not check Server ID requirement: ' + fieldsError.message;
+                }
+
+                statusEl.innerText = statusMsg;
                 sortPackageRows();
                 window.showToast('Catalogue imported ✓', 'success');
             } catch (error) {
@@ -13242,10 +13449,21 @@
                 // placeFazerCardOrder (admin-side) reads at order time.
                 pendingFazerCardFields = (data.fields || []).map(f => f.key);
 
+                // Auto-set "Requires Server ID" straight from those fields
+                // instead of leaving it to the admin to notice and flip
+                // manually - on when FazerCards actually asks for a
+                // server/zone value for this game, off when it doesn't. Same
+                // regex + same bidirectional set as the bulk importer
+                // (runFazerCardBulkImport) below, so single-game and bulk
+                // imports behave identically.
+                const fazerNeedsServerIdField = pendingFazerCardFields.some(k => /server|zone/i.test(k));
+                document.getElementById('edit-game-serverid').checked = fazerNeedsServerIdField;
+
                 statusEl.style.color = 'var(--accent)';
-                statusEl.innerText = updatedCount
+                statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
+                    + (fazerNeedsServerIdField ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.');
                 sortPackageRows();
                 window.showToast('FazerCards catalogue imported ✓', 'success');
             } catch (error) {
@@ -13333,12 +13551,20 @@
                     }
                 }
 
+                // Auto-set "Requires Server ID"/"Requires Character Name"
+                // straight from the imported products instead of just
+                // warning and leaving it to the admin to flip manually - on
+                // when Aluu.in's own product data says this game needs it,
+                // off when none of the imported products do.
+                document.getElementById('edit-game-serverid').checked = anyRequiresServerId;
+                document.getElementById('edit-game-charname').checked = anyRequiresCharName;
+
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
-                    + (anyRequiresServerId && !document.getElementById('edit-game-serverid').checked ? '\n⚠ Some products need a Server ID — turn on "Requires Server ID" for this game.' : '')
-                    + (anyRequiresCharName && !document.getElementById('edit-game-charname').checked ? '\n⚠ Some products need a Character Name — turn on "Requires Character Name" for this game.' : '')
+                    + (anyRequiresServerId ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
+                    + (anyRequiresCharName ? '\n✓ "Requires Character Name" auto-enabled for this game.' : '')
                     + serverOptionsNote;
                 sortPackageRows();
                 window.showToast('Aluu.in catalogue imported ✓', 'success');
@@ -15023,6 +15249,7 @@
             listenFrames();
             listenActivityLog();
             listenAdminAccounts();
+            listenAutoUpdatePricesSetting();
             startAdminHeartbeat();
             startOrderArchiveScheduler();
             startDailySummaryScheduler();
