@@ -11707,13 +11707,23 @@
             if (!s.apiKey) {
                 throw new Error('Add your Aluu.in API key first (Settings → Aluu.in).');
             }
-            let url = s.proxyUrl
-                ? `${s.proxyUrl}?path=${encodeURIComponent('/api/v.1' + path)}`
-                : `${ALUU_BASE_URL}${path}`;
+            // Query params must be folded into the *inner* Aluu.in path
+            // before it gets wrapped in the proxy's own path= query param.
+            // This used to append params to the outer proxied URL instead,
+            // so the Worker only ever forwarded the bare inner path with no
+            // query string — any param-taking endpoint (currently only
+            // /server-options) silently lost its params through the proxy,
+            // and Aluu.in responded to the param-less request with a
+            // generic/misleading error (e.g. "Order not found") instead of
+            // the real server list.
+            let innerPath = path;
             if (params) {
                 const qs = new URLSearchParams(params).toString();
-                url += (url.includes('?') ? '&' : '?') + qs;
+                innerPath += (innerPath.includes('?') ? '&' : '?') + qs;
             }
+            const url = s.proxyUrl
+                ? `${s.proxyUrl}?path=${encodeURIComponent('/api/v.1' + innerPath)}`
+                : `${ALUU_BASE_URL}${innerPath}`;
             const res = await fetch(url, {
                 method,
                 headers: {
