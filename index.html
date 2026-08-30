@@ -12314,7 +12314,7 @@
         let ALUU_GAMES_LIST = null;
         function isBgmiEntry(item) {
             const code = (item.gamecode || item.code || '').toLowerCase();
-            const name = (item.name || item.title || item.gamename || item.game_name || item.display_name || item.label || '').toLowerCase();
+            const name = (item.Name || item.name || item.title || item.gamename || item.game_name || item.display_name || item.label || '').toLowerCase();
             return code.includes('bgmi') || name.includes('bgmi') || name.includes('battlegrounds mobile india');
         }
         // Turns a raw slug/code like "8_ball_pool" or "arena-breakout" into
@@ -12363,10 +12363,21 @@
             const items = raw
                 .filter(g => !isBgmiEntry(g))
                 .map(g => {
-                    const code = g.gamecode || g.code || '';
-                    const rawName = g.name || g.title || g.gamename || g.game_name || g.display_name || g.label || code;
+                    const code = g.gamecode || g.Gamecode || g.code || g.Code || '';
+                    // Aluu.in's real response uses capitalized "Name" - the
+                    // lowercase "name" check below never matched, so this
+                    // always fell through to the raw code and only got
+                    // prettified when the code itself had an "_"/"-" in it
+                    // (e.g. "afkjourney" stayed as-is instead of becoming
+                    // "AFK Journey"). Capitalized key checked first now.
+                    const rawName = g.Name || g.name || g.title || g.gamename || g.game_name || g.display_name || g.label || code;
                     const name = looksLikeRawCode(rawName) ? prettifyGameName(rawName) : rawName;
-                    const image = g.image || g.image_url || g.icon || g.icon_url || g.logo || '';
+                    const rawImage = g.image || g.Image || g.image_url || g.icon || g.icon_url || g.logo || '';
+                    // Guard against a future/edge response with a relative
+                    // path instead of Aluu.in's usual full URL.
+                    const image = rawImage && !/^https?:\/\//i.test(rawImage)
+                        ? 'https://aluu.in' + (rawImage.startsWith('/') ? '' : '/') + rawImage
+                        : rawImage;
                     return { code, name, image };
                 });
             ALUU_GAMES_LIST = await attachG2BulkImages(items);
