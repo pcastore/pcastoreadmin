@@ -12332,6 +12332,31 @@
                 .map(w => w ? w[0].toUpperCase() + w.slice(1) : w)
                 .join(' ');
         }
+        // Aluu.in's image URLs (https://aluu.in/api/game-image/<code>) live
+        // under the same /api/ path as every other endpoint in their docs,
+        // every one of which requires an x-api-key header - a plain <img>
+        // tag can't attach custom headers, so loading these directly
+        // 401s and silently falls back to the colored-initials placeholder
+        // (this is why the picker showed "AL", "BL", "BC"... instead of
+        // real logos even though the URL itself was correct). Routing
+        // through the same aluu-functions proxy Worker already used for
+        // JSON calls fixes this IF that Worker forwards the path generically
+        // and attaches the key server-side - it never has to reach the
+        // browser that way, and the resulting proxied URL is safe to store
+        // and show on the public storefront too. Without a proxy configured,
+        // this falls back to the raw URL (today's broken behavior - nothing
+        // this app can do client-side to add an auth header to an <img> tag).
+        function aluuImageUrl(rawUrl) {
+            if (!rawUrl) return '';
+            const proxyUrl = ALUU_SETTINGS.proxyUrl;
+            if (!proxyUrl) return rawUrl;
+            try {
+                const u = new URL(rawUrl);
+                return `${proxyUrl}?path=${encodeURIComponent(u.pathname + u.search)}`;
+            } catch (error) {
+                return rawUrl;
+            }
+        }
         async function fetchAluuGamesList(forceRefresh = false) {
             if (ALUU_GAMES_LIST && !forceRefresh) return ALUU_GAMES_LIST;
             let data;
@@ -12375,9 +12400,10 @@
                     const rawImage = g.image || g.Image || g.image_url || g.icon || g.icon_url || g.logo || '';
                     // Guard against a future/edge response with a relative
                     // path instead of Aluu.in's usual full URL.
-                    const image = rawImage && !/^https?:\/\//i.test(rawImage)
+                    const absImage = rawImage && !/^https?:\/\//i.test(rawImage)
                         ? 'https://aluu.in' + (rawImage.startsWith('/') ? '' : '/') + rawImage
                         : rawImage;
+                    const image = aluuImageUrl(absImage);
                     return { code, name, image };
                 });
             ALUU_GAMES_LIST = await attachG2BulkImages(items);
