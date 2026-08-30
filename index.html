@@ -12361,15 +12361,18 @@
             if (ALUU_GAMES_LIST && !forceRefresh) return ALUU_GAMES_LIST;
             let data;
             try {
-                // The real endpoint is /store/games, per Aluu.in's own docs
-                // ("Check the required params from the Supported Games table
-                // or directly from /store/games") - NOT /games. Hitting the
-                // wrong path is why names/images never came through before.
-                // /games is kept as a fallback in case that changes again.
+                // Confirmed from Aluu.in's actual docs screenshot: GET
+                // /api/v.1/games (not /store/games - that was an earlier
+                // guess based on the Generic Game Check page's "or directly
+                // from /store/games" wording, which turned out to refer to a
+                // different, undocumented listing, not this one). Response
+                // shape: { success, data: [{ Name, gamecode, image,
+                // totalProducts }] } - /store/games kept as a fallback only
+                // in case Aluu.in ever reintroduces it under that path.
                 try {
-                    data = await aluuRequest('/store/games');
-                } catch (primaryError) {
                     data = await aluuRequest('/games');
+                } catch (primaryError) {
+                    data = await aluuRequest('/store/games');
                 }
             } catch (error) {
                 // Capture the exact failure so showAluuDebugInfo() can show
