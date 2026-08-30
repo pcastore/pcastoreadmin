@@ -13263,7 +13263,8 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(p.name, cost, cost, '', '', p.image || '', 'currency', null, true, '', '', '', 'aluu', denom);
+                        const absImage = p.image ? (/^https?:\/\//.test(p.image) ? p.image : 'https://aluu.in' + p.image) : '';
+                        addPackageRow(p.name, cost, cost, '', '', absImage, 'currency', null, true, '', '', '', 'aluu', denom);
                         addedCount++;
                     }
                 });
