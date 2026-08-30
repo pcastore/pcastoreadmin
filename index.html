@@ -2938,8 +2938,11 @@
                     <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
                     <button class="btn btn-outline" onclick="openBulkPkgModal()" title="Cost/Price အားလုံးကို % တစ်ခုတည်းနဲ့ တစ်ခါတည်းချိန်ညှိပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-dollar"></use></svg> Bulk %</button>
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
+                    <button class="btn btn-outline" id="g2bulk-debug-btn" onclick="debugG2BulkServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ G2Bulk ရဲ့ fields/servers raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="fazercard-import-btn" onclick="importFazerCardCatalogue()" style="display:none;">Import from FazerCards</button>
+                    <button class="btn btn-outline" id="fazercard-debug-btn" onclick="debugFazerCardServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ FazerCards ရဲ့ fields raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="aluu-import-btn" onclick="importAluuCatalogue()" style="display:none;">Import from Aluu.in</button>
+                    <button class="btn btn-outline" id="aluu-debug-btn" onclick="debugAluuServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ Aluu.in ရဲ့ server-options raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                 </div>
@@ -9023,6 +9026,8 @@
                 document.getElementById('fazercard-import-status').innerText = '';
                 document.getElementById('edit-game-g2bulk-idcheck-code').value = g.g2bulkIdCheckCode || '';
                 pendingFazerCardFields = Array.isArray(g.fazercardFields) ? g.fazercardFields.slice() : [];
+                pendingFazerCardServerMode = g.fazercardServerMode || null;
+                pendingFazerCardServerOptions = Array.isArray(g.fazercardServerOptions) ? g.fazercardServerOptions.slice() : null;
                 onFazerCardGameChange();
                 document.getElementById('edit-game-fazercard-giftcard-category').value = g.fazercardGiftCategoryId || '';
                 document.getElementById('fazercard-giftcard-import-status').innerText = '';
@@ -9038,6 +9043,7 @@
                 pendingAluuServerOptions = Array.isArray(g.aluuServerOptions) ? g.aluuServerOptions.slice() : null;
                 refreshPickerButton('aluu');
                 document.getElementById('aluu-import-btn').style.display = g.aluuCode ? 'block' : 'none';
+                document.getElementById('aluu-debug-btn').style.display = g.aluuCode ? 'block' : 'none';
                 pendingG2BulkServerMode = g.g2bulkServerMode || null;
                 pendingG2BulkServerOptions = Array.isArray(g.g2bulkServerOptions) ? g.g2bulkServerOptions.slice() : null;
                 deleteBtn.style.display = 'block';
@@ -9064,12 +9070,15 @@
                 document.getElementById('fazercard-import-status').innerText = '';
                 document.getElementById('edit-game-g2bulk-idcheck-code').value = '';
                 pendingFazerCardFields = [];
+                pendingFazerCardServerMode = null;
+                pendingFazerCardServerOptions = null;
                 onFazerCardGameChange();
                 document.getElementById('edit-game-fazercard-giftcard-category').value = '';
                 document.getElementById('fazercard-giftcard-import-status').innerText = '';
                 document.getElementById('edit-game-aluu-code').value = '';
                 document.getElementById('aluu-import-status').innerText = '';
                 document.getElementById('aluu-import-btn').style.display = 'none';
+                document.getElementById('aluu-debug-btn').style.display = 'none';
                 pendingAluuServerMode = null;
                 pendingAluuServerOptions = null;
                 pendingG2BulkServerMode = null;
@@ -9268,7 +9277,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -12409,8 +12418,36 @@
         // to fall back to a borrowed G2Bulk image (see attachG2BulkImages
         // above) by name match. That fallback stays in place for the rare
         // category FazerCards itself has no image for.
+        // A server/zone field FazerCards marks as a fixed list (not
+        // free-text) should render as a dropdown, same as Aluu.in/G2Bulk -
+        // but the exact key FazerCards uses for the options array isn't
+        // nailed down publicly, so this checks the common shapes
+        // (options/values/choices) defensively and returns null (free-text
+        // fallback) if none match, rather than guessing wrong silently.
+        // Shared by the single-game and bulk FazerCards importers below.
+        function detectFazerCardServerDropdown(fieldDefs) {
+            const serverField = (fieldDefs || []).find(f => /server|zone/i.test(f.key || ''));
+            const optionsRaw = serverField && (serverField.options || serverField.values || serverField.choices);
+            if (!serverField || !Array.isArray(optionsRaw) || optionsRaw.length === 0) return { mode: null, options: null };
+            return {
+                mode: 'select',
+                options: optionsRaw.map(o =>
+                    (o && typeof o === 'object') ? { label: o.label || o.name || o.value, value: o.value != null ? o.value : o.label } : { label: String(o), value: String(o) }
+                )
+            };
+        }
         let FAZERCARD_TOPUPS_LIST = null;
         let pendingFazerCardFields = [];
+        // FazerCards: GET /topups/offers returns a `fields` array where each
+        // field carries {key, label, type} (and, for a fixed-list field, an
+        // options-style array under a provider-defined key - schema not
+        // nailed down publicly, see the OpenAPI spec linked from FazerCards'
+        // docs). Previously only `key` was kept (pendingFazerCardFields), so
+        // any select-type field silently degraded to free-text - this pair
+        // captures the rest so a server/zone field that FazerCards marks as
+        // a fixed list can render as a dropdown too, same as Aluu.in/G2Bulk.
+        let pendingFazerCardServerMode = null;
+        let pendingFazerCardServerOptions = null;
         // Aluu.in: GET /server-options?gamecode= result for the currently
         // edited game, fetched during importAluuCatalogue when any imported
         // product has requiresServerId, and saved onto the game doc as
@@ -12727,7 +12764,9 @@
             // refreshPackageRowProviderVisibility for the per-row logic.
             refreshPackageRowProviderVisibility();
             document.getElementById('fazercard-import-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
+            document.getElementById('fazercard-debug-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
             document.getElementById('aluu-import-btn').style.display = (provider === 'aluu' && document.getElementById('edit-game-aluu-code').value) ? 'block' : 'none';
+            document.getElementById('aluu-debug-btn').style.display = (provider === 'aluu' && document.getElementById('edit-game-aluu-code').value) ? 'block' : 'none';
             if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
             if (provider === 'fazercard') { refreshPickerButton('fazercard'); }
             if (provider === 'aluu') { refreshPickerButton('aluu'); }
@@ -12752,6 +12791,7 @@
         function onG2BulkGameChange() {
             const code = document.getElementById('edit-game-g2bulk-code').value;
             document.getElementById('g2bulk-import-btn').style.display = code ? 'block' : 'none';
+            document.getElementById('g2bulk-debug-btn').style.display = code ? 'block' : 'none';
             refreshCheckPricesBtn();
         }
         window.onG2BulkGameChange = onG2BulkGameChange;
@@ -12759,12 +12799,14 @@
         function onFazerCardGameChange() {
             const code = document.getElementById('edit-game-fazercard-category').value;
             document.getElementById('fazercard-import-btn').style.display = code ? 'block' : 'none';
+            document.getElementById('fazercard-debug-btn').style.display = code ? 'block' : 'none';
         }
         window.onFazerCardGameChange = onFazerCardGameChange;
 
         function onAluuGameChange() {
             const code = document.getElementById('edit-game-aluu-code').value;
             document.getElementById('aluu-import-btn').style.display = code ? 'block' : 'none';
+            document.getElementById('aluu-debug-btn').style.display = code ? 'block' : 'none';
         }
         window.onAluuGameChange = onAluuGameChange;
 
@@ -13287,6 +13329,46 @@
         }
         window.onJCPlaysCodeTyped = onJCPlaysCodeTyped;
 
+        // Debug-only check: calls G2Bulk's /games/fields and /games/servers
+        // for whatever code is currently entered and dumps the raw response
+        // into the same status paragraph the import button uses — lets the
+        // admin confirm whether a game's dropdown-vs-free-text outcome is
+        // correct before running (and possibly re-running) a full catalogue
+        // import, which also touches the package list.
+        async function debugG2BulkServerCheck() {
+            const code = document.getElementById('edit-game-g2bulk-code').value;
+            if (!code) return;
+            const statusEl = document.getElementById('g2bulk-import-status');
+            const btn = document.getElementById('g2bulk-debug-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.color = 'var(--text-muted)';
+            statusEl.innerText = 'Checking G2Bulk API for "' + code + '"...';
+            try {
+                const fieldsRes = await fetch('https://api.g2bulk.com/v1/games/fields', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: code })
+                });
+                const fieldsData = await fieldsRes.json();
+                const serversRes = await fetch('https://api.g2bulk.com/v1/games/servers', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: code })
+                });
+                const serversData = await serversRes.json();
+                console.log('[Debug] G2Bulk /games/fields:', fieldsRes.status, fieldsData);
+                console.log('[Debug] G2Bulk /games/servers:', serversRes.status, serversData);
+                statusEl.style.color = 'var(--accent)';
+                statusEl.innerText = `/games/fields → ${fieldsRes.status}\n${JSON.stringify(fieldsData, null, 2)}\n\n/games/servers → ${serversRes.status}\n${JSON.stringify(serversData, null, 2)}`;
+            } catch (error) {
+                console.error('[Debug] G2Bulk server check error:', error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Debug check failed: ' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.debugG2BulkServerCheck = debugG2BulkServerCheck;
+
         // Fetches the live G2Bulk catalogue for the selected game and pre-fills
         // the packages list with its denominations, converted to MMK using the
         // saved USD rate. Admin can still hand-edit any price afterward.
@@ -13366,17 +13448,24 @@
                                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: code })
                             });
                             const serversData = await serversRes.json();
-                            if (serversRes.ok && serversData.servers) {
+                            console.log('G2Bulk /games/servers response for', code, ':', serversRes.status, serversData);
+                            const serverEntries = (serversRes.ok && serversData.servers) ? Object.entries(serversData.servers) : [];
+                            if (serverEntries.length > 0) {
                                 pendingG2BulkServerMode = 'select';
-                                pendingG2BulkServerOptions = Object.entries(serversData.servers).map(([label, value]) => ({ label, value }));
+                                pendingG2BulkServerOptions = serverEntries.map(([label, value]) => ({ label, value }));
+                                statusMsg += `\n✓ Server dropdown detected (${serverEntries.length} options: ${serverEntries.map(e => e[0]).join(', ')}).`;
                             } else {
                                 pendingG2BulkServerMode = null;
                                 pendingG2BulkServerOptions = null;
+                                statusMsg += serversRes.ok
+                                    ? '\nℹ This game has no fixed server list — Server ID stays free-text.'
+                                    : `\nℹ No server dropdown for this game (${serversRes.status}${serversData.detail && serversData.detail.message ? ': ' + serversData.detail.message : ''}) — Server ID stays free-text.`;
                             }
                         } catch (serversError) {
                             console.error("G2Bulk /games/servers fetch error:", serversError);
                             pendingG2BulkServerMode = null;
                             pendingG2BulkServerOptions = null;
+                            statusMsg += '\n⚠ Could not fetch server list (' + serversError.message + ') — Server ID stays free-text.';
                         }
                     } else {
                         pendingG2BulkServerMode = null;
@@ -13401,6 +13490,38 @@
             }
         }
         window.importG2BulkCatalogue = importG2BulkCatalogue;
+
+        // Debug-only check: calls FazerCards' /topups/offers for whatever
+        // category is currently linked and dumps the raw fields array (the
+        // part that decides free-text vs dropdown) into the status
+        // paragraph, without touching the package list the way a full
+        // import does.
+        async function debugFazerCardServerCheck() {
+            const categoryId = document.getElementById('edit-game-fazercard-category').value;
+            if (!categoryId) return;
+            const statusEl = document.getElementById('fazercard-import-status');
+            const btn = document.getElementById('fazercard-debug-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.color = 'var(--text-muted)';
+            statusEl.innerText = 'Checking FazerCards API for "' + categoryId + '"...';
+            try {
+                const data = await fazercardRequest('/topups/offers', { params: { category_id: categoryId } });
+                console.log('[Debug] FazerCards /topups/offers:', data);
+                const dropdown = detectFazerCardServerDropdown(data.fields || []);
+                statusEl.style.color = 'var(--accent)';
+                statusEl.innerText = `fields → ${JSON.stringify(data.fields || [], null, 2)}\n\nDetected: ${dropdown.mode === 'select' ? `dropdown (${dropdown.options.length} options)` : 'free-text (no fixed list found)'}`;
+            } catch (error) {
+                console.error('[Debug] FazerCards server check error:', error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Debug check failed: ' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.debugFazerCardServerCheck = debugFazerCardServerCheck;
 
         // Fetches the live FazerCards offers for the selected game top-up
         // category and pre-fills the packages list, converted to MMK using
@@ -13447,7 +13568,13 @@
                 // response, not per-package - stash them so saveGame can
                 // persist them onto the game doc as fazercardFields, which
                 // placeFazerCardOrder (admin-side) reads at order time.
-                pendingFazerCardFields = (data.fields || []).map(f => f.key);
+                const fazerFieldDefs = data.fields || [];
+                pendingFazerCardFields = fazerFieldDefs.map(f => f.key);
+                console.log('FazerCards /topups/offers fields for', categoryId, ':', fazerFieldDefs);
+
+                const fazerDropdown = detectFazerCardServerDropdown(fazerFieldDefs);
+                pendingFazerCardServerMode = fazerDropdown.mode;
+                pendingFazerCardServerOptions = fazerDropdown.options;
 
                 // Auto-set "Requires Server ID" straight from those fields
                 // instead of leaving it to the admin to notice and flip
@@ -13463,7 +13590,10 @@
                 statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
-                    + (fazerNeedsServerIdField ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.');
+                    + (fazerNeedsServerIdField ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
+                    + (pendingFazerCardServerMode === 'select'
+                        ? `\n✓ Server dropdown detected (${pendingFazerCardServerOptions.length} options).`
+                        : (fazerNeedsServerIdField ? '\nℹ No fixed server list found for this field — Server ID stays free-text (check console log for the raw field shape).' : ''));
                 sortPackageRows();
                 window.showToast('FazerCards catalogue imported ✓', 'success');
             } catch (error) {
@@ -13491,6 +13621,37 @@
         // is the stable, human-meaningful SKU code; the field name
         // "aluuProductId" was kept as-is elsewhere to avoid touching every
         // call site, but it now holds a denom code, not a Mongo id).
+        // Debug-only check: calls Aluu.in's /server-options for whatever
+        // code is currently linked and dumps the raw response into the
+        // status paragraph, without needing a full import (which requires a
+        // product to already report requiresServerId first).
+        async function debugAluuServerCheck() {
+            const code = document.getElementById('edit-game-aluu-code').value;
+            if (!code) return;
+            const statusEl = document.getElementById('aluu-import-status');
+            const btn = document.getElementById('aluu-debug-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.color = 'var(--text-muted)';
+            statusEl.innerText = 'Checking Aluu.in /server-options for "' + code + '"...';
+            try {
+                const soData = await aluuRequest('/server-options', { params: { gamecode: code } });
+                console.log('[Debug] Aluu.in /server-options:', soData);
+                const soServers = Array.isArray(soData.servers) ? soData.servers : [];
+                statusEl.style.color = 'var(--accent)';
+                statusEl.innerText = `${JSON.stringify(soData, null, 2)}\n\nDetected: ${soServers.length > 0 ? `dropdown (${soServers.length} options)` : 'free-text (no servers array, or empty)'}`;
+            } catch (error) {
+                console.error('[Debug] Aluu.in server check error:', error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Debug check failed: ' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.debugAluuServerCheck = debugAluuServerCheck;
+
         async function importAluuCatalogue() {
             const code = document.getElementById('edit-game-aluu-code').value;
             if (!code) return;
@@ -13541,8 +13702,23 @@
                 if (anyRequiresServerId) {
                     try {
                         const soData = await aluuRequest('/server-options', { params: { gamecode: code } });
-                        pendingAluuServerMode = soData.serverMode || 'manual';
-                        pendingAluuServerOptions = Array.isArray(soData.servers) ? soData.servers : [];
+                        console.log('Aluu.in /server-options response for', code, ':', soData);
+                        const soServers = Array.isArray(soData.servers) ? soData.servers : [];
+                        // store.html's dropdown check requires aluuServerMode to be
+                        // exactly the string 'select' - Aluu.in's own serverMode
+                        // value might spell that differently (e.g. "dropdown",
+                        // "fixed", true), so treat any non-empty server list as
+                        // select mode rather than trusting an exact string match
+                        // that could silently fall back to free-text.
+                        if (soServers.length > 0) {
+                            pendingAluuServerMode = 'select';
+                            pendingAluuServerOptions = soServers;
+                            serverOptionsNote = `\n✓ Server dropdown detected (${soServers.length} options, Aluu.in serverMode: "${soData.serverMode}").`;
+                        } else {
+                            pendingAluuServerMode = null;
+                            pendingAluuServerOptions = null;
+                            serverOptionsNote = `\nℹ No fixed server list from Aluu.in (serverMode: "${soData.serverMode}") — Server ID stays free-text.`;
+                        }
                     } catch (soError) {
                         console.error("Aluu.in /server-options fetch error:", soError);
                         pendingAluuServerMode = null;
@@ -13648,6 +13824,7 @@
                         return { amount: o.name, cost, price: cost, g2bulk: '', jcplays: '', voucherId: '', fazercardOfferId: o.offer_id, image: '', type: 'currency', tab: 'currency' };
                     });
                     const fieldKeys = (data.fields || []).map(f => f.key);
+                    const fazerDropdown = detectFazerCardServerDropdown(data.fields || []);
                     const split = splitFazerCardRegionName(item.name);
 
                     const gameData = {
@@ -13661,6 +13838,8 @@
                         g2bulkCode: '', jcplaysProduct: '', g2bulkVoucherCategory: '',
                         fazercardCategoryId: item.code,
                         fazercardFields: fieldKeys,
+                        fazercardServerMode: fazerDropdown.mode || '',
+                        fazercardServerOptions: fazerDropdown.options || [],
                         g2bulkIdCheckCode: '',
                         fulfillProvider: 'fazercard',
                         category: '', description: '', popular: false,
