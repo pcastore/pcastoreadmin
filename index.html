@@ -1959,6 +1959,10 @@
                     <span>FazerCards</span>
                     <b id="an-fazercard-balance-display" style="color:var(--accent);">—</b>
                 </div>
+                <div class="details-grid-item">
+                    <span>Aluu.in</span>
+                    <b id="an-aluu-balance-display" style="color:var(--accent);">—</b>
+                </div>
             </div>
 
             <div class="dash-section-label">Top Spenders</div>
@@ -2231,6 +2235,14 @@
                     <span class="api-doc-title">FazerCards API Key</span>
                 </div>
                 <button class="btn btn-outline api-doc-btn" onclick="openFazerCardModal()">Settings</button>
+            </div>
+
+            <div class="api-doc-card">
+                <div class="api-doc-icon" style="background:#0EA5A0;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-key"></use></svg></div>
+                <div class="api-doc-info">
+                    <span class="api-doc-title">Aluu.in API Key</span>
+                </div>
+                <button class="btn btn-outline api-doc-btn" onclick="openAluuModal()">Settings</button>
             </div>
 
             <div class="api-doc-card">
@@ -2710,6 +2722,19 @@
                     </label>
                 </div>
 
+                <!-- Aluu.in-specific: /create takes a separate charname field
+                     (requiresCharName per-product per Aluu.in's docs) distinct
+                     from serverid. Only shown/relevant for Aluu.in-linked games. -->
+                <div class="switch-row" id="requires-charname-row" style="display:none;">
+                    <div>
+                        <span class="switch-label">Requires Character Name <span style="font-weight:400;color:var(--text-muted);">(Aluu.in)</span></span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-game-charname">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
                 <div style="display:flex;gap:10px;align-items:flex-start;">
                     <div style="flex:0 0 36%;min-width:0;">
                         <label>Game Image <span style="font-weight:400;color:var(--text-muted);">(1:1)</span></label>
@@ -2757,6 +2782,7 @@
                             <div class="pkg-type-tabs">
                                 <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
                                 <button type="button" class="pkg-type-tab" data-provider="fazercard" onclick="setFulfillProvider('fazercard')">FazerCards</button>
+                                <button type="button" class="pkg-type-tab" data-provider="aluu" onclick="setFulfillProvider('aluu')">Aluu.in</button>
                                 <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
                             </div>
                         </div>
@@ -2842,6 +2868,27 @@
                         <p style="font-size:11px;color:var(--text-muted);margin-top:-4px;">FazerCards ID check ခ်လုပ်မရရင် (unsupported or down) ဒီ G2Bulk code ကို အသုံးပြုပြီး player name ကိုပဲ ပြပေးမယ် — order ကတော့ FazerCards ကနေပဲ ဆက်ဆောင်ရွက်ပါမယ်။</p>
                     </div>
 
+                    <!-- Aluu.in Game Top-ups: GET /api/v.1/games -> GET
+                         /api/v.1/products/:gameCode -> POST /api/v.1/create.
+                         Each product returned by /products/:gameCode becomes
+                         a package row (matched by its own _id, same pattern
+                         as FazerCards' offer_id above) - requiresUserId/
+                         requiresServerId/requiresCharName come back per
+                         product but aren't auto-applied to the game's Player
+                         ID/Server ID toggles yet, so double-check those match
+                         after importing. BGMI is intentionally skipped from
+                         the picker list. -->
+                    <div id="aluu-fulfill-section" style="display:none;margin-top:10px;">
+                        <label style="margin-top:0;">Aluu.in Game</label>
+                        <input type="hidden" id="edit-game-aluu-code" value="">
+                        <div class="picker-btn" id="aluu-picker-btn" onclick="openGamePicker('aluu')">
+                            <div class="picker-btn-thumb" id="aluu-picker-thumb"></div>
+                            <span class="picker-btn-label muted" id="aluu-picker-display">-- Not linked (manual fulfillment) --</span>
+                            <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                        </div>
+                        <p id="aluu-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
+                    </div>
+
                     <!-- FazerCards Gift Cards: a separate part of FazerCards'
                          catalog (GET /api/v2/giftcards → GET
                          /api/v2/giftcards/cards?category_id=... → POST
@@ -2875,6 +2922,7 @@
                     <button class="btn btn-outline" onclick="openBulkPkgModal()" title="Cost/Price အားလုံးကို % တစ်ခုတည်းနဲ့ တစ်ခါတည်းချိန်ညှိပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-dollar"></use></svg> Bulk %</button>
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
                     <button class="btn btn-outline" id="fazercard-import-btn" onclick="importFazerCardCatalogue()" style="display:none;">Import from FazerCards</button>
+                    <button class="btn btn-outline" id="aluu-import-btn" onclick="importAluuCatalogue()" style="display:none;">Import from Aluu.in</button>
                     <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                 </div>
@@ -3285,6 +3333,66 @@
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-fazercard-btn" onclick="verifyFazerCardKey()">Verify Key</button>
                 <button class="btn btn-primary" id="save-fazercard-btn" onclick="saveFazerCardKey()">Save</button>
+            </div>
+        </div>
+    </div>
+    <!-- Aluu.in API Settings Modal: API key + optional proxy (worker used to
+         bypass CORS, same role as FazerCards' proxyUrl — not a secret-hiding
+         layer here since the admin already holds the key in this panel).
+         Catalogue import / game linking / order auto-fulfill / webhook come
+         in a later phase; this modal only covers the key + connectivity check. -->
+    <div class="modal-overlay" id="aluu-modal-overlay" onclick="if(event.target===this) closeAluuModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Aluu.in API Key</h3>
+                <div class="modal-close" onclick="closeAluuModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <label>API Key</label>
+                <div class="secret-field-wrap">
+                    <input type="text" id="aluu-api-key" class="secret-input" placeholder="your_api_key_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('aluu-api-key', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
+                <p id="aluu-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
+                <div id="aluu-result-grid" style="display:none;"></div>
+
+                <label>Proxy URL <span style="font-weight:400;color:var(--text-muted);">(Cloudflare Worker — only needed if a direct call from this browser gets CORS-blocked)</span></label>
+                <input type="text" id="aluu-proxy-url" placeholder="https://aluu-functions.pca-game-store.workers.dev/aluu-proxy" autocomplete="off">
+                <p style="font-size:11.5px;color:var(--text-muted);margin-top:-6px;">Leave blank to call aluu.in directly. If Verify Key fails with a network/CORS error, deploy the aluu-functions Worker and paste its /aluu-proxy URL here.</p>
+
+                <label>USD → MMK Rate <span style="font-weight:400;color:var(--text-muted);">(for catalogue import Cost conversion, used later)</span></label>
+                <input type="number" id="aluu-usd-rate" placeholder="e.g. 4500" step="1">
+
+                <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(USD, 0 = off)</span></label>
+                <input type="number" id="aluu-low-balance-alert" placeholder="e.g. 20" step="1" min="0" title="Header will show a warning when the wallet balance drops below this amount">
+
+                <!-- Unlike G2Bulk's callback_url (sent per-order, so the
+                     secret rides along as a ?secret= query param), Aluu.in
+                     signs every webhook call with HMAC-SHA256 using a secret
+                     configured once on THEIR dashboard - so this URL field is
+                     informational only (copy it into Aluu.in's webhook
+                     settings), and the secret below is what the Worker uses
+                     to verify the X-Signature header, not something sent in
+                     a URL. -->
+                <label>Webhook URL <span style="font-weight:400;color:var(--text-muted);">(paste this into Aluu.in's dashboard — this app never calls it, Aluu.in does)</span></label>
+                <input type="text" id="aluu-webhook-url" placeholder="https://your-worker.workers.dev/aluu-webhook" autocomplete="off">
+
+                <label>Webhook Secret <span style="font-weight:400;color:var(--text-muted);">(must match the secret set on Aluu.in's dashboard exactly)</span></label>
+                <div class="secret-field-wrap">
+                    <input type="text" id="aluu-webhook-secret" class="secret-input" placeholder="your_random_secret_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('aluu-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
+
+                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+                    <input type="checkbox" id="aluu-enabled" style="width:auto;" checked>
+                    <span>Enabled — turn off to fully hide Aluu.in (wallet card, game-link picker) everywhere in the app</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="verify-aluu-btn" onclick="verifyAluuKey()">Verify Key</button>
+                <button class="btn btn-primary" id="save-aluu-btn" onclick="saveAluuKey()">Save</button>
             </div>
         </div>
     </div>
@@ -4955,16 +5063,21 @@
                     actionButtons = `<button class="btn btn-outline" onclick="checkFazerCardOrderStatus('${orderId}', '${data.fazercardOrderId}')">Check FazerCards Status (${data.fazercardStatus || 'processing'})</button>
                                       <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else if (data.status === 'Processing' && data.aluuPartnerOrderId) {
+                    actionButtons = `<button class="btn btn-outline" onclick="checkAluuOrderStatus('${orderId}', '${data.aluuPartnerOrderId}')">Check Aluu.in Status (${data.aluuStatus || 'pending'})</button>
+                                      <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Processing') {
                     actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Pending') {
                     let startLabel = 'Start Processing';
-                    const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId || data.g2bulkVoucherProductId || (data.fazercardCategoryId && data.fazercardOfferId);
+                    const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId || data.g2bulkVoucherProductId || (data.fazercardCategoryId && data.fazercardOfferId) || data.aluuGameCode;
                     if (data.g2bulkGameCode && data.g2bulkCatalogueName) startLabel = 'Auto-Fulfill via G2Bulk';
                     else if (data.jcplaysProductId) startLabel = 'Get Redeem Code via JCPlays';
                     else if (data.g2bulkVoucherProductId) startLabel = 'Auto-Fulfill via G2Bulk (Voucher)';
                     else if (data.fazercardCategoryId && data.fazercardOfferId) startLabel = 'Auto-Fulfill via FazerCards';
+                    else if (data.aluuGameCode) startLabel = 'Auto-Fulfill via Aluu.in';
                     // Auto-linked orders get a manual fallback button too, so if the
                     // API call fails (bad credentials, insufficient balance, JCPlays/
                     // G2Bulk downtime, etc.) the admin isn't stuck retrying the same
@@ -4987,6 +5100,8 @@
                         ? `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})" title="Re-check in case G2Bulk actually finished it after we marked this Fail">Recheck G2Bulk Status</button>`
                         : (data.status === 'Fail' && data.fazercardOrderId)
                         ? `<button class="btn btn-outline" onclick="checkFazerCardOrderStatus('${orderId}', '${data.fazercardOrderId}')" title="Re-check in case FazerCards actually finished it after we marked this Fail">Recheck FazerCards Status</button>`
+                        : (data.status === 'Fail' && data.aluuPartnerOrderId)
+                        ? `<button class="btn btn-outline" onclick="checkAluuOrderStatus('${orderId}', '${data.aluuPartnerOrderId}')" title="Re-check in case Aluu.in actually finished it after we marked this Fail">Recheck Aluu.in Status</button>`
                         : '';
                     const cleanBtn = data.adminCleared
                         ? `<button class="btn btn-outline" onclick="restoreOrder('${orderId}')" title="Bring this back into the active list">↺ Restore</button>`
@@ -5062,6 +5177,12 @@
                                             ? `<span style="color:#28a745;">${escapeHtml(data.fazercardVerifiedName)} ✓ verified</span>`
                                             : `<button type="button" class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="verifyFazerCardPlayerId('${orderId}', this)">Verify Player ID</button>`}</div>
                                     </div>` : ''}
+                                    ${data.aluuGameCode ? `<div class="od-cell span-2" id="aluu-role-cell-${orderId}">
+                                        <div class="od-label">Aluu.in Name Check</div>
+                                        <div class="od-value" id="aluu-role-value-${orderId}">${data.aluuVerifiedName
+                                            ? `<span style="color:#28a745;">${escapeHtml(data.aluuVerifiedName)} ✓ verified</span>`
+                                            : `<button type="button" class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="verifyAluuPlayerId('${orderId}', this)">Verify Player ID</button>`}</div>
+                                    </div>` : ''}
                                     <div class="od-cell">
                                         <div class="od-label">Order ID</div>
                                         <div class="od-value mono">${orderId}</div>
@@ -5073,6 +5194,10 @@
                                     ${data.fazercardOrderId ? `<div class="od-cell">
                                         <div class="od-label">FazerCards Order ID</div>
                                         <div class="od-value mono">${data.fazercardOrderId}</div>
+                                    </div>` : ''}
+                                    ${data.aluuOrderId ? `<div class="od-cell">
+                                        <div class="od-label">Aluu.in Order ID</div>
+                                        <div class="od-value mono">${data.aluuOrderId}</div>
                                     </div>` : ''}
                                     <div class="od-cell">
                                         <div class="od-label">Transaction ID</div>
@@ -5149,6 +5274,12 @@
             // no player ID) instead of the top-up order endpoint.
             if (order && order.fazercardGiftCategoryId && order.fazercardGiftCardId) {
                 return placeFazerCardGiftCardOrder(orderId, order, btnElement);
+            }
+            // Orders placed against an Aluu.in-linked package carry aluuGameCode
+            // (see submitOrder in store.html) - route those through Aluu.in's
+            // /create endpoint.
+            if (order && order.aluuGameCode) {
+                return placeAluuOrder(orderId, order, btnElement);
             }
 
             // btnElement is null when called from the bulk "Confirm Selected" action
@@ -5632,6 +5763,239 @@
         }
         setInterval(autoPollFazerCardOrders, 25000);
 
+        // ---------- Aluu.in auto-fulfillment ----------
+        // POST /api/v.1/create places the order; POST /api/v.1/:partner_orderid/track
+        // checks it later. partner_orderid is OUR reference, not Aluu.in's - using
+        // this Firestore order's own id for it means every retry of the same order
+        // reuses the same partner_orderid automatically (no separate idempotency
+        // key needed), and a 409 "Duplicate partner_orderid" response is simply
+        // Aluu.in confirming it already has this exact order - handled below as a
+        // success case, not an error.
+        //
+        // /create's REQUEST BODY per Aluu.in's actual API docs:
+        // { game, denom, userid, serverid, charname, partner_webhook_url,
+        //   partner_orderid } - confirmed from the docs screenshots
+        // (previously this was guessed as code/product_id/characterId/
+        // server_code, which was wrong and would have 400'd on every real
+        // order - fixed below). partner_webhook_url is optional per-order;
+        // it's filled in from the saved Aluu.in settings so completed orders
+        // push a webhook instead of relying only on polling.
+        async function placeAluuOrder(orderId, order, btnElement) {
+            if (!ALUU_SETTINGS.enabled) {
+                window.showToast('Aluu.in is turned off (Dashboard → Aluu.in → Settings). Fulfill this order manually or re-enable it.', 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+            if (!ALUU_SETTINGS.apiKey) {
+                window.showToast('Add your Aluu.in API key first (Dashboard → Aluu.in).', 'fail');
+                return 'error';
+            }
+            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
+
+            const partnerOrderId = order.aluuPartnerOrderId || orderId;
+            if (!order.aluuPartnerOrderId) {
+                try { await updateDoc(doc(db, "orders", orderId), { aluuPartnerOrderId: partnerOrderId }); }
+                catch (error) { console.error("Save Aluu.in partner_orderid error:", error); }
+            }
+
+            const url = ALUU_SETTINGS.proxyUrl
+                ? `${ALUU_SETTINGS.proxyUrl}?path=${encodeURIComponent('/api/v.1/create')}`
+                : `${ALUU_BASE_URL}/create`;
+            let res, data;
+            try {
+                res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'x-api-key': ALUU_SETTINGS.apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        partner_orderid: partnerOrderId,
+                        game: order.aluuGameCode,
+                        denom: order.aluuProductId || undefined,
+                        userid: order.playerId,
+                        serverid: order.serverId || undefined,
+                        charname: order.charName || undefined,
+                        partner_webhook_url: ALUU_SETTINGS.webhookUrl || undefined
+                    })
+                });
+                data = await res.json();
+            } catch (error) {
+                console.error("Aluu.in place order error:", error);
+                window.showToast('Aluu.in order failed: ' + error.message, 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+
+            if (res.status === 429) {
+                window.showToast(data.message || 'Aluu.in rate limit hit — wait a moment and click Start Processing again.', 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+            // 409 = Aluu.in already has an order under this partner_orderid (e.g. a
+            // retry after the first call's response got lost) - adopt its existing
+            // orderid/status instead of treating this as a failure.
+            if (res.status !== 409 && (!res.ok || data.success === false)) {
+                window.showToast('Aluu.in order failed: ' + (data.message || `HTTP ${res.status}`), 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+
+            // data.data.orderid is Aluu.in echoing back OUR OWN
+            // partner_orderid (confirmed by the docs' example: request
+            // partner_orderid "ORDER-10001" -> response "orderid":
+            // "ORDER-10001") - not worth storing since partnerOrderId above
+            // already has it. data.data.reference is Aluu.in's own distinct
+            // tracking id, so that's what's saved as aluuOrderId.
+            const aluuOrderId = (data.data && data.data.reference) || null;
+            const aluuStatus = (data.data && data.data.status) || 'pending';
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "Processing",
+                    aluuOrderId,
+                    aluuStatus
+                });
+                window.showToast(res.status === 409 ? 'Already placed with Aluu.in — checking status...' : 'Order placed with Aluu.in — checking for completion...', 'success');
+                pollAluuOrder(orderId, partnerOrderId, 5); // ~5 tries, 4s apart = 20s
+                return 'processing';
+            } catch (error) {
+                console.error("Aluu.in order accepted but saving the result failed:", error);
+                window.showInfoDialog(
+                    'Order Accepted, But Not Saved',
+                    `Aluu.in accepted this order${aluuOrderId ? ' (id: ' + aluuOrderId + ')' : ''}, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order — refresh the page instead; if it's still stuck, check the order directly on Aluu.in's dashboard before doing anything else.`
+                );
+                if (btnElement) btnElement.innerText = "Refresh Page";
+                return 'accepted_unsaved';
+            }
+        }
+        window.placeAluuOrder = placeAluuOrder;
+
+        // Checks one order's status via POST /:partner_orderid/track and applies
+        // it locally. silent=true is used by the background auto-poller, same
+        // pattern as checkFazerCardOrderStatus above. "successful"/"pending"
+        // are confirmed by the docs' example response; "completed"/"failed"/
+        // "cancelled"/"refunded" are kept as defensive synonyms since the
+        // full enum still isn't spelled out.
+        async function checkAluuOrderStatus(orderId, partnerOrderId, silent = false) {
+            if (!ALUU_SETTINGS.apiKey) {
+                if (!silent) window.showToast('Add your Aluu.in API key first.', 'fail');
+                return;
+            }
+            try {
+                const data = await aluuRequest(`/${encodeURIComponent(partnerOrderId)}/track`, { method: 'POST' });
+                const status = ((data.data && data.data.status) || '').toLowerCase();
+
+                if (status === 'successful' || status === 'success' || status === 'completed') {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), aluuStatus: status });
+                    window.showToast('Aluu.in order completed ✓', 'success');
+                    editTelegramOrderMessage(orderId, 'Success');
+                } else if (status === 'failed' || status === 'cancelled' || status === 'refunded') {
+                    await markOrderFailedWithRefund(orderId, { aluuStatus: status });
+                    if (!silent) window.showToast('Aluu.in order failed/refunded.', 'fail');
+                    editTelegramOrderMessage(orderId, 'Fail');
+                } else {
+                    await updateDoc(doc(db, "orders", orderId), { aluuStatus: status || 'pending' });
+                    if (!silent) window.showToast('Still processing on Aluu.in (' + (status || 'pending') + ')...');
+                }
+                return status;
+            } catch (error) {
+                console.error("Aluu.in status check error:", error);
+                if (!silent) window.showToast(error.message || 'Could not reach Aluu.in to check status.', 'fail');
+            }
+        }
+        window.checkAluuOrderStatus = checkAluuOrderStatus;
+
+        // Same short auto-poll burst as pollFazerCardOrder - a few tries a few
+        // seconds apart right after placing, so the common fast case resolves
+        // without the admin having to tap "Check Status" themselves. Aluu.in also
+        // pushes a webhook the instant it finishes (see the aluu-webhook route in
+        // telegram-worker.js) - this poll burst is just a bridge for while the
+        // admin panel is open and watching.
+        async function pollAluuOrder(orderId, partnerOrderId, triesLeft) {
+            if (triesLeft <= 0) return;
+            await new Promise(r => setTimeout(r, 4000));
+            const status = await checkAluuOrderStatus(orderId, partnerOrderId, true);
+            if (status !== 'successful' && status !== 'success' && status !== 'completed' && status !== 'failed' && status !== 'cancelled' && status !== 'refunded') {
+                pollAluuOrder(orderId, partnerOrderId, triesLeft - 1);
+            }
+        }
+
+        // Applies one batch/track status result to its Firestore order - the
+        // same status handling as checkAluuOrderStatus above, factored out so
+        // both the batch path and the per-order fallback path share it.
+        async function applyAluuStatusResult(orderId, statusRaw) {
+            const status = (statusRaw || '').toLowerCase();
+            if (status === 'successful' || status === 'success' || status === 'completed') {
+                await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), aluuStatus: status });
+                editTelegramOrderMessage(orderId, 'Success');
+            } else if (status === 'failed' || status === 'cancelled' || status === 'refunded') {
+                await markOrderFailedWithRefund(orderId, { aluuStatus: status });
+                editTelegramOrderMessage(orderId, 'Fail');
+            } else if (status) {
+                await updateDoc(doc(db, "orders", orderId), { aluuStatus: status });
+            }
+            return status;
+        }
+
+        // Background auto-sync, same fallback role as autoPollFazerCardOrders -
+        // quietly re-checks every "Processing" order with an aluuPartnerOrderId
+        // roughly every ~25s, as a backstop alongside the real-time webhook in
+        // case a webhook call was ever missed.
+        //
+        // Uses POST /status/batch (docs: "up to 50 order ids in one request...
+        // does not count against the 20/min status limit") instead of one
+        // /track call per order - the previous one-call-per-order loop with a
+        // 600ms stagger (~1.7 req/s) could blow past the 20/min track limit
+        // once more than ~10 orders were Processing at the same time.
+        // Chunked into groups of 50 per the docs' stated cap.
+        //
+        // NOTE: the docs screenshots don't show /status/batch's exact
+        // request/response field names (only the rate-limit note that it
+        // exists), so the request body and response parsing below are
+        // inferred to match every other Aluu.in endpoint here (keyed off
+        // partner_orderid, and track's response shape where "orderid" holds
+        // the partner_orderid value, not Aluu.in's internal id). If this
+        // guess is wrong, the try/catch below falls back to the old,
+        // known-working one-by-one /track polling (now correctly paced at
+        // ~1 call/3.2s to respect the 20/min limit on its own) so pending
+        // orders never silently stop syncing - just re-check the exact field
+        // names against Aluu.in's endpoint reference if it doesn't behave.
+        let aluuAutoPollRunning = false;
+        async function autoPollAluuOrders() {
+            if (aluuAutoPollRunning || !ALUU_SETTINGS.apiKey) return;
+            const pending = Object.values(ORDERS).filter(o => o.status === 'Processing' && o.aluuPartnerOrderId);
+            if (pending.length === 0) return;
+            aluuAutoPollRunning = true;
+            try {
+                if (pending.length === 1) {
+                    await checkAluuOrderStatus(pending[0].id, pending[0].aluuPartnerOrderId, true);
+                    return;
+                }
+                for (let i = 0; i < pending.length; i += 50) {
+                    const chunk = pending.slice(i, i + 50);
+                    try {
+                        const data = await aluuRequest('/status/batch', {
+                            method: 'POST',
+                            body: { partner_orderids: chunk.map(o => o.aluuPartnerOrderId) }
+                        });
+                        const results = Array.isArray(data.data) ? data.data : (Array.isArray(data.results) ? data.results : null);
+                        if (!results) throw new Error('Unexpected /status/batch response shape');
+                        const byPartnerOrderId = new Map(results.map(r => [String(r.orderid || r.partner_orderid || r.reference || ''), r.status]));
+                        for (const order of chunk) {
+                            const status = byPartnerOrderId.get(String(order.aluuPartnerOrderId));
+                            if (status !== undefined) await applyAluuStatusResult(order.id, status);
+                        }
+                    } catch (batchError) {
+                        console.error("Aluu.in /status/batch failed, falling back to individual /track calls:", batchError);
+                        for (const order of chunk) {
+                            await checkAluuOrderStatus(order.id, order.aluuPartnerOrderId, true);
+                            await new Promise(r => setTimeout(r, 3200)); // ~1 call per 3.2s stays under 20/min
+                        }
+                    }
+                }
+            } finally {
+                aluuAutoPollRunning = false;
+            }
+        }
+        setInterval(autoPollAluuOrders, 25000);
+
         // Calls FazerCards' /topups/validate-id to confirm the Player/Server ID
         // resolves to a real in-game account and shows the admin the actual
         // in-game name before they commit to Start Processing (advisory
@@ -5755,6 +6119,87 @@
             }
         }
         window.verifyFazerCardPlayerId = verifyFazerCardPlayerId;
+
+        // Aluu.in's separate "Name Check" API (base path /api/check/,
+        // distinct from the Products & Order API at /api/v.1/) - lets the
+        // admin confirm a Player ID/Server ID resolves to a real in-game
+        // account before clicking Start Processing. Advisory only, same
+        // role as verifyFazerCardPlayerId above; doesn't block manual
+        // fulfillment either way.
+        //
+        // MLBB has its own dedicated GET /check/mlbb-check?user_id=&server_id=
+        // endpoint (response: user_id/server_id/username/country). Every
+        // other game uses the generic GET /check/game-check?code=&characterId=
+        // [&server_code=] (response: name/nickname/region/uid/valid/fullname,
+        // "valid" holding the string "valid"/"invalid"). characterId/
+        // server_code here are this Check API's own param names and do NOT
+        // match /create's userid/serverid field names (confirmed separately
+        // from /create's docs) - don't conflate the two when adjusting
+        // either endpoint's fields later.
+        //
+        // NOTE: the docs screenshots for this API didn't show its base
+        // domain explicitly - assumed to be the same aluu.in host as
+        // everything else, at /api/check (not /api/v.1). If this starts
+        // failing with a network/DNS error rather than a normal 4xx, that
+        // assumption is the first thing to check against Aluu.in's actual
+        // reference.
+        const ALUU_CHECK_BASE_URL = 'https://aluu.in/api/check';
+        async function verifyAluuPlayerId(orderId, btnElement) {
+            const order = ORDERS[orderId];
+            if (!order || !order.aluuGameCode) {
+                window.showToast('This order is not linked to an Aluu.in game.', 'fail');
+                return;
+            }
+            if (!order.playerId) {
+                window.showToast('This order has no Player ID to verify.', 'fail');
+                return;
+            }
+            if (!ALUU_SETTINGS.apiKey) {
+                window.showToast('Add your Aluu.in API key first (Dashboard → Aluu.in).', 'fail');
+                return;
+            }
+            const valueEl = document.getElementById(`aluu-role-value-${orderId}`);
+            const originalText = btnElement ? btnElement.innerText : '';
+            if (btnElement) { btnElement.disabled = true; btnElement.innerText = 'Checking...'; }
+
+            let playerName = null;
+            try {
+                const isMlbb = order.aluuGameCode === 'mlbb';
+                const url = isMlbb
+                    ? `${ALUU_CHECK_BASE_URL}/mlbb-check?user_id=${encodeURIComponent(order.playerId)}&server_id=${encodeURIComponent(order.serverId || '')}`
+                    : `${ALUU_CHECK_BASE_URL}/game-check?code=${encodeURIComponent(order.aluuGameCode)}&characterId=${encodeURIComponent(order.playerId)}${order.serverId ? `&server_code=${encodeURIComponent(order.serverId)}` : ''}`;
+                const res = await fetch(url, { headers: { 'x-api-key': ALUU_SETTINGS.apiKey } });
+                const data = await res.json();
+                if (isMlbb) {
+                    if (res.ok && data.success && data.username) playerName = data.username;
+                } else {
+                    if (res.ok && data.valid === 'valid' && (data.name || data.nickname)) playerName = data.name || data.nickname;
+                }
+            } catch (error) {
+                console.error("Aluu.in name-check error:", error);
+            }
+
+            if (!playerName) {
+                window.showInfoDialog(
+                    'Player ID Verification Failed',
+                    `Could not find an Aluu.in account for this Player ID${order.serverId ? '/Server ID' : ''}. Double-check with the customer before processing this order.`
+                );
+                if (btnElement) { btnElement.disabled = false; btnElement.innerText = originalText; }
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "orders", orderId), { aluuVerifiedName: playerName });
+                order.aluuVerifiedName = playerName;
+                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(playerName)} ✓ verified</span>`;
+                window.showToast('Player ID verified ✓', 'success');
+            } catch (error) {
+                console.error("Save aluuVerifiedName error:", error);
+                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(playerName)} ✓ verified</span> <span style="color:var(--text-muted);font-size:11px;">(not saved)</span>`;
+                window.showToast('Verified, but failed to save: ' + error.message, 'fail');
+            }
+        }
+        window.verifyAluuPlayerId = verifyAluuPlayerId;
 
         // ---------- Background auto-sync for orders sent to G2Bulk (fallback) ----------
         // Every ~25s (while this admin panel tab is open), quietly re-checks every
@@ -7614,7 +8059,7 @@
         }
         window.removeCustomPkgTab = removeCustomPkgTab;
 
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null) {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null, aluuProductId = '') {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
             // name: a leading number ("100 Diamonds") → Currency, a plain name
@@ -7634,8 +8079,8 @@
             // for anything else (including while the Vouchers tab is open,
             // since vouchers use their own separate voucherId field below).
             const resolvedProvider = provider
-                || (g2bulkName ? 'g2bulk' : jcplaysProductId ? 'jcplays' : fazercardOfferId ? 'fazercard'
-                    : (['g2bulk', 'jcplays', 'fazercard'].includes(currentFulfillProvider) ? currentFulfillProvider : 'manual'));
+                || (g2bulkName ? 'g2bulk' : jcplaysProductId ? 'jcplays' : fazercardOfferId ? 'fazercard' : aluuProductId ? 'aluu'
+                    : (['g2bulk', 'jcplays', 'fazercard', 'aluu'].includes(currentFulfillProvider) ? currentFulfillProvider : 'manual'));
             const resolvedTab = tab || currentPkgTab;
             // A tab we haven't seen yet on this game (e.g. loaded from saved
             // data) gets auto-registered as a custom tab so it shows in the bar.
@@ -7737,12 +8182,14 @@
                                     <option value="g2bulk" ${resolvedProvider === 'g2bulk' ? 'selected' : ''}>G2Bulk</option>
                                     <option value="jcplays" ${resolvedProvider === 'jcplays' ? 'selected' : ''}>JCPlays (Redeem Code)</option>
                                     <option value="fazercard" ${resolvedProvider === 'fazercard' ? 'selected' : ''}>FazerCards</option>
+                                    <option value="aluu" ${resolvedProvider === 'aluu' ? 'selected' : ''}>Aluu.in</option>
                                 </select>
                             </div>
                             <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-fazercard" placeholder="FazerCards offer_id" value="${fazercardOfferId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-aluu" placeholder="Aluu.in denom (Pack code)" value="${aluuProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-fazercard-giftcard-id" placeholder="FazerCards card_id" value="${fazercardGiftCardId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <span class="pkg-stock-badge"></span>
                             <div class="pkg-card-footer">
@@ -7779,6 +8226,7 @@
                 const g2 = row.querySelector('.pkg-g2bulk');
                 const jc = row.querySelector('.pkg-jcplays');
                 const fc = row.querySelector('.pkg-fazercard');
+                const al = row.querySelector('.pkg-aluu');
                 const vc = row.querySelector('.pkg-voucher-id');
                 const fgc = row.querySelector('.pkg-fazercard-giftcard-id');
                 if (!providerRow) return;
@@ -7787,6 +8235,7 @@
                     g2.style.display = 'none';
                     jc.style.display = 'none';
                     fc.style.display = 'none';
+                    al.style.display = 'none';
                     vc.style.display = isVoucherGame ? 'block' : 'none';
                     fgc.style.display = isFazerGiftGame ? 'block' : 'none';
                 } else {
@@ -7797,6 +8246,7 @@
                     g2.style.display = rowProvider === 'g2bulk' ? 'block' : 'none';
                     jc.style.display = rowProvider === 'jcplays' ? 'block' : 'none';
                     fc.style.display = rowProvider === 'fazercard' ? 'block' : 'none';
+                    al.style.display = rowProvider === 'aluu' ? 'block' : 'none';
                 }
             });
         }
@@ -8371,6 +8821,7 @@
                 // Missing field on older games defaults to "required" so nothing changes for them.
                 document.getElementById('edit-game-playerid').checked = g.playerIdRequired !== false;
                 document.getElementById('edit-game-serverid').checked = g.serverIdRequired !== false;
+                document.getElementById('edit-game-charname').checked = !!g.charNameRequired;
                 onPlayerIdRequiredToggle();
                 preview.src = g.image;
                 preview.style.display = 'block';
@@ -8390,7 +8841,12 @@
                     bannerChangeBadge.style.display = 'none';
                 }
 
-                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : (g.g2bulkVoucherCategory ? 'g2bulk_voucher' : (g.fazercardGiftCategoryId ? 'fazercard_giftcard' : (g.fazercardCategoryId ? 'fazercard' : 'manual'))));
+                // NOTE: g.aluuCode must be checked here too, or a saved
+                // Aluu.in-linked game reopens showing as 'manual' - the
+                // aluu-fulfill-section/requires-charname-row stay hidden and
+                // the fulfill-provider tab doesn't highlight Aluu.in, even
+                // though its packages still carry aluuProductId.
+                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : (g.g2bulkVoucherCategory ? 'g2bulk_voucher' : (g.fazercardGiftCategoryId ? 'fazercard_giftcard' : (g.fazercardCategoryId ? 'fazercard' : (g.aluuCode ? 'aluu' : 'manual')))));
                 setFulfillProvider(initialProvider);
                 // Restore custom tabs up front (including any left empty) so they don't
                 // silently disappear on reload - addPackageRow below will also pick up
@@ -8401,7 +8857,7 @@
                     package: (g.packageTabLabels && g.packageTabLabels.package) || 'Package',
                     currency: (g.packageTabLabels && g.packageTabLabels.currency) || 'Currency'
                 };
-                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency', false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || ''));
+                (g.packages || []).forEach(p => addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', p.type || 'currency', p.tab || p.type || 'currency', false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.aluuProductId || ''));
                 renderPkgTabBar();
                 switchPackageTab('package');
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
@@ -8424,6 +8880,17 @@
                 document.getElementById('edit-game-fazercard-giftcard-category').value = g.fazercardGiftCategoryId || '';
                 document.getElementById('fazercard-giftcard-import-status').innerText = '';
                 onFazerCardGiftCardCategoryChange();
+                // Was silently dropped before (never written into saveGame()'s
+                // data object below) - a linked Aluu.in game re-opened for
+                // editing looked unlinked even though its packages still had
+                // aluuProductId set. Now loaded + saved like every other
+                // provider's code.
+                document.getElementById('edit-game-aluu-code').value = g.aluuCode || '';
+                document.getElementById('aluu-import-status').innerText = '';
+                pendingAluuServerMode = g.aluuServerMode || null;
+                pendingAluuServerOptions = Array.isArray(g.aluuServerOptions) ? g.aluuServerOptions.slice() : null;
+                refreshPickerButton('aluu');
+                document.getElementById('aluu-import-btn').style.display = g.aluuCode ? 'block' : 'none';
                 deleteBtn.style.display = 'block';
                 renderServerVariantThumbs(gameId);
             } else {
@@ -8436,6 +8903,7 @@
                 document.getElementById('edit-game-popular').checked = false;
                 document.getElementById('edit-game-playerid').checked = false;
                 document.getElementById('edit-game-serverid').checked = false;
+                document.getElementById('edit-game-charname').checked = false;
                 onPlayerIdRequiredToggle();
                 document.getElementById('edit-game-g2bulk-code').value = '';
                 document.getElementById('edit-game-jcplays-code').value = '';
@@ -8450,6 +8918,11 @@
                 onFazerCardGameChange();
                 document.getElementById('edit-game-fazercard-giftcard-category').value = '';
                 document.getElementById('fazercard-giftcard-import-status').innerText = '';
+                document.getElementById('edit-game-aluu-code').value = '';
+                document.getElementById('aluu-import-status').innerText = '';
+                document.getElementById('aluu-import-btn').style.display = 'none';
+                pendingAluuServerMode = null;
+                pendingAluuServerOptions = null;
                 onFazerCardGiftCardCategoryChange();
                 setFulfillProvider(gameListTab === 'voucher' ? 'g2bulk_voucher' : 'manual');
                 preview.src = '';
@@ -8576,11 +9049,16 @@
             // the admin is just previewing another tab, since blanking it on
             // every tab switch would lose it before Save is even pressed.
             const g2bulkIdCheckCode = document.getElementById('edit-game-g2bulk-idcheck-code').value.trim();
+            // Was picked in the game picker (openGamePicker('aluu')) but never
+            // actually made it into the saved game doc — fixed so Aluu.in-linked
+            // orders can carry aluuGameCode at checkout like every other provider.
+            const aluuCode = document.getElementById('edit-game-aluu-code').value;
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
             const playerIdRequired = document.getElementById('edit-game-playerid').checked;
             const serverIdRequired = playerIdRequired && document.getElementById('edit-game-serverid').checked;
+            const charNameRequired = document.getElementById('edit-game-charname').checked;
 
             const packages = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).map(row => {
                 // Voucher rows (Vouchers tab) still use the single shared
@@ -8598,6 +9076,7 @@
                     jcplays: rowProvider === 'jcplays' ? row.querySelector('.pkg-jcplays').value.trim() : '',
                     voucherId: currentFulfillProvider === 'g2bulk_voucher' ? row.querySelector('.pkg-voucher-id').value.trim() : '',
                     fazercardOfferId: rowProvider === 'fazercard' ? row.querySelector('.pkg-fazercard').value.trim() : '',
+                    aluuProductId: rowProvider === 'aluu' ? row.querySelector('.pkg-aluu').value.trim() : '',
                     fazercardGiftCardId: currentFulfillProvider === 'fazercard_giftcard' ? row.querySelector('.pkg-fazercard-giftcard-id').value.trim() : '',
                     image: row.querySelector('.pkg-img-preview').dataset.url || '',
                     type: row.querySelector('.pkg-type').value || 'currency',
@@ -8638,7 +9117,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -10646,6 +11125,7 @@
         // Settings (same escape hatch as JCPLAYS_SETTINGS.proxyUrl) - fill that in
         // only if Verify Key fails with a network/CORS error.
         let fazercardListenerAttached = false;
+        let aluuListenerAttached = false;
         let FAZERCARD_SETTINGS = { apiKey: '', proxyUrl: '', enabled: true, lowBalanceAlert: 0, usdRate: 4500 };
         const FAZERCARD_BASE_URL = 'https://api.fzr.cards/api/v2';
 
@@ -10970,12 +11450,200 @@
         }
         window.refreshFazerCardBalance = refreshFazerCardBalance;
 
+        // ---------- Aluu.in ----------
+        let ALUU_SETTINGS = { apiKey: '', proxyUrl: '', enabled: true, lowBalanceAlert: 0, usdRate: 4500, webhookUrl: '', webhookSecret: '' };
+        const ALUU_BASE_URL = 'https://aluu.in/api/v.1';
+
+        function openAluuModal() {
+            document.getElementById('aluu-status').style.display = 'none';
+            document.getElementById('aluu-result-grid').style.display = 'none';
+            document.getElementById('aluu-modal-overlay').classList.add('show');
+        }
+        window.openAluuModal = openAluuModal;
+
+        function closeAluuModal() {
+            document.getElementById('aluu-modal-overlay').classList.remove('show');
+        }
+        window.closeAluuModal = closeAluuModal;
+
+        function listenAluu() {
+            if (aluuListenerAttached) return;
+            aluuListenerAttached = true;
+            onSnapshot(doc(db, "settings", "aluu"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('aluu-api-key').value = data.apiKey || '';
+                document.getElementById('aluu-proxy-url').value = data.proxyUrl || '';
+                document.getElementById('aluu-low-balance-alert').value = data.lowBalanceAlert || '';
+                document.getElementById('aluu-usd-rate').value = data.usdRate || '';
+                document.getElementById('aluu-webhook-url').value = data.webhookUrl || '';
+                document.getElementById('aluu-webhook-secret').value = data.webhookSecret || '';
+                const aluuEnabled = data.enabled !== false;
+                document.getElementById('aluu-enabled').checked = aluuEnabled;
+                ALUU_SETTINGS = {
+                    apiKey: data.apiKey || '',
+                    proxyUrl: (data.proxyUrl || '').trim(),
+                    enabled: aluuEnabled,
+                    lowBalanceAlert: Number(data.lowBalanceAlert) || 0,
+                    usdRate: Number(data.usdRate) || 4500,
+                    webhookUrl: (data.webhookUrl || '').trim(),
+                    webhookSecret: (data.webhookSecret || '').trim()
+                };
+                applyProviderVisibility('aluu', aluuEnabled);
+                if (window.refreshAluuBalance) window.refreshAluuBalance();
+            }, (error) => {
+                console.error("Aluu.in settings listener error:", error);
+            });
+        }
+
+        async function saveAluuKey() {
+            const apiKey = document.getElementById('aluu-api-key').value.trim();
+            const proxyUrl = document.getElementById('aluu-proxy-url').value.trim();
+            const lowBalanceAlert = Number(document.getElementById('aluu-low-balance-alert').value) || 0;
+            const usdRate = Number(document.getElementById('aluu-usd-rate').value) || 0;
+            const webhookUrl = document.getElementById('aluu-webhook-url').value.trim();
+            const webhookSecret = document.getElementById('aluu-webhook-secret').value.trim();
+            const enabled = document.getElementById('aluu-enabled').checked;
+            const btn = document.getElementById('save-aluu-btn');
+            const originalText = btn.innerText;
+
+            if (proxyUrl && !/^https:\/\//i.test(proxyUrl)) {
+                window.showToast('Proxy URL must start with https://', 'fail');
+                return;
+            }
+            if (webhookUrl && !/^https:\/\//i.test(webhookUrl)) {
+                window.showToast('Webhook URL must start with https://', 'fail');
+                return;
+            }
+            if (webhookUrl && !webhookSecret) {
+                window.showToast('Add a Webhook Secret too — it has to match what you set on Aluu.in\'s dashboard.', 'fail');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                await setDoc(doc(db, "settings", "aluu"), { apiKey, proxyUrl, lowBalanceAlert, usdRate, webhookUrl, webhookSecret, enabled }, { merge: true });
+                logAdminActivity('Saved Aluu.in settings', enabled ? 'Enabled' : 'Disabled');
+                window.showToast('Aluu.in key saved!', 'success');
+                closeAluuModal();
+            } catch (error) {
+                console.error("Save Aluu.in key error:", error);
+                window.showToast('Failed to save Aluu.in key.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveAluuKey = saveAluuKey;
+
+        // Core request helper for every Aluu.in call. Routes through
+        // proxyUrl (as a ?path=/api/v.1/... wrapper) when one is configured,
+        // exactly like fazercardRequest/jcplaysRequest — the proxy exists only
+        // to dodge CORS, since the admin already holds the key in this panel.
+        // Aluu.in's success/error shape uses {success, message, data} (not
+        // FazerCards' {ok, error}), so this checks data.success instead.
+        async function aluuRequest(path, { method = 'GET', params = null, body = null, settings = null } = {}) {
+            const s = settings || ALUU_SETTINGS;
+            if (!s.apiKey) {
+                throw new Error('Add your Aluu.in API key first (Settings → Aluu.in).');
+            }
+            let url = s.proxyUrl
+                ? `${s.proxyUrl}?path=${encodeURIComponent('/api/v.1' + path)}`
+                : `${ALUU_BASE_URL}${path}`;
+            if (params) {
+                const qs = new URLSearchParams(params).toString();
+                url += (url.includes('?') ? '&' : '?') + qs;
+            }
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'x-api-key': s.apiKey,
+                    ...(body ? { 'Content-Type': 'application/json' } : {})
+                },
+                body: body ? JSON.stringify(body) : undefined
+            });
+            const data = await res.json();
+            if (!data.success) {
+                // 429 responses point at the batch endpoint instead of
+                // per-order polling — surface that message as-is since it's
+                // actionable guidance, not just a generic failure.
+                throw new Error(data.message || `Aluu.in request failed (HTTP ${res.status})`);
+            }
+            return data;
+        }
+        window.aluuRequest = aluuRequest;
+
+        async function verifyAluuKey() {
+            const apiKey = document.getElementById('aluu-api-key').value.trim();
+            const proxyUrl = document.getElementById('aluu-proxy-url').value.trim();
+            const statusEl = document.getElementById('aluu-status');
+            const gridEl = document.getElementById('aluu-result-grid');
+            if (!apiKey) {
+                window.showToast('Enter a key first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('verify-aluu-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.display = 'block';
+            statusEl.style.color = 'var(--text-secondary)';
+            gridEl.style.display = 'none';
+            statusEl.innerText = 'Checking key...';
+
+            try {
+                const bal = await aluuRequest('/balance', { settings: { apiKey, proxyUrl } });
+                statusEl.innerText = 'Key valid ✓';
+                statusEl.style.color = 'var(--accent)';
+                gridEl.style.display = 'block';
+                gridEl.className = 'details-grid';
+                gridEl.innerHTML = `
+                    <div class="details-grid-item full" style="grid-column:1/-1;"><span>Wallet Balance</span><b>${Number(bal.data?.wallet_balance || 0).toLocaleString()} ${bal.data?.currency || ''}</b></div>
+                `;
+            } catch (error) {
+                console.error("Verify Aluu.in key error:", error);
+                statusEl.innerText = (proxyUrl ? '' : '(no Proxy URL set — trying a direct call) ') + (error.message || 'Verification failed.');
+                statusEl.style.color = 'var(--fail)';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.verifyAluuKey = verifyAluuKey;
+
+        // Balance refresh for the saved Aluu.in key (mirrors refreshFazerCardBalance) -
+        // used by the Analytics page's API Balances grid.
+        let aluuLastBalance = null;
+        async function refreshAluuBalance() {
+            const displayEls = [document.getElementById('an-aluu-balance-display')].filter(Boolean);
+            if (displayEls.length === 0) return;
+            if (!ALUU_SETTINGS.apiKey) {
+                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = 'var(--text-muted)'; });
+                return;
+            }
+            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+            try {
+                const bal = await aluuRequest('/balance', { settings: ALUU_SETTINGS });
+                const balanceNum = Number(bal.data?.wallet_balance) || 0;
+                const currency = bal.data?.currency || '';
+                const text = `${balanceNum.toLocaleString()} ${currency}`.trim();
+                displayEls.forEach(el => { el.innerText = text; el.style.color = 'var(--accent)'; });
+                aluuLastBalance = balanceNum;
+            } catch (error) {
+                console.error("Aluu.in balance error:", error);
+                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = 'var(--danger-strong)'; });
+                aluuLastBalance = null;
+            }
+        }
+        window.refreshAluuBalance = refreshAluuBalance;
+
         // Combined refresher for the Analytics "API Balances" grid - fires all
-        // three provider balance checks in parallel.
+        // provider balance checks in parallel.
         function refreshAllApiBalances() {
             if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
             if (window.refreshFazerCardBalance) window.refreshFazerCardBalance();
+            if (window.refreshAluuBalance) window.refreshAluuBalance();
         }
         window.refreshAllApiBalances = refreshAllApiBalances;
 
@@ -11560,6 +12228,16 @@
         // category FazerCards itself has no image for.
         let FAZERCARD_TOPUPS_LIST = null;
         let pendingFazerCardFields = [];
+        // Aluu.in: GET /server-options?gamecode= result for the currently
+        // edited game, fetched during importAluuCatalogue when any imported
+        // product has requiresServerId, and saved onto the game doc as
+        // aluuServerMode/aluuServerOptions. Not consumed anywhere in
+        // admin.html itself yet - this just carries the data forward so
+        // store.html's checkout can render the right server picker
+        // (dropdown for serverMode:"select" vs free-text for "manual") once
+        // that side is built, without needing a second research pass.
+        let pendingAluuServerMode = null;
+        let pendingAluuServerOptions = null;
         async function fetchFazerCardTopupsList(forceRefresh = false) {
             if (FAZERCARD_TOPUPS_LIST && !forceRefresh) return FAZERCARD_TOPUPS_LIST;
             // /api/v2/topups is cursor-paginated (NOT offset/page): each response's
@@ -11587,6 +12265,30 @@
             console.log(`[FazerCards] finished after ${guard} page(s), total items: ${allItems.length}`);
             FAZERCARD_TOPUPS_LIST = await attachG2BulkImages(allItems.map(g => ({ code: g.category_id, name: g.name, image: g.imageurl || '' })));
             return FAZERCARD_TOPUPS_LIST;
+        }
+
+        // ---------- Aluu.in game catalogue import ----------
+        // GET /api/v.1/games returns the account's available game list (not
+        // shown with a full example response in Aluu.in's docs, so this
+        // normalizes defensively — accepting either `gamecode`/`code` and
+        // `name`/`title` — and treats `data` as the array per the shape
+        // every other Aluu.in endpoint uses). BGMI is filtered out here per
+        // request, by code or name, so it never appears in the picker.
+        let ALUU_GAMES_LIST = null;
+        function isBgmiEntry(item) {
+            const code = (item.gamecode || item.code || '').toLowerCase();
+            const name = (item.name || item.title || '').toLowerCase();
+            return code.includes('bgmi') || name.includes('bgmi') || name.includes('battlegrounds mobile india');
+        }
+        async function fetchAluuGamesList(forceRefresh = false) {
+            if (ALUU_GAMES_LIST && !forceRefresh) return ALUU_GAMES_LIST;
+            const data = await aluuRequest('/games');
+            const raw = data.data || [];
+            const items = raw
+                .filter(g => !isBgmiEntry(g))
+                .map(g => ({ code: g.gamecode || g.code || '', name: g.name || g.title || (g.gamecode || g.code || ''), image: g.image || '' }));
+            ALUU_GAMES_LIST = await attachG2BulkImages(items);
+            return ALUU_GAMES_LIST;
         }
 
         // ---------- FazerCards Gift Cards ----------
@@ -11702,6 +12404,8 @@
             document.getElementById('jcplays-fulfill-section').style.display = provider === 'jcplays' ? 'block' : 'none';
             document.getElementById('g2bulk-voucher-fulfill-section').style.display = provider === 'g2bulk_voucher' ? 'block' : 'none';
             document.getElementById('fazercard-fulfill-section').style.display = provider === 'fazercard' ? 'block' : 'none';
+            document.getElementById('aluu-fulfill-section').style.display = provider === 'aluu' ? 'block' : 'none';
+            document.getElementById('requires-charname-row').style.display = provider === 'aluu' ? '' : 'none';
             document.getElementById('fazercard-giftcard-fulfill-section').style.display = provider === 'fazercard_giftcard' ? 'block' : 'none';
             // Package rows no longer follow this tab (each has its own
             // Auto-Fulfill Provider select now) — this tab only decides
@@ -11710,8 +12414,10 @@
             // refreshPackageRowProviderVisibility for the per-row logic.
             refreshPackageRowProviderVisibility();
             document.getElementById('fazercard-import-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
+            document.getElementById('aluu-import-btn').style.display = (provider === 'aluu' && document.getElementById('edit-game-aluu-code').value) ? 'block' : 'none';
             if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
             if (provider === 'fazercard') { refreshPickerButton('fazercard'); }
+            if (provider === 'aluu') { refreshPickerButton('aluu'); }
             if (provider === 'fazercard_giftcard') { refreshPickerButton('fazercard_giftcard'); onFazerCardGiftCardCategoryChange(); }
             refreshCheckPricesBtn();
         }
@@ -11742,6 +12448,12 @@
             document.getElementById('fazercard-import-btn').style.display = code ? 'block' : 'none';
         }
         window.onFazerCardGameChange = onFazerCardGameChange;
+
+        function onAluuGameChange() {
+            const code = document.getElementById('edit-game-aluu-code').value;
+            document.getElementById('aluu-import-btn').style.display = code ? 'block' : 'none';
+        }
+        window.onAluuGameChange = onAluuGameChange;
 
         function onFazerCardGiftCardCategoryChange() {
             const categoryId = document.getElementById('edit-game-fazercard-giftcard-category').value;
@@ -11827,13 +12539,14 @@
         // just switch on one string instead of re-deriving this each time.
         function gamePickerKind() {
             if (gamePickerProvider === 'g2bulk' && gamePickerSubtab === 'voucher') return 'voucher';
-            return gamePickerProvider; // 'g2bulk' (direct) | 'jcplays' | 'fazercard'
+            return gamePickerProvider; // 'g2bulk' (direct) | 'jcplays' | 'fazercard' | 'aluu'
         }
         function gamePickerFieldId(kind) {
             if (kind === 'g2bulk') return 'edit-game-g2bulk-code';
             if (kind === 'voucher') return 'edit-game-voucher-category';
             if (kind === 'fazercard') return 'edit-game-fazercard-category';
             if (kind === 'fazercard_giftcard') return 'edit-game-fazercard-giftcard-category';
+            if (kind === 'aluu') return 'edit-game-aluu-code';
             return 'edit-game-jcplays-code';
         }
 
@@ -11889,6 +12602,7 @@
                 : kind === 'voucher' ? voucherPickerItems()
                 : kind === 'fazercard' ? (FAZERCARD_TOPUPS_LIST || [])
                 : kind === 'fazercard_giftcard' ? (FAZERCARD_GIFTCARD_CATEGORIES_LIST || [])
+                : kind === 'aluu' ? (ALUU_GAMES_LIST || [])
                 : (JCPLAYS_PRODUCTS_LIST || []);
             const match = list.find(g => g.code === code);
 
@@ -11918,6 +12632,7 @@
             if (kind === 'voucher') return 'Choose Voucher Category';
             if (kind === 'fazercard') return 'Choose FazerCards Game';
             if (kind === 'fazercard_giftcard') return 'Choose FazerCards Gift Card Category';
+            if (kind === 'aluu') return 'Choose Aluu.in Game';
             return 'Choose JCPlays Game';
         }
 
@@ -12013,6 +12728,16 @@
                         console.error("Load FazerCards gift card categories error:", error);
                         document.getElementById('game-picker-grid').innerHTML = `<p class="game-picker-empty-msg">Couldn't load FazerCards' gift card categories: ${escapeHtml(error.message)}</p>`;
                     });
+            } else if (kind === 'aluu') {
+                fetchAluuGamesList()
+                    .then(items => {
+                        gamePickerItems = items;
+                        renderGamePickerGrid('');
+                    })
+                    .catch(error => {
+                        console.error("Load Aluu.in games list error:", error);
+                        document.getElementById('game-picker-grid').innerHTML = `<p class="game-picker-empty-msg">Couldn't load Aluu.in's game list: ${escapeHtml(error.message)}</p>`;
+                    });
             } else {
                 fetchJCPlaysProductsList()
                     .then(items => {
@@ -12032,7 +12757,7 @@
         // immediately, instead of only after a full page reload.
         function refreshGamePickerList() {
             const kind = gamePickerKind();
-            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'fazercard' && kind !== 'fazercard_giftcard' && kind !== 'jcplays') return;
+            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'fazercard' && kind !== 'fazercard_giftcard' && kind !== 'jcplays' && kind !== 'aluu') return;
             const btn = document.getElementById('game-picker-update-btn');
             const originalText = btn.innerText;
             btn.disabled = true;
@@ -12051,6 +12776,8 @@
                 ? fetchFazerCardTopupsList(true).then(items => { gamePickerItems = items; })
                 : kind === 'fazercard_giftcard'
                 ? fetchFazerCardGiftCardCategories(true).then(items => { gamePickerItems = items; })
+                : kind === 'aluu'
+                ? fetchAluuGamesList(true).then(items => { gamePickerItems = items; })
                 : kind === 'jcplays'
                 ? fetchJCPlaysProductsList(true).then(items => { gamePickerItems = items; })
                 : fetchG2BulkCategoriesList(true).then(() => { gamePickerItems = voucherPickerItems(); });
@@ -12058,7 +12785,7 @@
             refreshPromise
                 .then(() => {
                     renderGamePickerGrid(document.getElementById('game-picker-search').value);
-                    window.showToast((kind === 'fazercard' || kind === 'fazercard_giftcard' ? 'FazerCards' : kind === 'jcplays' ? 'JCPlays' : 'G2Bulk') + ' list refreshed ✓', 'success');
+                    window.showToast((kind === 'fazercard' || kind === 'fazercard_giftcard' ? 'FazerCards' : kind === 'jcplays' ? 'JCPlays' : kind === 'aluu' ? 'Aluu.in' : 'G2Bulk') + ' list refreshed ✓', 'success');
                 })
                 .catch(error => {
                     console.error("Refresh game picker list error:", error);
@@ -12208,6 +12935,7 @@
             if (kind === 'g2bulk') onG2BulkGameChange();
             if (kind === 'voucher') onVoucherCategoryChange();
             if (kind === 'fazercard') onFazerCardGameChange();
+            if (kind === 'aluu') onAluuGameChange();
             if (kind === 'fazercard_giftcard') onFazerCardGiftCardCategoryChange();
             // Whichever subtab the pick was made from, make sure the outer
             // fulfillment-provider tab bar matches it - so the right section
@@ -12378,6 +13106,99 @@
             }
         }
         window.importFazerCardCatalogue = importFazerCardCatalogue;
+
+        // Fetches the live Aluu.in product list for the selected game and
+        // pre-fills the packages list, converted to MMK using the saved
+        // Aluu.in USD rate.
+        //
+        // IMPORTANT: per Aluu.in's actual API docs, /create's request body
+        // takes a "denom" field whose value is the product's "Pack" code
+        // (e.g. "86"), NOT its Mongo "_id". So .pkg-aluu / aluuProductId now
+        // stores p.Pack (falling back to _id only if a product has no Pack)
+        // - this is what placeAluuOrder sends as `denom` below. Matching on
+        // re-import also switched from _id to Pack for the same reason (Pack
+        // is the stable, human-meaningful SKU code; the field name
+        // "aluuProductId" was kept as-is elsewhere to avoid touching every
+        // call site, but it now holds a denom code, not a Mongo id).
+        async function importAluuCatalogue() {
+            const code = document.getElementById('edit-game-aluu-code').value;
+            if (!code) return;
+            const statusEl = document.getElementById('aluu-import-status');
+            const btn = document.getElementById('aluu-import-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Importing...';
+            statusEl.innerText = '';
+
+            try {
+                const data = await aluuRequest(`/products/${encodeURIComponent(code)}`);
+                const rate = ALUU_SETTINGS.usdRate || 4500;
+                const products = data.data || [];
+
+                const rowByDenom = new Map();
+                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
+                    const key = row.querySelector('.pkg-aluu').value.trim();
+                    if (key) rowByDenom.set(key, row);
+                });
+
+                let updatedCount = 0, addedCount = 0;
+                let anyRequiresServerId = false, anyRequiresCharName = false;
+                products.forEach(p => {
+                    if (p.requiresServerId) anyRequiresServerId = true;
+                    if (p.requiresCharName) anyRequiresCharName = true;
+                    const denom = p.Pack || p._id;
+                    const cost = Math.round(Number(p.price) * rate);
+                    const existingRow = rowByDenom.get(denom);
+                    if (existingRow) {
+                        const costInput = existingRow.querySelector('.pkg-cost');
+                        costInput.value = cost;
+                        updatePackageProfit(costInput);
+                        updatedCount++;
+                    } else {
+                        addPackageRow(p.name, cost, cost, '', '', p.image || '', 'currency', null, true, '', '', '', 'aluu', denom);
+                        addedCount++;
+                    }
+                });
+
+                // Per the docs' Important Notes ("Use /server-options before
+                // order creation for games that require server selection"),
+                // pull the server list/mode once here so it's saved with the
+                // game instead of store.html having to fetch it again at
+                // checkout time for every order.
+                let serverOptionsNote = '';
+                if (anyRequiresServerId) {
+                    try {
+                        const soData = await aluuRequest('/server-options', { params: { gamecode: code } });
+                        pendingAluuServerMode = soData.serverMode || 'manual';
+                        pendingAluuServerOptions = Array.isArray(soData.servers) ? soData.servers : [];
+                    } catch (soError) {
+                        console.error("Aluu.in /server-options fetch error:", soError);
+                        pendingAluuServerMode = null;
+                        pendingAluuServerOptions = null;
+                        serverOptionsNote = '\n⚠ Could not fetch server options: ' + soError.message;
+                    }
+                }
+
+                statusEl.style.color = 'var(--accent)';
+                statusEl.innerText = (updatedCount
+                    ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
+                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
+                    + (anyRequiresServerId && !document.getElementById('edit-game-serverid').checked ? '\n⚠ Some products need a Server ID — turn on "Requires Server ID" for this game.' : '')
+                    + (anyRequiresCharName && !document.getElementById('edit-game-charname').checked ? '\n⚠ Some products need a Character Name — turn on "Requires Character Name" for this game.' : '')
+                    + serverOptionsNote;
+                sortPackageRows();
+                window.showToast('Aluu.in catalogue imported ✓', 'success');
+            } catch (error) {
+                console.error("Import Aluu.in catalogue error:", error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Import failed: ' + error.message;
+                window.showToast('Failed to import catalogue.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.importAluuCatalogue = importAluuCatalogue;
 
         // FazerCards names region/server variants of the same game as
         // separate catalogue items with the region in parentheses - e.g.
@@ -13769,6 +14590,7 @@
             document.getElementById('edit-game-popular').checked = !!base.popular;
             document.getElementById('edit-game-playerid').checked = base.playerIdRequired !== false;
             document.getElementById('edit-game-serverid').checked = base.serverIdRequired !== false;
+            document.getElementById('edit-game-charname').checked = !!base.charNameRequired;
             onPlayerIdRequiredToggle();
 
             if (base.image) {
@@ -14040,6 +14862,7 @@
             listenG2Bulk();
             listenJCPlays();
             listenFazerCard();
+            listenAluu();
             listenTelegramBot();
             listenUsers();
             listenTierSettings();
