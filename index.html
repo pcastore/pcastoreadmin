@@ -2942,7 +2942,6 @@
                     <button class="btn btn-outline" id="fazercard-import-btn" onclick="importFazerCardCatalogue()" style="display:none;">Import from FazerCards</button>
                     <button class="btn btn-outline" id="fazercard-debug-btn" onclick="debugFazerCardServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ FazerCards ရဲ့ fields raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="aluu-import-btn" onclick="importAluuCatalogue()" style="display:none;">Import from Aluu.in</button>
-                    <button class="btn btn-outline" id="aluu-debug-btn" onclick="debugAluuServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ Aluu.in ရဲ့ server-options raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                 </div>
@@ -9043,7 +9042,6 @@
                 pendingAluuServerOptions = Array.isArray(g.aluuServerOptions) ? g.aluuServerOptions.slice() : null;
                 refreshPickerButton('aluu');
                 document.getElementById('aluu-import-btn').style.display = g.aluuCode ? 'block' : 'none';
-                document.getElementById('aluu-debug-btn').style.display = g.aluuCode ? 'block' : 'none';
                 pendingG2BulkServerMode = g.g2bulkServerMode || null;
                 pendingG2BulkServerOptions = Array.isArray(g.g2bulkServerOptions) ? g.g2bulkServerOptions.slice() : null;
                 deleteBtn.style.display = 'block';
@@ -9078,7 +9076,6 @@
                 document.getElementById('edit-game-aluu-code').value = '';
                 document.getElementById('aluu-import-status').innerText = '';
                 document.getElementById('aluu-import-btn').style.display = 'none';
-                document.getElementById('aluu-debug-btn').style.display = 'none';
                 pendingAluuServerMode = null;
                 pendingAluuServerOptions = null;
                 pendingG2BulkServerMode = null;
@@ -11708,14 +11705,14 @@
                 throw new Error('Add your Aluu.in API key first (Settings → Aluu.in).');
             }
             // Query params must be folded into the *inner* Aluu.in path
-            // before it gets wrapped in the proxy's own path= query param.
-            // This used to append params to the outer proxied URL instead,
-            // so the Worker only ever forwarded the bare inner path with no
-            // query string — any param-taking endpoint (currently only
-            // /server-options) silently lost its params through the proxy,
-            // and Aluu.in responded to the param-less request with a
-            // generic/misleading error (e.g. "Order not found") instead of
-            // the real server list.
+            // before it gets wrapped in the proxy's own path= query param -
+            // appending them to the outer proxied URL instead meant the
+            // Worker only ever forwarded the bare inner path with no query
+            // string, so any param-taking endpoint would silently lose its
+            // params through the proxy. Kept as the general fix for any
+            // future param-taking call even though the endpoint that first
+            // surfaced this (a since-removed /server-options call) turned
+            // out not to exist on Aluu.in's real API at all.
             let innerPath = path;
             if (params) {
                 const qs = new URLSearchParams(params).toString();
@@ -12455,17 +12452,17 @@
         // docs). Previously only `key` was kept (pendingFazerCardFields), so
         // any select-type field silently degraded to free-text - this pair
         // captures the rest so a server/zone field that FazerCards marks as
-        // a fixed list can render as a dropdown too, same as Aluu.in/G2Bulk.
+        // a fixed list can render as a dropdown too, same as G2Bulk.
         let pendingFazerCardServerMode = null;
         let pendingFazerCardServerOptions = null;
-        // Aluu.in: GET /server-options?gamecode= result for the currently
-        // edited game, fetched during importAluuCatalogue when any imported
-        // product has requiresServerId, and saved onto the game doc as
-        // aluuServerMode/aluuServerOptions. Not consumed anywhere in
-        // admin.html itself yet - this just carries the data forward so
-        // store.html's checkout can render the right server picker
-        // (dropdown for serverMode:"select" vs free-text for "manual") once
-        // that side is built, without needing a second research pass.
+        // Aluu.in has no server-list/dropdown endpoint at all (confirmed
+        // against Aluu.in's real public API docs - server_code is always a
+        // free-text parameter per their Supported Games table; an earlier
+        // assumed /server-options endpoint didn't exist and always 404'd
+        // into a misleading "Order not found"). These two stay permanently
+        // null for Aluu.in-linked games - kept only so saveGame's payload
+        // shape matches the other providers' aluuServerMode/aluuServerOptions
+        // fields rather than omitting them conditionally.
         let pendingAluuServerMode = null;
         let pendingAluuServerOptions = null;
         // G2Bulk: POST /v1/games/fields (body {game}) returns which fields a
@@ -12776,7 +12773,6 @@
             document.getElementById('fazercard-import-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
             document.getElementById('fazercard-debug-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
             document.getElementById('aluu-import-btn').style.display = (provider === 'aluu' && document.getElementById('edit-game-aluu-code').value) ? 'block' : 'none';
-            document.getElementById('aluu-debug-btn').style.display = (provider === 'aluu' && document.getElementById('edit-game-aluu-code').value) ? 'block' : 'none';
             if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
             if (provider === 'fazercard') { refreshPickerButton('fazercard'); }
             if (provider === 'aluu') { refreshPickerButton('aluu'); }
@@ -12816,7 +12812,6 @@
         function onAluuGameChange() {
             const code = document.getElementById('edit-game-aluu-code').value;
             document.getElementById('aluu-import-btn').style.display = code ? 'block' : 'none';
-            document.getElementById('aluu-debug-btn').style.display = code ? 'block' : 'none';
         }
         window.onAluuGameChange = onAluuGameChange;
 
@@ -13631,37 +13626,6 @@
         // is the stable, human-meaningful SKU code; the field name
         // "aluuProductId" was kept as-is elsewhere to avoid touching every
         // call site, but it now holds a denom code, not a Mongo id).
-        // Debug-only check: calls Aluu.in's /server-options for whatever
-        // code is currently linked and dumps the raw response into the
-        // status paragraph, without needing a full import (which requires a
-        // product to already report requiresServerId first).
-        async function debugAluuServerCheck() {
-            const code = document.getElementById('edit-game-aluu-code').value;
-            if (!code) return;
-            const statusEl = document.getElementById('aluu-import-status');
-            const btn = document.getElementById('aluu-debug-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Checking...';
-            statusEl.style.color = 'var(--text-muted)';
-            statusEl.innerText = 'Checking Aluu.in /server-options for "' + code + '"...';
-            try {
-                const soData = await aluuRequest('/server-options', { params: { gamecode: code } });
-                console.log('[Debug] Aluu.in /server-options:', soData);
-                const soServers = Array.isArray(soData.servers) ? soData.servers : [];
-                statusEl.style.color = 'var(--accent)';
-                statusEl.innerText = `${JSON.stringify(soData, null, 2)}\n\nDetected: ${soServers.length > 0 ? `dropdown (${soServers.length} options)` : 'free-text (no servers array, or empty)'}`;
-            } catch (error) {
-                console.error('[Debug] Aluu.in server check error:', error);
-                statusEl.style.color = 'var(--danger-strong)';
-                statusEl.innerText = 'Debug check failed: ' + error.message;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.debugAluuServerCheck = debugAluuServerCheck;
-
         async function importAluuCatalogue() {
             const code = document.getElementById('edit-game-aluu-code').value;
             if (!code) return;
@@ -13703,39 +13667,19 @@
                     }
                 });
 
-                // Per the docs' Important Notes ("Use /server-options before
-                // order creation for games that require server selection"),
-                // pull the server list/mode once here so it's saved with the
-                // game instead of store.html having to fetch it again at
-                // checkout time for every order.
-                let serverOptionsNote = '';
-                if (anyRequiresServerId) {
-                    try {
-                        const soData = await aluuRequest('/server-options', { params: { gamecode: code } });
-                        console.log('Aluu.in /server-options response for', code, ':', soData);
-                        const soServers = Array.isArray(soData.servers) ? soData.servers : [];
-                        // store.html's dropdown check requires aluuServerMode to be
-                        // exactly the string 'select' - Aluu.in's own serverMode
-                        // value might spell that differently (e.g. "dropdown",
-                        // "fixed", true), so treat any non-empty server list as
-                        // select mode rather than trusting an exact string match
-                        // that could silently fall back to free-text.
-                        if (soServers.length > 0) {
-                            pendingAluuServerMode = 'select';
-                            pendingAluuServerOptions = soServers;
-                            serverOptionsNote = `\n✓ Server dropdown detected (${soServers.length} options, Aluu.in serverMode: "${soData.serverMode}").`;
-                        } else {
-                            pendingAluuServerMode = null;
-                            pendingAluuServerOptions = null;
-                            serverOptionsNote = `\nℹ No fixed server list from Aluu.in (serverMode: "${soData.serverMode}") — Server ID stays free-text.`;
-                        }
-                    } catch (soError) {
-                        console.error("Aluu.in /server-options fetch error:", soError);
-                        pendingAluuServerMode = null;
-                        pendingAluuServerOptions = null;
-                        serverOptionsNote = '\n⚠ Could not fetch server options: ' + soError.message;
-                    }
-                }
+                // Per Aluu.in's actual public API docs (Supported Games
+                // table), server_code is always a free-text parameter the
+                // customer types in - there is no dropdown/fixed-list
+                // endpoint for it (an earlier assumption that /server-options
+                // existed was wrong; calling it always 404s into Aluu.in's
+                // generic order-lookup fallback and returns a misleading
+                // "Order not found"). Aluu.in-linked games therefore never
+                // get select mode - pendingAluuServerMode/Options stay null
+                // and store.html's Server ID field renders as free-text,
+                // same as it would for any other provider with no fixed
+                // list.
+                pendingAluuServerMode = null;
+                pendingAluuServerOptions = null;
 
                 // Auto-set "Requires Server ID"/"Requires Character Name"
                 // straight from the imported products instead of just
@@ -13750,8 +13694,7 @@
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
                     + (anyRequiresServerId ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
-                    + (anyRequiresCharName ? '\n✓ "Requires Character Name" auto-enabled for this game.' : '')
-                    + serverOptionsNote;
+                    + (anyRequiresCharName ? '\n✓ "Requires Character Name" auto-enabled for this game.' : '');
                 sortPackageRows();
                 window.showToast('Aluu.in catalogue imported ✓', 'success');
             } catch (error) {
