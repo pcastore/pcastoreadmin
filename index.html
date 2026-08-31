@@ -13608,7 +13608,7 @@
 
             try {
                 const idCheckUrl = ALUU_SETTINGS.proxyUrl.replace(/\/aluu-proxy\/?$/, '/aluu-id-check');
-                const url = `${idCheckUrl}?gameCode=${encodeURIComponent(gameCode)}&playerId=${encodeURIComponent(playerId)}&serverId=${encodeURIComponent(serverId)}`;
+                const url = `${idCheckUrl}?gameCode=${encodeURIComponent(gameCode)}&playerId=${encodeURIComponent(playerId)}&serverId=${encodeURIComponent(serverId)}&debug=1`;
                 const res = await fetch(url);
                 // Read as text first, not res.json() directly - if the
                 // Worker or Aluu.in itself errors out with a non-JSON body
