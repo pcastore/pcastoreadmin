@@ -2891,10 +2891,12 @@
                          a package row (matched by its own _id, same pattern
                          as FazerCards' offer_id above) - requiresUserId/
                          requiresServerId/requiresCharName come back per
-                         product but aren't auto-applied to the game's Player
-                         ID/Server ID toggles yet, so double-check those match
-                         after importing. BGMI is intentionally skipped from
-                         the picker list. -->
+                         product and ARE auto-applied to the game's Player
+                         ID/Server ID/Character Name toggles on import (see
+                         importAluuCatalogue), along with a live server/
+                         region list from GET /server-options when one
+                         exists - double-check they match after importing.
+                         BGMI is intentionally skipped from the picker list. -->
                     <div id="aluu-fulfill-section" style="display:none;margin-top:10px;">
                         <label style="margin-top:0;">Aluu.in Game</label>
                         <input type="hidden" id="edit-game-aluu-code" value="">
@@ -2903,18 +2905,17 @@
                             <span class="picker-btn-label muted" id="aluu-picker-display">-- Not linked (manual fulfillment) --</span>
                             <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
                         </div>
-                        <p id="aluu-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
-                        <!-- Aluu.in has no /server-options API (see
-                             importAluuCatalogue) - some games still need a
-                             fixed server-code list (e.g. Gangstar Mirage
-                             City: Southeast Asia/SouthAsia/EastEurope/MENA/
-                             SouthAmerica/NorthAmerica), so this is admin-typed
-                             instead of auto-imported. One per line, either
-                             "Label" or "Label|value" (value defaults to the
-                             label text if omitted) - feeds store.html's
-                             existing aluuServerMode:'select' dropdown
+                        <p id="aluu-import-status" style="font-size:11px;color:var(--text-muted);white-space:pre-wrap;"></p>
+                        <!-- Auto-filled by importAluuCatalogue via Aluu.in's
+                             real GET /server-options?gamecode=... endpoint
+                             (see fetchAluuServerOptions) whenever it reports
+                             a fixed list for this game - stays editable so
+                             it can be corrected by hand if needed. One per
+                             line, either "Label" or "Label|value" (value
+                             defaults to the label text if omitted) - feeds
+                             store.html's aluuServerMode:'select' dropdown
                              rendering the same way G2Bulk/FazerCards do. -->
-                        <label style="margin-top:8px;font-size:12px;">Server ID Options <span style="font-weight:400;color:var(--text-muted);">(optional — only if this game needs a fixed list instead of free text; one per line, "Label" or "Label|value")</span></label>
+                        <label style="margin-top:8px;font-size:12px;">Server ID Options <span style="font-weight:400;color:var(--text-muted);">(auto-filled on import when Aluu.in has a fixed list — edit if wrong, or fill in by hand; one per line, "Label" or "Label|value")</span></label>
                         <textarea id="aluu-server-options-input" rows="3" placeholder="Southeast Asia&#10;SouthAsia&#10;EastEurope" oninput="onAluuServerOptionsChange()" style="font-size:12px;"></textarea>
 
                         <!-- Debug helper so a wrong server_code guess can be
@@ -11749,10 +11750,9 @@
             // appending them to the outer proxied URL instead meant the
             // Worker only ever forwarded the bare inner path with no query
             // string, so any param-taking endpoint would silently lose its
-            // params through the proxy. Kept as the general fix for any
-            // future param-taking call even though the endpoint that first
-            // surfaced this (a since-removed /server-options call) turned
-            // out not to exist on Aluu.in's real API at all.
+            // params through the proxy. This is what makes GET
+            // /server-options?gamecode=... (see fetchAluuServerOptions)
+            // actually reach Aluu.in with its query string intact.
             let innerPath = path;
             if (params) {
                 const qs = new URLSearchParams(params).toString();
@@ -12495,23 +12495,27 @@
         // a fixed list can render as a dropdown too, same as G2Bulk.
         let pendingFazerCardServerMode = null;
         let pendingFazerCardServerOptions = null;
-        // Aluu.in has no server-list/dropdown endpoint at all (confirmed
-        // against Aluu.in's real public API docs - server_code is always a
-        // free-text parameter per their Supported Games table; an earlier
-        // assumed /server-options endpoint didn't exist and always 404'd
-        // into a misleading "Order not found"). These two stay permanently
-        // null for Aluu.in-linked games - kept only so saveGame's payload
-        // shape matches the other providers' aluuServerMode/aluuServerOptions
-        // fields rather than omitting them conditionally.
+        // Aluu.in DOES have a real server-list endpoint - GET
+        // /api/v.1/server-options?gamecode=... - confirmed against Aluu.in's
+        // official API docs (PDF, July 2026). It was wrongly assumed not to
+        // exist for a while (a broken call into it 404'd into a misleading
+        // "Order not found"), which is why the Server ID Options box below
+        // used to be purely hand-typed. It's now auto-filled by
+        // fetchAluuServerOptions() during importAluuCatalogue whenever
+        // Aluu.in reports serverMode:'select' for that game, and stays
+        // editable so an admin override (e.g. a game Aluu.in itself gets
+        // wrong) is still possible. These two stay null for games that use
+        // a free-text Server ID (serverMode 'manual'/'none', or the box
+        // left empty).
         let pendingAluuServerMode = null;
         let pendingAluuServerOptions = null;
 
-        // Parses the admin-typed Server ID Options textarea (see comment on
-        // the aluu-fulfill-section markup) into the same {label,value} shape
-        // G2Bulk/FazerCards' auto-detected dropdowns use, so store.html's
-        // existing renderServerIdField() picks it up unchanged. Empty
-        // textarea -> free-text Server ID (pendingAluuServerMode stays null),
-        // same as before this feature existed.
+        // Parses the Server ID Options textarea (auto-filled by
+        // fetchAluuServerOptions, or hand-typed/edited by the admin) into
+        // the same {label,value} shape G2Bulk/FazerCards' auto-detected
+        // dropdowns use, so store.html's existing renderServerIdField()
+        // picks it up unchanged. Empty textarea -> free-text Server ID
+        // (pendingAluuServerMode stays null).
         function onAluuServerOptionsChange() {
             const lines = document.getElementById('aluu-server-options-input').value
                 .split('\n').map(l => l.trim()).filter(Boolean);
@@ -12525,8 +12529,37 @@
                 const [label, value] = line.split('|').map(s => s.trim());
                 return { label, value: value || label };
             });
+            // A fixed list in this box IS the "this game needs a Server ID"
+            // decision - without this, importAluuCatalogue (or the admin
+            // manually) can leave "Requires Server ID" unchecked because
+            // Aluu.in's own product data says requiresServerId: false,
+            // which would hide the Server ID field entirely in store.html
+            // regardless of how many options are here. Force it on
+            // whenever the box has content so the dropdown this feeds
+            // actually reaches customers.
+            document.getElementById('edit-game-serverid').checked = true;
         }
         window.onAluuServerOptionsChange = onAluuServerOptionsChange;
+
+        // Fetches Aluu.in's live server/region list for a game code via the
+        // real /server-options endpoint. Returns null (non-fatal) on any
+        // failure so callers can just fall back to whatever's already in
+        // the Server ID Options box - this call failing (or a game simply
+        // not needing a fixed list) must never block a catalogue import.
+        async function fetchAluuServerOptions(gameCode) {
+            try {
+                const res = await aluuRequest('/server-options', { params: { gamecode: gameCode } });
+                return {
+                    requiresServerId: !!res.requiresServerId,
+                    serverMode: res.serverMode || 'none',
+                    servers: Array.isArray(res.servers) ? res.servers : []
+                };
+            } catch (error) {
+                console.warn('Aluu.in /server-options lookup failed (non-fatal):', error.message);
+                return null;
+            }
+        }
+        window.fetchAluuServerOptions = fetchAluuServerOptions;
         // G2Bulk: POST /v1/games/fields (body {game}) returns which fields a
         // game needs (e.g. ["userid","serverid"]); POST /v1/games/servers
         // returns the server list for games that have one, or a 403 meaning
@@ -13770,32 +13803,45 @@
                     }
                 });
 
-                // Per Aluu.in's actual public API docs (Supported Games
-                // table), server_code is documented as a free-text parameter
-                // the customer types in - there is no dropdown/fixed-list
-                // endpoint for it (an earlier assumption that /server-options
-                // existed was wrong; calling it always 404s into Aluu.in's
-                // generic order-lookup fallback and returns a misleading
-                // "Order not found"). Some games (e.g. Gangstar Mirage City)
-                // turned out to need a fixed list anyway despite that, so
-                // that's now admin-typed into the "Server ID Options" box
-                // above instead of auto-imported - importing the catalogue
-                // must NOT clear whatever the admin already typed there.
+                // Fetch Aluu.in's live server/region list via the real
+                // /server-options endpoint and auto-fill the Server ID
+                // Options box when it reports a fixed list (serverMode
+                // 'select') - but only if the box is still empty, so a
+                // manual admin override (e.g. a game Aluu.in itself gets
+                // wrong) is never overwritten by re-importing. A failed
+                // lookup or a 'manual'/'none' serverMode just leaves the
+                // box as-is.
+                const textareaEl = document.getElementById('aluu-server-options-input');
+                const hadManualEntry = textareaEl.value.trim().length > 0;
+                const serverOptions = await fetchAluuServerOptions(code);
+                if (serverOptions && !hadManualEntry && serverOptions.serverMode === 'select' && serverOptions.servers.length) {
+                    textareaEl.value = serverOptions.servers
+                        .map(s => (s.label && s.label !== s.value) ? `${s.label}|${s.value}` : s.value)
+                        .join('\n');
+                }
                 onAluuServerOptionsChange();
 
                 // Auto-set "Requires Server ID"/"Requires Character Name"
-                // straight from the imported products instead of just
-                // warning and leaving it to the admin to flip manually - on
-                // when Aluu.in's own product data says this game needs it,
-                // off when none of the imported products do.
-                document.getElementById('edit-game-serverid').checked = anyRequiresServerId;
+                // straight from the imported products (and Aluu.in's own
+                // /server-options flag) instead of just warning and leaving
+                // it to the admin to flip manually - on when Aluu.in says
+                // this game needs it, off when nothing does. Exception: a
+                // Server ID Options list (just re-applied by
+                // onAluuServerOptionsChange above, which already checked
+                // this box) always wins - some games need a fixed list even
+                // when Aluu.in's own flags say requiresServerId: false.
+                const requiresServerId = anyRequiresServerId || (serverOptions ? serverOptions.requiresServerId : false);
+                if (pendingAluuServerMode !== 'select') {
+                    document.getElementById('edit-game-serverid').checked = requiresServerId;
+                }
                 document.getElementById('edit-game-charname').checked = anyRequiresCharName;
 
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
-                    + (anyRequiresServerId ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
+                    + (requiresServerId ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
+                    + (pendingAluuServerMode === 'select' ? '\n✓ Server ID Options auto-filled from Aluu.in — check the list below.' : '')
                     + (anyRequiresCharName ? '\n✓ "Requires Character Name" auto-enabled for this game.' : '');
                 sortPackageRows();
                 window.showToast('Aluu.in catalogue imported ✓', 'success');
