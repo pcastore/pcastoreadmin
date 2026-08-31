@@ -6159,11 +6159,10 @@
         //
         // NOTE: the docs screenshots for this API didn't show its base
         // domain explicitly - assumed to be the same aluu.in host as
-        // everything else, at /api/check (not /api/v.1). If this starts
-        // failing with a network/DNS error rather than a normal 4xx, that
-        // assumption is the first thing to check against Aluu.in's actual
-        // reference.
-        const ALUU_CHECK_BASE_URL = 'https://aluu.in/api/check';
+        // everything else, at /api/check (not /api/v.1). Confirmed against
+        // Aluu.in's own reference docs since (Authentication page shows
+        // GET /api/check/game-check?code=&characterId=[&server_code=] with
+        // an x-api-key header) - the assumption was correct.
         async function verifyAluuPlayerId(orderId, btnElement) {
             const order = ORDERS[orderId];
             if (!order || !order.aluuGameCode) {
@@ -6174,8 +6173,8 @@
                 window.showToast('This order has no Player ID to verify.', 'fail');
                 return;
             }
-            if (!ALUU_SETTINGS.apiKey) {
-                window.showToast('Add your Aluu.in API key first (Dashboard → Aluu.in).', 'fail');
+            if (!ALUU_SETTINGS.proxyUrl) {
+                window.showToast('Add your Aluu.in Worker Proxy URL first (Dashboard → Aluu.in).', 'fail');
                 return;
             }
             const valueEl = document.getElementById(`aluu-role-value-${orderId}`);
@@ -6184,17 +6183,26 @@
 
             let playerName = null;
             try {
-                const isMlbb = order.aluuGameCode === 'mlbb';
-                const url = isMlbb
-                    ? `${ALUU_CHECK_BASE_URL}/mlbb-check?user_id=${encodeURIComponent(order.playerId)}&server_id=${encodeURIComponent(order.serverId || '')}`
-                    : `${ALUU_CHECK_BASE_URL}/game-check?code=${encodeURIComponent(order.aluuGameCode)}&characterId=${encodeURIComponent(order.playerId)}${order.serverId ? `&server_code=${encodeURIComponent(order.serverId)}` : ''}`;
-                const res = await fetch(url, { headers: { 'x-api-key': ALUU_SETTINGS.apiKey } });
+                // Routed through the Worker's /aluu-id-check route (the same
+                // one store.html's customer-facing "Confirm ID" already
+                // uses) instead of fetching https://aluu.in/api/check/...
+                // directly from the browser like this used to. A direct
+                // browser fetch to Aluu.in's own domain almost certainly has
+                // no CORS allowance - it's a server-to-server reseller API
+                // gated by an x-api-key header, not a public browser API -
+                // so this was silently failing on every single check here
+                // (network/CORS error caught below, playerName stays null),
+                // always landing on "Player ID Verification Failed"
+                // regardless of whether the ID was actually valid. Routing
+                // through the Worker also keeps the real Aluu.in API key off
+                // the wire from the browser, same reasoning /aluu-id-check
+                // was built for in the first place.
+                const idCheckUrl = ALUU_SETTINGS.proxyUrl.replace(/\/aluu-proxy\/?$/, '/aluu-id-check');
+                const res = await fetch(
+                    `${idCheckUrl}?gameCode=${encodeURIComponent(order.aluuGameCode)}&playerId=${encodeURIComponent(order.playerId)}&serverId=${encodeURIComponent(order.serverId || '')}`
+                );
                 const data = await res.json();
-                if (isMlbb) {
-                    if (res.ok && data.success && data.username) playerName = data.username;
-                } else {
-                    if (res.ok && data.valid === 'valid' && (data.name || data.nickname)) playerName = data.name || data.nickname;
-                }
+                if (res.ok && data.valid === true && data.name) playerName = data.name;
             } catch (error) {
                 console.error("Aluu.in name-check error:", error);
             }
