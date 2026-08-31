@@ -2916,6 +2916,22 @@
                              rendering the same way G2Bulk/FazerCards do. -->
                         <label style="margin-top:8px;font-size:12px;">Server ID Options <span style="font-weight:400;color:var(--text-muted);">(optional — only if this game needs a fixed list instead of free text; one per line, "Label" or "Label|value")</span></label>
                         <textarea id="aluu-server-options-input" rows="3" placeholder="Southeast Asia&#10;SouthAsia&#10;EastEurope" oninput="onAluuServerOptionsChange()" style="font-size:12px;"></textarea>
+
+                        <!-- Debug helper so a wrong server_code guess can be
+                             tried and read on-phone (no DevTools/Network tab
+                             needed) - calls the same /aluu-id-check Worker
+                             route the customer-facing check and
+                             verifyAluuPlayerId() use, but with admin-typed
+                             test values and the FULL raw response text
+                             (not just valid/name) so an Aluu-side error
+                             message hinting at the right server_code format
+                             is visible too. -->
+                        <label style="margin-top:8px;font-size:12px;">Debug: Test ID Check <span style="font-weight:400;color:var(--text-muted);">(no DevTools needed — shows the raw Aluu.in response)</span></label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="aluu-debug-playerid" placeholder="Test Player ID" style="flex:1;min-width:0;font-size:12px;">
+                            <input type="text" id="aluu-debug-serverid" placeholder="Test Server value" style="flex:1;min-width:0;font-size:12px;">
+                        </div>
+                        <button type="button" class="btn btn-outline" id="aluu-debug-btn" onclick="debugAluuIdCheck()" style="margin-top:6px;padding:8px 12px;font-size:12px;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug Check</button>
                     </div>
 
                     <!-- FazerCards Gift Cards: a separate part of FazerCards'
@@ -13573,6 +13589,47 @@
             }
         }
         window.debugFazerCardServerCheck = debugFazerCardServerCheck;
+
+        async function debugAluuIdCheck() {
+            const gameCode = document.getElementById('edit-game-aluu-code').value;
+            if (!gameCode) return;
+            const playerId = document.getElementById('aluu-debug-playerid').value.trim();
+            const serverId = document.getElementById('aluu-debug-serverid').value.trim();
+            if (!playerId) { window.showToast('Type a Test Player ID first.', 'fail'); return; }
+            if (!ALUU_SETTINGS.proxyUrl) { window.showToast('Add your Aluu.in Worker Proxy URL first (Dashboard → Aluu.in).', 'fail'); return; }
+
+            const statusEl = document.getElementById('aluu-import-status');
+            const btn = document.getElementById('aluu-debug-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.color = 'var(--text-muted)';
+            statusEl.innerText = `Checking Aluu.in for game "${gameCode}", player "${playerId}", server "${serverId}"...`;
+
+            try {
+                const idCheckUrl = ALUU_SETTINGS.proxyUrl.replace(/\/aluu-proxy\/?$/, '/aluu-id-check');
+                const url = `${idCheckUrl}?gameCode=${encodeURIComponent(gameCode)}&playerId=${encodeURIComponent(playerId)}&serverId=${encodeURIComponent(serverId)}`;
+                const res = await fetch(url);
+                // Read as text first, not res.json() directly - if the
+                // Worker or Aluu.in itself errors out with a non-JSON body
+                // (a raw error page, an empty 500, etc.) .json() would throw
+                // and hide that body from the admin instead of showing it.
+                const raw = await res.text();
+                let parsed = null;
+                try { parsed = JSON.parse(raw); } catch (e) { /* not JSON - show raw text as-is below */ }
+                console.log('[Debug] Aluu.in id-check:', res.status, parsed || raw);
+                statusEl.style.color = (parsed && parsed.valid) ? 'var(--accent)' : 'var(--danger-strong)';
+                statusEl.innerText = `HTTP ${res.status}\n${parsed ? JSON.stringify(parsed, null, 2) : raw}`;
+            } catch (error) {
+                console.error('[Debug] Aluu.in id-check error:', error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Debug check failed: ' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.debugAluuIdCheck = debugAluuIdCheck;
 
         // Fetches the live FazerCards offers for the selected game top-up
         // category and pre-fills the packages list, converted to MMK using
