@@ -2904,6 +2904,18 @@
                             <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
                         </div>
                         <p id="aluu-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
+                        <!-- Aluu.in has no /server-options API (see
+                             importAluuCatalogue) - some games still need a
+                             fixed server-code list (e.g. Gangstar Mirage
+                             City: Southeast Asia/SouthAsia/EastEurope/MENA/
+                             SouthAmerica/NorthAmerica), so this is admin-typed
+                             instead of auto-imported. One per line, either
+                             "Label" or "Label|value" (value defaults to the
+                             label text if omitted) - feeds store.html's
+                             existing aluuServerMode:'select' dropdown
+                             rendering the same way G2Bulk/FazerCards do. -->
+                        <label style="margin-top:8px;font-size:12px;">Server ID Options <span style="font-weight:400;color:var(--text-muted);">(optional — only if this game needs a fixed list instead of free text; one per line, "Label" or "Label|value")</span></label>
+                        <textarea id="aluu-server-options-input" rows="3" placeholder="Southeast Asia&#10;SouthAsia&#10;EastEurope" oninput="onAluuServerOptionsChange()" style="font-size:12px;"></textarea>
                     </div>
 
                     <!-- FazerCards Gift Cards: a separate part of FazerCards'
@@ -9048,6 +9060,9 @@
                 document.getElementById('aluu-import-status').innerText = '';
                 pendingAluuServerMode = g.aluuServerMode || null;
                 pendingAluuServerOptions = Array.isArray(g.aluuServerOptions) ? g.aluuServerOptions.slice() : null;
+                document.getElementById('aluu-server-options-input').value = (pendingAluuServerOptions || [])
+                    .map(o => (o.value && o.value !== o.label) ? `${o.label}|${o.value}` : o.label)
+                    .join('\n');
                 refreshPickerButton('aluu');
                 document.getElementById('aluu-import-btn').style.display = g.aluuCode ? 'block' : 'none';
                 pendingG2BulkServerMode = g.g2bulkServerMode || null;
@@ -9086,6 +9101,7 @@
                 document.getElementById('aluu-import-btn').style.display = 'none';
                 pendingAluuServerMode = null;
                 pendingAluuServerOptions = null;
+                document.getElementById('aluu-server-options-input').value = '';
                 pendingG2BulkServerMode = null;
                 pendingG2BulkServerOptions = null;
                 onFazerCardGiftCardCategoryChange();
@@ -12473,6 +12489,28 @@
         // fields rather than omitting them conditionally.
         let pendingAluuServerMode = null;
         let pendingAluuServerOptions = null;
+
+        // Parses the admin-typed Server ID Options textarea (see comment on
+        // the aluu-fulfill-section markup) into the same {label,value} shape
+        // G2Bulk/FazerCards' auto-detected dropdowns use, so store.html's
+        // existing renderServerIdField() picks it up unchanged. Empty
+        // textarea -> free-text Server ID (pendingAluuServerMode stays null),
+        // same as before this feature existed.
+        function onAluuServerOptionsChange() {
+            const lines = document.getElementById('aluu-server-options-input').value
+                .split('\n').map(l => l.trim()).filter(Boolean);
+            if (!lines.length) {
+                pendingAluuServerMode = null;
+                pendingAluuServerOptions = null;
+                return;
+            }
+            pendingAluuServerMode = 'select';
+            pendingAluuServerOptions = lines.map(line => {
+                const [label, value] = line.split('|').map(s => s.trim());
+                return { label, value: value || label };
+            });
+        }
+        window.onAluuServerOptionsChange = onAluuServerOptionsChange;
         // G2Bulk: POST /v1/games/fields (body {game}) returns which fields a
         // game needs (e.g. ["userid","serverid"]); POST /v1/games/servers
         // returns the server list for games that have one, or a 403 meaning
@@ -13676,18 +13714,17 @@
                 });
 
                 // Per Aluu.in's actual public API docs (Supported Games
-                // table), server_code is always a free-text parameter the
-                // customer types in - there is no dropdown/fixed-list
+                // table), server_code is documented as a free-text parameter
+                // the customer types in - there is no dropdown/fixed-list
                 // endpoint for it (an earlier assumption that /server-options
                 // existed was wrong; calling it always 404s into Aluu.in's
                 // generic order-lookup fallback and returns a misleading
-                // "Order not found"). Aluu.in-linked games therefore never
-                // get select mode - pendingAluuServerMode/Options stay null
-                // and store.html's Server ID field renders as free-text,
-                // same as it would for any other provider with no fixed
-                // list.
-                pendingAluuServerMode = null;
-                pendingAluuServerOptions = null;
+                // "Order not found"). Some games (e.g. Gangstar Mirage City)
+                // turned out to need a fixed list anyway despite that, so
+                // that's now admin-typed into the "Server ID Options" box
+                // above instead of auto-imported - importing the catalogue
+                // must NOT clear whatever the admin already typed there.
+                onAluuServerOptionsChange();
 
                 // Auto-set "Requires Server ID"/"Requires Character Name"
                 // straight from the imported products instead of just
