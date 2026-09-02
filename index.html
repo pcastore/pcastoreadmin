@@ -615,9 +615,15 @@
         /* Bulk order selection (Pending orders only) + sticky action bar */
         .order-select-box { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
         .order-select-box input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+        /* No position:sticky here on purpose: this bar sits above the long
+           scrollable Pending-orders list, and sticky + backdrop-filter is
+           the exact combo that made .pkg-tab-bar ghost/smear onto rows
+           below it while scrolling on low-power devices (same GPU
+           recomposite-per-scroll-frame issue) - see that fix's notes. Kept
+           as static flow instead, same as .pkg-tab-bar's fix. */
         .order-bulk-bar {
             display: none; align-items: center; justify-content: space-between; gap: 10px;
-            position: sticky; top: 6px; z-index: 5; margin-bottom: 12px; padding: 10px 12px;
+            margin-bottom: 12px; padding: 10px 12px;
             background: var(--surface-strong); border: 1px solid var(--border-glass); border-radius: 14px;
             box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass);
             -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
@@ -1750,6 +1756,9 @@
         <div class="nav-item" id="group-game" onclick="openNavGroupSheet('game')">
             <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> Game
         </div>
+        <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
+            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Wallet
+        </div>
         <div class="nav-item" id="group-userlist" onclick="openNavGroupSheet('userlist')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> Userlist
         </div>
@@ -1894,6 +1903,20 @@
                     </div>
                 </div>
                 </div>
+                <div id="dash-bay2game-row">
+                <div style="height:1px;background:var(--bg-subtle);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <svg class="ui-icon" style="width:17px;height:17px;color:var(--accent);"><use href="#icon-wallet"></use></svg>
+                        </div>
+                        <div>
+                            <span style="font-size:13px;font-weight: 600;display:block;">Bay2Game Balance</span>
+                            <span style="font-size:17px;font-weight: 600;color:var(--accent);" id="dash-bay2game-balance-display">—</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
                 <button class="btn btn-outline" style="margin-top:2px;" id="dash-wallet-refresh-btn" onclick="refreshDashboardWallets()">Refresh Balances</button>
             </div>
         </div>
@@ -1962,6 +1985,10 @@
                 <div class="details-grid-item">
                     <span>Aluu.in</span>
                     <b id="an-aluu-balance-display" style="color:var(--accent);">—</b>
+                </div>
+                <div class="details-grid-item">
+                    <span>Bay2Game</span>
+                    <b id="an-bay2game-balance-display" style="color:var(--accent);">—</b>
                 </div>
             </div>
 
@@ -2260,6 +2287,14 @@
                     <span class="api-doc-title">Aluu.in API Key</span>
                 </div>
                 <button class="btn btn-outline api-doc-btn" onclick="openAluuModal()">Settings</button>
+            </div>
+
+            <div class="api-doc-card">
+                <div class="api-doc-icon" style="background:#DC2626;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-key"></use></svg></div>
+                <div class="api-doc-info">
+                    <span class="api-doc-title">Bay2Game API Key</span>
+                </div>
+                <button class="btn btn-outline api-doc-btn" onclick="openBay2gameModal()">Settings</button>
             </div>
 
             <div class="api-doc-card">
@@ -2800,6 +2835,7 @@
                                 <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
                                 <button type="button" class="pkg-type-tab" data-provider="fazercard" onclick="setFulfillProvider('fazercard')">FazerCards</button>
                                 <button type="button" class="pkg-type-tab" data-provider="aluu" onclick="setFulfillProvider('aluu')">Aluu.in</button>
+                                <button type="button" class="pkg-type-tab" data-provider="bay2game" onclick="setFulfillProvider('bay2game')">Bay2Game</button>
                                 <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
                             </div>
                         </div>
@@ -2935,6 +2971,27 @@
                         <button type="button" class="btn btn-outline" id="aluu-debug-btn" onclick="debugAluuIdCheck()" style="margin-top:6px;padding:8px 12px;font-size:12px;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug Check</button>
                     </div>
 
+                    <!-- Bay2Game Game Top-ups: GET /api/categories -> GET
+                         /api/products?game_code=... -> GET /api/create_order
+                         (reference required + unique, game_zone_id optional
+                         per game_fields from /categories). Each product
+                         becomes a package row, matched by its own
+                         product_code - same pattern as G2Bulk/Aluu.in above.
+                         game_fields ("userid"/"serverid") from the selected
+                         category auto-applies to the game's Player ID /
+                         Server ID toggles on import (see
+                         importBay2gameCatalogue). -->
+                    <div id="bay2game-fulfill-section" style="display:none;margin-top:10px;">
+                        <label style="margin-top:0;">Bay2Game Game</label>
+                        <input type="hidden" id="edit-game-bay2game-code" value="">
+                        <div class="picker-btn" id="bay2game-picker-btn" onclick="openGamePicker('bay2game')">
+                            <div class="picker-btn-thumb" id="bay2game-picker-thumb"></div>
+                            <span class="picker-btn-label muted" id="bay2game-picker-display">-- Not linked (manual fulfillment) --</span>
+                            <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
+                        </div>
+                        <p id="bay2game-import-status" style="font-size:11px;color:var(--text-muted);white-space:pre-wrap;"></p>
+                    </div>
+
                     <!-- FazerCards Gift Cards: a separate part of FazerCards'
                          catalog (GET /api/v2/giftcards → GET
                          /api/v2/giftcards/cards?category_id=... → POST
@@ -2971,6 +3028,7 @@
                     <button class="btn btn-outline" id="fazercard-import-btn" onclick="importFazerCardCatalogue()" style="display:none;">Import from FazerCards</button>
                     <button class="btn btn-outline" id="fazercard-debug-btn" onclick="debugFazerCardServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ FazerCards ရဲ့ fields raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="aluu-import-btn" onclick="importAluuCatalogue()" style="display:none;">Import from Aluu.in</button>
+                    <button class="btn btn-outline" id="bay2game-import-btn" onclick="importBay2gameCatalogue()" style="display:none;">Import from Bay2Game</button>
                     <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                 </div>
@@ -3445,6 +3503,44 @@
             </div>
         </div>
     </div>
+    <div class="modal-overlay" id="bay2game-modal-overlay" onclick="if(event.target===this) closeBay2gameModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Bay2Game API Key</h3>
+                <div class="modal-close" onclick="closeBay2gameModal()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <label>API Key</label>
+                <div class="secret-field-wrap">
+                    <input type="text" id="bay2game-api-key" class="secret-input" placeholder="your_merchant_api_key" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('bay2game-api-key', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
+                </div>
+                <p id="bay2game-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
+                <div id="bay2game-result-grid" style="display:none;"></div>
+
+                <label>Proxy URL <span style="font-weight:400;color:var(--text-muted);">(Cloudflare Worker — only needed if a direct call from this browser gets CORS-blocked)</span></label>
+                <input type="text" id="bay2game-proxy-url" placeholder="https://your-worker.workers.dev/bay2game-proxy" autocomplete="off">
+                <p style="font-size:11.5px;color:var(--text-muted);margin-top:-6px;">Leave blank to call api.bay2game.xyz directly. If Verify Key fails with a network/CORS error, deploy a proxy Worker and paste its URL here.</p>
+
+                <label>USD → MMK Rate <span style="font-weight:400;color:var(--text-muted);">(for catalogue import Cost conversion)</span></label>
+                <input type="number" id="bay2game-usd-rate" placeholder="e.g. 4500" step="1">
+
+                <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(USD, 0 = off)</span></label>
+                <input type="number" id="bay2game-low-balance-alert" placeholder="e.g. 20" step="1" min="0" title="Header will show a warning when the wallet balance drops below this amount">
+
+                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+                    <input type="checkbox" id="bay2game-enabled" style="width:auto;" checked>
+                    <span>Enabled — turn off to fully hide Bay2Game (wallet card, game-link picker) everywhere in the app</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="verify-bay2game-btn" onclick="verifyBay2gameKey()">Verify Key</button>
+                <button class="btn btn-primary" id="save-bay2game-btn" onclick="saveBay2gameKey()">Save</button>
+            </div>
+        </div>
+    </div>
     <div class="modal-overlay" id="telegram-modal-overlay" onclick="if(event.target===this) closeTelegramBotModal()">
         <div class="modal-box">
             <div class="modal-header">
@@ -3598,7 +3694,7 @@
         const PAGE_TO_NAV_GROUP = {
             'dashboard': 'group-dashboard', 'analytics': 'group-dashboard', 'order-list': 'group-dashboard',
             'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
-            'payment-list': 'group-game', 'topup-list': 'group-game',
+            'payment-list': 'group-wallet', 'topup-list': 'group-wallet',
             'user-list': 'group-userlist', 'tier-list': 'group-userlist', 'frames': 'group-userlist', 'activity-log': 'group-userlist',
             'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
         };
@@ -3628,11 +3724,13 @@
             api: { title: 'API', items: [
                 { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
                 { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
-                { label: 'Fazercards', icon: '#icon-plug', run: () => showPage('api-docs') }
+                { label: 'API Keys', icon: '#icon-plug', run: () => showPage('api-docs') }
             ]},
             game: { title: 'Game', items: [
                 { label: 'Direct', icon: '#icon-gamepad', run: () => showGameListTab('direct') },
-                { label: 'Voucher', icon: '#icon-gift', run: () => showGameListTab('voucher') },
+                { label: 'Voucher', icon: '#icon-gift', run: () => showGameListTab('voucher') }
+            ]},
+            wallet: { title: 'Wallet', items: [
                 { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
                 { label: 'Top Up', icon: '#icon-wallet', run: () => showPage('topup-list') }
             ]},
@@ -5330,6 +5428,12 @@
             if (order && order.aluuGameCode) {
                 return placeAluuOrder(orderId, order, btnElement);
             }
+            // Orders placed against a Bay2Game-linked package carry
+            // bay2gameProductId (see submitOrder in store.html, once wired
+            // there) - route those through Bay2Game's /create_order.
+            if (order && order.bay2gameProductId) {
+                return placeBay2gameOrder(orderId, order, btnElement);
+            }
 
             // btnElement is null when called from the bulk "Confirm Selected" action
             // (see doBulkConfirm), which has no single button to update.
@@ -5632,6 +5736,74 @@
         }
         window.placeFazerCardOrder = placeFazerCardOrder;
 
+        // ---------- Bay2Game auto-fulfillment ----------
+        // GET /api/create_order — synchronous like FazerCards' sibling here,
+        // but Bay2Game answers with the finished result (or a definitive
+        // FAILED) in the same response, no polling needed. reference must be
+        // unique per order — reused across retries via
+        // order.bay2gameReference so a re-click after a network hiccup can't
+        // double-charge (Bay2Game reports the same order back instead of
+        // creating a second one for a repeated reference).
+        async function placeBay2gameOrder(orderId, order, btnElement) {
+            if (!BAY2GAME_SETTINGS.enabled) {
+                window.showToast('Bay2Game is turned off (Dashboard → Bay2Game API Key → Settings). Fulfill this order manually or re-enable it.', 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+            if (!BAY2GAME_SETTINGS.apiKey) {
+                window.showToast('Add your Bay2Game API key first (Dashboard → Bay2Game API Key).', 'fail');
+                return 'error';
+            }
+            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
+
+            const reference = order.bay2gameReference || orderId;
+            if (!order.bay2gameReference) {
+                try { await updateDoc(doc(db, "orders", orderId), { bay2gameReference: reference }); }
+                catch (error) { console.error("Save Bay2Game reference error:", error); }
+            }
+
+            let data;
+            try {
+                const params = { product_code: order.bay2gameProductId, game_user_id: order.playerId, reference };
+                if (order.serverId) params.game_zone_id = order.serverId;
+                const qs = new URLSearchParams({ ...params, api_key: BAY2GAME_SETTINGS.apiKey }).toString();
+                const innerPath = '/create_order?' + qs;
+                const url = BAY2GAME_SETTINGS.proxyUrl
+                    ? `${BAY2GAME_SETTINGS.proxyUrl}?path=${encodeURIComponent('/api' + innerPath)}`
+                    : `${BAY2GAME_BASE_URL}${innerPath}`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                data = await res.json();
+            } catch (error) {
+                console.error("Bay2Game place order error:", error);
+                window.showToast('Bay2Game order failed: ' + error.message, 'fail');
+                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                return 'error';
+            }
+
+            if (data.status === 'SUCCESS') {
+                try {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), bay2gameStatus: data.status });
+                    window.showToast('Bay2Game order completed ✓', 'success');
+                    editTelegramOrderMessage(orderId, 'Success');
+                    return 'success';
+                } catch (error) {
+                    console.error("Bay2Game order accepted but saving the result failed:", error);
+                    window.showInfoDialog(
+                        'Order Accepted, But Not Saved',
+                        `Bay2Game completed this order (reference: ${reference}), but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order — refresh the page instead; if it's still stuck, check the reference directly against Bay2Game before doing anything else.`
+                    );
+                    if (btnElement) btnElement.innerText = "Refresh Page";
+                    return 'accepted_unsaved';
+                }
+            } else {
+                await markOrderFailedWithRefund(orderId, { bay2gameStatus: data.status || 'FAILED' });
+                window.showToast('Bay2Game order failed: ' + (data.message || 'Unknown error'), 'fail');
+                editTelegramOrderMessage(orderId, 'Fail');
+                return 'error';
+            }
+        }
+        window.placeBay2gameOrder = placeBay2gameOrder;
+
         // Checks FazerCards' order status once and applies it to the local order
         // doc. silent=true is used by the background auto-poller, same pattern
         // as checkG2BulkOrderStatus above. FazerCards' public order ids look
@@ -5797,7 +5969,7 @@
         // missed.
         let fazercardAutoPollRunning = false;
         async function autoPollFazerCardOrders() {
-            if (fazercardAutoPollRunning || !FAZERCARD_SETTINGS.apiKey) return;
+            if (document.hidden || fazercardAutoPollRunning || !FAZERCARD_SETTINGS.apiKey) return;
             const pending = Object.values(ORDERS).filter(o => o.status === 'Processing' && o.fazercardOrderId);
             if (pending.length === 0) return;
             fazercardAutoPollRunning = true;
@@ -6008,7 +6180,7 @@
         // names against Aluu.in's endpoint reference if it doesn't behave.
         let aluuAutoPollRunning = false;
         async function autoPollAluuOrders() {
-            if (aluuAutoPollRunning || !ALUU_SETTINGS.apiKey) return;
+            if (document.hidden || aluuAutoPollRunning || !ALUU_SETTINGS.apiKey) return;
             const pending = Object.values(ORDERS).filter(o => o.status === 'Processing' && o.aluuPartnerOrderId);
             if (pending.length === 0) return;
             aluuAutoPollRunning = true;
@@ -6271,7 +6443,7 @@
         // failed callback retry) whenever the admin panel happens to be open.
         let g2bulkAutoPollRunning = false;
         async function autoPollG2BulkOrders() {
-            if (g2bulkAutoPollRunning || !G2BULK_SETTINGS.apiKey) return;
+            if (document.hidden || g2bulkAutoPollRunning || !G2BULK_SETTINGS.apiKey) return;
             const pending = Object.values(ORDERS).filter(o => o.status === 'Processing' && o.g2bulkOrderId);
             if (pending.length === 0) return;
             g2bulkAutoPollRunning = true;
@@ -8232,7 +8404,7 @@
         }
         window.removeCustomPkgTab = removeCustomPkgTab;
 
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null, aluuProductId = '') {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null, aluuProductId = '', bay2gameProductId = '') {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
             // name: a leading number ("100 Diamonds") → Currency, a plain name
@@ -8252,8 +8424,8 @@
             // for anything else (including while the Vouchers tab is open,
             // since vouchers use their own separate voucherId field below).
             const resolvedProvider = provider
-                || (g2bulkName ? 'g2bulk' : jcplaysProductId ? 'jcplays' : fazercardOfferId ? 'fazercard' : aluuProductId ? 'aluu'
-                    : (['g2bulk', 'jcplays', 'fazercard', 'aluu'].includes(currentFulfillProvider) ? currentFulfillProvider : 'manual'));
+                || (g2bulkName ? 'g2bulk' : jcplaysProductId ? 'jcplays' : fazercardOfferId ? 'fazercard' : aluuProductId ? 'aluu' : bay2gameProductId ? 'bay2game'
+                    : (['g2bulk', 'jcplays', 'fazercard', 'aluu', 'bay2game'].includes(currentFulfillProvider) ? currentFulfillProvider : 'manual'));
             const resolvedTab = tab || currentPkgTab;
             // A tab we haven't seen yet on this game (e.g. loaded from saved
             // data) gets auto-registered as a custom tab so it shows in the bar.
@@ -8356,6 +8528,7 @@
                                     <option value="jcplays" ${resolvedProvider === 'jcplays' ? 'selected' : ''}>JCPlays (Redeem Code)</option>
                                     <option value="fazercard" ${resolvedProvider === 'fazercard' ? 'selected' : ''}>FazerCards</option>
                                     <option value="aluu" ${resolvedProvider === 'aluu' ? 'selected' : ''}>Aluu.in</option>
+                                    <option value="bay2game" ${resolvedProvider === 'bay2game' ? 'selected' : ''}>Bay2Game</option>
                                 </select>
                             </div>
                             <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
@@ -8363,6 +8536,7 @@
                             <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-fazercard" placeholder="FazerCards offer_id" value="${fazercardOfferId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-aluu" placeholder="Aluu.in denom (Pack code)" value="${aluuProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-bay2game" placeholder="Bay2Game product_code" value="${bay2gameProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-fazercard-giftcard-id" placeholder="FazerCards card_id" value="${fazercardGiftCardId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <span class="pkg-stock-badge"></span>
                             <div class="pkg-card-footer">
@@ -8400,6 +8574,7 @@
                 const jc = row.querySelector('.pkg-jcplays');
                 const fc = row.querySelector('.pkg-fazercard');
                 const al = row.querySelector('.pkg-aluu');
+                const b2 = row.querySelector('.pkg-bay2game');
                 const vc = row.querySelector('.pkg-voucher-id');
                 const fgc = row.querySelector('.pkg-fazercard-giftcard-id');
                 if (!providerRow) return;
@@ -8409,6 +8584,7 @@
                     jc.style.display = 'none';
                     fc.style.display = 'none';
                     al.style.display = 'none';
+                    b2.style.display = 'none';
                     vc.style.display = isVoucherGame ? 'block' : 'none';
                     fgc.style.display = isFazerGiftGame ? 'block' : 'none';
                 } else {
@@ -8420,6 +8596,7 @@
                     jc.style.display = rowProvider === 'jcplays' ? 'block' : 'none';
                     fc.style.display = rowProvider === 'fazercard' ? 'block' : 'none';
                     al.style.display = rowProvider === 'aluu' ? 'block' : 'none';
+                    b2.style.display = rowProvider === 'bay2game' ? 'block' : 'none';
                 }
             });
         }
@@ -9019,7 +9196,7 @@
                 // aluu-fulfill-section/requires-charname-row stay hidden and
                 // the fulfill-provider tab doesn't highlight Aluu.in, even
                 // though its packages still carry aluuProductId.
-                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : (g.g2bulkVoucherCategory ? 'g2bulk_voucher' : (g.fazercardGiftCategoryId ? 'fazercard_giftcard' : (g.fazercardCategoryId ? 'fazercard' : (g.aluuCode ? 'aluu' : 'manual')))));
+                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : (g.g2bulkVoucherCategory ? 'g2bulk_voucher' : (g.fazercardGiftCategoryId ? 'fazercard_giftcard' : (g.fazercardCategoryId ? 'fazercard' : (g.aluuCode ? 'aluu' : (g.bay2gameCode ? 'bay2game' : 'manual'))))));
                 setFulfillProvider(initialProvider);
                 // Restore custom tabs up front (including any left empty) so they don't
                 // silently disappear on reload - addPackageRow below will also pick up
@@ -9042,11 +9219,17 @@
                 (g.packages || []).forEach(p => {
                     const savedTab = p.tab || p.type || 'currency';
                     const effectiveTab = ['package', 'currency'].includes(savedTab) ? detectPkgTypeFromName(p.amount) : savedTab;
-                    addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', effectiveTab, effectiveTab, false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.aluuProductId || '');
+                    addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', effectiveTab, effectiveTab, false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.aluuProductId || '', p.bay2gameProductId || '');
                 });
                 renderPkgTabBar();
                 switchPackageTab('package');
                 document.getElementById('edit-game-g2bulk-code').value = g.g2bulkCode || '';
+                // g2bulk-import-status was never cleared here (or in the "Add
+                // New Game" reset branch below) - a leftover "Imported X
+                // packages..." message from whichever game was last G2Bulk-
+                // imported kept bleeding through into every other game's
+                // editor, including ones with nothing to do with G2Bulk.
+                document.getElementById('g2bulk-import-status').innerText = '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
                 // refreshPickerButton/refreshCheckPricesBtn read these two
@@ -9057,6 +9240,10 @@
                 refreshPickerButton('jcplays');
                 refreshCheckPricesBtn();
                 document.getElementById('edit-game-voucher-category').value = g.g2bulkVoucherCategory || '';
+                // Same leak as g2bulk-import-status above - only ever cleared
+                // in the "Add New Game" branch, so a leftover voucher import
+                // message could bleed into the next game's editor too.
+                document.getElementById('voucher-import-status').innerText = '';
                 onVoucherCategoryChange();
                 document.getElementById('edit-game-fazercard-category').value = g.fazercardCategoryId || '';
                 document.getElementById('fazercard-import-status').innerText = '';
@@ -9082,6 +9269,16 @@
                     .join('\n');
                 refreshPickerButton('aluu');
                 document.getElementById('aluu-import-btn').style.display = g.aluuCode ? 'block' : 'none';
+                // Same silently-dropped bug the Aluu.in comment above once had -
+                // bay2gameCode was never loaded here nor saved in saveGame()'s
+                // data object below, so a Bay2Game-linked game re-opened for
+                // editing looked unlinked even though its packages still had
+                // bay2gameProductId set. Now loaded + saved like every other
+                // provider's code.
+                document.getElementById('edit-game-bay2game-code').value = g.bay2gameCode || '';
+                document.getElementById('bay2game-import-status').innerText = '';
+                refreshPickerButton('bay2game');
+                document.getElementById('bay2game-import-btn').style.display = g.bay2gameCode ? 'block' : 'none';
                 pendingG2BulkServerMode = g.g2bulkServerMode || null;
                 pendingG2BulkServerOptions = Array.isArray(g.g2bulkServerOptions) ? g.g2bulkServerOptions.slice() : null;
                 deleteBtn.style.display = 'block';
@@ -9099,6 +9296,7 @@
                 document.getElementById('edit-game-charname').checked = false;
                 onPlayerIdRequiredToggle();
                 document.getElementById('edit-game-g2bulk-code').value = '';
+                document.getElementById('g2bulk-import-status').innerText = '';
                 document.getElementById('edit-game-jcplays-code').value = '';
                 document.getElementById('jcplays-denom-status').innerText = '';
                 document.getElementById('edit-game-voucher-category').value = '';
@@ -9119,6 +9317,9 @@
                 pendingAluuServerMode = null;
                 pendingAluuServerOptions = null;
                 document.getElementById('aluu-server-options-input').value = '';
+                document.getElementById('edit-game-bay2game-code').value = '';
+                document.getElementById('bay2game-import-status').innerText = '';
+                document.getElementById('bay2game-import-btn').style.display = 'none';
                 pendingG2BulkServerMode = null;
                 pendingG2BulkServerOptions = null;
                 onFazerCardGiftCardCategoryChange();
@@ -9251,6 +9452,7 @@
             // actually made it into the saved game doc — fixed so Aluu.in-linked
             // orders can carry aluuGameCode at checkout like every other provider.
             const aluuCode = document.getElementById('edit-game-aluu-code').value;
+            const bay2gameCode = document.getElementById('edit-game-bay2game-code').value;
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
@@ -9275,6 +9477,7 @@
                     voucherId: currentFulfillProvider === 'g2bulk_voucher' ? row.querySelector('.pkg-voucher-id').value.trim() : '',
                     fazercardOfferId: rowProvider === 'fazercard' ? row.querySelector('.pkg-fazercard').value.trim() : '',
                     aluuProductId: rowProvider === 'aluu' ? row.querySelector('.pkg-aluu').value.trim() : '',
+                    bay2gameProductId: rowProvider === 'bay2game' ? row.querySelector('.pkg-bay2game').value.trim() : '',
                     fazercardGiftCardId: currentFulfillProvider === 'fazercard_giftcard' ? row.querySelector('.pkg-fazercard-giftcard-id').value.trim() : '',
                     image: row.querySelector('.pkg-img-preview').dataset.url || '',
                     type: row.querySelector('.pkg-type').value || 'currency',
@@ -9315,7 +9518,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], bay2gameCode: bay2gameCode || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -10030,6 +10233,47 @@
             });
         }
         window.renderAdminUsersList = renderAdminUsersList;
+        // Keyed cache of already-rendered card nodes, so a Firestore update
+        // that only changes a handful of users doesn't force the browser to
+        // throw away and reparse every card in the list (that full
+        // innerHTML rebuild — on every single users/orders snapshot event —
+        // was the main cause of the panel freezing/stuttering while
+        // switching pages). Keyed by user id; each entry remembers the last
+        // HTML string written so unchanged cards are skipped entirely.
+        const userCardNodes = new Map();
+        function buildUserCardInnerHtml(id, u, agg) {
+            const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
+            const orderCount = agg.count;
+            const spend = agg.spend;
+            const tier = tierForSpendAdmin(spend);
+            return `
+                <div class="ugc-top">
+                    <span class="badge ${u.banned ? 'badge-danger' : 'badge-success'}">${statusBadgeHtml(u.banned ? 'badge-danger' : 'badge-success', u.banned ? 'Banned' : 'Active')}</span>
+                </div>
+                <div class="ugc-identity">
+                    <div class="user-avatar" style="width:48px;height:48px;flex-shrink:0;">
+                        ${u.photo ? `<img src="${u.photo}" loading="lazy" decoding="async">` : `<svg class="ui-icon" style="width:20px;height:20px;"><use href="#icon-users"></use></svg>`}
+                    </div>
+                    <div style="min-width:0;">
+                        <h5>${displayName} ${googleVerifiedBadgeHTML(u)}</h5>
+                        <div class="ugc-id">ID: ${u.guestId || id} <svg class="ui-icon copy-id-btn" style="width:12px;height:12px;cursor:pointer;" onclick="copyUserId(event, '${u.guestId || id}')"><use href="#icon-copy"></use></svg></div>
+                        ${adminTierBadgeHTML(tier)}
+                    </div>
+                </div>
+                <div class="ugc-meta">
+                    <div class="ugc-meta-cell"><span>Orders</span><b>${orderCount}</b></div>
+                    <div class="ugc-meta-cell"><span>Wallet</span><b>${fmtMoney(u.walletBalance || 0)}</b></div>
+                </div>
+                <div class="ugc-contact">
+                    <svg class="ui-icon" style="width:14px;height:14px;color:var(--text-muted);"><use href="#icon-phone"></use></svg>
+                    ${u.phone || 'No phone on file'}
+                </div>
+                <div class="ugc-actions">
+                    <button type="button" class="btn btn-primary" onclick="openUserDetails('${id}')">Visit</button>
+                    <button type="button" class="btn btn-danger-outline" onclick="quickDeleteUser('${id}')">Delete</button>
+                </div>
+            `;
+        }
         function renderAdminUsersListImpl() {
             const container = document.getElementById('admin-users-container');
             const searchTerm = (document.getElementById('user-search')?.value || '').trim().toLowerCase();
@@ -10048,6 +10292,7 @@
                 container.innerHTML = searchTerm
                     ? '<p class="empty-msg">No users match your search.</p>'
                     : '<p class="empty-msg">No users yet. They\'ll appear here once someone opens the Store app.</p>';
+                userCardNodes.clear();
                 return;
             }
             // Most recently active first.
@@ -10070,43 +10315,49 @@
                 agg.count++;
                 if (o.status === 'Success') agg.spend += Number(o.price) || 0;
             }
-            container.innerHTML = ids.map(id => {
+            // If the container was showing the empty-state message (or was
+            // wiped by a previous error), the cached nodes no longer match
+            // what's actually in the DOM — drop the cache so it rebuilds
+            // fresh instead of trying to reposition detached nodes.
+            if (container.children.length !== userCardNodes.size || (userCardNodes.size && !container.contains(userCardNodes.values().next().value.el))) {
+                userCardNodes.clear();
+                container.innerHTML = '';
+            }
+            const seen = new Set();
+            let prevEl = null;
+            for (const id of ids) {
+                seen.add(id);
                 const u = USERS[id];
-                const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
                 const agg = orderStatsByUser.get(id) || { count: 0, spend: 0 };
-                const orderCount = agg.count;
-                const spend = agg.spend;
-                const tier = tierForSpendAdmin(spend);
-                return `
-                    <div class="user-grid-card">
-                        <div class="ugc-top">
-                            <span class="badge ${u.banned ? 'badge-danger' : 'badge-success'}">${statusBadgeHtml(u.banned ? 'badge-danger' : 'badge-success', u.banned ? 'Banned' : 'Active')}</span>
-                        </div>
-                        <div class="ugc-identity">
-                            <div class="user-avatar" style="width:48px;height:48px;flex-shrink:0;">
-                                ${u.photo ? `<img src="${u.photo}" loading="lazy" decoding="async">` : `<svg class="ui-icon" style="width:20px;height:20px;"><use href="#icon-users"></use></svg>`}
-                            </div>
-                            <div style="min-width:0;">
-                                <h5>${displayName} ${googleVerifiedBadgeHTML(u)}</h5>
-                                <div class="ugc-id">ID: ${u.guestId || id} <svg class="ui-icon copy-id-btn" style="width:12px;height:12px;cursor:pointer;" onclick="copyUserId(event, '${u.guestId || id}')"><use href="#icon-copy"></use></svg></div>
-                                ${adminTierBadgeHTML(tier)}
-                            </div>
-                        </div>
-                        <div class="ugc-meta">
-                            <div class="ugc-meta-cell"><span>Orders</span><b>${orderCount}</b></div>
-                            <div class="ugc-meta-cell"><span>Wallet</span><b>${fmtMoney(u.walletBalance || 0)}</b></div>
-                        </div>
-                        <div class="ugc-contact">
-                            <svg class="ui-icon" style="width:14px;height:14px;color:var(--text-muted);"><use href="#icon-phone"></use></svg>
-                            ${u.phone || 'No phone on file'}
-                        </div>
-                        <div class="ugc-actions">
-                            <button type="button" class="btn btn-primary" onclick="openUserDetails('${id}')">Visit</button>
-                            <button type="button" class="btn btn-danger-outline" onclick="quickDeleteUser('${id}')">Delete</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                const html = buildUserCardInnerHtml(id, u, agg);
+                let entry = userCardNodes.get(id);
+                if (!entry) {
+                    const el = document.createElement('div');
+                    el.className = 'user-grid-card';
+                    el.innerHTML = html;
+                    entry = { el, html };
+                    userCardNodes.set(id, entry);
+                } else if (entry.html !== html) {
+                    entry.el.innerHTML = html;
+                    entry.html = html;
+                }
+                // Only touch the DOM position when the card isn't already
+                // right where it should be — avoids a reflow-triggering
+                // insertBefore call for every card on every render when the
+                // sort order hasn't actually changed.
+                const wantsToFollow = prevEl ? prevEl.nextElementSibling !== entry.el : container.firstElementChild !== entry.el;
+                if (wantsToFollow) {
+                    container.insertBefore(entry.el, prevEl ? prevEl.nextElementSibling : container.firstElementChild);
+                }
+                prevEl = entry.el;
+            }
+            // Drop cards for users no longer in the filtered/sorted list.
+            for (const [id, entry] of userCardNodes) {
+                if (!seen.has(id)) {
+                    entry.el.remove();
+                    userCardNodes.delete(id);
+                }
+            }
         }
 
         // Copies a user's ID to the clipboard without triggering the card's
@@ -11844,6 +12095,173 @@
         }
         window.refreshAluuBalance = refreshAluuBalance;
 
+        // ---------- Bay2Game API Key ----------
+        // https://api.bay2game.xyz/api — GET-based, api_key sent as a query
+        // param on every call (not a header), and every response is shaped
+        // {status:"SUCCESS"|"ERROR", ...}. Mirrors aluuRequest's proxyUrl
+        // escape hatch for CORS, but wraps the inner path as ?path=/api/...
+        // same convention as the other proxy-capable providers.
+        let bay2gameListenerAttached = false;
+        let BAY2GAME_SETTINGS = { apiKey: '', proxyUrl: '', enabled: true, lowBalanceAlert: 0, usdRate: 4500 };
+        const BAY2GAME_BASE_URL = 'https://api.bay2game.xyz/api';
+
+        function openBay2gameModal() {
+            document.getElementById('bay2game-status').style.display = 'none';
+            document.getElementById('bay2game-result-grid').style.display = 'none';
+            document.getElementById('bay2game-modal-overlay').classList.add('show');
+        }
+        window.openBay2gameModal = openBay2gameModal;
+
+        function closeBay2gameModal() {
+            document.getElementById('bay2game-modal-overlay').classList.remove('show');
+        }
+        window.closeBay2gameModal = closeBay2gameModal;
+
+        function listenBay2game() {
+            if (bay2gameListenerAttached) return;
+            bay2gameListenerAttached = true;
+            onSnapshot(doc(db, "settings", "bay2game"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('bay2game-api-key').value = data.apiKey || '';
+                document.getElementById('bay2game-proxy-url').value = data.proxyUrl || '';
+                document.getElementById('bay2game-usd-rate').value = data.usdRate || '';
+                document.getElementById('bay2game-low-balance-alert').value = data.lowBalanceAlert || '';
+                const bay2gameEnabled = data.enabled !== false;
+                document.getElementById('bay2game-enabled').checked = bay2gameEnabled;
+                BAY2GAME_SETTINGS = {
+                    apiKey: data.apiKey || '',
+                    proxyUrl: (data.proxyUrl || '').trim(),
+                    enabled: bay2gameEnabled,
+                    lowBalanceAlert: Number(data.lowBalanceAlert) || 0,
+                    usdRate: Number(data.usdRate) || 4500
+                };
+                applyProviderVisibility('bay2game', bay2gameEnabled);
+                if (window.refreshBay2gameBalance) window.refreshBay2gameBalance();
+            }, (error) => {
+                console.error("Bay2Game settings listener error:", error);
+            });
+        }
+
+        async function saveBay2gameKey() {
+            const apiKey = document.getElementById('bay2game-api-key').value.trim();
+            const proxyUrl = document.getElementById('bay2game-proxy-url').value.trim();
+            const lowBalanceAlert = Number(document.getElementById('bay2game-low-balance-alert').value) || 0;
+            const usdRate = Number(document.getElementById('bay2game-usd-rate').value) || 0;
+            const enabled = document.getElementById('bay2game-enabled').checked;
+            const btn = document.getElementById('save-bay2game-btn');
+            const originalText = btn.innerText;
+
+            if (proxyUrl && !/^https:\/\//i.test(proxyUrl)) {
+                window.showToast('Proxy URL must start with https://', 'fail');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                await setDoc(doc(db, "settings", "bay2game"), { apiKey, proxyUrl, lowBalanceAlert, usdRate, enabled }, { merge: true });
+                logAdminActivity('Saved Bay2Game settings', enabled ? 'Enabled' : 'Disabled');
+                window.showToast('Bay2Game key saved!', 'success');
+                closeBay2gameModal();
+            } catch (error) {
+                console.error("Save Bay2Game key error:", error);
+                window.showToast('Failed to save Bay2Game key.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveBay2gameKey = saveBay2gameKey;
+
+        // Core request helper for every Bay2Game call - api_key always rides
+        // as a query param (never a header), per its docs. Routes through
+        // proxyUrl (as ?path=/api/... wrapper) when set, same CORS escape
+        // hatch as aluuRequest above.
+        async function bay2gameRequest(path, { params = null, settings = null } = {}) {
+            const s = settings || BAY2GAME_SETTINGS;
+            if (!s.apiKey) {
+                throw new Error('Add your Bay2Game API key first (Settings → Bay2Game).');
+            }
+            const qs = new URLSearchParams({ ...(params || {}), api_key: s.apiKey }).toString();
+            const innerPath = path + '?' + qs;
+            const url = s.proxyUrl
+                ? `${s.proxyUrl}?path=${encodeURIComponent('/api' + innerPath)}`
+                : `${BAY2GAME_BASE_URL}${innerPath}`;
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            if (data.status !== 'SUCCESS') {
+                throw new Error(data.message || `Bay2Game request failed (HTTP ${res.status})`);
+            }
+            return data;
+        }
+        window.bay2gameRequest = bay2gameRequest;
+
+        async function verifyBay2gameKey() {
+            const apiKey = document.getElementById('bay2game-api-key').value.trim();
+            const proxyUrl = document.getElementById('bay2game-proxy-url').value.trim();
+            const statusEl = document.getElementById('bay2game-status');
+            const gridEl = document.getElementById('bay2game-result-grid');
+            if (!apiKey) {
+                window.showToast('Enter a key first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('verify-bay2game-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Checking...';
+            statusEl.style.display = 'block';
+            statusEl.style.color = 'var(--text-secondary)';
+            gridEl.style.display = 'none';
+            statusEl.innerText = 'Checking key...';
+
+            try {
+                const profile = await bay2gameRequest('/profile', { settings: { apiKey, proxyUrl } });
+                statusEl.innerText = 'Key valid ✓';
+                statusEl.style.color = 'var(--accent)';
+                gridEl.style.display = 'block';
+                gridEl.className = 'details-grid';
+                gridEl.innerHTML = `
+                    <div class="details-grid-item"><span>Username</span><b>${escapeHtml(profile.user?.username || '')}</b></div>
+                    <div class="details-grid-item"><span>Balance</span><b>${Number(profile.user?.balance || 0).toLocaleString()} USD</b></div>
+                    <div class="details-grid-item"><span>Total Orders</span><b>${Number(profile.user?.total_orders || 0).toLocaleString()}</b></div>
+                    <div class="details-grid-item"><span>Total Spent</span><b>${Number(profile.user?.total_spent || 0).toLocaleString()} USD</b></div>
+                `;
+            } catch (error) {
+                console.error("Verify Bay2Game key error:", error);
+                statusEl.innerText = (proxyUrl ? '' : '(no Proxy URL set — trying a direct call) ') + (error.message || 'Verification failed.');
+                statusEl.style.color = 'var(--fail)';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.verifyBay2gameKey = verifyBay2gameKey;
+
+        // Balance refresh for the saved Bay2Game key - used by the Dashboard
+        // wallet card and the Analytics page's API Balances grid.
+        let bay2gameLastBalance = null;
+        async function refreshBay2gameBalance() {
+            const displayEls = [document.getElementById('an-bay2game-balance-display'), document.getElementById('dash-bay2game-balance-display')].filter(Boolean);
+            if (displayEls.length === 0) return;
+            if (!BAY2GAME_SETTINGS.apiKey) {
+                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = 'var(--text-muted)'; });
+                return;
+            }
+            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+            try {
+                const profile = await bay2gameRequest('/profile', { settings: BAY2GAME_SETTINGS });
+                const balanceNum = Number(profile.user?.balance) || 0;
+                const text = `${balanceNum.toLocaleString()} USD`;
+                displayEls.forEach(el => { el.innerText = text; el.style.color = 'var(--accent)'; });
+                bay2gameLastBalance = balanceNum;
+            } catch (error) {
+                console.error("Bay2Game balance error:", error);
+                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = 'var(--danger-strong)'; });
+                bay2gameLastBalance = null;
+            }
+        }
+        window.refreshBay2gameBalance = refreshBay2gameBalance;
+
         // Combined refresher for the Analytics "API Balances" grid - fires all
         // provider balance checks in parallel.
         function refreshAllApiBalances() {
@@ -11851,6 +12269,7 @@
             if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
             if (window.refreshFazerCardBalance) window.refreshFazerCardBalance();
             if (window.refreshAluuBalance) window.refreshAluuBalance();
+            if (window.refreshBay2gameBalance) window.refreshBay2gameBalance();
         }
         window.refreshAllApiBalances = refreshAllApiBalances;
 
@@ -12612,6 +13031,12 @@
         // filtered out here per request, by code or name, so it never
         // appears in the picker.
         let ALUU_GAMES_LIST = null;
+        let BAY2GAME_GAMES_LIST = null;
+        // Caches GET /api/categories entries by game_code -> game_fields
+        // (e.g. ["userid","serverid"]) so importBay2gameCatalogue can look
+        // up whether the selected game needs a Server ID without a second
+        // request.
+        let BAY2GAME_CATEGORY_FIELDS = {};
         function isBgmiEntry(item) {
             const code = (item.gamecode || item.code || '').toLowerCase();
             const name = (item.Name || item.name || item.title || item.gamename || item.game_name || item.display_name || item.label || '').toLowerCase();
@@ -12743,6 +13168,26 @@
         }
         window.showAluuDebugInfo = showAluuDebugInfo;
 
+        // ---------- Bay2Game Games ----------
+        // GET /api/categories -> { status, total, categories: [{game_code,
+        // name, description, image_url, game_fields}] }. game_fields tells
+        // us whether this game needs a Server ID (e.g. ["userid","serverid"])
+        // so it can auto-apply to the Server ID toggle on import, same as
+        // Aluu.in's requiresServerId flag above. Cached by game_code in
+        // BAY2GAME_CATEGORY_FIELDS for importBay2gameCatalogue to read.
+        async function fetchBay2gameGamesList(forceRefresh = false) {
+            if (BAY2GAME_GAMES_LIST && !forceRefresh) return BAY2GAME_GAMES_LIST;
+            const data = await bay2gameRequest('/categories');
+            const raw = data.categories || [];
+            BAY2GAME_CATEGORY_FIELDS = {};
+            const items = raw.map(c => {
+                BAY2GAME_CATEGORY_FIELDS[c.game_code] = c.game_fields || [];
+                return { code: c.game_code, name: c.name, image: c.image_url || '' };
+            });
+            BAY2GAME_GAMES_LIST = items;
+            return BAY2GAME_GAMES_LIST;
+        }
+
         // ---------- FazerCards Gift Cards ----------
         // A separate FazerCards catalog from the Game Top-ups list above -
         // GET /api/v2/giftcards (cursor-paginated, same shape as /topups)
@@ -12858,6 +13303,7 @@
             document.getElementById('fazercard-fulfill-section').style.display = provider === 'fazercard' ? 'block' : 'none';
             document.getElementById('aluu-fulfill-section').style.display = provider === 'aluu' ? 'block' : 'none';
             document.getElementById('requires-charname-row').style.display = provider === 'aluu' ? '' : 'none';
+            document.getElementById('bay2game-fulfill-section').style.display = provider === 'bay2game' ? 'block' : 'none';
             document.getElementById('fazercard-giftcard-fulfill-section').style.display = provider === 'fazercard_giftcard' ? 'block' : 'none';
             // Package rows no longer follow this tab (each has its own
             // Auto-Fulfill Provider select now) — this tab only decides
@@ -12868,9 +13314,11 @@
             document.getElementById('fazercard-import-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
             document.getElementById('fazercard-debug-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
             document.getElementById('aluu-import-btn').style.display = (provider === 'aluu' && document.getElementById('edit-game-aluu-code').value) ? 'block' : 'none';
+            document.getElementById('bay2game-import-btn').style.display = (provider === 'bay2game' && document.getElementById('edit-game-bay2game-code').value) ? 'block' : 'none';
             if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
             if (provider === 'fazercard') { refreshPickerButton('fazercard'); }
             if (provider === 'aluu') { refreshPickerButton('aluu'); }
+            if (provider === 'bay2game') { refreshPickerButton('bay2game'); }
             if (provider === 'fazercard_giftcard') { refreshPickerButton('fazercard_giftcard'); onFazerCardGiftCardCategoryChange(); }
             refreshCheckPricesBtn();
         }
@@ -12909,6 +13357,12 @@
             document.getElementById('aluu-import-btn').style.display = code ? 'block' : 'none';
         }
         window.onAluuGameChange = onAluuGameChange;
+
+        function onBay2gameGameChange() {
+            const code = document.getElementById('edit-game-bay2game-code').value;
+            document.getElementById('bay2game-import-btn').style.display = code ? 'block' : 'none';
+        }
+        window.onBay2gameGameChange = onBay2gameGameChange;
 
         function onFazerCardGiftCardCategoryChange() {
             const categoryId = document.getElementById('edit-game-fazercard-giftcard-category').value;
@@ -13002,6 +13456,7 @@
             if (kind === 'fazercard') return 'edit-game-fazercard-category';
             if (kind === 'fazercard_giftcard') return 'edit-game-fazercard-giftcard-category';
             if (kind === 'aluu') return 'edit-game-aluu-code';
+            if (kind === 'bay2game') return 'edit-game-bay2game-code';
             return 'edit-game-jcplays-code';
         }
 
@@ -13058,6 +13513,7 @@
                 : kind === 'fazercard' ? (FAZERCARD_TOPUPS_LIST || [])
                 : kind === 'fazercard_giftcard' ? (FAZERCARD_GIFTCARD_CATEGORIES_LIST || [])
                 : kind === 'aluu' ? (ALUU_GAMES_LIST || [])
+                : kind === 'bay2game' ? (BAY2GAME_GAMES_LIST || [])
                 : (JCPLAYS_PRODUCTS_LIST || []);
             const match = list.find(g => g.code === code);
 
@@ -13088,6 +13544,7 @@
             if (kind === 'fazercard') return 'Choose FazerCards Game';
             if (kind === 'fazercard_giftcard') return 'Choose FazerCards Gift Card Category';
             if (kind === 'aluu') return 'Choose Aluu.in Game';
+            if (kind === 'bay2game') return 'Choose Bay2Game Game';
             return 'Choose JCPlays Game';
         }
 
@@ -13194,6 +13651,16 @@
                         console.error("Load Aluu.in games list error:", error);
                         document.getElementById('game-picker-grid').innerHTML = `<p class="game-picker-empty-msg">Couldn't load Aluu.in's game list: ${escapeHtml(error.message)}</p>`;
                     });
+            } else if (kind === 'bay2game') {
+                fetchBay2gameGamesList()
+                    .then(items => {
+                        gamePickerItems = items;
+                        renderGamePickerGrid('');
+                    })
+                    .catch(error => {
+                        console.error("Load Bay2Game games list error:", error);
+                        document.getElementById('game-picker-grid').innerHTML = `<p class="game-picker-empty-msg">Couldn't load Bay2Game's game list: ${escapeHtml(error.message)}</p>`;
+                    });
             } else {
                 fetchJCPlaysProductsList()
                     .then(items => {
@@ -13213,7 +13680,7 @@
         // immediately, instead of only after a full page reload.
         function refreshGamePickerList() {
             const kind = gamePickerKind();
-            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'fazercard' && kind !== 'fazercard_giftcard' && kind !== 'jcplays' && kind !== 'aluu') return;
+            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'fazercard' && kind !== 'fazercard_giftcard' && kind !== 'jcplays' && kind !== 'aluu' && kind !== 'bay2game') return;
             const btn = document.getElementById('game-picker-update-btn');
             const originalText = btn.innerText;
             btn.disabled = true;
@@ -13234,6 +13701,8 @@
                 ? fetchFazerCardGiftCardCategories(true).then(items => { gamePickerItems = items; })
                 : kind === 'aluu'
                 ? fetchAluuGamesList(true).then(items => { gamePickerItems = items; })
+                : kind === 'bay2game'
+                ? fetchBay2gameGamesList(true).then(items => { gamePickerItems = items; })
                 : kind === 'jcplays'
                 ? fetchJCPlaysProductsList(true).then(items => { gamePickerItems = items; })
                 : fetchG2BulkCategoriesList(true).then(() => { gamePickerItems = voucherPickerItems(); });
@@ -13241,7 +13710,7 @@
             refreshPromise
                 .then(() => {
                     renderGamePickerGrid(document.getElementById('game-picker-search').value);
-                    window.showToast((kind === 'fazercard' || kind === 'fazercard_giftcard' ? 'FazerCards' : kind === 'jcplays' ? 'JCPlays' : kind === 'aluu' ? 'Aluu.in' : 'G2Bulk') + ' list refreshed ✓', 'success');
+                    window.showToast((kind === 'fazercard' || kind === 'fazercard_giftcard' ? 'FazerCards' : kind === 'jcplays' ? 'JCPlays' : kind === 'aluu' ? 'Aluu.in' : kind === 'bay2game' ? 'Bay2Game' : 'G2Bulk') + ' list refreshed ✓', 'success');
                 })
                 .catch(error => {
                     console.error("Refresh game picker list error:", error);
@@ -13374,7 +13843,7 @@
             // the same "fill it in for you" treatment as the name field
             // above — but only when no image has been set yet, so an admin's
             // own uploaded photo is never overwritten.
-            if ((kind === 'g2bulk' || kind === 'voucher' || kind === 'fazercard_giftcard' || kind === 'aluu') && code) {
+            if ((kind === 'g2bulk' || kind === 'voucher' || kind === 'fazercard_giftcard' || kind === 'aluu' || kind === 'bay2game') && code) {
                 const match = gamePickerItems.find(g => g.code === code);
                 const preview = document.getElementById('edit-game-preview');
                 if (match && match.image && preview.style.display !== 'block') {
@@ -13392,6 +13861,7 @@
             if (kind === 'voucher') onVoucherCategoryChange();
             if (kind === 'fazercard') onFazerCardGameChange();
             if (kind === 'aluu') onAluuGameChange();
+            if (kind === 'bay2game') onBay2gameGameChange();
             if (kind === 'fazercard_giftcard') onFazerCardGiftCardCategoryChange();
             // Whichever subtab the pick was made from, make sure the outer
             // fulfillment-provider tab bar matches it - so the right section
@@ -13533,6 +14003,14 @@
                     const fieldsData = await fieldsRes.json();
                     const g2bulkFields = (fieldsData.info && Array.isArray(fieldsData.info.fields)) ? fieldsData.info.fields : [];
                     const needsG2BulkServerId = g2bulkFields.some(k => /server/i.test(k));
+                    // Requires Player ID was never auto-enabled here (unlike
+                    // Bay2Game's import) - every Direct provider's create-order
+                    // call needs a player/user id regardless, and leaving this
+                    // off meant the Requires Server ID row right below stayed
+                    // hidden (it's only shown while Player ID is on), making
+                    // the auto-set above look like it silently did nothing.
+                    document.getElementById('edit-game-playerid').checked = true;
+                    onPlayerIdRequiredToggle();
                     document.getElementById('edit-game-serverid').checked = needsG2BulkServerId;
                     statusMsg += needsG2BulkServerId
                         ? '\n✓ "Requires Server ID" auto-enabled for this game.'
@@ -13725,6 +14203,12 @@
                 // (runFazerCardBulkImport) below, so single-game and bulk
                 // imports behave identically.
                 const fazerNeedsServerIdField = pendingFazerCardFields.some(k => /server|zone/i.test(k));
+                // Same fix as G2Bulk's import above - Requires Player ID was
+                // never auto-enabled here, so the Requires Server ID row
+                // (hidden until Player ID is on) never actually became
+                // visible after this ran.
+                document.getElementById('edit-game-playerid').checked = true;
+                onPlayerIdRequiredToggle();
                 document.getElementById('edit-game-serverid').checked = fazerNeedsServerIdField;
 
                 statusEl.style.color = 'var(--accent)';
@@ -13831,6 +14315,12 @@
                 // this box) always wins - some games need a fixed list even
                 // when Aluu.in's own flags say requiresServerId: false.
                 const requiresServerId = anyRequiresServerId || (serverOptions ? serverOptions.requiresServerId : false);
+                // Same fix as G2Bulk/FazerCards' imports above - Requires
+                // Player ID was never auto-enabled here, so the Requires
+                // Server ID toggle below (and the Requires Character Name row
+                // right after it) stayed hidden even once auto-set.
+                document.getElementById('edit-game-playerid').checked = true;
+                onPlayerIdRequiredToggle();
                 if (pendingAluuServerMode !== 'select') {
                     document.getElementById('edit-game-serverid').checked = requiresServerId;
                 }
@@ -13856,6 +14346,77 @@
             }
         }
         window.importAluuCatalogue = importAluuCatalogue;
+
+        // Fetches Bay2Game's live product list for the linked game_code and
+        // pre-fills the packages list (Cost + Bay2Game product_code per row) -
+        // same import pattern as importAluuCatalogue above, just simpler
+        // (Bay2Game has no per-product server-options/charname flags, only
+        // the game-level game_fields already cached in
+        // BAY2GAME_CATEGORY_FIELDS by fetchBay2gameGamesList).
+        async function importBay2gameCatalogue() {
+            const code = document.getElementById('edit-game-bay2game-code').value;
+            if (!code) return;
+            const statusEl = document.getElementById('bay2game-import-status');
+            const btn = document.getElementById('bay2game-import-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Importing...';
+            statusEl.innerText = '';
+
+            try {
+                const data = await bay2gameRequest('/products', { params: { game_code: code } });
+                const rate = BAY2GAME_SETTINGS.usdRate || 4500;
+                const products = data.products || [];
+
+                const rowByCode = new Map();
+                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
+                    const key = row.querySelector('.pkg-bay2game').value.trim();
+                    if (key) rowByCode.set(key, row);
+                });
+
+                let updatedCount = 0, addedCount = 0;
+                products.filter(p => p.status === 'active' || !p.status).forEach(p => {
+                    const cost = Math.round(Number(p.sell_price) * rate);
+                    const existingRow = rowByCode.get(p.product_code);
+                    if (existingRow) {
+                        const costInput = existingRow.querySelector('.pkg-cost');
+                        costInput.value = cost;
+                        updatePackageProfit(costInput);
+                        updatedCount++;
+                    } else {
+                        addPackageRow(p.name, cost, cost, '', '', '', 'currency', null, true, '', '', '', 'bay2game', '', p.product_code);
+                        addedCount++;
+                    }
+                });
+
+                // game_fields (["userid"] or ["userid","serverid"]) from the
+                // /categories response tells us whether this game needs a
+                // Server ID - "Requires Player ID" always turns on since
+                // Bay2Game's create_order always needs game_user_id.
+                const fields = BAY2GAME_CATEGORY_FIELDS[code] || [];
+                const requiresServerId = fields.includes('serverid');
+                document.getElementById('edit-game-playerid').checked = true;
+                onPlayerIdRequiredToggle();
+                document.getElementById('edit-game-serverid').checked = requiresServerId;
+
+                statusEl.style.color = 'var(--accent)';
+                statusEl.innerText = (updatedCount
+                    ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
+                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
+                    + (requiresServerId ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.');
+                sortPackageRows();
+                window.showToast('Bay2Game catalogue imported ✓', 'success');
+            } catch (error) {
+                console.error("Import Bay2Game catalogue error:", error);
+                statusEl.style.color = 'var(--danger-strong)';
+                statusEl.innerText = 'Import failed: ' + error.message;
+                window.showToast('Failed to import catalogue.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.importBay2gameCatalogue = importBay2gameCatalogue;
 
         // FazerCards names region/server variants of the same game as
         // separate catalogue items with the region in parentheses - e.g.
@@ -14762,7 +15323,7 @@
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = 'Refreshing...'; }
             try {
-                await Promise.all([refreshG2BulkBalance(), refreshJCPlaysBalance()]);
+                await Promise.all([refreshG2BulkBalance(), refreshJCPlaysBalance(), refreshBay2gameBalance()]);
             } finally {
                 if (btn) { btn.disabled = false; btn.innerText = originalText; }
             }
@@ -15523,6 +16084,7 @@
             listenJCPlays();
             listenFazerCard();
             listenAluu();
+            listenBay2game();
             listenTelegramBot();
             listenUsers();
             listenTierSettings();
@@ -15691,6 +16253,16 @@
                 if (!document.hidden) sendAdminHeartbeat();
             });
         }
+        // The 3 order-status auto-pollers above skip their work while the
+        // panel is backgrounded (document.hidden) so a phone switching apps
+        // doesn't keep quietly burning CPU/network every 25s. Catch up once
+        // immediately on returning instead of waiting for the next tick.
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) return;
+            autoPollFazerCardOrders();
+            autoPollAluuOrders();
+            autoPollG2BulkOrders();
+        });
     </script>
 </body>
 </html>
