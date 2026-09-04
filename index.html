@@ -1075,6 +1075,7 @@
             flex-shrink: 0; flex-basis: auto;
             min-height: 60px; max-height: 50vh; overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
             padding: 10px;
             border: 1px solid var(--border-glass);
             border-radius: 16px;
@@ -2743,6 +2744,24 @@
 
                 <label>Description <span style="font-weight:400;color:var(--text-muted);">(optional — shown to customers under the game banner)</span></label>
                 <textarea id="edit-game-description" rows="4" placeholder="e.g. Mobile Legends: Bang Bang is a 5v5 MOBA. Diamonds are delivered instantly to your in-game ID after payment is confirmed." style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border-glass);background:var(--fill-soft);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+
+                <!-- App deep-link fields: purely optional. When set, Store.html
+                     shows a "Game ဖွင့်မယ်" button on the game detail page and
+                     order success screen that jumps straight into the app (via
+                     Android intent:// / iOS custom scheme), falling back to the
+                     Play Store / App Store if the app isn't installed. See
+                     appHasDeepLink()/openGameApp() in store.html. -->
+                <div style="margin:4px 0 2px;padding:12px;background:var(--fill-soft);border-radius:12px;border:1px solid var(--fill-soft);">
+                    <p style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">App Link (optional)</p>
+                    <label style="margin-top:0;">Android Package <span style="font-weight:400;color:var(--text-muted);">(e.g. com.mobile.legends)</span></label>
+                    <input type="text" id="edit-game-app-android-package" placeholder="com.mobile.legends">
+                    <label>Android Store URL <span style="font-weight:400;color:var(--text-muted);">(optional — auto-built from package name if blank)</span></label>
+                    <input type="text" id="edit-game-app-android-store-url" placeholder="https://play.google.com/store/apps/details?id=...">
+                    <label>iOS Scheme <span style="font-weight:400;color:var(--text-muted);">(custom URL scheme, without "://")</span></label>
+                    <input type="text" id="edit-game-app-ios-scheme" placeholder="e.g. mlbb">
+                    <label>iOS Store URL</label>
+                    <input type="text" id="edit-game-app-ios-store-url" placeholder="https://apps.apple.com/app/...">
+                </div>
 
                 <div class="switch-row">
                     <div>
@@ -5272,7 +5291,7 @@
                             <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
                             <div class="oc-info">
                                 <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
-                                <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${data.userName}` : ''}</p>
+                                <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${escapeHtml(data.userName)}` : ''}</p>
                             </div>
                             <div class="oc-status">
                                 <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, data.status)}</span>
@@ -5296,15 +5315,15 @@
                                 <div class="od-grid">
                                     <div class="od-cell span-2">
                                         <div class="od-label">Customer</div>
-                                        <div class="od-value">${data.userName || 'Guest'}${data.userPhone ? ` &middot; <a href="tel:${data.userPhone}">${data.userPhone}</a>` : ''}</div>
+                                        <div class="od-value">${escapeHtml(data.userName || 'Guest')}${data.userPhone ? ` &middot; <a href="tel:${escapeHtml(data.userPhone)}">${escapeHtml(data.userPhone)}</a>` : ''}</div>
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">In-Game Name</div>
-                                        <div class="od-value">${data.inGameName || 'N/A'}</div>
+                                        <div class="od-value">${escapeHtml(data.inGameName || 'N/A')}</div>
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">ID</div>
-                                        <div class="od-value mono">${data.playerId || 'N/A'}</div>
+                                        <div class="od-value mono">${escapeHtml(data.playerId || 'N/A')}</div>
                                     </div>
                                     ${data.serverId ? `<div class="od-cell">
                                         <div class="od-label">Server ID</div>
@@ -5348,7 +5367,7 @@
                                     </div>` : ''}
                                     <div class="od-cell">
                                         <div class="od-label">Transaction ID</div>
-                                        <div class="od-value mono">${data.transactionId || 'N/A'}</div>
+                                        <div class="od-value mono">${escapeHtml(data.transactionId || 'N/A')}</div>
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">Paid Via</div>
@@ -8279,6 +8298,10 @@
             const row = btn.closest('.package-row');
             if (row.dataset.tab === 'package' || row.dataset.tab === 'currency') {
                 row.dataset.tab = value;
+                // This moves the row into the other built-in tab, so both
+                // tabs' counts change right here — redraw the tab bar now
+                // instead of leaving it to catch up next time a tab is tapped.
+                renderPkgTabBar();
                 applyPackageTabFilter();
             }
         }
@@ -8837,6 +8860,12 @@
         function removePackageRow(el) {
             el.closest('.package-row').remove();
             renumberPackageRows();
+            // Deleting a row changes that tab's package count (and can empty
+            // it out entirely), so the tab bar has to redraw right away —
+            // otherwise the badge/empty-state stays stale until the admin
+            // happens to switch tabs, which is what re-renders it.
+            renderPkgTabBar();
+            applyPackageTabFilter();
         }
         window.removePackageRow = removePackageRow;
 
@@ -9167,6 +9196,10 @@
                 document.getElementById('edit-game-category').value = g.category || '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = g.description || '';
+                document.getElementById('edit-game-app-android-package').value = g.appAndroidPackage || '';
+                document.getElementById('edit-game-app-android-store-url').value = g.appAndroidStoreUrl || '';
+                document.getElementById('edit-game-app-ios-scheme').value = g.appIosScheme || '';
+                document.getElementById('edit-game-app-ios-store-url').value = g.appIosStoreUrl || '';
                 document.getElementById('edit-game-popular').checked = !!g.popular;
                 // Missing field on older games defaults to "required" so nothing changes for them.
                 document.getElementById('edit-game-playerid').checked = g.playerIdRequired !== false;
@@ -9290,6 +9323,10 @@
                 document.getElementById('edit-game-category').value = '';
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = '';
+                document.getElementById('edit-game-app-android-package').value = '';
+                document.getElementById('edit-game-app-android-store-url').value = '';
+                document.getElementById('edit-game-app-ios-scheme').value = '';
+                document.getElementById('edit-game-app-ios-store-url').value = '';
                 document.getElementById('edit-game-popular').checked = false;
                 document.getElementById('edit-game-playerid').checked = false;
                 document.getElementById('edit-game-serverid').checked = false;
@@ -9455,6 +9492,10 @@
             const bay2gameCode = document.getElementById('edit-game-bay2game-code').value;
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
+            const appAndroidPackage = document.getElementById('edit-game-app-android-package').value.trim();
+            const appAndroidStoreUrl = document.getElementById('edit-game-app-android-store-url').value.trim();
+            const appIosScheme = document.getElementById('edit-game-app-ios-scheme').value.trim();
+            const appIosStoreUrl = document.getElementById('edit-game-app-ios-store-url').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
             const playerIdRequired = document.getElementById('edit-game-playerid').checked;
             const serverIdRequired = playerIdRequired && document.getElementById('edit-game-serverid').checked;
@@ -9518,7 +9559,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], bay2gameCode: bay2gameCode || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], bay2gameCode: bay2gameCode || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', appAndroidPackage: appAndroidPackage || '', appAndroidStoreUrl: appAndroidStoreUrl || '', appIosScheme: appIosScheme || '', appIosStoreUrl: appIosStoreUrl || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -12189,7 +12230,7 @@
                 : `${BAY2GAME_BASE_URL}${innerPath}`;
             const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
             const data = await res.json();
-            if (data.status !== 'SUCCESS') {
+            if (String(data.status).toUpperCase() !== 'SUCCESS') {
                 throw new Error(data.message || `Bay2Game request failed (HTTP ${res.status})`);
             }
             return data;
@@ -13184,7 +13225,12 @@
                 BAY2GAME_CATEGORY_FIELDS[c.game_code] = c.game_fields || [];
                 return { code: c.game_code, name: c.name, image: c.image_url || '' };
             });
-            BAY2GAME_GAMES_LIST = items;
+            // Bay2Game's /categories doesn't always send a real image_url per
+            // game (many come back blank), so - same as JCPlays/FazerCards
+            // above - borrow G2Bulk's cover image for any entry whose name
+            // matches closely enough. Only fills in items missing their own
+            // image; never overwrites a real Bay2Game image_url.
+            BAY2GAME_GAMES_LIST = await attachG2BulkImages(items);
             return BAY2GAME_GAMES_LIST;
         }
 
@@ -15808,6 +15854,10 @@
             document.getElementById('edit-game-category').value = base.category || '';
             renderGameCategorySelect();
             document.getElementById('edit-game-description').value = base.description || '';
+            document.getElementById('edit-game-app-android-package').value = base.appAndroidPackage || '';
+            document.getElementById('edit-game-app-android-store-url').value = base.appAndroidStoreUrl || '';
+            document.getElementById('edit-game-app-ios-scheme').value = base.appIosScheme || '';
+            document.getElementById('edit-game-app-ios-store-url').value = base.appIosStoreUrl || '';
             document.getElementById('edit-game-popular').checked = !!base.popular;
             document.getElementById('edit-game-playerid').checked = base.playerIdRequired !== false;
             document.getElementById('edit-game-serverid').checked = base.serverIdRequired !== false;
