@@ -991,8 +991,8 @@
 
         .cal-range-display { text-align: center; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
 
-        .game-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 6px; }
-        .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid var(--fill-soft); border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; content-visibility: auto; contain-intrinsic-size: 0 96px; }
+        .game-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow-y: auto; padding-bottom: 6px; scroll-behavior: smooth; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; }
+        .game-picker-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1.5px solid var(--fill-soft); border-radius: 14px; cursor: pointer; text-align: center; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease; content-visibility: auto; contain-intrinsic-size: 0 96px; scroll-snap-align: start; }
         .game-picker-card:active { transform: scale(0.96); }
         .game-picker-card.selected { border-color: var(--accent); background: #F0F6FF; }
         .game-picker-card span { font-size: 11.5px; font-weight: 500; color: var(--text-strong); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1076,13 +1076,21 @@
             min-height: 60px; max-height: 50vh; overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
+            scroll-behavior: smooth;
+            scroll-snap-type: y proximity;
+            /* Own compositing layer for the scroll container itself, so the
+               browser can scroll it by moving a single GPU layer instead of
+               repainting the whole box (and everything under it) every
+               frame — this is the main fix for the choppy/stuttery scroll
+               feel on phones. */
+            transform: translateZ(0);
             padding: 10px;
             border: 1px solid var(--border-glass);
             border-radius: 16px;
             background: var(--surface);
             box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass);
         }
-        .package-row { display: flex; align-items: stretch; gap: 0; flex-shrink: 0; background: var(--surface-strong); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; min-width: 0; }
+        .package-row { display: flex; align-items: stretch; gap: 0; flex-shrink: 0; background: var(--surface-strong); border: 1px solid var(--fill-soft); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.15s ease, border-color 0.15s ease; touch-action: pan-y; min-width: 0; contain: layout style paint; transform: translateZ(0); backface-visibility: hidden; scroll-snap-align: start; }
         .package-row.dragging { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: var(--accent); position: relative; z-index: 5; }
         .package-row.drag-over { border-color: var(--accent); }
         .pkg-order-col { flex-shrink: 0; width: 26px; display: flex; flex-direction: column; align-items: stretch; border-right: 1px solid var(--fill-soft); }
@@ -5294,7 +5302,7 @@
                                 <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${escapeHtml(data.userName)}` : ''}</p>
                             </div>
                             <div class="oc-status">
-                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, data.status)}</span>
+                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(data.status))}</span>
                                 <svg class="ui-icon" id="chevron-${orderId}" style="width:16px;height:16px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
@@ -5305,7 +5313,7 @@
                                         <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
                                         <div class="od-card-title-text">
                                             <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
-                                            <p class="oc-meta">${Number(data.price).toLocaleString()} MMK &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, data.status)}</span></p>
+                                            <p class="oc-meta">${Number(data.price).toLocaleString()} MMK &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(data.status))}</span></p>
                                         </div>
                                     </div>
                                     <div class="od-card-close" onclick="toggleOrderCard('${orderId}')">
@@ -6944,7 +6952,7 @@
                                 <p class="oc-meta">${t.userName || t.userId || 'Guest'} &middot; ${t.paymentMethod || 'N/A'}${t.fazercardPaymentId ? ' &middot; <span style="color:var(--accent);">Auto-verified</span>' : ''}</p>
                             </div>
                             <div class="oc-status">
-                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, t.status)}</span>
+                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status))}</span>
                                 <svg class="ui-icon" id="topup-chevron-${t.id}" style="width:16px;height:16px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
@@ -6955,7 +6963,7 @@
                                         ${walletThumb}
                                         <div class="od-card-title-text">
                                             <span class="oc-game-name">+${Number(t.amount || 0).toLocaleString()} MMK</span>
-                                            <p class="oc-meta">${t.paymentMethod || 'N/A'} &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, t.status)}</span></p>
+                                            <p class="oc-meta">${t.paymentMethod || 'N/A'} &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status))}</span></p>
                                         </div>
                                     </div>
                                     <div class="od-card-close" onclick="toggleTopupCard('${t.id}')">
@@ -10472,7 +10480,7 @@
                         <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;cursor:pointer;" onclick="toggleUserOrderCard('${orderId}')">
                             <span class="ac-id">${o.game} (${o.itemAmount})</span>
                             <div style="display:flex;align-items:center;gap:8px;">
-                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, o.status + (o.adminCleared ? ' · cleaned' : ''))}</span>
+                                <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(o.status) + (o.adminCleared ? ' · cleaned' : ''))}</span>
                                 <svg class="ui-icon" id="ud-oc-chevron-${orderId}" style="width:15px;height:15px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
@@ -10614,7 +10622,7 @@
                     <div class="admin-card" style="padding:12px;">
                         <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;">
                             <span class="ac-id">${fmtMoney(t.amount || 0)}</span>
-                            <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, t.status || 'Pending')}</span>
+                            <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status || 'Pending'))}</span>
                         </div>
                         <p style="font-size:13px;color:var(--text-secondary);">${t.paymentMethod || 'N/A'}</p>
                         <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">${dateStr}</p>
@@ -13333,6 +13341,26 @@
             return `${statusBadgeIcon(badgeClass)}<span>${escapeHtml(label)}</span>`;
         }
         window.statusBadgeHtml = statusBadgeHtml;
+
+        // Display-only relabeling of order/top-up status badges (internal
+        // status values like "Pending"/"Success"/"Fail" are untouched — only
+        // what's shown in the badge text changes). Positions map 1:1 to the
+        // 4 badge colors: pending→Draft, processing→In-progress,
+        // success-class (Success/Approved/Completed)→In-review,
+        // danger-class (Fail/Rejected)→Completed.
+        const ORDER_STATUS_DISPLAY_LABELS = {
+            Pending: 'Draft',
+            Processing: 'In-progress',
+            Success: 'In-review',
+            Approved: 'In-review',
+            Completed: 'In-review',
+            Fail: 'Completed',
+            Rejected: 'Completed'
+        };
+        function orderStatusLabel(status) {
+            return ORDER_STATUS_DISPLAY_LABELS[status] || status;
+        }
+        window.orderStatusLabel = orderStatusLabel;
 
         // Toggles which auto-fulfillment provider's fields are visible in the
         // game editor - both at the game level (the two picker sections) and
