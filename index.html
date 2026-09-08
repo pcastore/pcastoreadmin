@@ -8448,7 +8448,7 @@
         }
         window.removeCustomPkgTab = removeCustomPkgTab;
 
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null, aluuProductId = '', bay2gameProductId = '') {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null, aluuProductId = '', bay2gameProductId = '', badge = '') {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
             // name: a leading number ("100 Diamonds") → Currency, a plain name
@@ -8501,6 +8501,7 @@
                                     <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
                                 </div>
                                 <span class="pkg-summary-name">${amount || 'Unnamed package'}</span>
+                                <span class="pkg-summary-badge-tag" style="${badge === 'top' || badge === 'hot' ? '' : 'display:none;'}padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;color:#fff;background:${badge === 'top' ? 'linear-gradient(135deg,#FFC93C,#FF9800)' : 'linear-gradient(135deg,#FF8A65,#FF3D57)'};">⭐${badge === 'top' ? 'TOP' : 'HOT'}</span>
                             </div>
                             <span class="pkg-summary-dot ${type === 'package' ? 'pkg-dot-package' : ''}" title="${type === 'package' ? 'Package (wide banner)' : 'Currency (grid card)'}"></span>
                         </div>
@@ -8551,6 +8552,14 @@
                                     </select>
                                     <div class="pkg-img-remove" onclick="removePackageImage(this)" style="${image ? '' : 'display:none;'}">Remove img</div>
                                 </div>
+                            </div>
+                            <div class="pkg-price-field">
+                                <label>Badge (Store ကတ်ပေါ်မှာ ⭐ tag ပြမည်)</label>
+                                <select class="pkg-badge" onchange="updatePkgSummaryBadge(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;background:var(--surface);">
+                                    <option value="" ${badge !== 'top' && badge !== 'hot' ? 'selected' : ''}>None</option>
+                                    <option value="top" ${badge === 'top' ? 'selected' : ''}>⭐ TOP</option>
+                                    <option value="hot" ${badge === 'hot' ? 'selected' : ''}>⭐ HOT</option>
+                                </select>
                             </div>
                             <div class="pkg-row-pricing">
                                 <div class="pkg-price-field">
@@ -8710,6 +8719,25 @@
             linkEl.style.display = 'none';
         }
         window.removePackageImage = removePackageImage;
+
+        // Live-updates the small ⭐TOP/⭐HOT tag shown in the collapsed
+        // package summary row whenever the Badge dropdown changes, so an
+        // admin scanning the collapsed list can see which packages are
+        // tagged without expanding each one.
+        function updatePkgSummaryBadge(selectEl) {
+            const row = selectEl.closest('.package-row');
+            const tag = row.querySelector('.pkg-summary-badge-tag');
+            if (!tag) return;
+            const val = selectEl.value;
+            if (val === 'top' || val === 'hot') {
+                tag.style.display = '';
+                tag.style.background = val === 'top' ? 'linear-gradient(135deg,#FFC93C,#FF9800)' : 'linear-gradient(135deg,#FF8A65,#FF3D57)';
+                tag.textContent = `⭐${val === 'top' ? 'TOP' : 'HOT'}`;
+            } else {
+                tag.style.display = 'none';
+            }
+        }
+        window.updatePkgSummaryBadge = updatePkgSummaryBadge;
 
         // Recomputes and redraws the profit-% badge for one package row whenever
         // its Cost or Price field changes. Cost is never sent to the Store (only
@@ -9282,7 +9310,7 @@
                 (g.packages || []).forEach(p => {
                     const savedTab = p.tab || p.type || 'currency';
                     const effectiveTab = ['package', 'currency'].includes(savedTab) ? detectPkgTypeFromName(p.amount) : savedTab;
-                    addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', effectiveTab, effectiveTab, false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.aluuProductId || '', p.bay2gameProductId || '');
+                    addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', effectiveTab, effectiveTab, false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.aluuProductId || '', p.bay2gameProductId || '', p.badge || '');
                 });
                 renderPkgTabBar();
                 switchPackageTab('package');
@@ -9554,7 +9582,8 @@
                     fazercardGiftCardId: currentFulfillProvider === 'fazercard_giftcard' ? row.querySelector('.pkg-fazercard-giftcard-id').value.trim() : '',
                     image: row.querySelector('.pkg-img-preview').dataset.url || '',
                     type: row.querySelector('.pkg-type').value || 'currency',
-                    tab: row.dataset.tab || row.querySelector('.pkg-type').value || 'currency'
+                    tab: row.dataset.tab || row.querySelector('.pkg-type').value || 'currency',
+                    badge: row.querySelector('.pkg-badge') ? row.querySelector('.pkg-badge').value : ''
                 };
             }).filter(p => p.amount && p.price > 0);
 
