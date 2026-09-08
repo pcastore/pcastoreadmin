@@ -147,12 +147,34 @@
         ::selection { background: var(--accent-soft); color: var(--accent); }
 
         /* Smooth theme switch — applied to <html> for ~450ms right after
-           applyTheme() flips [data-theme], then removed. While active, every
-           themed surface (backgrounds, text, borders, shadows, icon strokes)
-           crossfades to the new palette instead of snapping instantly. It's
-           lifted afterward so it never lingers and interferes with other
-           transitions (button press, card open/close, hover states, etc). */
-        html.theme-transition, html.theme-transition * , html.theme-transition *::before, html.theme-transition *::after {
+           applyTheme() flips [data-theme], then removed. While active, the
+           main themed surfaces crossfade to the new palette instead of
+           snapping instantly. It's lifted afterward so it never lingers and
+           interferes with other transitions (button press, card open/close,
+           hover states, etc).
+           Was previously a universal `*` selector (every element AND every
+           ::before/::after in the whole document) — on this page that's
+           thousands of nodes (every order/package/game row, badge, icon...),
+           and adding a class to <html> that a selector like that matches
+           forces the browser to recompute style for the entire tree at
+           once, which is exactly what caused the stutter/freeze on switch.
+           Scoped down to the actual chrome/surface elements that need to
+           visibly crossfade — everything else still re-colors correctly via
+           the CSS variables, just without an animated transition on it. */
+        html.theme-transition body,
+        html.theme-transition .header,
+        html.theme-transition .side-nav,
+        html.theme-transition .admin-card,
+        html.theme-transition .btn,
+        html.theme-transition .modal-box,
+        html.theme-transition .modal-overlay,
+        html.theme-transition .dialog-box,
+        html.theme-transition .dialog-overlay,
+        html.theme-transition .login-box,
+        html.theme-transition #toast,
+        html.theme-transition input,
+        html.theme-transition select,
+        html.theme-transition textarea {
             transition: background-color 0.4s ease, background-image 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, fill 0.4s ease, stroke 0.4s ease !important;
         }
 
@@ -307,7 +329,14 @@
         .login-dots span.active { width: 20px; background: var(--accent, #4C6FFF); box-shadow: 0 0 10px -1px rgba(76,154,255,0.8); }
 
         /* Header */
-        .header { background-color: var(--surface); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 var(--border-glass), 0 8px 24px -12px rgba(0,0,0,0.25); border-bottom: 1px solid var(--fill-soft); }
+        /* transform: translateZ(0) promotes the sticky header to its own
+           GPU layer. Sticky positioning + backdrop-filter (see .glass rule
+           below) is a known combination that can tear/ghost mid-scroll on
+           mobile Firefox — the blurred layer isn't always fully
+           recomposited on every sticky-reposition frame, showing as a
+           half-rendered/duplicated header strip. Forcing its own layer
+           makes the browser recomposite it properly every frame. */
+        .header { background-color: var(--surface); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 var(--border-glass), 0 8px 24px -12px rgba(0,0,0,0.25); border-bottom: 1px solid var(--fill-soft); transform: translateZ(0); will-change: transform; }
         .logo { color: var(--text-primary); font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .logo-icon { background: var(--accent); color: white; padding: 4px; border-radius: 6px; display: flex; width: 26px; height: 26px; }
         .logo-icon.has-custom-logo { padding: 0; background: transparent; overflow: hidden; }
@@ -854,6 +883,10 @@
         .img-update-box.ratio-banner { aspect-ratio: 16 / 9; padding: 10px; }
         .img-update-box.ratio-square.has-image, .img-update-box.ratio-banner.has-image { padding: 0; }
         .img-update-box.ratio-square img, .img-update-box.ratio-banner img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
+        /* Payment method logo/QR preview: force a small centered 1:1 box (side letterboxing, not top/bottom) instead of stretching full-width. */
+        .img-update-box.logo-square { aspect-ratio: 1 / 1; max-width: 140px; margin: 0 auto; padding: 10px; }
+        .img-update-box.logo-square.has-image { padding: 0; }
+        .img-update-box.logo-square img { width: 100%; height: 100%; max-height: none; object-fit: contain; background: var(--bg-subtle); }
         .img-update-change { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #fff; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
         .img-update-change svg { width: 13px; height: 13px; }
         #server-variant-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
@@ -3184,7 +3217,7 @@
                 <input type="text" id="edit-payment-accountname" placeholder="e.g. Mg Mg Aung">
 
                 <label>Logo Image (optional)</label>
-                <label class="img-update-box" id="payment-img-update-box" for="edit-payment-file">
+                <label class="img-update-box logo-square" id="payment-img-update-box" for="edit-payment-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Image Update</span>
                     <img id="edit-payment-preview" src="" alt="Preview" style="display:none;">
@@ -3202,7 +3235,7 @@
                      number into their banking app. Optional - stored as its
                      own qrImage field so it never overwrites the logo. -->
                 <label style="margin-top:14px;">QR Code Image (optional)</label>
-                <label class="img-update-box" id="payment-qr-update-box" for="edit-payment-qr-file">
+                <label class="img-update-box logo-square" id="payment-qr-update-box" for="edit-payment-qr-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">QR Update</span>
                     <img id="edit-payment-qr-preview" src="" alt="Preview" style="display:none;">
@@ -3867,9 +3900,26 @@
             if (!el || el._touchGuardAttached) return;
             el._touchGuardAttached = true;
             el._isTouching = false;
-            el.addEventListener('touchstart', () => { el._isTouching = true; }, { passive: true });
-            el.addEventListener('touchend', () => { el._isTouching = false; }, { passive: true });
-            el.addEventListener('touchcancel', () => { el._isTouching = false; }, { passive: true });
+            // Safety net: touchend/touchcancel can be missed by the browser
+            // (a swipe-back/navigation gesture interrupting mid-drag, the
+            // app being backgrounded mid-touch, etc). If that happens,
+            // _isTouching gets stuck true forever, and every future
+            // re-render for this container (Orders/Games/Top-ups/Users all
+            // use this same guard) defers indefinitely — the list just
+            // stays blank until some later touch happens to land on this
+            // exact container and finally fires touchend, "unsticking" it.
+            // That's the "blank until I scroll a little" symptom. Auto-clear
+            // the flag a fixed time after touchstart so a render can never
+            // be blocked longer than that, no matter what happens to the
+            // real touchend/touchcancel.
+            const clearTouching = () => { clearTimeout(el._touchGuardStuckTimer); el._isTouching = false; };
+            el.addEventListener('touchstart', () => {
+                el._isTouching = true;
+                clearTimeout(el._touchGuardStuckTimer);
+                el._touchGuardStuckTimer = setTimeout(clearTouching, 1500);
+            }, { passive: true });
+            el.addEventListener('touchend', clearTouching, { passive: true });
+            el.addEventListener('touchcancel', clearTouching, { passive: true });
         }
         function initScrollReveal(container, selector = ':scope > .admin-card, :scope > .package-row') {
             if (!container) return;
@@ -12042,7 +12092,29 @@
 
         // escapeHtml() is already defined further down (used for provider game names).
 
-        function buildTelegramOrderText(orderId, order) {
+        // Live G2Bulk balance fetch with no UI side effects (unlike
+        // refreshG2BulkBalance, which paints the Dashboard/G2Bulk-tab display
+        // elements). Used to show the balance in the Telegram order message
+        // and to check fulfillability before auto-placing on Telegram
+        // Confirm — the cached g2bulkLastBalance can be stale by then.
+        async function fetchLiveG2BulkBalance() {
+            if (!G2BULK_SETTINGS.apiKey) return null;
+            try {
+                const res = await fetch('https://api.g2bulk.com/api/v2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: G2BULK_SETTINGS.apiKey, action: 'balance' })
+                });
+                const data = await res.json();
+                if (data.error) return null;
+                return Number(data.balance) || 0;
+            } catch (error) {
+                console.error('fetchLiveG2BulkBalance error:', error);
+                return null;
+            }
+        }
+
+        function buildTelegramOrderText(orderId, order, balanceInfo) {
             // Aligned monospace grid inside a <pre> block so it renders as a tidy
             // card in Telegram (HTML parse_mode only supports a limited tag set —
             // pre/code is the closest thing to a real table).
@@ -12062,16 +12134,38 @@
                 return `${connector} ${label.padEnd(labelWidth, ' ')}  ${value}`;
             });
 
+            // Live balance snapshot (G2Bulk/voucher-linked orders only) — shown
+            // right on the order card so the admin can judge fulfillability
+            // before tapping Confirm, without opening the app.
+            const balanceLine = !balanceInfo ? null
+                : balanceInfo.insufficient
+                    ? `⚠️ <b>G2Bulk Balance LOW:</b> ${balanceInfo.balanceUsd.toFixed(2)} USD (~${Math.round(balanceInfo.mmkEquivalent).toLocaleString()} MMK) — not enough to cover this order`
+                    : `💰 G2Bulk Balance: ${balanceInfo.balanceUsd.toFixed(2)} USD (~${Math.round(balanceInfo.mmkEquivalent).toLocaleString()} MMK)`;
+
             return [
                 `🛒 <b>New Order</b>`,
                 `<pre>${gridLines.join('\n')}</pre>`,
+                balanceLine,
                 `🔖 Order ID: <code>${escapeHtml(orderId)}</code>`
-            ].join('\n');
+            ].filter(Boolean).join('\n');
         }
 
         async function sendOrderToTelegram(orderId, order) {
             if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
-            const text = buildTelegramOrderText(orderId, order);
+
+            // Snapshot live G2Bulk balance for G2Bulk/voucher-linked orders so
+            // it can be shown on the Telegram card (see buildTelegramOrderText).
+            let balanceInfo = null;
+            const isG2BulkOrVoucher = !!(order.g2bulkGameCode && order.g2bulkCatalogueName) || !!order.g2bulkVoucherProductId;
+            if (isG2BulkOrVoucher) {
+                const liveBalanceUsd = await fetchLiveG2BulkBalance();
+                if (liveBalanceUsd !== null) {
+                    const mmkEquivalent = liveBalanceUsd * (G2BULK_SETTINGS.usdRate || 4500);
+                    balanceInfo = { balanceUsd: liveBalanceUsd, mmkEquivalent, insufficient: mmkEquivalent < Number(order.price || 0) };
+                }
+            }
+
+            const text = buildTelegramOrderText(orderId, order, balanceInfo);
             const reply_markup = { inline_keyboard: [[
                 { text: '✅ Confirm', callback_data: 'confirm:' + orderId },
                 { text: '❌ Reject', callback_data: 'reject:' + orderId }
@@ -12127,12 +12221,12 @@
             }
         }
 
-        async function answerTelegramCallback(callbackQueryId, text) {
+        async function answerTelegramCallback(callbackQueryId, text, showAlert = false) {
             if (!TELEGRAM_SETTINGS.botToken) return;
             try {
                 await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/answerCallbackQuery`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ callback_query_id: callbackQueryId, text })
+                    body: JSON.stringify({ callback_query_id: callbackQueryId, text, show_alert: showAlert })
                 });
             } catch (error) { /* non-critical - button just keeps its loading spinner briefly */ }
         }
@@ -12162,6 +12256,33 @@
                 const isVoucherLinked = !isG2BulkLinked && !isJCPlaysLinked && !!order.g2bulkVoucherProductId;
                 if (isG2BulkLinked || isJCPlaysLinked || isVoucherLinked) {
                     const providerLabel = isG2BulkLinked ? 'G2Bulk' : isJCPlaysLinked ? 'JCPlays' : 'G2Bulk (Voucher)';
+
+                    // G2Bulk (direct and voucher) charges the wallet at order
+                    // time but accepts the order into its queue even when the
+                    // balance can't cover it — it never auto-fails that order
+                    // back, so it would otherwise sit "Processing" in Telegram
+                    // forever with no further signal. Check the LIVE balance
+                    // (not the cached one, which can be stale) before placing,
+                    // and block with a clear alert instead of placing a doomed
+                    // order. The Confirm/Reject buttons are deliberately left
+                    // in place (no editTelegramOrderMessage call) so the admin
+                    // can just top up and tap Confirm again.
+                    if (isG2BulkLinked || isVoucherLinked) {
+                        const liveBalanceUsd = await fetchLiveG2BulkBalance();
+                        if (liveBalanceUsd !== null) {
+                            const mmkEquivalent = liveBalanceUsd * (G2BULK_SETTINGS.usdRate || 4500);
+                            if (mmkEquivalent < Number(order.price || 0)) {
+                                await answerTelegramCallback(
+                                    cb.id,
+                                    `⚠️ G2Bulk balance low: ${liveBalanceUsd.toFixed(2)} USD (~${Math.round(mmkEquivalent).toLocaleString()} MMK) — need ${Number(order.price || 0).toLocaleString()} MMK.\n\nOrder NOT placed. Top up G2Bulk then tap Confirm again.`,
+                                    true
+                                );
+                                window.showToast(`Telegram confirm blocked — G2Bulk balance low (${liveBalanceUsd.toFixed(2)} USD)`, 'fail');
+                                return;
+                            }
+                        }
+                    }
+
                     await answerTelegramCallback(cb.id, `Confirmed — placing with ${providerLabel}...`);
                     const result = isG2BulkLinked
                         ? await placeG2BulkOrder(orderId, order, null)
