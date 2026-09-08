@@ -289,7 +289,6 @@
         }
         .otp-paste-btn:hover { background: rgba(111,163,255,0.18); }
         .otp-paste-btn svg { width: 15px; height: 15px; }
-        #resend-verify-btn { width: 100%; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 15px; border: none; background: var(--accent, #4C6FFF); color: #fff; cursor: pointer; margin-bottom: 8px; box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6); }
 
         /* ---- Right-panel illustration: a small orbiting-atom graphic (glowing
            nucleus + elliptical orbit rings), echoing the ambient backdrop
@@ -866,7 +865,14 @@
         .server-variant-thumb.active span { color: var(--accent); font-weight: 600; }
 
         /* Custom Delete / Warning / Information dialog (replaces browser confirm()/alert()) */
-        .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; padding: 24px; }
+        /* z-index bumped from 300 to 400: this dialog is opened from *inside*
+           other 300-tier overlays too (order reject-with-note is launched from
+           the open order-details card, .od-overlay, also z-index 300) — at an
+           equal z-index the one later in the DOM paints on top, and since this
+           overlay is a static element near the top of <body> while order cards
+           render further down, the order-details overlay was covering the
+           confirm dialog instead of the dialog showing above it. */
+        .dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 400; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; padding: 24px; }
         .dialog-overlay.show { opacity: 1; pointer-events: auto; }
         .dialog-box { background: var(--surface-strong); width: 100%; max-width: 340px; border-radius: 24px; padding: 24px 20px 18px; text-align: center; transform: scale(0.92); transition: transform 0.2s ease; border: 1px solid var(--border-glass); box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
         .dialog-overlay.show .dialog-box { transform: scale(1); }
@@ -1147,6 +1153,17 @@
            to the row's own small box instead of covering the screen — this cancels those
            properties only while a row is open for editing, restoring true viewport-fixed. */
         .package-row.editing { transform: none; contain: none; overflow: visible; }
+        /* The row-level fix above isn't enough on its own: the row sits inside
+           the Edit Game .modal-box, which has its own `transform: translateY(0)`
+           (its slide-up-sheet animation, see .modal-overlay.show .modal-box) —
+           any non-"none" transform value also creates a containing block, so
+           the fixed overlay was getting trapped inside the modal's own box
+           instead of the real viewport (it renders pinned near the modal's
+           bottom edge, as if the "container" swallowed it). While a package
+           card is open, .pkg-editing-open cancels that transform too;
+           translateY(0) and none render identically, so this doesn't visibly
+           move the modal or reset its open/close animation. */
+        .modal-overlay.show .modal-box.pkg-editing-open { transform: none; }
         .pkg-card { background: var(--surface-strong); width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
         .pkg-card-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500; color: var(--text-primary); padding-bottom: 2px; }
         .pkg-card-close { font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 2px 8px; display: inline-flex; align-items: center; justify-content: center; }
@@ -1404,16 +1421,6 @@
                         </div>
                         <button type="submit" id="login-btn">Login</button>
                     </form>
-                </div>
-
-                <!-- Step 2: verify email (required before TOTP can be set up) -->
-                <div id="step-verify-email" style="display:none;">
-                    <h2>Verify Your Email</h2>
-                    <p class="sub">Authenticator setup requires a verified email first.</p>
-                    <p class="login-msg-info">We've sent a verification link to <b id="verify-email-address"></b>. Open it, then come back and sign in again.</p>
-                    <p id="verify-email-error" class="login-msg-error"></p>
-                    <button type="button" id="resend-verify-btn" onclick="resendVerificationEmail()">Resend Email</button>
-                    <button type="button" class="login-secondary-btn" onclick="backToLogin()">Back to Sign In</button>
                 </div>
 
                 <!-- Step 3a: first-time TOTP enrollment -->
@@ -1948,26 +1955,41 @@
                 <span>API Balances</span>
                 <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="refreshAllApiBalances()">Refresh</button>
             </div>
-            <div class="details-grid" style="margin-top:0;">
-                <div class="details-grid-item">
-                    <span>G2Bulk</span>
-                    <b id="an-g2bulk-balance-display" style="color:var(--accent);">—</b>
+            <div class="stat-grid" style="margin-top:0;">
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">G2Bulk</span>
+                        <div class="stat-card-icon" style="background:#7C3AED;"><svg class="ui-icon" style="color:#fff;"><use href="#icon-g2bulk"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-g2bulk-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
-                <div class="details-grid-item">
-                    <span>JCPlays</span>
-                    <b id="an-jcplays-balance-display" style="color:var(--accent);">—</b>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">JCPlays</span>
+                        <div class="stat-card-icon" style="background:#16A34A;"><svg class="ui-icon"><use href="#icon-key"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-jcplays-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
-                <div class="details-grid-item">
-                    <span>FazerCards</span>
-                    <b id="an-fazercard-balance-display" style="color:var(--accent);">—</b>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">FazerCards</span>
+                        <div class="stat-card-icon" style="background:#2563EB;"><svg class="ui-icon"><use href="#icon-key"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-fazercard-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
-                <div class="details-grid-item">
-                    <span>Aluu.in</span>
-                    <b id="an-aluu-balance-display" style="color:var(--accent);">—</b>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Aluu.in</span>
+                        <div class="stat-card-icon" style="background:#0EA5A0;"><svg class="ui-icon"><use href="#icon-key"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-aluu-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
-                <div class="details-grid-item">
-                    <span>Bay2Game</span>
-                    <b id="an-bay2game-balance-display" style="color:var(--accent);">—</b>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Bay2Game</span>
+                        <div class="stat-card-icon" style="background:#DC2626;"><svg class="ui-icon"><use href="#icon-key"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="an-bay2game-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
             </div>
 
@@ -2130,7 +2152,7 @@
                         <span style="font-size:15px;font-weight: 600;">Admin Accounts</span>
                         <span id="admin-accounts-count" style="font-size:11.5px;font-weight: 700;padding:2px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);">0</span>
                     </div>
-                    <button class="btn btn-primary" style="flex:unset;padding:8px 14px;font-size:13px;" onclick="openAddAdminModal()">+ Add Admin</button>
+                    <button class="btn btn-primary" style="flex:unset;padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="openAddAdminModal()">+ Add Admin</button>
                 </div>
                 <div id="admin-accounts-list" style="margin-top:12px;">
                     <p class="empty-msg">Loading admins...</p>
@@ -8716,6 +8738,8 @@
             const row = el.closest('.package-row');
             populatePkgTabSelect(row);
             row.classList.add('editing');
+            const hostModal = row.closest('.modal-box');
+            if (hostModal) hostModal.classList.add('pkg-editing-open');
             applyPkgCardViewportFix();
         }
         window.expandPackageRow = expandPackageRow;
@@ -8756,6 +8780,13 @@
             const row = el.closest('.package-row');
             syncPkgSummary(row);
             row.classList.remove('editing');
+            const hostModal = row.closest('.modal-box');
+            // Only drop the modal's own transform-cancel once no other package
+            // card in it is still open (there's normally just one at a time,
+            // but this keeps it correct if that ever changes).
+            if (hostModal && !hostModal.querySelector('.package-row.editing')) {
+                hostModal.classList.remove('pkg-editing-open');
+            }
             const overlay = row.querySelector('.pkg-card-overlay');
             overlay.style.height = '';
             overlay.style.top = '';
