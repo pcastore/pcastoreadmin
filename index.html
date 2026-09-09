@@ -708,6 +708,16 @@
         .nav-item .nav-item-low-balance-dot {
             position: absolute; top: 9px; right: 14px; margin-left: 0;
         }
+
+        /* Collapsible sidebar: hides labels and narrows the rail. State is
+           persisted in localStorage (see toggleSidebarCollapse()) so it stays
+           put across reloads. The toggle button pins to the bottom of the nav
+           list via margin-top:auto. */
+        .nav-collapse-toggle { margin-top: auto; border-top: 1px solid var(--border-glass); color: var(--text-muted); }
+        .side-nav.collapsed { width: 60px !important; }
+        .side-nav.collapsed .nav-label { display: none; }
+        .side-nav.collapsed .nav-item { padding: 14px 2px; flex-direction: column; justify-content: center; gap: 4px; border-left: none; }
+
         
         /* Utility */
         #toast { position: fixed; top: 14px; left: 14px; right: 14px; max-width: 480px; margin: 0 auto; background: #FFFFFF; border: 2px solid #00D65E; color: #00A843; padding: 14px 16px; border-radius: 14px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; z-index: 1000; transform: translateY(-150%); box-shadow: 0 10px 28px -8px rgba(20,30,25,0.28); }
@@ -1629,6 +1639,7 @@
         <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
         <symbol id="icon-gamepad" viewBox="0 0 24 24"><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z" fill="#7C5CFC" stroke="none"></path><path d="M6.7 10.7v3.2M5.1 12.3h3.2" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="15.9" cy="11.1" r="1.05" fill="#ffffff" stroke="none"></circle><circle cx="18.3" cy="13.5" r="1.05" fill="#ffffff" stroke="none"></circle></symbol>
         <symbol id="icon-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></symbol>
+        <symbol id="icon-tag" viewBox="0 0 24 24"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></symbol>
         <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
         <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
         <symbol id="icon-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></symbol>
@@ -1707,6 +1718,13 @@
     </div>
 
     <header class="header">
+        <div class="header-icon" id="sidebar-hamburger-btn" title="Menu" onclick="toggleSidebarCollapse()">
+            <svg class="ui-icon" style="width:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </div>
         <div class="logo" id="store-switcher-btn" onclick="openStoreSwitcherSheet()" style="cursor:pointer;">
             <div class="logo-icon" id="header-logo-icon">
                 <svg class="ui-icon" id="header-logo-default-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg>
@@ -1781,28 +1799,31 @@
 
     <div class="app-layout">
     <!-- Side Navigation -->
-    <nav class="side-nav">
+    <nav class="side-nav" id="admin-side-nav">
         <!-- Grouped side-nav: each icon now bundles several related pages.
              Tapping one opens a picker sheet (#nav-group-sheet-overlay) instead
              of jumping straight to a page - see openNavGroupSheet() / NAV_GROUPS. -->
         <div class="nav-item active" id="group-dashboard" onclick="openNavGroupSheet('dashboard')">
-            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> Dashboard
+            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> <span class="nav-label">Dashboard</span>
         </div>
         <div class="nav-item" id="group-api" onclick="openNavGroupSheet('api')">
-            <svg class="ui-icon"><use href="#icon-plug"></use></svg> API
+            <svg class="ui-icon"><use href="#icon-plug"></use></svg> <span class="nav-label">API</span>
             <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
         <div class="nav-item" id="group-game" onclick="openNavGroupSheet('game')">
-            <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> Game
+            <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> <span class="nav-label">Game</span>
         </div>
         <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
-            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> Wallet
+            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Wallet</span>
         </div>
         <div class="nav-item" id="group-userlist" onclick="openNavGroupSheet('userlist')">
-            <svg class="ui-icon"><use href="#icon-users"></use></svg> Userlist
+            <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Userlist</span>
         </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
-            <svg class="ui-icon"><use href="#icon-gear"></use></svg> Setting
+            <svg class="ui-icon"><use href="#icon-gear"></use></svg> <span class="nav-label">Setting</span>
+        </div>
+        <div class="nav-item nav-collapse-toggle" id="sidebar-collapse-toggle" onclick="toggleSidebarCollapse()" title="Collapse sidebar">
+            <svg class="ui-icon" id="sidebar-collapse-icon" style="transform:rotate(180deg);"><use href="#icon-chevron-right"></use></svg> <span class="nav-label">Collapse</span>
         </div>
     </nav>
 
@@ -2085,6 +2106,52 @@
 
                     <p id="social-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;margin:0 0 10px;"></p>
                     <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleReferralSettings()">
+                    <span style="font-size:15px;font-weight: 600;">Referral Program</span>
+                    <svg class="ui-icon" id="referral-settings-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="referral-settings-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Wallet credit given to both sides when a customer redeems a friend's referral code on the store.</p>
+                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">New Customer Reward (MMK)</label>
+                    <input type="number" id="referral-new-user-reward" placeholder="1000" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Referrer Reward (MMK)</label>
+                    <input type="number" id="referral-referrer-reward" placeholder="1000" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 14px;">
+
+                    <div style="border-top:1px solid var(--border);margin:4px 0 12px;padding-top:12px;">
+                        <p style="font-size:13px;font-weight:600;margin:0 0 4px;">Tier-Based Commission</p>
+                        <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px;">% of every successful order placed by a referred friend, credited to the referrer's wallet — based on the referrer's own VIP tier at the time of that order.</p>
+                        <div id="referral-tier-commission-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;"></div>
+                    </div>
+                    <button class="btn btn-primary" id="save-referral-settings-btn" onclick="saveReferralSettings()">Save Referral Settings</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleFlashSaleSettings()">
+                    <span style="font-size:15px;font-weight: 600;">Flash Sale Banner</span>
+                    <svg class="ui-icon" id="flashsale-settings-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="flashsale-settings-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">A countdown banner shown at the top of the store's Home page while it's enabled and hasn't expired.</p>
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="flashsale-enabled" style="width:auto;">
+                        <span>Show banner on Home</span>
+                    </label>
+                    <label style="margin-top:12px;font-size:13px;font-weight: 500;color:var(--text-secondary);">Title</label>
+                    <input type="text" id="flashsale-title" placeholder="Flash Sale" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Description</label>
+                    <input type="text" id="flashsale-desc" placeholder="20% off Mobile Legends diamonds" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Linked Game <span style="font-weight:400;">(optional — tapping the banner opens this game)</span></label>
+                    <select id="flashsale-game-select" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                        <option value="">None</option>
+                    </select>
+                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Ends At</label>
+                    <input type="datetime-local" id="flashsale-endtime" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 14px;">
+                    <button class="btn btn-primary" id="save-flashsale-btn" onclick="saveFlashSaleSettings()">Save Flash Sale</button>
                 </div>
             </div>
 
@@ -2598,6 +2665,14 @@
             <h2 class="title-header">Payment Methods <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openPaymentEditor()">+ Add</button></h2>
             <div id="admin-payment-container">
                 <p class="empty-msg">Loading payment methods...</p>
+            </div>
+        </div>
+
+        <!-- COUPON CODES PAGE (Firebase Connected) -->
+        <div id="coupon-list" class="page-section">
+            <h2 class="title-header">Coupons <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openCouponEditor()">+ Add</button></h2>
+            <div id="admin-coupon-container">
+                <p class="empty-msg">Loading coupons...</p>
             </div>
         </div>
 
@@ -3253,6 +3328,75 @@
         </div>
     </div>
 
+    <!-- Coupon Editor Modal: discount code with an optional start/expiry
+         event window, total-use cap, and per-user use cap. Doc ID in
+         Firestore = the code itself (uppercased) so redemption lookups
+         (Store.html/worker.js, wired separately) are a single getDoc by
+         code with no query needed. -->
+    <div class="modal-overlay" id="coupon-editor-modal-overlay" onclick="if(event.target===this) closeCouponEditor()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="coupon-editor-title">Add Coupon</h3>
+                <div class="modal-close" onclick="closeCouponEditor()">
+                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                </div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-coupon-original-code">
+                <label>Code</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="edit-coupon-code" placeholder="e.g. PCA2026" style="flex:1;text-transform:uppercase;" maxlength="24">
+                    <button type="button" class="btn btn-outline" style="flex:unset;padding:10px 14px;" onclick="generateCouponCode()">Generate</button>
+                </div>
+
+                <label>Discount Type</label>
+                <select id="edit-coupon-type" onchange="onCouponTypeChange()">
+                    <option value="percent">Percent (%)</option>
+                    <option value="fixed">Fixed Amount (MMK)</option>
+                </select>
+
+                <label>Discount Value</label>
+                <input type="number" id="edit-coupon-value" min="0" placeholder="e.g. 10">
+
+                <div id="coupon-max-discount-row">
+                    <label>Max Discount Cap (MMK, optional)</label>
+                    <input type="number" id="edit-coupon-max-discount" min="0" placeholder="Leave blank for no cap">
+                </div>
+
+                <label>Starts At (optional — leave blank to start immediately)</label>
+                <input type="datetime-local" id="edit-coupon-starts">
+
+                <label>Expiry Date &amp; Time (optional)</label>
+                <input type="datetime-local" id="edit-coupon-expiry">
+
+                <label>Total Use Limit (optional)</label>
+                <input type="number" id="edit-coupon-maxuses" min="0" placeholder="Leave blank for unlimited">
+
+                <label>Per-User Use Limit</label>
+                <input type="number" id="edit-coupon-perlimit" min="0" placeholder="e.g. 1 (leave blank for unlimited)" value="1">
+
+                <label>Note (admin-only, optional)</label>
+                <input type="text" id="edit-coupon-note" placeholder="e.g. Facebook page promo, Sep 2026">
+
+                <div class="switch-row">
+                    <div>
+                        <span class="switch-label">Active</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-coupon-active" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <p id="coupon-used-count-note" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-coupon-btn" style="display:none;" onclick="deleteCurrentCoupon()">Delete</button>
+                <button class="btn btn-primary" id="save-coupon-btn" onclick="saveCoupon()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JCPlays Settings Modal: SmileCoin-compatible credentials (Base URL, UID, Email, M_KEY) -->
     <div class="modal-overlay" id="jcplays-modal-overlay" onclick="if(event.target===this) closeJCPlaysModal()">
         <div class="modal-box">
@@ -3666,7 +3810,7 @@
         const PAGE_TO_NAV_GROUP = {
             'dashboard': 'group-dashboard', 'analytics': 'group-dashboard', 'order-list': 'group-dashboard',
             'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
-            'payment-list': 'group-wallet', 'topup-list': 'group-wallet',
+            'payment-list': 'group-wallet', 'topup-list': 'group-wallet', 'coupon-list': 'group-wallet',
             'user-list': 'group-userlist', 'tier-list': 'group-userlist', 'activity-log': 'group-userlist',
             'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
         };
@@ -3704,7 +3848,8 @@
             ]},
             wallet: { title: 'Wallet', items: [
                 { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
-                { label: 'Top Up', icon: '#icon-wallet', run: () => showPage('topup-list') }
+                { label: 'Top Up', icon: '#icon-wallet', run: () => showPage('topup-list') },
+                { label: 'Coupons', icon: '#icon-tag', run: () => showPage('coupon-list') }
             ]},
             userlist: { title: 'Userlist', items: [
                 { label: 'Userlist', icon: '#icon-users', run: () => showPage('user-list') },
@@ -4027,6 +4172,28 @@
         window.showActionDialog = showActionDialog;
         window.closeActionDialog = closeActionDialog;
         window.confirmActionDialog = confirmActionDialog;
+        function toggleSidebarCollapse() {
+            const nav = document.getElementById('admin-side-nav');
+            const icon = document.getElementById('sidebar-collapse-icon');
+            const btn = document.getElementById('sidebar-collapse-toggle');
+            const collapsed = nav.classList.toggle('collapsed');
+            icon.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+            btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+            try { localStorage.setItem('admin_sidebar_collapsed', collapsed ? '1' : '0'); } catch (e) { /* private browsing */ }
+        }
+        window.toggleSidebarCollapse = toggleSidebarCollapse;
+        // Restore the saved collapse state on load - the nav element is already
+        // parsed by this point since this script block sits after it in the DOM.
+        (function restoreSidebarCollapseState() {
+            try {
+                if (localStorage.getItem('admin_sidebar_collapsed') === '1') {
+                    document.getElementById('admin-side-nav').classList.add('collapsed');
+                    document.getElementById('sidebar-collapse-icon').style.transform = 'rotate(0deg)';
+                    document.getElementById('sidebar-collapse-toggle').title = 'Expand sidebar';
+                }
+            } catch (e) { /* private browsing */ }
+        })();
+
         function toggleSocialLinks() {
             const body = document.getElementById('social-links-body');
             const chevron = document.getElementById('social-links-chevron');
@@ -4035,6 +4202,24 @@
             chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
         }
         window.toggleSocialLinks = toggleSocialLinks;
+
+        function toggleReferralSettings() {
+            const body = document.getElementById('referral-settings-body');
+            const chevron = document.getElementById('referral-settings-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleReferralSettings = toggleReferralSettings;
+
+        function toggleFlashSaleSettings() {
+            const body = document.getElementById('flashsale-settings-body');
+            const chevron = document.getElementById('flashsale-settings-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleFlashSaleSettings = toggleFlashSaleSettings;
 
         window.showInfoDialog = showInfoDialog;
     </script>
@@ -4948,6 +5133,7 @@
                 const newOrders = {};
                 querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                 ORDERS = newOrders;
+                processReferralCommissions(newOrders);
                 if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
                 if (Object.keys(USERS).length) renderAdminUsersList();
                 renderOrdersList();
@@ -8267,10 +8453,28 @@
                 if (ordersListenerAttached) renderOrdersList();
                 if (lossFixSchedulerStarted) autoFixLossMakingPackages();
                 maybeRunAutoPriceUpdateOnLoad();
+                populateFlashSaleGameSelect();
             }, (error) => {
                 console.error("Games listener error:", error);
                 document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
             });
+        }
+
+        // Keeps the Flash Sale settings card's game dropdown in sync with the
+        // live games list, without losing whatever the admin currently has
+        // selected (including a selection not yet saved to Firestore).
+        function populateFlashSaleGameSelect() {
+            const select = document.getElementById('flashsale-game-select');
+            if (!select) return;
+            // Preserve an edit the admin is actively making (selected a game
+            // that differs from the saved value) over the saved value itself.
+            const desired = (select.value && select.value !== flashSaleSelectedGameId) ? select.value : flashSaleSelectedGameId;
+            const options = ['<option value="">None</option>'];
+            Object.keys(GAMES).forEach(id => {
+                options.push(`<option value="${id}">${GAMES[id].name || id}</option>`);
+            });
+            select.innerHTML = options.join('');
+            if (desired && GAMES[desired]) select.value = desired;
         }
 
         function previewGameImage(e) {
@@ -10126,6 +10330,247 @@
             });
         }
 
+        // ---------- Coupons (discount codes) ----------
+        // Firestore doc ID = the code itself (uppercased) so redemption at
+        // checkout is a single getDoc(doc(db,"coupons",CODE)) with no query
+        // needed — that lookup + the atomic usedCount/perUserLimit increment
+        // gets wired into Store.html/worker.js separately.
+        // Fields: code, discountType ('percent'|'fixed'), discountValue,
+        // maxDiscount (cap for percent type, null = no cap), startsAt (ms
+        // epoch, null = usable immediately), expiresAt (ms epoch, null =
+        // never), maxUses (null = unlimited), usedCount, perUserLimit
+        // (null = unlimited), note, isActive, createdAt.
+        // startsAt/expiresAt together define the coupon's "event window" —
+        // Store.html's coupon-availability listener uses the same two
+        // fields (+ isActive) to decide whether to show the Coupon Code
+        // box at all, so an admin toggling isActive off, or a window
+        // that hasn't opened / has already closed, makes it disappear
+        // from the storefront entirely rather than showing a code box
+        // that would just fail.
+        let COUPONS = {};
+        let couponListenerAttached = false;
+        let editingCouponOriginalCode = null;
+
+        function couponStatusInfo(c) {
+            if (!c.isActive) return { label: 'Inactive', cls: 'badge-danger' };
+            if (c.startsAt && c.startsAt > Date.now()) return { label: 'Scheduled', cls: 'badge-warning' };
+            if (c.expiresAt && c.expiresAt <= Date.now()) return { label: 'Expired', cls: 'badge-danger' };
+            if (c.maxUses && (c.usedCount || 0) >= c.maxUses) return { label: 'Exhausted', cls: 'badge-danger' };
+            return { label: 'Active', cls: 'badge-success' };
+        }
+        function formatCouponDiscount(c) {
+            if (c.discountType === 'fixed') return `${Number(c.discountValue || 0).toLocaleString()} MMK off`;
+            const cap = c.maxDiscount ? ` (max ${Number(c.maxDiscount).toLocaleString()} MMK)` : '';
+            return `${c.discountValue}% off${cap}`;
+        }
+
+        function renderCouponList() {
+            const container = document.getElementById('admin-coupon-container');
+            const codes = Object.keys(COUPONS).sort((a, b) => (COUPONS[b].createdAtMs || 0) - (COUPONS[a].createdAtMs || 0));
+            if (codes.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No coupons yet. Tap + Add to create one.</p>';
+                return;
+            }
+            container.innerHTML = codes.map(code => {
+                const c = COUPONS[code];
+                const status = couponStatusInfo(c);
+                const usesText = c.maxUses ? `${c.usedCount || 0} / ${c.maxUses}` : `${c.usedCount || 0} / Unlimited`;
+                const perUserText = c.perUserLimit ? `${c.perUserLimit}x per user` : 'Unlimited per user';
+                const startsText = c.startsAt ? new Date(c.startsAt).toLocaleString() : 'Immediately';
+                const expiryText = c.expiresAt ? new Date(c.expiresAt).toLocaleString() : 'Never';
+                return `
+                    <div class="admin-card">
+                        <div class="ac-header">
+                            <span class="ac-id">${code}</span>
+                            <span class="badge ${status.cls}">${status.label}</span>
+                        </div>
+                        <div class="ac-body">
+                            <p><b>Discount:</b> ${formatCouponDiscount(c)}</p>
+                            <p><b>Uses:</b> ${usesText}</p>
+                            <p><b>Limit:</b> ${perUserText}</p>
+                            <p><b>Starts:</b> ${startsText}</p>
+                            <p><b>Expires:</b> ${expiryText}</p>
+                            ${c.note ? `<p><b>Note:</b> ${c.note}</p>` : ''}
+                        </div>
+                        <div class="ac-footer">
+                            <button class="btn btn-outline" onclick="openCouponEditor('${code}')">Edit</button>
+                            <button class="btn btn-danger" onclick="deleteCoupon('${code}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function listenCoupons() {
+            if (couponListenerAttached) return;
+            couponListenerAttached = true;
+            onSnapshot(collection(db, "coupons"), (snap) => {
+                const next = {};
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    next[docSnap.id] = { ...data, createdAtMs: data.createdAt?.toMillis ? data.createdAt.toMillis() : 0 };
+                });
+                COUPONS = next;
+                renderCouponList();
+            }, (error) => {
+                console.error("Coupons listener error:", error);
+                document.getElementById('admin-coupon-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load coupons.</p>';
+            });
+        }
+
+        function generateCouponCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0/I/1 (easy to misread)
+            let code = 'PCA';
+            for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            document.getElementById('edit-coupon-code').value = code;
+        }
+        window.generateCouponCode = generateCouponCode;
+
+        function onCouponTypeChange() {
+            const isPercent = document.getElementById('edit-coupon-type').value === 'percent';
+            document.getElementById('coupon-max-discount-row').style.display = isPercent ? '' : 'none';
+        }
+        window.onCouponTypeChange = onCouponTypeChange;
+
+        function openCouponEditor(code = null) {
+            editingCouponOriginalCode = code;
+            const c = code ? COUPONS[code] : null;
+            document.getElementById('edit-coupon-original-code').value = code || '';
+            document.getElementById('coupon-editor-title').innerText = code ? 'Edit Coupon' : 'Add Coupon';
+            document.getElementById('edit-coupon-code').value = code || '';
+            document.getElementById('edit-coupon-code').disabled = !!code; // code is the doc ID — don't allow renaming an existing coupon
+            document.getElementById('edit-coupon-type').value = c?.discountType || 'percent';
+            document.getElementById('edit-coupon-value').value = c ? c.discountValue : '';
+            document.getElementById('edit-coupon-max-discount').value = c?.maxDiscount ?? '';
+            document.getElementById('edit-coupon-starts').value = c?.startsAt ? msToDatetimeLocalValue(c.startsAt) : '';
+            document.getElementById('edit-coupon-expiry').value = c?.expiresAt ? msToDatetimeLocalValue(c.expiresAt) : '';
+            document.getElementById('edit-coupon-maxuses').value = c?.maxUses ?? '';
+            document.getElementById('edit-coupon-perlimit').value = c ? (c.perUserLimit ?? '') : 1;
+            document.getElementById('edit-coupon-note').value = c?.note || '';
+            document.getElementById('edit-coupon-active').checked = c ? !!c.isActive : true;
+            document.getElementById('delete-coupon-btn').style.display = code ? '' : 'none';
+            const usedNote = document.getElementById('coupon-used-count-note');
+            if (c && c.usedCount) {
+                usedNote.style.display = '';
+                usedNote.innerText = `Already used ${c.usedCount} time(s). Lowering the total limit below that won't un-use it.`;
+            } else {
+                usedNote.style.display = 'none';
+            }
+            onCouponTypeChange();
+            document.getElementById('coupon-editor-modal-overlay').classList.add('show');
+        }
+        window.openCouponEditor = openCouponEditor;
+
+        function closeCouponEditor() {
+            document.getElementById('coupon-editor-modal-overlay').classList.remove('show');
+            document.getElementById('edit-coupon-code').disabled = false;
+        }
+        window.closeCouponEditor = closeCouponEditor;
+
+        async function saveCoupon() {
+            const originalCode = document.getElementById('edit-coupon-original-code').value;
+            const code = document.getElementById('edit-coupon-code').value.trim().toUpperCase().replace(/\s+/g, '');
+            const discountType = document.getElementById('edit-coupon-type').value;
+            const discountValue = parseFloat(document.getElementById('edit-coupon-value').value);
+            const maxDiscountRaw = document.getElementById('edit-coupon-max-discount').value;
+            const startsRaw = document.getElementById('edit-coupon-starts').value;
+            const expiryRaw = document.getElementById('edit-coupon-expiry').value;
+            const maxUsesRaw = document.getElementById('edit-coupon-maxuses').value;
+            const perLimitRaw = document.getElementById('edit-coupon-perlimit').value;
+            const note = document.getElementById('edit-coupon-note').value.trim();
+            const isActive = document.getElementById('edit-coupon-active').checked;
+
+            if (!code) { window.showToast('Please enter a code', 'fail'); return; }
+            if (!/^[A-Z0-9_-]+$/.test(code)) { window.showToast('Code can only have letters, numbers, - and _', 'fail'); return; }
+            if (!discountValue || discountValue <= 0) { window.showToast('Please enter a discount value', 'fail'); return; }
+            if (discountType === 'percent' && discountValue > 100) { window.showToast('Percent discount cannot exceed 100', 'fail'); return; }
+            if (!originalCode && COUPONS[code]) { window.showToast('This code already exists', 'fail'); return; }
+            const startsAtMs = startsRaw ? new Date(startsRaw).getTime() : null;
+            const expiresAtMs = expiryRaw ? new Date(expiryRaw).getTime() : null;
+            if (startsAtMs && expiresAtMs && startsAtMs >= expiresAtMs) { window.showToast('Starts At must be before the Expiry time', 'fail'); return; }
+
+            const saveBtn = document.getElementById('save-coupon-btn');
+            const originalText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                const data = {
+                    code,
+                    discountType,
+                    discountValue,
+                    maxDiscount: (discountType === 'percent' && maxDiscountRaw !== '') ? parseFloat(maxDiscountRaw) : null,
+                    startsAt: startsAtMs,
+                    expiresAt: expiresAtMs,
+                    maxUses: maxUsesRaw !== '' ? parseInt(maxUsesRaw, 10) : null,
+                    perUserLimit: perLimitRaw !== '' ? parseInt(perLimitRaw, 10) : null,
+                    note,
+                    isActive
+                };
+                if (originalCode) {
+                    await updateDoc(doc(db, "coupons", originalCode), data);
+                    logAdminActivity('Edited coupon', code);
+                } else {
+                    data.usedCount = 0;
+                    data.createdAt = serverTimestamp();
+                    await setDoc(doc(db, "coupons", code), data);
+                    logAdminActivity('Added coupon', code);
+                }
+                window.showToast('Coupon saved!', 'success');
+                closeCouponEditor();
+            } catch (error) {
+                console.error("Save coupon error:", error);
+                window.showToast(error.message || 'Failed to save coupon.', 'fail');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalText;
+            }
+        }
+        window.saveCoupon = saveCoupon;
+
+        function deleteCoupon(code) {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Coupon?',
+                message: `"${code}" cannot be recovered.`,
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "coupons", code));
+                        logAdminActivity('Deleted coupon', code);
+                        window.showToast('Coupon deleted', 'cancel');
+                    } catch (error) {
+                        console.error("Delete coupon error:", error);
+                        window.showToast('Failed to delete coupon.', 'fail');
+                    }
+                }
+            });
+        }
+        window.deleteCoupon = deleteCoupon;
+
+        function deleteCurrentCoupon() {
+            const code = document.getElementById('edit-coupon-original-code').value;
+            if (!code) return;
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Coupon?',
+                message: `"${code}" cannot be recovered.`,
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "coupons", code));
+                        logAdminActivity('Deleted coupon', code);
+                        window.showToast('Coupon deleted', 'cancel');
+                        closeCouponEditor();
+                    } catch (error) {
+                        console.error("Delete coupon error:", error);
+                        window.showToast('Failed to delete coupon.', 'fail');
+                    }
+                }
+            });
+        }
+        window.deleteCurrentCoupon = deleteCurrentCoupon;
+
         // ---------- Users (real customers, synced from the Store app's local profile) ----------
         let USERS = {};
         let usersListenerAttached = false;
@@ -11020,6 +11465,7 @@
 
         // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
         let socialListenerAttached = false;
+        let referralSettingsListenerAttached = false;
         // Per-platform icon image the admin is about to upload (null = keep
         // whatever's already saved), and a separate flag for "explicitly
         // removed" so Save knows to clear that field instead of leaving it
@@ -11027,6 +11473,235 @@
         // whenever a platform has no uploaded image.
         let editingSocialImageFiles = { facebook: null, telegram: null, tiktok: null };
         let removedSocialImages = { facebook: false, telegram: false, tiktok: false };
+
+        // datetime-local inputs use the browser's local time zone with no
+        // offset info, so both directions here go through the local Date
+        // constructor/getters rather than ISO/UTC conversions.
+        function msToDatetimeLocalValue(ms) {
+            const d = new Date(ms);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        let flashSaleListenerAttached = false;
+        let flashSaleSelectedGameId = '';
+        function listenFlashSaleSettings() {
+            if (flashSaleListenerAttached) return;
+            flashSaleListenerAttached = true;
+            onSnapshot(doc(db, "settings", "flashsale"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('flashsale-enabled').checked = !!data.enabled;
+                document.getElementById('flashsale-title').value = data.title || '';
+                document.getElementById('flashsale-desc').value = data.description || '';
+                document.getElementById('flashsale-endtime').value = data.endTime ? msToDatetimeLocalValue(data.endTime) : '';
+                flashSaleSelectedGameId = data.gameId || '';
+                populateFlashSaleGameSelect();
+            }, (error) => {
+                console.error("Flash sale settings listener error:", error);
+            });
+        }
+
+        async function saveFlashSaleSettings() {
+            const enabled = document.getElementById('flashsale-enabled').checked;
+            const title = document.getElementById('flashsale-title').value.trim();
+            const description = document.getElementById('flashsale-desc').value.trim();
+            const gameId = document.getElementById('flashsale-game-select').value;
+            const endtimeInput = document.getElementById('flashsale-endtime').value;
+            const endTime = endtimeInput ? new Date(endtimeInput).getTime() : null;
+
+            if (enabled && (!endTime || endTime <= Date.now())) {
+                window.showToast('Set an end time in the future before enabling the banner.', 'fail');
+                return;
+            }
+
+            const btn = document.getElementById('save-flashsale-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                await setDoc(doc(db, "settings", "flashsale"), { enabled, title, description, gameId, endTime }, { merge: true });
+                logAdminActivity('Saved flash sale banner settings');
+                window.showToast('Flash sale banner saved!', 'success');
+            } catch (error) {
+                console.error("Save flash sale settings error:", error);
+                window.showToast(error.message || 'Failed to save flash sale settings.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveFlashSaleSettings = saveFlashSaleSettings;
+
+        // Default commission % per VIP tier (of the referred friend's order price),
+        // paid to the referrer. Escalates with the referrer's own tier so it
+        // doubles as a VIP perk. Admin-editable at runtime via TIER_COMMISSION,
+        // which listenReferralSettings() below keeps in sync with Firestore.
+        const DEFAULT_TIER_COMMISSION = {
+            Bronze: 0, Gold: 1, Platinum: 2, Diamond: 3,
+            Legend: 4, Conqueror: 5, Mythical: 7, Immortal: 10
+        };
+        let TIER_COMMISSION = { ...DEFAULT_TIER_COMMISSION };
+
+        // Renders one % input per tier into the settings grid. Built once per
+        // Firestore update (not once ever) so it stays correct even if TIER_META
+        // itself is edited later; relies on TIER_META (defined further below in
+        // the VIP Tier Limits section, but already initialized by the time this
+        // page's settings panel can be opened).
+        function renderTierCommissionInputs(values) {
+            const grid = document.getElementById('referral-tier-commission-grid');
+            if (!grid || typeof TIER_META === 'undefined') return;
+            const orderedLowToHigh = [...TIER_META].reverse();
+            grid.innerHTML = orderedLowToHigh.map(t => `
+                <div>
+                    <label style="font-size:11.5px;color:var(--text-secondary);">${t.name}</label>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <input type="number" min="0" max="100" step="0.5" class="tier-commission-input" data-tier="${t.name}" value="${Number.isFinite(values[t.name]) ? values[t.name] : DEFAULT_TIER_COMMISSION[t.name]}" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:8px;font-size:13px;">
+                        <span style="font-size:12px;color:var(--text-secondary);">%</span>
+                    </div>
+                </div>`).join('');
+        }
+
+        function listenReferralSettings() {
+            if (referralSettingsListenerAttached) return;
+            referralSettingsListenerAttached = true;
+            onSnapshot(doc(db, "settings", "referral"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                document.getElementById('referral-new-user-reward').value = data.newUserReward || 1000;
+                document.getElementById('referral-referrer-reward').value = data.referrerReward || 1000;
+                TIER_COMMISSION = { ...DEFAULT_TIER_COMMISSION, ...(data.tierCommission || {}) };
+                renderTierCommissionInputs(TIER_COMMISSION);
+            }, (error) => {
+                console.error("Referral settings listener error:", error);
+            });
+        }
+
+        async function saveReferralSettings() {
+            const newUserReward = Number(document.getElementById('referral-new-user-reward').value) || 0;
+            const referrerReward = Number(document.getElementById('referral-referrer-reward').value) || 0;
+            const tierCommission = {};
+            document.querySelectorAll('.tier-commission-input').forEach(input => {
+                tierCommission[input.dataset.tier] = Math.max(0, Math.min(100, Number(input.value) || 0));
+            });
+
+            const btn = document.getElementById('save-referral-settings-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                await setDoc(doc(db, "settings", "referral"), { newUserReward, referrerReward, tierCommission }, { merge: true });
+                logAdminActivity('Saved referral program settings');
+                window.showToast('Referral settings saved!', 'success');
+            } catch (error) {
+                console.error("Save referral settings error:", error);
+                window.showToast(error.message || 'Failed to save referral settings.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        // ---------- Referral Commission engine (tier-based, on order Success) ----------
+        // Fires off the same real-time "orders" listener that already powers the
+        // Orders tab (see fetchOrders below), so it runs automatically no matter
+        // which code path flipped an order to Success (manual Mark Success,
+        // Telegram approval, the auto-poller, or a provider webhook) — no need to
+        // touch each of those call sites individually. Idempotent: guarded by
+        // referralCommissionApplied on the order doc, re-checked inside the
+        // transaction to survive the listener re-firing mid-flight.
+        let referralCommissionInFlight = new Set();
+
+        function processReferralCommissions(ordersMap) {
+            Object.values(ordersMap).forEach(order => {
+                if (order.status !== 'Success') return;
+                if (order.referralCommissionApplied) return;
+                if (referralCommissionInFlight.has(order.id)) return;
+                referralCommissionInFlight.add(order.id);
+                creditReferralCommission(order).finally(() => referralCommissionInFlight.delete(order.id));
+            });
+        }
+
+        async function markCommissionSkipped(orderId) {
+            try {
+                await setDoc(doc(db, "orders", orderId), { referralCommissionApplied: true }, { merge: true });
+            } catch (error) {
+                console.error('markCommissionSkipped error:', error);
+            }
+        }
+
+        // Best-effort provider-cost lookup for older orders placed before the
+        // order doc itself started carrying a `cost` snapshot. Matches by game
+        // name + the package's amount string (itemAmount can be "86 × 2" for
+        // multi-qty orders — the multiplier is parsed back out and applied to
+        // the per-unit cost). Returns null if no confident match is found.
+        function lookupLegacyOrderCost(order) {
+            if (!order.game || !order.itemAmount) return null;
+            const [amountPart, qtyPart] = String(order.itemAmount).split('×').map(s => s.trim());
+            const qty = qtyPart ? (Number(qtyPart) || 1) : 1;
+            const game = Object.values(GAMES).find(g => g.name === order.game);
+            if (!game || !Array.isArray(game.packages)) return null;
+            const pkg = game.packages.find(p => String(p.amount) === amountPart);
+            if (!pkg || !Number.isFinite(Number(pkg.cost))) return null;
+            return Number(pkg.cost) * qty;
+        }
+
+        async function creditReferralCommission(order) {
+            try {
+                const buyerId = order.userId;
+                if (!buyerId) { await markCommissionSkipped(order.id); return; }
+
+                const buyerSnap = await getDoc(doc(db, "users", buyerId));
+                const referrerCode = buyerSnap.exists() ? buyerSnap.data().referredBy : null;
+                if (!referrerCode) { await markCommissionSkipped(order.id); return; }
+
+                // Referrer's own tier, from their lifetime successful spend — same
+                // in-memory ORDERS cache and tierForSpendAdmin() the Users tab uses,
+                // so this always matches what the admin sees on that referrer's profile.
+                const referrerSpend = Object.values(ORDERS)
+                    .filter(o => o.userId === referrerCode && o.status === 'Success')
+                    .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+                const referrerTier = tierForSpendAdmin(referrerSpend).name;
+                const rate = Number(TIER_COMMISSION[referrerTier]) || 0;
+                let commission = Math.round((Number(order.price) || 0) * rate / 100);
+                if (commission <= 0) { await markCommissionSkipped(order.id); return; }
+
+                // Cap the payout so it can never push this order below the
+                // provider cost (i.e. commission is capped at the order's
+                // profit margin, never dipping into or below cost). New orders
+                // carry `cost` directly; older ones fall back to a catalogue
+                // lookup, and if even that fails, the cap is skipped (order too
+                // old / package since deleted) rather than blocking payout.
+                const cost = Number.isFinite(Number(order.cost)) ? Number(order.cost) : lookupLegacyOrderCost(order);
+                if (cost !== null) {
+                    const profit = Math.max(0, (Number(order.price) || 0) - cost);
+                    commission = Math.round(Math.min(commission, profit));
+                }
+                if (commission <= 0) { await markCommissionSkipped(order.id); return; }
+
+                await runTransaction(db, async (tx) => {
+                    const orderRef = doc(db, "orders", order.id);
+                    const orderSnap = await tx.get(orderRef);
+                    if (!orderSnap.exists() || orderSnap.data().referralCommissionApplied) return;
+                    const referrerRef = doc(db, "users", referrerCode);
+                    tx.set(referrerRef, { walletBalance: increment(commission) }, { merge: true });
+                    tx.set(orderRef, {
+                        referralCommissionApplied: true,
+                        referralCommissionAmount: commission,
+                        referralCommissionTier: referrerTier
+                    }, { merge: true });
+                    tx.set(doc(collection(db, "walletTopups")), {
+                        amount: commission,
+                        paymentMethod: `Referral Commission (${referrerTier} tier)`,
+                        status: 'Completed', timestamp: serverTimestamp(),
+                        userId: referrerCode, userName: referrerCode, userPhone: ''
+                    });
+                });
+            } catch (error) {
+                console.error('Referral commission error for order', order.id, error);
+            }
+        }
+        window.saveReferralSettings = saveReferralSettings;
 
         function listenSocialLinks() {
             if (socialListenerAttached) return;
@@ -16012,8 +16687,11 @@
             listenNotifications();
             listenAnnouncementsAdmin();
             listenPaymentMethods();
+            listenCoupons();
             listenSocialLinks();
             listenBranding();
+            listenReferralSettings();
+            listenFlashSaleSettings();
             listenReceiptStyle();
             listenG2Bulk();
             listenJCPlays();
