@@ -642,6 +642,37 @@
         }
         #admin-games-container .admin-card:last-child { margin-bottom: 0; }
 
+        /* Game Accounts (marketplace) — same bounded, independently-scrollable
+           list box pattern as Orders/Games above. */
+        #admin-accounts-container {
+            max-height: 65vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            padding: 10px;
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            background: var(--surface);
+            box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass);
+        }
+        #admin-accounts-container .admin-card:last-child { margin-bottom: 0; }
+        .acct-card-row { display:flex; align-items:center; gap:10px; cursor:pointer; }
+        .acct-card-thumb { width:52px; height:52px; border-radius:10px; object-fit:cover; flex-shrink:0; background:var(--bg-subtle); }
+        .acct-card-info { min-width:0; flex:1; }
+        .acct-card-title { font-size:13.5px; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .acct-card-meta { font-size:11.5px; color:var(--text-secondary); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .acct-card-price { font-size:12.5px; font-weight:600; color:var(--accent); margin-top:2px; }
+        .acct-status-badge { font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:20px; flex-shrink:0; white-space:nowrap; }
+        .acct-status-badge.available { background:rgba(52,211,153,0.15); color:#059669; }
+        .acct-status-badge.sold { background:rgba(251,113,133,0.15); color:#E11D48; }
+        .acct-gallery-row { display:flex; gap:8px; overflow-x:auto; padding:2px; -webkit-overflow-scrolling:touch; }
+        .acct-gallery-thumb { position:relative; width:64px; height:64px; border-radius:10px; overflow:hidden; flex-shrink:0; background:var(--bg-subtle-2); border:1px solid var(--fill-soft); }
+        .acct-gallery-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+        .acct-gallery-remove { position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .acct-gallery-remove svg { width:11px; height:11px; stroke:#fff; }
+        .acct-gallery-add { width:64px; height:64px; border-radius:10px; border:2px dashed var(--border-dashed); background:var(--bg-subtle-2); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
+        .acct-gallery-add svg { width:20px; height:20px; color:var(--text-secondary); }
+
         /* Bulk order selection (Pending orders only) + sticky action bar */
         .order-select-box { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
         .order-select-box input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
@@ -852,6 +883,18 @@
         .modal-body > * { flex-shrink: 0; }
         .modal-body label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
         .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; }
+        /* Native datetime-local pickers (Coupon Starts At/Expiry, Flash Sale
+           End Time) previously fell back to the browser's completely
+           unstyled default box — no radius, no theme background, harsh
+           black border on most Android browsers. Brought in line with the
+           text/number/password inputs above; color-scheme + a filter on
+           the calendar icon keep the native picker legible in dark themes
+           too, since the icon glyph itself can't be recolored directly. */
+        .modal-body input[type="datetime-local"] { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 13.5px; color-scheme: light; font-family: inherit; }
+        html[data-theme="dark"] .modal-body input[type="datetime-local"] { color-scheme: dark; }
+        .modal-body input[type="datetime-local"]::-webkit-calendar-picker-indicator { padding: 4px; border-radius: 8px; cursor: pointer; opacity: 0.75; }
+        .modal-body input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover { opacity: 1; background: var(--accent-soft); }
+        .modal-body input[type="datetime-local"]:focus { outline: none; border-color: var(--accent); }
         /* Soft-lock style for the Game Name field once FazerCards' region
            split ("Free Fire (BD)" -> Name "Free Fire" + Server "BD") has
            filled it in — greyed out + readonly so a stray edit can't break
@@ -1207,6 +1250,15 @@
            translateY(0) and none render identically, so this doesn't visibly
            move the modal or reset its open/close animation. */
         .modal-overlay.show .modal-box.pkg-editing-open { transform: none; }
+        /* #edit-packages-list (the scrollable box each package row sits in) has its
+           own `transform: translateZ(0)` for scroll performance — a third containing
+           block on top of .package-row's and .modal-box's, so canceling just those
+           two still left the fixed overlay trapped inside this box (clipped by its
+           max-height/overflow-y, which is why it looked like it vanished into the
+           container). Cancel it here too while a card is open; overflow doesn't
+           matter in that state since the full-screen overlay blocks interaction
+           with the list underneath anyway. */
+        #edit-packages-list.pkg-editing-open { transform: none; overflow: visible; }
         .pkg-card { background: var(--surface-strong); width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
         .pkg-card-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500; color: var(--text-primary); padding-bottom: 2px; }
         .pkg-card-close { font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 2px 8px; display: inline-flex; align-items: center; justify-content: center; }
@@ -2482,6 +2534,93 @@
             </div>
         </div>
 
+        <!-- GAME ACCOUNTS PAGE (Firebase Connected) — admin management for the
+             customer-facing Account marketplace (browse & buy pre-made
+             accounts; see store's account / account-list / account-detail
+             pages). Accounts are never auto-marked sold — the admin flips
+             status to Sold by hand here after confirming the matching order
+             in Active Orders (orderType: "gameAccount"), since handing over
+             account credentials is a manual, human step. -->
+        <div id="account-list" class="page-section">
+            <h2 class="title-header">
+                <span>Game Accounts</span>
+            </h2>
+            <div class="pkg-actions-row" style="margin:-8px 0 14px;">
+                <button class="btn btn-primary" onclick="openAccountEditor()">+ Add Account</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="account-search" placeholder="Search by game or title..." autocomplete="off" oninput="renderAccountsList()">
+                </div>
+            </div>
+            <div id="admin-accounts-container">
+                <p class="empty-msg">Loading accounts...</p>
+            </div>
+        </div>
+
+        <!-- ACCOUNT EDITOR MODAL -->
+        <div class="modal-overlay" id="account-editor-modal-overlay" onclick="if(event.target===this) closeAccountEditor()">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3 id="account-editor-title">Add Account</h3>
+                    <div class="modal-close" onclick="closeAccountEditor()">
+                        <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-account-id">
+                    <label>Game Name</label>
+                    <input type="text" id="edit-account-gamename" placeholder="e.g. Mobile Legends">
+                    <label>Title</label>
+                    <input type="text" id="edit-account-title" placeholder="e.g. Mythic 100 Star, 80+ Skins">
+                    <label>Price (MMK)</label>
+                    <input type="number" id="edit-account-price" placeholder="e.g. 150000" min="0">
+
+                    <div style="display:flex;gap:10px;">
+                        <div style="flex:1;min-width:0;">
+                            <label>Rank <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+                            <input type="text" id="edit-account-rank" placeholder="e.g. Mythic">
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <label>Server <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+                            <input type="text" id="edit-account-server" placeholder="e.g. Global">
+                        </div>
+                    </div>
+
+                    <label>Description <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+                    <textarea id="edit-account-description" rows="4" placeholder="Details about this account..." style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border-glass);background:var(--fill-soft);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+
+                    <label>Skins Included <span style="font-weight:400;color:var(--text-muted);">(comma separated, optional)</span></label>
+                    <input type="text" id="edit-account-skins" placeholder="e.g. Star Dragon Lancelot, Wolf Master Natalia">
+
+                    <label>Photos <span style="font-weight:400;color:var(--text-muted);">(first photo is the cover)</span></label>
+                    <div class="acct-gallery-row" id="edit-account-gallery">
+                        <label class="acct-gallery-add" for="edit-account-file">
+                            <svg class="ui-icon"><use href="#icon-camera"></use></svg>
+                        </label>
+                    </div>
+                    <input type="file" id="edit-account-file" accept="image/*" multiple style="display:none;" onchange="addAccountImageFiles(event)">
+                    <p id="account-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+
+                    <div class="switch-row">
+                        <div>
+                            <span class="switch-label">Mark as Sold</span>
+                            <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် customer store ဘက်မှာ ဒီ account ကို ပေါ်မှာမဟုတ်ပါ။</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="edit-account-sold">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" id="delete-account-btn" style="display:none;" onclick="deleteCurrentAccount()">Delete</button>
+                    <button class="btn btn-primary" id="save-account-btn" onclick="saveGameAccount()">Save</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ORDERS PAGE (Firebase Connected) -->
         <div id="order-list" class="page-section">
             <h2 class="title-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -2829,11 +2968,6 @@
             </div>
         </div>
 
-    </main>
-    </div>
-
-    <!-- GAME EDITOR PAGE: opened as a full page (not a modal) from the game
-         action sheet's Edit button, or from "+ Add" on the game list. -->
     <div class="page-section" id="game-editor-page">
         <div class="udp-back" onclick="closeGameEditor()">
             <svg class="ui-icon" style="width:16px;height:16px;transform:rotate(180deg);"><use href="#icon-chevron-right"></use></svg>
@@ -3178,6 +3312,11 @@
                 <button class="btn btn-primary" id="save-game-btn" onclick="saveGame()">Save Game</button>
             </div>
     </div>
+    </main>
+    </div>
+
+    <!-- GAME EDITOR PAGE: opened as a full page (not a modal) from the game
+         action sheet's Edit button, or from "+ Add" on the game list. -->
 
     <!-- Bulk Price/Cost Adjust Modal: shift every package's Price or Cost by a
          percentage in one tap (e.g. "+5% all prices" after a supplier hike).
@@ -3812,7 +3951,8 @@
             'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
             'payment-list': 'group-wallet', 'topup-list': 'group-wallet', 'coupon-list': 'group-wallet',
             'user-list': 'group-userlist', 'tier-list': 'group-userlist', 'activity-log': 'group-userlist',
-            'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
+            'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting',
+            'account-list': 'group-game'
         };
         function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
@@ -3844,7 +3984,8 @@
             ]},
             game: { title: 'Game', items: [
                 { label: 'Direct', icon: '#icon-gamepad', run: () => showGameListTab('direct') },
-                { label: 'Voucher', icon: '#icon-gift', run: () => showGameListTab('voucher') }
+                { label: 'Voucher', icon: '#icon-gift', run: () => showGameListTab('voucher') },
+                { label: 'Accounts', icon: '#icon-tag', run: () => showPage('account-list') }
             ]},
             wallet: { title: 'Wallet', items: [
                 { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
@@ -8460,6 +8601,214 @@
             });
         }
 
+        // ---------- Game Accounts (marketplace) admin management ----------
+        // Manages the "gameAccounts" collection the store's Account tab reads
+        // from (see store's listenGameAccounts()/renderAccountGames()).
+        // Deliberately no auto-fulfillment here: the admin marks an account
+        // "Sold" by hand from this list after confirming the matching order
+        // in Active Orders (orderType: "gameAccount"), since handing over
+        // account credentials is a manual, human step.
+        let GAME_ACCOUNTS = {};
+        let editingAccountImages = [];
+        function listenGameAccounts() {
+            onSnapshot(collection(db, "gameAccounts"), (snap) => {
+                const map = {};
+                snap.forEach(docSnap => { map[docSnap.id] = docSnap.data(); });
+                GAME_ACCOUNTS = map;
+                renderAccountsList();
+            }, (error) => {
+                console.error("Game accounts listener error:", error);
+                const el = document.getElementById('admin-accounts-container');
+                if (el) el.innerHTML = '<p class="empty-msg" style="color:red;">Could not load accounts. Check connection.</p>';
+            });
+        }
+
+        function renderAccountsList() {
+            const container = document.getElementById('admin-accounts-container');
+            if (!container) return;
+            const searchTerm = (document.getElementById('account-search')?.value || '').trim().toLowerCase();
+            const ids = Object.keys(GAME_ACCOUNTS).filter(id => {
+                const a = GAME_ACCOUNTS[id];
+                if (!searchTerm) return true;
+                return (a.gameName || '').toLowerCase().includes(searchTerm) || (a.title || '').toLowerCase().includes(searchTerm);
+            }).sort((a, b) => {
+                const ga = GAME_ACCOUNTS[a], gb = GAME_ACCOUNTS[b];
+                return (ga.gameName || '').localeCompare(gb.gameName || '') || (ga.title || '').localeCompare(gb.title || '');
+            });
+            if (ids.length === 0) {
+                container.innerHTML = searchTerm
+                    ? '<p class="empty-msg">No accounts match your search.</p>'
+                    : '<p class="empty-msg">No game accounts yet. Tap + Add Account to create one.</p>';
+                return;
+            }
+            container.innerHTML = ids.map(id => {
+                const a = GAME_ACCOUNTS[id];
+                const cover = (Array.isArray(a.images) && a.images[0]) || '';
+                const sold = (a.status || 'available') === 'sold';
+                return `
+                    <div class="admin-card acct-card-row" onclick="openAccountEditor('${id}')">
+                        <img class="acct-card-thumb" src="${cover}" alt="" loading="lazy" decoding="async">
+                        <div class="acct-card-info">
+                            <div class="acct-card-title">${escapeHtml(a.title || 'Untitled Account')}</div>
+                            <div class="acct-card-meta">${escapeHtml(a.gameName || '')}${a.rank ? ' • ' + escapeHtml(a.rank) : ''}${a.server ? ' • ' + escapeHtml(a.server) : ''}</div>
+                            <div class="acct-card-price">${Number(a.price || 0).toLocaleString()} MMK</div>
+                        </div>
+                        <span class="acct-status-badge ${sold ? 'sold' : 'available'}">${sold ? 'Sold' : 'Available'}</span>
+                    </div>
+                `;
+            }).join('');
+            initScrollReveal(container);
+        }
+        window.renderAccountsList = renderAccountsList;
+
+        function renderAccountGalleryEditor() {
+            const wrap = document.getElementById('edit-account-gallery');
+            const addTile = wrap.querySelector('.acct-gallery-add');
+            wrap.querySelectorAll('.acct-gallery-thumb').forEach(el => el.remove());
+            editingAccountImages.forEach((url, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'acct-gallery-thumb';
+                thumb.innerHTML = `<img src="${url}" alt=""><span class="acct-gallery-remove" onclick="event.stopPropagation(); removeAccountImage(${idx})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>`;
+                wrap.insertBefore(thumb, addTile);
+            });
+        }
+
+        function removeAccountImage(idx) {
+            editingAccountImages.splice(idx, 1);
+            renderAccountGalleryEditor();
+        }
+        window.removeAccountImage = removeAccountImage;
+
+        async function addAccountImageFiles(e) {
+            const files = Array.from(e.target.files || []);
+            if (!files.length) return;
+            const statusEl = document.getElementById('account-upload-status');
+            statusEl.style.display = 'block';
+            for (const file of files) {
+                try {
+                    statusEl.innerText = `Uploading photo ${editingAccountImages.length + 1}...`;
+                    const url = await uploadImageToImgBB(file, 'account-upload-status');
+                    editingAccountImages.push(url);
+                    renderAccountGalleryEditor();
+                } catch (error) {
+                    console.error("Account image upload error:", error);
+                    window.showToast(error.message || 'Photo upload failed.', 'fail');
+                }
+            }
+            statusEl.innerText = 'Photos uploaded ✓';
+            e.target.value = '';
+        }
+        window.addAccountImageFiles = addAccountImageFiles;
+
+        function openAccountEditor(id = null) {
+            document.getElementById('edit-account-id').value = id || '';
+            document.getElementById('edit-account-file').value = '';
+            document.getElementById('account-upload-status').style.display = 'none';
+            const deleteBtn = document.getElementById('delete-account-btn');
+            if (id && GAME_ACCOUNTS[id]) {
+                const a = GAME_ACCOUNTS[id];
+                document.getElementById('account-editor-title').innerText = 'Edit Account';
+                document.getElementById('edit-account-gamename').value = a.gameName || '';
+                document.getElementById('edit-account-title').value = a.title || '';
+                document.getElementById('edit-account-price').value = a.price || '';
+                document.getElementById('edit-account-rank').value = a.rank || '';
+                document.getElementById('edit-account-server').value = a.server || '';
+                document.getElementById('edit-account-description').value = a.description || '';
+                document.getElementById('edit-account-skins').value = Array.isArray(a.skins) ? a.skins.join(', ') : '';
+                document.getElementById('edit-account-sold').checked = (a.status || 'available') === 'sold';
+                editingAccountImages = Array.isArray(a.images) ? a.images.slice() : [];
+                deleteBtn.style.display = 'block';
+            } else {
+                document.getElementById('account-editor-title').innerText = 'Add Account';
+                document.getElementById('edit-account-gamename').value = '';
+                document.getElementById('edit-account-title').value = '';
+                document.getElementById('edit-account-price').value = '';
+                document.getElementById('edit-account-rank').value = '';
+                document.getElementById('edit-account-server').value = '';
+                document.getElementById('edit-account-description').value = '';
+                document.getElementById('edit-account-skins').value = '';
+                document.getElementById('edit-account-sold').checked = false;
+                editingAccountImages = [];
+                deleteBtn.style.display = 'none';
+            }
+            renderAccountGalleryEditor();
+            document.getElementById('account-editor-modal-overlay').classList.add('show');
+        }
+        window.openAccountEditor = openAccountEditor;
+
+        function closeAccountEditor() {
+            document.getElementById('account-editor-modal-overlay').classList.remove('show');
+        }
+        window.closeAccountEditor = closeAccountEditor;
+
+        async function saveGameAccount() {
+            const id = document.getElementById('edit-account-id').value;
+            const gameName = document.getElementById('edit-account-gamename').value.trim();
+            const title = document.getElementById('edit-account-title').value.trim();
+            const price = Number(document.getElementById('edit-account-price').value) || 0;
+            const rank = document.getElementById('edit-account-rank').value.trim();
+            const server = document.getElementById('edit-account-server').value.trim();
+            const description = document.getElementById('edit-account-description').value.trim();
+            const skins = document.getElementById('edit-account-skins').value.split(',').map(s => s.trim()).filter(Boolean);
+            const sold = document.getElementById('edit-account-sold').checked;
+
+            if (!gameName || !title || !price) { window.showToast('Game Name, Title, Price တွေ ဖြည့်ပါ', 'fail'); return; }
+            if (editingAccountImages.length === 0) { window.showToast('ဓာတ်ပုံ အနည်းဆုံး တစ်ပုံ ထည့်ပါ', 'fail'); return; }
+
+            const saveBtn = document.getElementById('save-account-btn');
+            const originalText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'Saving...';
+
+            try {
+                const data = {
+                    gameName, title, price, rank, server, description, skins,
+                    images: editingAccountImages,
+                    status: sold ? 'sold' : 'available'
+                };
+                if (id) {
+                    await updateDoc(doc(db, "gameAccounts", id), data);
+                    logAdminActivity('Edited game account', `${gameName} — ${title}`);
+                } else {
+                    await addDoc(collection(db, "gameAccounts"), data);
+                    logAdminActivity('Added game account', `${gameName} — ${title}`);
+                }
+                window.showToast('Account saved!', 'success');
+                closeAccountEditor();
+            } catch (error) {
+                console.error("Save game account error:", error);
+                window.showToast(error.message || 'Failed to save account.', 'fail');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalText;
+            }
+        }
+        window.saveGameAccount = saveGameAccount;
+
+        function deleteCurrentAccount() {
+            const id = document.getElementById('edit-account-id').value;
+            if (!id) return;
+            const a = GAME_ACCOUNTS[id];
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete Account?',
+                message: 'This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    try {
+                        await deleteDoc(doc(db, "gameAccounts", id));
+                        logAdminActivity('Deleted game account', a ? `${a.gameName} — ${a.title}` : id);
+                        window.showToast('Account deleted.', 'success');
+                        closeAccountEditor();
+                    } catch (error) {
+                        console.error("Delete game account error:", error);
+                        window.showToast(error.message || 'Failed to delete account.', 'fail');
+                    }
+                }
+            });
+        }
+        window.deleteCurrentAccount = deleteCurrentAccount;
+
         // Keeps the Flash Sale settings card's game dropdown in sync with the
         // live games list, without losing whatever the admin currently has
         // selected (including a selection not yet saved to Firestore).
@@ -9022,6 +9371,8 @@
             row.classList.add('editing');
             const hostModal = row.closest('.modal-box');
             if (hostModal) hostModal.classList.add('pkg-editing-open');
+            const listBox = row.closest('#edit-packages-list');
+            if (listBox) listBox.classList.add('pkg-editing-open');
             applyPkgCardViewportFix();
         }
         window.expandPackageRow = expandPackageRow;
@@ -9068,6 +9419,10 @@
             // but this keeps it correct if that ever changes).
             if (hostModal && !hostModal.querySelector('.package-row.editing')) {
                 hostModal.classList.remove('pkg-editing-open');
+            }
+            const listBox = row.closest('#edit-packages-list');
+            if (listBox && !listBox.querySelector('.package-row.editing')) {
+                listBox.classList.remove('pkg-editing-open');
             }
             const overlay = row.querySelector('.pkg-card-overlay');
             overlay.style.height = '';
@@ -16684,6 +17039,7 @@
             fetchOrders();
             fetchWalletTopups();
             listenGames();
+            listenGameAccounts();
             listenNotifications();
             listenAnnouncementsAdmin();
             listenPaymentMethods();
