@@ -931,7 +931,10 @@
         .sc-bubble { position: relative; max-width: 78%; padding: 9px 13px 16px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; word-break: break-word; }
         .sc-bubble.mine { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
         .sc-bubble.theirs { align-self: flex-start; background: var(--fill-soft); color: var(--text-primary); border-bottom-left-radius: 4px; }
-        .sc-bubble-time { position: absolute; right: 12px; bottom: 4px; font-size: 9.5px; opacity: 0.7; }
+        .sc-bubble-time { position: absolute; right: 12px; bottom: 4px; font-size: 9.5px; opacity: 0.7; display: flex; align-items: center; gap: 3px; }
+        .sc-tick { display: inline-flex; }
+        .sc-tick svg { width: 13px; height: 13px; display: block; }
+        .sc-tick.seen svg { color: #6FE0FF; opacity: 1; }
         .sc-inputrow { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--fill-soft); margin-top: 8px; flex-shrink: 0; }
         .sc-inputrow input { flex: 1; padding: 11px 14px; border-radius: 22px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); font-size: 14px; min-width: 0; }
         .sc-send { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
@@ -2864,7 +2867,7 @@
         <!-- USERS PAGE (Firebase Connected) -->
         <div id="user-list" class="page-section">
             <h2 class="title-header">
-                <span>Manage Users</span>
+                <span>Manage Users <span id="user-list-count-badge" class="badge badge-success" style="margin-left:6px;vertical-align:middle;" title="Total registered users">0</span></span>
                 <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportUsersCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
             </h2>
             <div class="admin-search-wrap">
@@ -10682,6 +10685,65 @@
         let supportChatMsgUnsub = null; // messages listener for whichever thread is open
         let currentSupportChatGuestId = null;
 
+        // Notification sounds (received / sent) - generated with WebAudio so
+        // no external audio file needs to be hosted. Browsers block audio
+        // before any user gesture on the page, so this stays silent until
+        // the admin has clicked/tapped anywhere at least once - normal since
+        // they'll have already clicked into the panel before a chat loads.
+        let chatAudioCtx = null;
+        function getChatAudioCtx() {
+            if (!chatAudioCtx) {
+                try { chatAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+            }
+            return chatAudioCtx;
+        }
+        function playChatSound(kind) {
+            const ctx = getChatAudioCtx();
+            if (!ctx) return;
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const now = ctx.currentTime;
+            // 'receive': two-note ascending ding. 'send': one short soft blip.
+            const notes = kind === 'receive' ? [880, 1108] : [660];
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                const start = now + i * 0.09;
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(0.18, start + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(start);
+                osc.stop(start + 0.18);
+            });
+        }
+        // One-time unlock: some browsers keep a freshly-created AudioContext
+        // suspended until a user gesture happens *after* it exists, so grab
+        // the very first click/tap on the page to resume it.
+        document.addEventListener('click', function unlockChatAudio() {
+            const ctx = getChatAudioCtx();
+            if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+            document.removeEventListener('click', unlockChatAudio);
+        }, { once: true });
+
+        let supportChatFirstLoad = true;
+        const supportChatLastKnownMsgAt = {}; // guestId -> millis, used to detect genuinely-new incoming messages
+
+        // Looks up the guest's real account (users/{uid}) if this "guest" is
+        // actually a logged-in customer, so their profile name/photo is
+        // shown instead of the bare Guest-XXXX id. Falls back through
+        // userName (Store.html-supplied display name) to the raw id.
+        function resolveChatDisplayName(c) {
+            const u = USERS[c.id];
+            if (u && u.name && u.name.trim()) return u.name.trim();
+            return (c && c.userName) || (c && c.id) || 'Guest';
+        }
+        function resolveChatAvatar(c) {
+            const u = USERS[c.id];
+            return (u && u.photo) ? u.photo : null;
+        }
+
         // Typing indicator: each supportChats/{guestId} summary doc carries a
         // userTypingAt (written by Store.html) and adminTypingAt (written
         // here) timestamp, refreshed at most every TYPING_THROTTLE_MS while
@@ -10712,6 +10774,22 @@
             const q = query(collection(db, "supportChats"), orderBy("lastMessageAt", "desc"));
             onSnapshot(q, (snap) => {
                 SUPPORT_CHATS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Play the "received" ding for any chat whose last message is
+                // newer than what we last saw and came from the customer -
+                // skipped on the very first snapshot (page load) so it
+                // doesn't blast through every existing conversation at once.
+                if (!supportChatFirstLoad) {
+                    SUPPORT_CHATS.forEach(c => {
+                        const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
+                        const prev = supportChatLastKnownMsgAt[c.id] || 0;
+                        if (c.lastSender === 'user' && at > prev) playChatSound('receive');
+                    });
+                }
+                SUPPORT_CHATS.forEach(c => {
+                    const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
+                    supportChatLastKnownMsgAt[c.id] = at;
+                });
+                supportChatFirstLoad = false;
                 renderSupportChatList();
                 renderSupportChatThreadTyping();
                 const unreadCount = SUPPORT_CHATS.filter(c => c.unreadByAdmin).length;
@@ -10767,7 +10845,7 @@
             let list = SUPPORT_CHATS;
             if (term) {
                 list = list.filter(c =>
-                    (c.userName || '').toLowerCase().includes(term) ||
+                    resolveChatDisplayName(c).toLowerCase().includes(term) ||
                     (c.id || '').toLowerCase().includes(term) ||
                     (c.lastMessage || '').toLowerCase().includes(term)
                 );
@@ -10778,14 +10856,16 @@
             }
             container.innerHTML = list.map(c => {
                 const unread = !!c.unreadByAdmin;
-                const name = c.userName || c.id;
+                const name = resolveChatDisplayName(c);
+                const avatar = resolveChatAvatar(c);
                 const initial = escapeHtml((name || '?').trim().charAt(0).toUpperCase() || '?');
                 const preview = escapeHtml(c.lastMessage || '');
                 const when = c.lastMessageAt && c.lastMessageAt.toDate ? timeAgoShort(c.lastMessageAt.toDate()) : '';
                 const fromLabel = c.lastSender === 'admin' ? 'You: ' : '';
+                const avatarInner = avatar ? `<img src="${avatar}" loading="lazy" decoding="async" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial;
                 return `
                     <div class="admin-card" style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;" onclick="openSupportChatThread('${c.id}')">
-                        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;">${initial}</div>
+                        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden;">${avatarInner}</div>
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                                 <span style="font-weight:${unread ? '700' : '500'};font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
@@ -10813,7 +10893,20 @@
                 const mine = m.sender === 'admin';
                 const time = (m.timestamp && m.timestamp.toDate) ? m.timestamp.toDate().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
                 const safe = escapeHtml(m.text || '');
-                return `<div class="sc-bubble ${mine ? 'mine' : 'theirs'}">${safe}<span class="sc-bubble-time">${time}</span></div>`;
+                // Sent/Seen tick for our own messages - single check once sent,
+                // double (accent-colored) check once seenByUser is set true
+                // (Store.html needs to write that flag when the customer opens
+                // the chat, mirroring the seenByAdmin flag set below for theirs).
+                let tick = '';
+                if (mine) {
+                    const seen = m.seenByUser === true;
+                    tick = `<span class="sc-tick${seen ? ' seen' : ''}" title="${seen ? 'Seen' : 'Sent'}">` +
+                        (seen
+                            ? '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 10l4 4 4-6"/><path d="M8 10l4 4 7-9"/></svg>'
+                            : '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l4 4 9-9"/></svg>') +
+                        `</span>`;
+                }
+                return `<div class="sc-bubble ${mine ? 'mine' : 'theirs'}">${safe}<span class="sc-bubble-time">${time}${tick}</span></div>`;
             }).join('');
             box.scrollTop = box.scrollHeight;
         }
@@ -10822,7 +10915,7 @@
             currentSupportChatGuestId = guestId;
             adminTypingWriteAt = 0;
             const chat = SUPPORT_CHATS.find(c => c.id === guestId);
-            document.getElementById('supportchat-thread-title').innerText = (chat && chat.userName) || guestId;
+            document.getElementById('supportchat-thread-title').innerText = chat ? resolveChatDisplayName(chat) : guestId;
             document.getElementById('supportchat-thread-messages').innerHTML = '<p class="empty-msg">Loading...</p>';
             document.getElementById('supportchat-thread-overlay').classList.add('show');
             renderSupportChatThreadTyping();
@@ -10876,6 +10969,7 @@
                 await setDoc(doc(db, "supportChats", guestId), {
                     lastMessage: text, lastMessageAt: serverTimestamp(), lastSender: 'admin', unreadByAdmin: false, adminTypingAt: null
                 }, { merge: true });
+                playChatSound('send');
             } catch (error) {
                 console.error("Support chat reply send error:", error);
                 window.showToast(error.message || 'Failed to send.', 'fail');
@@ -11650,6 +11744,8 @@
                 renderAdminUsersList();
                 const totalUsersEl = document.getElementById('stat-total-users');
                 if (totalUsersEl) totalUsersEl.innerText = Object.keys(USERS).length.toLocaleString();
+                const userListCountBadge = document.getElementById('user-list-count-badge');
+                if (userListCountBadge) userListCountBadge.innerText = Object.keys(USERS).length.toLocaleString();
                 if (currentUserDetailsId && USERS[currentUserDetailsId]) {
                     document.getElementById('ud-wallet-balance-h').innerText = fmtMoney(USERS[currentUserDetailsId].walletBalance || 0);
                 }
