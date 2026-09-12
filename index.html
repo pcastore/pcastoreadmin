@@ -1887,15 +1887,15 @@
         <div class="nav-item active" id="group-dashboard" onclick="openNavGroupSheet('dashboard')">
             <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> <span class="nav-label">Dashboard</span>
         </div>
-        <div class="nav-item" id="group-api" onclick="openNavGroupSheet('api')">
-            <svg class="ui-icon"><use href="#icon-plug"></use></svg> <span class="nav-label">API</span>
-            <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
-        </div>
         <div class="nav-item" id="group-game" onclick="openNavGroupSheet('game')">
             <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> <span class="nav-label">Game</span>
         </div>
         <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
             <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Wallet</span>
+        </div>
+        <div class="nav-item" id="group-api" onclick="openNavGroupSheet('api')">
+            <svg class="ui-icon"><use href="#icon-plug"></use></svg> <span class="nav-label">API</span>
+            <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
         <div class="nav-item" id="group-userlist" onclick="openNavGroupSheet('userlist')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Userlist</span>
@@ -2920,7 +2920,7 @@
 
         <!-- PAYMENT METHODS PAGE (Firebase Connected) -->
         <div id="payment-list" class="page-section">
-            <h2 class="title-header">Payment Methods <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openPaymentEditor()">+ Add</button></h2>
+            <h2 class="title-header"><span>Payment Methods</span> <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openPaymentEditor()">+ Add</button></h2>
             <div id="admin-payment-container">
                 <p class="empty-msg">Loading payment methods...</p>
             </div>
@@ -2928,7 +2928,7 @@
 
         <!-- COUPON CODES PAGE (Firebase Connected) -->
         <div id="coupon-list" class="page-section">
-            <h2 class="title-header">Coupons <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openCouponEditor()">+ Add</button></h2>
+            <h2 class="title-header"><span>Coupons</span> <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openCouponEditor()">+ Add</button></h2>
             <div id="admin-coupon-container">
                 <p class="empty-msg">Loading coupons...</p>
             </div>
@@ -3084,7 +3084,7 @@
              be edited or deleted from the client. -->
         <div id="activity-log" class="page-section">
             <h2 class="title-header">Admin Activity Log</h2>
-            <div class="admin-search-wrap" style="margin-bottom:12px;">
+            <div class="admin-search-wrap">
                 <input type="text" id="activity-log-filter" placeholder="Filter by admin username..." oninput="renderActivityLog()">
             </div>
             <div id="activity-log-container">
@@ -4127,13 +4127,8 @@
         const NAV_GROUPS = {
             dashboard: { title: 'Dashboard', items: [
                 { label: 'Dashboard', icon: '#icon-trending-up', run: () => showPage('dashboard') },
-                { label: 'Analytics', icon: '#icon-bar-chart', run: () => showPage('analytics') },
-                { label: 'Orders', icon: '#icon-cart', run: () => showPage('order-list') }
-            ]},
-            api: { title: 'API', items: [
-                { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
-                { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
-                { label: 'API Keys', icon: '#icon-plug', run: () => showPage('api-docs') }
+                { label: 'Orders', icon: '#icon-cart', run: () => showPage('order-list') },
+                { label: 'Analytics', icon: '#icon-bar-chart', run: () => showPage('analytics') }
             ]},
             game: { title: 'Game', items: [
                 { label: 'Direct', icon: '#icon-gamepad', run: () => showGameListTab('direct') },
@@ -4144,6 +4139,11 @@
                 { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
                 { label: 'Top Up', icon: '#icon-wallet', run: () => showPage('topup-list') },
                 { label: 'Coupons', icon: '#icon-tag', run: () => showPage('coupon-list') }
+            ]},
+            api: { title: 'API', items: [
+                { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
+                { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
+                { label: 'API Keys', icon: '#icon-plug', run: () => showPage('api-docs') }
             ]},
             userlist: { title: 'Userlist', items: [
                 { label: 'Userlist', icon: '#icon-users', run: () => showPage('user-list') },
