@@ -2861,6 +2861,15 @@
         <div id="notify-list" class="page-section">
             <h2 class="title-header">Send Notification</h2>
             <div class="admin-card">
+                <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Send to</label>
+                <select id="notif-audience" onchange="onNotifAudienceChange()" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <option value="all">All Users</option>
+                    <option value="user">Specific User (by ID)</option>
+                </select>
+                <div id="notif-target-user-wrap" style="display:none;">
+                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">User ID</label>
+                    <input type="text" id="notif-target-user" placeholder="e.g. guest_ab12cd34" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                </div>
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Title</label>
                 <input type="text" id="notif-title" placeholder="e.g. Server Maintenance" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Intro</label>
@@ -5462,14 +5471,25 @@
 
         // ---------- Orders: 7-day auto-delete (Success/Fail only) ----------
         // Mirrors the same policy on Store.html's own History page: completed
-        // orders (Success or Fail) older than 7 days are permanently deleted.
-        // Pending/Processing orders are never touched. Runs client-side
-        // whenever this admin panel's Orders listener is active - move into
-        // the pca-telegram-bot Worker's cron for guaranteed enforcement with
-        // the panel closed. NOTE: VIP tier and the Leaderboard are computed
-        // live from this same collection, so this intentionally trims
-        // lifetime totals down to a trailing 7-day window.
-        const ORDER_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+        // orders (Success or Fail) older than 3 days are moved into the
+        // "ordersArchive" collection (full data preserved, just out of the
+        // live/listened "orders" collection) instead of being permanently
+        // deleted - keeps accounting/refund-dispute history intact per the
+        // admin audit report's recommendation, while still keeping the live
+        // Orders listener/dashboard small and fast. Pending/Processing
+        // orders are never touched. Runs client-side whenever this admin
+        // panel's Orders listener is active - move into the pca-telegram-bot
+        // Worker's cron for guaranteed enforcement with the panel closed.
+        // ---------- Orders: 2-month flat auto-delete (Success/Fail only) ----------
+        // Completed orders (Success or Fail) older than 2 months are moved
+        // into "ordersArchive" (full data preserved, just out of the live
+        // "orders" collection) instead of being permanently deleted. Same
+        // window for every user regardless of VIP tier. Pending/Processing
+        // orders are never touched.
+        // NOTE: VIP tier and the Leaderboard are computed from userStats
+        // (totalSpent), not from this collection, so archiving here never
+        // changes lifetime totals/tier — only how far back Order History shows.
+        const ORDER_RETENTION_MS = 60 * 24 * 60 * 60 * 1000;
         function checkOrdersAutoDelete(items) {
             const cutoffMs = Date.now() - ORDER_RETENTION_MS;
             const stale = Object.values(items).filter(o => {
@@ -5478,12 +5498,18 @@
                 return ms && ms < cutoffMs;
             });
             if (!stale.length) return;
-            // Chunk at 450 to stay safely under Firestore's 500-write batch limit.
-            for (let i = 0; i < stale.length; i += 450) {
-                const chunk = stale.slice(i, i + 450);
+            // Chunk at 225 (each order = 1 archive-set write + 1 delete
+            // write = 2 writes) to stay safely under Firestore's 500-write
+            // batch limit.
+            for (let i = 0; i < stale.length; i += 225) {
+                const chunk = stale.slice(i, i + 225);
                 const batch = writeBatch(db);
-                chunk.forEach(o => batch.delete(doc(db, "orders", o.id)));
-                batch.commit().catch(err => console.error("Order auto-delete error:", err));
+                chunk.forEach(o => {
+                    const { id, ...orderData } = o;
+                    batch.set(doc(db, "ordersArchive", o.id), { ...orderData, archivedAt: serverTimestamp() });
+                    batch.delete(doc(db, "orders", o.id));
+                });
+                batch.commit().catch(err => console.error("Order archive error:", err));
             }
         }
 
@@ -7522,7 +7548,13 @@
         // days are permanently deleted so the Top Up history doesn't grow
         // forever. Pending requests are never touched by this - they're only
         // ever handled by checkWalletTopupAutoExpire above.
-        const WALLET_TOPUP_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+        // ---------- Wallet Top Ups: 2-month flat auto-delete (Completed/Rejected only) ----------
+        // Top-up requests that have reached a final state (Completed or
+        // Rejected) older than 2 months are permanently deleted. Same window
+        // for every user regardless of VIP tier. Pending requests are never
+        // touched by this - they're only ever handled by
+        // checkWalletTopupAutoExpire above. Never touches userStats/totalSpent.
+        const WALLET_TOPUP_RETENTION_MS = 60 * 24 * 60 * 60 * 1000;
         function checkWalletTopupsAutoDelete(items) {
             const cutoffMs = Date.now() - WALLET_TOPUP_RETENTION_MS;
             const stale = Object.values(items).filter(t => {
@@ -10854,18 +10886,31 @@
             });
         }
 
-        // ---------- Notifications (broadcast to all users) ----------
+        // ---------- Notifications (broadcast to all users, or one specific user by ID) ----------
         let notifListenerAttached = false;
+
+        function onNotifAudienceChange() {
+            const audience = document.getElementById('notif-audience').value;
+            const wrap = document.getElementById('notif-target-user-wrap');
+            const btn = document.getElementById('send-notif-btn');
+            wrap.style.display = audience === 'user' ? 'block' : 'none';
+            btn.innerText = audience === 'user' ? 'Send to User' : 'Send to All Users';
+        }
+        window.onNotifAudienceChange = onNotifAudienceChange;
 
         async function sendNotification() {
             const titleEl = document.getElementById('notif-title');
             const introEl = document.getElementById('notif-intro');
             const detailsEl = document.getElementById('notif-details');
+            const audience = document.getElementById('notif-audience').value;
+            const targetUserEl = document.getElementById('notif-target-user');
             const title = titleEl.value.trim();
             const intro = introEl.value.trim();
             const details = detailsEl.value.trim();
+            const targetUserId = targetUserEl.value.trim();
 
             if (!title || !intro || !details) { window.showToast('Please enter a title, intro, and details', 'fail'); return; }
+            if (audience === 'user' && !targetUserId) { window.showToast('Enter the user ID to send to', 'fail'); return; }
 
             const btn = document.getElementById('send-notif-btn');
             const originalText = btn.innerText;
@@ -10873,16 +10918,23 @@
             btn.innerText = 'Sending...';
 
             try {
-                await addDoc(collection(db, "notifications"), {
-                    title,
-                    intro,
-                    details,
-                    timestamp: serverTimestamp()
-                });
+                const payload = { title, intro, details, timestamp: serverTimestamp() };
+                if (audience === 'user') {
+                    // Confirm the ID actually belongs to a user before writing anything,
+                    // so a typo doesn't silently vanish into a notification nobody gets.
+                    const userSnap = await getDoc(doc(db, "users", targetUserId));
+                    if (!userSnap.exists()) {
+                        window.showToast('No user found with that ID', 'fail');
+                        return;
+                    }
+                    payload.targetUserId = targetUserId;
+                }
+                await addDoc(collection(db, "notifications"), payload);
                 titleEl.value = '';
                 introEl.value = '';
                 detailsEl.value = '';
-                window.showToast('Notification sent to all users!', 'success');
+                targetUserEl.value = '';
+                window.showToast(audience === 'user' ? `Notification sent to ${targetUserId}!` : 'Notification sent to all users!', 'success');
             } catch (error) {
                 console.error("Send notification error:", error);
                 window.showToast('Failed to send notification.', 'fail');
@@ -10910,6 +10962,7 @@
                         <div class="admin-card">
                             <div class="ac-header">
                                 <span class="ac-id">${data.title}</span>
+                                ${data.targetUserId ? `<span class="badge badge-warning" style="margin-left:8px;">To: ${data.targetUserId}</span>` : `<span class="badge badge-success" style="margin-left:8px;">All Users</span>`}
                             </div>
                             <div class="ac-body">
                                 <p style="font-weight:500;">${data.intro || ''}</p>
