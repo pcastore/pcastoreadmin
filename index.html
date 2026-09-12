@@ -515,6 +515,11 @@
 
         /* Admin Cards */
         .admin-card { background: var(--surface); border-radius: 18px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border-glass); box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
+        .faq-item-row { border: 1px solid var(--fill-soft); border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+        .faq-item-row label { font-size: 11.5px; font-weight: 500; color: var(--text-secondary); display: block; margin: 6px 0 3px; }
+        .faq-item-row label:first-child { margin-top: 0; }
+        .faq-item-row textarea, .faq-item-row input[type="text"] { width: 100%; padding: 8px 10px; border: 1px solid var(--fill-soft); border-radius: 8px; font-size: 13px; resize: vertical; }
+        .faq-item-row .faq-item-del { font-size: 11px; color: var(--danger); cursor: pointer; float: right; }
 
         /* API tab: one row per credential (icon + name/description + action) */
         .api-doc-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 13px 14px; margin-bottom: 10px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
@@ -935,6 +940,11 @@
         .sc-tick { display: inline-flex; }
         .sc-tick svg { width: 13px; height: 13px; display: block; }
         .sc-tick.seen svg { color: #6FE0FF; opacity: 1; }
+        .sc-bubble.image-bubble { padding: 4px; background: transparent !important; border: none !important; }
+        .sc-bubble.image-bubble img { display: block; max-width: 200px; max-height: 260px; width: 100%; border-radius: 12px; cursor: pointer; }
+        .sc-bubble.image-bubble .sc-bubble-time { position: static; display: flex; justify-content: flex-end; margin-top: 2px; font-size: 9.5px; color: var(--text-muted); opacity: 1; }
+        .sc-msg-avatar { position: absolute; top: -7px; left: -7px; width: 17px; height: 17px; border-radius: 50%; overflow: hidden; border: 2px solid var(--bg-card, var(--surface)); background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700; color: #fff; line-height: 1; }
+        .sc-msg-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .sc-inputrow { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--fill-soft); margin-top: 8px; flex-shrink: 0; }
         .sc-inputrow input { flex: 1; padding: 11px 14px; border-radius: 22px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); font-size: 14px; min-width: 0; }
         .sc-send { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
@@ -2247,6 +2257,57 @@
                     <input type="file" id="edit-logo-file" class="img-update-input" accept="image/*" onchange="previewLogoImage(event)">
                     <p id="logo-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
                     <button class="btn btn-primary" id="save-logo-btn" style="margin-top:10px;" onclick="saveLogo()">Save Logo</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSupportAvatarSettings()">
+                    <span style="font-size:15px;font-weight: 600;">Support Chat Avatar</span>
+                    <svg class="ui-icon" id="support-avatar-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="support-avatar-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px;">Shown to customers in the Support Chat header, in place of the plain "A" circle.</p>
+                    <label class="img-update-box logo-square" id="support-avatar-img-update-box" for="edit-support-avatar-file" style="border-radius:50%;width:96px;max-width:96px;overflow:hidden;">
+                        <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
+                        <span class="img-update-label">Image Update</span>
+                        <img id="edit-support-avatar-preview" src="" alt="Preview" style="display:none;object-fit:cover;">
+                        <span class="img-update-change" id="support-avatar-img-update-change" style="display:none;">
+                            <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
+                        </span>
+                    </label>
+                    <input type="file" id="edit-support-avatar-file" class="img-update-input" accept="image/*" onchange="previewSupportAvatarImage(event)">
+                    <p id="support-avatar-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+                    <button class="btn btn-primary" id="save-support-avatar-btn" style="margin-top:10px;" onclick="saveSupportAvatar()">Save Avatar</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSupportFaqSettings()">
+                    <span style="font-size:15px;font-weight: 600;">Support Chat FAQ</span>
+                    <svg class="ui-icon" id="support-faq-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="support-faq-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px;">Quick-reply questions shown as tappable chips in the customer's Support Chat. Tapping one — or typing a message containing one of its keywords — gets an instant auto-answer, no admin needed online. Keywords: comma-separated words/phrases to match inside a customer's typed message.</p>
+                    <div id="support-faq-list"></div>
+                    <button type="button" class="btn btn-outline" style="width:100%;margin-top:4px;" onclick="addSupportFaqItem()">+ Add FAQ</button>
+                    <button class="btn btn-primary" id="save-support-faq-btn" style="margin-top:10px;width:100%;" onclick="saveSupportFaqSettings()">Save FAQ</button>
+                </div>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleWalletExpireSettings()">
+                    <span style="font-size:15px;font-weight: 600;">Wallet Top Up Auto-Expire</span>
+                    <svg class="ui-icon" id="wallet-expire-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="wallet-expire-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">A "Pending" top up request nobody confirmed or rejected in time gets automatically marked "Rejected" (with an auto-note explaining why), so the queue doesn't fill up with stale requests. This check runs client-side whenever this admin panel's Wallet Top Ups page is open.</p>
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="wallet-expire-enabled" style="width:16px;height:16px;">
+                        <span style="font-size:13px;font-weight:500;">Enable auto-expire</span>
+                    </label>
+                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);margin-top:12px;">Expire after (days)</label>
+                    <input type="number" id="wallet-expire-days" min="1" step="1" placeholder="3" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 14px;">
+                    <button class="btn btn-primary" id="save-wallet-expire-btn" style="width:100%;" onclick="saveWalletExpireSettings()">Save</button>
                 </div>
             </div>
 
@@ -4497,6 +4558,7 @@
         // the Activity Log and IP login-alert features below so every write
         // knows exactly which admin made it.
         let currentAdminUsername = null;
+        let currentAdminAvatarUrl = null;
         let currentAdminIP = null;
         let pendingEnrollSecret = null;
 
@@ -4575,6 +4637,43 @@
         }
         window.listenAdminAccounts = listenAdminAccounts;
 
+        // Lightweight avatar upload for admin accounts - no status element
+        // dependency (unlike uploadImageToImgBB above, which requires one),
+        // since this fires straight from a small circle in the accounts list.
+        async function uploadAdminAvatarToImgBB(file) {
+            const form = new FormData();
+            form.append('image', file);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: form });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error?.message || 'Avatar upload failed');
+            return data.data.url;
+        }
+
+        // Each admin's own photo, stored on their adminUsernames/{username}
+        // doc as avatarUrl. Denormalized onto every chat message they send
+        // (see sendSupportChatReply) so customers see the right face per
+        // reply even if the admin later changes their photo.
+        async function handleAdminAvatarSelect(inputEl, username) {
+            const file = inputEl.files && inputEl.files[0];
+            inputEl.value = '';
+            if (!file) return;
+            const circle = document.getElementById('admin-avatar-' + username);
+            if (circle) circle.style.opacity = '0.5';
+            try {
+                const avatarUrl = await uploadAdminAvatarToImgBB(file);
+                await setDoc(doc(db, "adminUsernames", username), { avatarUrl }, { merge: true });
+                if (username === currentAdminUsername) currentAdminAvatarUrl = avatarUrl;
+                logAdminActivity('Updated admin avatar', username);
+                window.showToast('Avatar updated ✓', 'success');
+            } catch (error) {
+                console.error('Admin avatar upload error:', error);
+                window.showToast(error.message || 'Failed to update avatar.', 'fail');
+            } finally {
+                if (circle) circle.style.opacity = '';
+            }
+        }
+        window.handleAdminAvatarSelect = handleAdminAvatarSelect;
+
         function renderAdminAccountsList() {
             const container = document.getElementById('admin-accounts-list');
             const countEl = document.getElementById('admin-accounts-count');
@@ -4589,14 +4688,26 @@
                 const has2fa = !!a.totpSecret;
                 const lastLogin = a.lastLoginAt?.toDate ? a.lastLoginAt.toDate().toLocaleString() : 'Never';
                 const isYou = a.username === currentAdminUsername;
+                if (isYou) currentAdminAvatarUrl = a.avatarUrl || null;
+                const initial = escapeHtml((a.username || '?').trim().charAt(0).toUpperCase() || '?');
+                const avatarInner = a.avatarUrl ? `<img src="${a.avatarUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">` : initial;
                 return `
                 <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                        <div style="min-width:0;">
-                            <div style="font-size:14px;font-weight: 600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-                                ${escapeHtml(a.username)}${isYou ? ' <span style="font-size:10.5px;font-weight:600;color:var(--accent);">(you)</span>' : ''}
+                        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                            <label style="position:relative;cursor:pointer;flex-shrink:0;" title="Change ${escapeHtml(a.username)}'s avatar">
+                                <div id="admin-avatar-${escapeHtml(a.username)}" style="width:38px;height:38px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;">${avatarInner}</div>
+                                <input type="file" accept="image/*" style="display:none;" onchange="handleAdminAvatarSelect(this,'${a.username.replace(/'/g, "\\'")}')">
+                                <span style="position:absolute;bottom:-2px;right:-2px;width:15px;height:15px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card, var(--surface));">
+                                    <svg class="ui-icon" style="width:8px;height:8px;color:#fff;"><use href="#icon-camera"></use></svg>
+                                </span>
+                            </label>
+                            <div style="min-width:0;">
+                                <div style="font-size:14px;font-weight: 600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                                    ${escapeHtml(a.username)}${isYou ? ' <span style="font-size:10.5px;font-weight:600;color:var(--accent);">(you)</span>' : ''}
+                                </div>
+                                <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Last login: ${lastLogin}${a.lastLoginIp ? ' · IP: ' + escapeHtml(a.lastLoginIp) : ''}</div>
                             </div>
-                            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Last login: ${lastLogin}${a.lastLoginIp ? ' · IP: ' + escapeHtml(a.lastLoginIp) : ''}</div>
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
                             <span style="font-size:10.5px;font-weight: 600;padding:3px 8px;border-radius:6px;white-space:nowrap;background:${has2fa ? 'var(--accent-soft)' : 'var(--danger-soft)'};color:${has2fa ? 'var(--accent)' : 'var(--danger)'};">${has2fa ? '2FA enabled' : 'Not set up yet'}</span>
@@ -5148,7 +5259,10 @@
             try {
                 const uq = query(collection(db, "adminUsernames"), where("email", "==", user.email));
                 const usnap = await getDocs(uq);
-                if (!usnap.empty) currentAdminUsername = usnap.docs[0].id;
+                if (!usnap.empty) {
+                    currentAdminUsername = usnap.docs[0].id;
+                    currentAdminAvatarUrl = usnap.docs[0].data().avatarUrl || null;
+                }
             } catch (e) { console.error('Admin username lookup error:', e); }
 
             if (sessionStorage.getItem('pca_mfa_ok') === '1') { unlockAdminApp(); return; }
@@ -5245,6 +5359,7 @@
                 loginScreen.classList.remove('hidden');
                 resetGateLocked();
                 currentAdminUsername = null;
+                currentAdminAvatarUrl = null;
                 currentAdminIP = null;
                 activityLogListenerAttached = false;
             }
@@ -5345,6 +5460,33 @@
         }
         window.toggleUserOrderCard = toggleUserOrderCard;
 
+        // ---------- Orders: 7-day auto-delete (Success/Fail only) ----------
+        // Mirrors the same policy on Store.html's own History page: completed
+        // orders (Success or Fail) older than 7 days are permanently deleted.
+        // Pending/Processing orders are never touched. Runs client-side
+        // whenever this admin panel's Orders listener is active - move into
+        // the pca-telegram-bot Worker's cron for guaranteed enforcement with
+        // the panel closed. NOTE: VIP tier and the Leaderboard are computed
+        // live from this same collection, so this intentionally trims
+        // lifetime totals down to a trailing 7-day window.
+        const ORDER_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+        function checkOrdersAutoDelete(items) {
+            const cutoffMs = Date.now() - ORDER_RETENTION_MS;
+            const stale = Object.values(items).filter(o => {
+                if (o.status !== 'Success' && o.status !== 'Fail') return false;
+                const ms = o.timestamp && o.timestamp.toMillis ? o.timestamp.toMillis() : null;
+                return ms && ms < cutoffMs;
+            });
+            if (!stale.length) return;
+            // Chunk at 450 to stay safely under Firestore's 500-write batch limit.
+            for (let i = 0; i < stale.length; i += 450) {
+                const chunk = stale.slice(i, i + 450);
+                const batch = writeBatch(db);
+                chunk.forEach(o => batch.delete(doc(db, "orders", o.id)));
+                batch.commit().catch(err => console.error("Order auto-delete error:", err));
+            }
+        }
+
         function fetchOrders() {
             if (ordersListenerAttached) {
                 window.showToast('Orders update automatically ✓');
@@ -5361,6 +5503,7 @@
                 if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
                 if (Object.keys(USERS).length) renderAdminUsersList();
                 renderOrdersList();
+                checkOrdersAutoDelete(newOrders);
 
                 // NOTE: Sending new Pending orders to Telegram used to happen here
                 // in the browser. That's now handled server-side by the standalone
@@ -7269,9 +7412,138 @@
         }
         window.switchTopupTab = switchTopupTab;
 
+        // ---------- Wallet Top Up Auto-Expire (settings/walletTopupSettings) ----------
+        // A Pending top up nobody actioned within N days gets flipped to
+        // Rejected with an explanatory auto-note. This is a client-side,
+        // best-effort check that runs whenever this panel's Wallet Top Ups
+        // page has a live listener open (see fetchWalletTopups below) - for
+        // guaranteed enforcement even while no admin has the panel open,
+        // move the same check into the pca-telegram-bot Cloudflare Worker's
+        // existing cron alongside its "orders" handling.
+        let WALLET_TOPUP_EXPIRY_ENABLED = false;
+        let WALLET_TOPUP_EXPIRY_DAYS = 3;
+        let walletExpireSettingsLoaded = false;
+        const walletExpireInFlight = new Set(); // topup ids currently being auto-expired, to avoid duplicate transactions
+
+        function toggleWalletExpireSettings() {
+            const body = document.getElementById('wallet-expire-body');
+            const chevron = document.getElementById('wallet-expire-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            if (!isOpen && !walletExpireSettingsLoaded) loadWalletExpireSettings();
+        }
+        window.toggleWalletExpireSettings = toggleWalletExpireSettings;
+
+        async function loadWalletExpireSettings() {
+            walletExpireSettingsLoaded = true;
+            try {
+                const snap = await getDoc(doc(db, "settings", "walletTopupSettings"));
+                const data = snap.exists() ? snap.data() : {};
+                WALLET_TOPUP_EXPIRY_ENABLED = data.expiryEnabled === true;
+                WALLET_TOPUP_EXPIRY_DAYS = Number(data.expiryDays) > 0 ? Number(data.expiryDays) : 3;
+            } catch (error) {
+                console.error("Wallet expire settings load error:", error);
+            }
+            const enabledEl = document.getElementById('wallet-expire-enabled');
+            const daysEl = document.getElementById('wallet-expire-days');
+            if (enabledEl) enabledEl.checked = WALLET_TOPUP_EXPIRY_ENABLED;
+            if (daysEl) daysEl.value = WALLET_TOPUP_EXPIRY_DAYS;
+        }
+
+        async function saveWalletExpireSettings() {
+            const enabledEl = document.getElementById('wallet-expire-enabled');
+            const daysEl = document.getElementById('wallet-expire-days');
+            const enabled = !!(enabledEl && enabledEl.checked);
+            const days = Math.max(1, Number(daysEl.value) || 3);
+            const btn = document.getElementById('save-wallet-expire-btn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...';
+            btn.disabled = true;
+            try {
+                await setDoc(doc(db, "settings", "walletTopupSettings"), { expiryEnabled: enabled, expiryDays: days }, { merge: true });
+                WALLET_TOPUP_EXPIRY_ENABLED = enabled;
+                WALLET_TOPUP_EXPIRY_DAYS = days;
+                daysEl.value = days;
+                window.showToast('Wallet auto-expire settings saved!', 'success');
+            } catch (error) {
+                console.error("Wallet expire settings save error:", error);
+                window.showToast(error.message || 'Failed to save.', 'fail');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+        window.saveWalletExpireSettings = saveWalletExpireSettings;
+
+        // Transaction-guarded so two admin tabs open at once (or this check
+        // firing twice in quick succession off the same onSnapshot burst)
+        // can never double-process the same request - it re-reads the
+        // status and bails out unless it's still Pending.
+        async function expireWalletTopup(id) {
+            const topupRef = doc(db, "walletTopups", id);
+            try {
+                await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(topupRef);
+                    if (!snap.exists() || snap.data().status !== 'Pending') return;
+                    tx.update(topupRef, {
+                        status: 'Rejected',
+                        statusNote: `Auto-expired — no admin action within ${WALLET_TOPUP_EXPIRY_DAYS} day(s).`,
+                        autoExpired: true,
+                        expiredAt: serverTimestamp()
+                    });
+                });
+                logAdminActivity('Auto-expired top-up', `id: ${id} (>${WALLET_TOPUP_EXPIRY_DAYS}d pending)`);
+                editTelegramWalletTopupMessage(id, 'Rejected');
+            } catch (error) {
+                console.error("expireWalletTopup error:", error);
+            }
+        }
+
+        // Scans the current in-memory WALLET_TOPUPS snapshot for stale
+        // Pending requests and expires them. Cheap no-op when the feature
+        // is off or nothing has aged out yet.
+        function checkWalletTopupAutoExpire(items) {
+            if (!walletExpireSettingsLoaded || !WALLET_TOPUP_EXPIRY_ENABLED) return;
+            const cutoffMs = Date.now() - WALLET_TOPUP_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+            Object.values(items).forEach(t => {
+                if (t.status !== 'Pending') return;
+                const ts = t.timestamp && t.timestamp.toMillis ? t.timestamp.toMillis() : null;
+                if (!ts || ts > cutoffMs) return;
+                if (walletExpireInFlight.has(t.id)) return;
+                walletExpireInFlight.add(t.id);
+                expireWalletTopup(t.id).finally(() => walletExpireInFlight.delete(t.id));
+            });
+        }
+
+        // ---------- Wallet Top Ups: 7-day auto-delete (Completed/Rejected only) ----------
+        // Mirrors the Orders 7-day auto-delete above: top-up requests that have
+        // already reached a final state (Completed or Rejected) older than 7
+        // days are permanently deleted so the Top Up history doesn't grow
+        // forever. Pending requests are never touched by this - they're only
+        // ever handled by checkWalletTopupAutoExpire above.
+        const WALLET_TOPUP_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+        function checkWalletTopupsAutoDelete(items) {
+            const cutoffMs = Date.now() - WALLET_TOPUP_RETENTION_MS;
+            const stale = Object.values(items).filter(t => {
+                if (t.status !== 'Completed' && t.status !== 'Rejected') return false;
+                const ms = t.timestamp && t.timestamp.toMillis ? t.timestamp.toMillis() : null;
+                return ms && ms < cutoffMs;
+            });
+            if (!stale.length) return;
+            // Chunk at 450 to stay safely under Firestore's 500-write batch limit.
+            for (let i = 0; i < stale.length; i += 450) {
+                const chunk = stale.slice(i, i + 450);
+                const batch = writeBatch(db);
+                chunk.forEach(t => batch.delete(doc(db, "walletTopups", t.id)));
+                batch.commit().catch(err => console.error("Wallet top-up auto-delete error:", err));
+            }
+        }
+
         function fetchWalletTopups() {
             if (topupsListenerAttached) return;
             topupsListenerAttached = true;
+            if (!walletExpireSettingsLoaded) loadWalletExpireSettings();
 
             const q = query(collection(db, "walletTopups"));
             onSnapshot(q, (querySnapshot) => {
@@ -7279,6 +7551,8 @@
                 querySnapshot.forEach(docSnap => { items[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                 WALLET_TOPUPS = items;
                 renderTopupsList();
+                checkWalletTopupAutoExpire(items);
+                checkWalletTopupsAutoDelete(items);
 
                 // New Pending requests that haven't been sent to Telegram yet get
                 // sent now. This fires whenever this admin panel is open and
@@ -10892,7 +11166,6 @@
             box.innerHTML = msgs.map(m => {
                 const mine = m.sender === 'admin';
                 const time = (m.timestamp && m.timestamp.toDate) ? m.timestamp.toDate().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
-                const safe = escapeHtml(m.text || '');
                 // Sent/Seen tick for our own messages - single check once sent,
                 // double (accent-colored) check once seenByUser is set true
                 // (Store.html needs to write that flag when the customer opens
@@ -10906,9 +11179,54 @@
                             : '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l4 4 9-9"/></svg>') +
                         `</span>`;
                 }
-                return `<div class="sc-bubble ${mine ? 'mine' : 'theirs'}">${safe}<span class="sc-bubble-time">${time}${tick}</span></div>`;
+                // Small avatar badge on our own bubbles, so with several
+                // admins replying in the same thread it's clear who sent
+                // what (each admin's avatar comes from their own account,
+                // see Settings > Admin Accounts).
+                let avatarBadge = '';
+                if (mine) {
+                    if (m.isBot) {
+                        avatarBadge = `<span class="sc-msg-avatar" title="Auto-reply">🤖</span>`;
+                    } else {
+                        const uname = m.adminUsername || '';
+                        const initial = escapeHtml((uname || 'A').trim().charAt(0).toUpperCase() || 'A');
+                        const inner = m.adminAvatar ? `<img src="${escapeHtml(m.adminAvatar)}" alt="">` : initial;
+                        avatarBadge = `<span class="sc-msg-avatar" title="${escapeHtml(uname || 'Admin')}">${inner}</span>`;
+                    }
+                }
+                const botLabel = (mine && m.isBot) ? `<span class="sc-bubble-bot-label" style="display:block;font-size:10px;opacity:0.75;margin:-2px 0 3px;">Auto-reply 🤖</span>` : '';
+                // Photo message (Store.html's camera-icon upload): m.imageUrl
+                // is set instead of text. Render as a thumbnail that opens
+                // full size on tap, same treatment as Store.html's own bubbles.
+                if (m.imageUrl) {
+                    return `<div class="sc-bubble image-bubble ${mine ? 'mine' : 'theirs'}">${avatarBadge}<img src="${escapeHtml(m.imageUrl)}" alt="Photo" loading="lazy" onclick="window.open('${escapeHtml(m.imageUrl)}','_blank')"><span class="sc-bubble-time">${time}${tick}</span></div>`;
+                }
+                const safe = escapeHtml(m.text || '');
+                return `<div class="sc-bubble ${mine ? 'mine' : 'theirs'}">${avatarBadge}${botLabel}${safe}<span class="sc-bubble-time">${time}${tick}</span></div>`;
             }).join('');
             box.scrollTop = box.scrollHeight;
+        }
+
+        // Messages older than 7 days are deleted so threads don't grow
+        // forever. Best-effort client-side cleanup (no backend job here) -
+        // runs once per guest thread whenever an admin opens it, mirroring
+        // the same cleanup Store.html runs on the customer side.
+        const SUPPORT_CHAT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+        const supportChatCleanupDoneFor = new Set();
+        async function cleanupOldSupportChatMessages(guestId) {
+            if (!guestId || supportChatCleanupDoneFor.has(guestId)) return;
+            supportChatCleanupDoneFor.add(guestId);
+            try {
+                const cutoff = new Date(Date.now() - SUPPORT_CHAT_RETENTION_MS);
+                const q = query(collection(db, "supportChats", guestId, "messages"), where("timestamp", "<", cutoff));
+                const snap = await getDocs(q);
+                if (snap.empty) return;
+                const batch = writeBatch(db);
+                snap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            } catch (error) {
+                console.error("Support chat cleanup error:", error);
+            }
         }
 
         function openSupportChatThread(guestId) {
@@ -10921,6 +11239,7 @@
             renderSupportChatThreadTyping();
 
             if (supportChatMsgUnsub) { supportChatMsgUnsub(); supportChatMsgUnsub = null; }
+            cleanupOldSupportChatMessages(guestId);
             const q = query(collection(db, "supportChats", guestId, "messages"), orderBy("timestamp", "asc"));
             supportChatMsgUnsub = onSnapshot(q, (snap) => {
                 const msgs = snap.docs.map(d => d.data());
@@ -10964,10 +11283,12 @@
             adminTypingWriteAt = 0;
             try {
                 await addDoc(collection(db, "supportChats", guestId, "messages"), {
-                    sender: 'admin', text, timestamp: serverTimestamp(), sentToTelegram: false
+                    sender: 'admin', text, timestamp: serverTimestamp(), sentToTelegram: false,
+                    adminUsername: currentAdminUsername || '', adminAvatar: currentAdminAvatarUrl || ''
                 });
                 await setDoc(doc(db, "supportChats", guestId), {
-                    lastMessage: text, lastMessageAt: serverTimestamp(), lastSender: 'admin', unreadByAdmin: false, adminTypingAt: null
+                    lastMessage: text, lastMessageAt: serverTimestamp(), lastSender: 'admin', unreadByAdmin: false, adminTypingAt: null,
+                    lastAdminUsername: currentAdminUsername || '', lastAdminAvatar: currentAdminAvatarUrl || ''
                 }, { merge: true });
                 playChatSound('send');
             } catch (error) {
@@ -12682,6 +13003,197 @@
                 box.classList.remove('has-custom-logo');
             }
         }
+
+        // ---------- Support Chat FAQ (settings/supportChatFaq, items: [{q,a,keywords}]) ----------
+        // Store.html reads this same doc live and uses it to render the
+        // quick-reply chips + keyword auto-answer in the customer's Support
+        // Chat, so any edit here shows up for customers without a redeploy.
+        let SUPPORT_FAQ_ITEMS = [];
+        let supportFaqLoaded = false;
+
+        const SUPPORT_FAQ_DEFAULTS = [
+            { q: 'အော်ဒါ ဘယ်လိုတင်ရမလဲ', keywords: 'အော်ဒါ, order, တင်ရ', a: 'Home စာမျက်နှာမှ ဂိမ်းကို ရွေးပါ။ Package/Currency ကို ရွေးပြီး In-Game ID (နှင့် Server ID လိုအပ်ပါက) ရိုက်ထည့်ပါ။ "Confirm ID" ကို နှိပ်ပြီး ID မှန်ကန်ကြောင်း စစ်ဆေးပါ။ နောက်ဆုံးတွင် ငွေပေးချေမှုအမျိုးအစား ရွေးချယ်ပြီး အတည်ပြုလိုက်ရုံပါပဲ။' },
+            { q: 'ငွေပေးချေနည်း ဘယ်လိုလုပ်ရမလဲ', keywords: 'ငွေပေးချေ, payment, ပေးချေ', a: 'Wallet ထဲက လက်ကျန်ငွေဖြင့် တိုက်ရိုက်ပေးချေနိုင်သလို၊ Payment Method တစ်ခုကို ရွေးပြီး ငွေလွှဲပြေစာ (Receipt) တင်၍လည်း ပေးချေနိုင်ပါသည်။ Wallet ထဲသို့ ငွေဖြည့်ရန် Wallet စာမျက်နှာမှ "Top Up" ကို သုံးပါ။' },
+            { q: 'အော်ဒါ Status ဘယ်လိုစစ်ရမလဲ', keywords: 'status, အခြေအနေ, စစ်ဆေး', a: 'History စာမျက်နှာတွင် အော်ဒါတစ်ခုချင်းစီကို Pending → Processing → Success/Fail အဆင့်ဆင့် အချိန်နှင့်တပြေးညီ ကြည့်ရှုနိုင်ပါသည်။ Processing တွင် ကြာမြင့်နေပါက "တိုင်ကြားရန်" tab ကနေ ပြန်လည်အကြောင်းကြားနိုင်ပါသည်။' },
+            { q: 'ID မှားထည့်မိရင် ဘယ်လိုလုပ်ရမလဲ', keywords: 'id မှား, id ပြင်, wrong id', a: 'ID မှားထည့်မိပါက ဖြစ်နိုင်သမျှ မြန်မြန် Support Chat မှတစ်ဆင့် ပြောပြပေးပါ။ အော်ဒါ "Processing" မဖြစ်သေးလျှင် ပြင်ဆင်ပေးနိုင်ပါသည်၊ Processing ပြီးသွားပါက ပြင်ဆင်ရန် ခက်ခဲနိုင်တဲ့အတွက် ID ကို ထပ်စစ်ပြီးမှ Confirm နှိပ်ဖို့ အကြံပြုပါသည်။' },
+            { q: 'Wallet ငွေဖြည့်ထားတာ ဘယ်လောက်ကြာမှ ဝင်မလဲ', keywords: 'wallet, ငွေဖြည့်, top up, topup', a: 'Wallet Top Up Receipt တင်ပြီးပါက ပုံမှန်အားဖြင့် မိနစ်အနည်းငယ်မှ နာရီအနည်းငယ်အတွင်း admin မှ စစ်ဆေးပြီး Wallet ထဲ ငွေဖြည့်ပေးပါမည်။ အလုပ်ချိန်ပြင်ပ ဖြစ်ပါက အနည်းငယ်ပိုကြာနိုင်ပါသည်။' }
+        ];
+
+        function toggleSupportFaqSettings() {
+            const body = document.getElementById('support-faq-body');
+            const chevron = document.getElementById('support-faq-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            if (!isOpen && !supportFaqLoaded) loadSupportFaqSettings();
+        }
+        window.toggleSupportFaqSettings = toggleSupportFaqSettings;
+
+        async function loadSupportFaqSettings() {
+            supportFaqLoaded = true;
+            try {
+                const snap = await getDoc(doc(db, "settings", "supportChatFaq"));
+                const items = (snap.exists() && Array.isArray(snap.data().items) && snap.data().items.length) ? snap.data().items : SUPPORT_FAQ_DEFAULTS;
+                SUPPORT_FAQ_ITEMS = items.map(it => ({
+                    q: it.q || '', a: it.a || '',
+                    keywords: Array.isArray(it.keywords) ? it.keywords.join(', ') : (it.keywords || '')
+                }));
+            } catch (error) {
+                console.error("Support FAQ load error:", error);
+                SUPPORT_FAQ_ITEMS = SUPPORT_FAQ_DEFAULTS.slice();
+            }
+            renderSupportFaqList();
+        }
+
+        function renderSupportFaqList() {
+            const wrap = document.getElementById('support-faq-list');
+            if (!wrap) return;
+            if (!SUPPORT_FAQ_ITEMS.length) {
+                wrap.innerHTML = '<p class="empty-msg" style="padding:10px 0;">No FAQ items yet - tap "+ Add FAQ" below.</p>';
+                return;
+            }
+            wrap.innerHTML = SUPPORT_FAQ_ITEMS.map((item, i) => `
+                <div class="faq-item-row">
+                    <span class="faq-item-del" onclick="removeSupportFaqItem(${i})">Delete</span>
+                    <label>Question (chip text)</label>
+                    <input type="text" id="faq-q-${i}" value="${escapeHtml(item.q)}" placeholder="e.g. Order ဘယ်လိုတင်ရမလဲ">
+                    <label>Answer</label>
+                    <textarea id="faq-a-${i}" rows="3" placeholder="Auto-reply answer text">${escapeHtml(item.a)}</textarea>
+                    <label>Keywords (comma-separated, matched inside a customer's typed message)</label>
+                    <input type="text" id="faq-k-${i}" value="${escapeHtml(item.keywords)}" placeholder="e.g. wallet, ငွေဖြည့်, top up">
+                </div>
+            `).join('');
+        }
+
+        function addSupportFaqItem() {
+            SUPPORT_FAQ_ITEMS.push({ q: '', a: '', keywords: '' });
+            renderSupportFaqList();
+        }
+        window.addSupportFaqItem = addSupportFaqItem;
+
+        function removeSupportFaqItem(i) {
+            collectSupportFaqFromForm();
+            SUPPORT_FAQ_ITEMS.splice(i, 1);
+            renderSupportFaqList();
+        }
+        window.removeSupportFaqItem = removeSupportFaqItem;
+
+        // Re-reads every row's current input values back into
+        // SUPPORT_FAQ_ITEMS, so add/remove/save all act on what's actually
+        // in the form rather than stale data from the last render.
+        function collectSupportFaqFromForm() {
+            SUPPORT_FAQ_ITEMS = SUPPORT_FAQ_ITEMS.map((item, i) => {
+                const qEl = document.getElementById(`faq-q-${i}`);
+                const aEl = document.getElementById(`faq-a-${i}`);
+                const kEl = document.getElementById(`faq-k-${i}`);
+                return {
+                    q: qEl ? qEl.value.trim() : item.q,
+                    a: aEl ? aEl.value.trim() : item.a,
+                    keywords: kEl ? kEl.value.trim() : item.keywords
+                };
+            });
+        }
+
+        async function saveSupportFaqSettings() {
+            collectSupportFaqFromForm();
+            const btn = document.getElementById('save-support-faq-btn');
+            const cleaned = SUPPORT_FAQ_ITEMS
+                .filter(item => item.q && item.a)
+                .map(item => ({
+                    q: item.q, a: item.a,
+                    keywords: item.keywords.split(',').map(k => k.trim()).filter(Boolean)
+                }));
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...';
+            btn.disabled = true;
+            try {
+                await setDoc(doc(db, "settings", "supportChatFaq"), { items: cleaned }, { merge: true });
+                SUPPORT_FAQ_ITEMS = cleaned.map(it => ({ ...it, keywords: it.keywords.join(', ') }));
+                renderSupportFaqList();
+                window.showToast('FAQ saved!', 'success');
+            } catch (error) {
+                console.error("Support FAQ save error:", error);
+                window.showToast(error.message || 'Failed to save FAQ.', 'fail');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+        window.saveSupportFaqSettings = saveSupportFaqSettings;
+
+        // ---------- Support Chat Avatar (settings/supportChat, adminAvatar: url) ----------
+        // Same doc pattern as branding above. Store.html reads this doc and
+        // shows the photo in the Support Chat widget header in place of the
+        // plain "A" letter circle.
+        let editingSupportAvatarFile = null;
+        let supportAvatarListenerAttached = false;
+
+        function toggleSupportAvatarSettings() {
+            const body = document.getElementById('support-avatar-body');
+            const chevron = document.getElementById('support-avatar-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleSupportAvatarSettings = toggleSupportAvatarSettings;
+
+        function previewSupportAvatarImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            editingSupportAvatarFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('edit-support-avatar-preview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+                document.getElementById('support-avatar-img-update-box').classList.add('has-image');
+                document.getElementById('support-avatar-img-update-change').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+        window.previewSupportAvatarImage = previewSupportAvatarImage;
+
+        function listenSupportAvatar() {
+            if (supportAvatarListenerAttached) return;
+            supportAvatarListenerAttached = true;
+            onSnapshot(doc(db, "settings", "supportChat"), (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                if (data.adminAvatar) {
+                    const preview = document.getElementById('edit-support-avatar-preview');
+                    preview.src = data.adminAvatar;
+                    preview.style.display = 'block';
+                    document.getElementById('support-avatar-img-update-box').classList.add('has-image');
+                    document.getElementById('support-avatar-img-update-change').style.display = 'flex';
+                }
+            }, (error) => {
+                console.error("Support avatar listener error:", error);
+            });
+        }
+
+        async function saveSupportAvatar() {
+            if (!editingSupportAvatarFile) {
+                window.showToast('Choose a photo first.', 'fail');
+                return;
+            }
+            const btn = document.getElementById('save-support-avatar-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                const adminAvatar = await uploadImageToImgBB(editingSupportAvatarFile, 'support-avatar-upload-status');
+                await setDoc(doc(db, "settings", "supportChat"), { adminAvatar }, { merge: true });
+                logAdminActivity('Updated support chat avatar');
+                window.showToast('Support chat avatar updated!', 'success');
+                editingSupportAvatarFile = null;
+            } catch (error) {
+                console.error("Save support avatar error:", error);
+                window.showToast(error.message || 'Failed to update avatar.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveSupportAvatar = saveSupportAvatar;
 
         // ---------- Receipt Style (settings/receipt, style: 'minimal'|'premium'|'dark') ----------
         // Same doc pattern as branding/tiers/social above. store.html reads this
@@ -17554,6 +18066,7 @@
             listenCoupons();
             listenSocialLinks();
             listenBranding();
+            listenSupportAvatar();
             listenReferralSettings();
             listenFlashSaleSettings();
             listenReceiptStyle();
