@@ -1255,6 +1255,11 @@
         .pkg-summary-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pkg-summary-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
         .pkg-summary-dot.pkg-dot-package { background: #A855F7; }
+        /* Shows on the collapsed row when checkLivePriceChanges() has found a
+           live Cost change for this package (mirrors .pkg-cost-update-btn's
+           state) so admin can spot which rows need attention without
+           opening every card. Hidden by default; toggled in syncPkgSummary(). */
+        .pkg-summary-warn-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: #FF9500; margin-left: 5px; animation: pkgUpdatePulse 1.4s ease-in-out infinite; }
         .pkg-summary-body { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 6px; border-top: 1px solid var(--fill-soft); }
         .pkg-summary-value { display: flex; align-items: baseline; gap: 4px; min-width: 0; flex-shrink: 1; overflow: hidden; background: var(--accent-soft); border-radius: 8px; padding: 4px 8px; }
         .pkg-summary-price-text { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--accent); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -3431,6 +3436,7 @@
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
                     <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
                     <button class="btn btn-outline" onclick="openBulkPkgModal()" title="Cost/Price အားလုံးကို % တစ်ခုတည်းနဲ့ တစ်ခါတည်းချိန်ညှိပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-dollar"></use></svg> Bulk %</button>
+                    <button class="btn btn-outline" onclick="resyncAllPricesToMargin()" title="Package အားလုံးရဲ့ Price ကို လက်ရှိ Cost အပေါ်မူတည်ပြီး ~5% margin ပြန်ရောက်အောင် ချိန်ညှိပေးမယ် (Cost မရှိသေးတဲ့ row တွေကိုတော့ ကျော်သွားမယ်)"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Resync 5%</button>
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
                     <button class="btn btn-outline" id="g2bulk-debug-btn" onclick="debugG2BulkServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ G2Bulk ရဲ့ fields/servers raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="fazercard-import-btn" onclick="importFazerCardCatalogue()" style="display:none;">Import from FazerCards</button>
@@ -8892,6 +8898,7 @@
                         if (liveCost === currentCost) return;
                         changed++;
                         p.cost = liveCost;
+                        p.price = autoPriceForCost(liveCost);
                     });
                 });
 
@@ -8961,6 +8968,7 @@
                     if (liveCost === (Number(p.cost) || 0)) return;
                     changed++;
                     p.cost = liveCost;
+                    p.price = autoPriceForCost(liveCost);
                 });
             });
             if (changed > 0) {
@@ -9588,6 +9596,7 @@
                             <span class="pkg-summary-value">
                                 <span class="pkg-summary-price-text">${price ? Number(price).toLocaleString() : '--'}</span>
                                 <span class="pkg-summary-price-unit">${price ? 'MMK' : ''}</span>
+                                <span class="pkg-summary-warn-dot" style="display:none;" title="Live price changed — tap to review"></span>
                             </span>
                             <div class="pkg-summary-actions">
                                 <span class="pkg-summary-profit">--</span>
@@ -9863,6 +9872,15 @@
             const dot = row.querySelector('.pkg-summary-dot');
             dot.classList.toggle('pkg-dot-package', type === 'package');
             dot.title = type === 'package' ? 'Package (wide banner)' : 'Currency (grid card)';
+
+            // Mirrors the (hidden, expanded-card-only) .pkg-cost-update-btn's
+            // state so a stale/changed live price is visible on the collapsed
+            // row too, without opening the card. Set by checkLivePriceChanges()
+            // and cleared by applyCostUpdate() (both just call this via
+            // updatePackageProfit()).
+            const costUpdateBtn = row.querySelector('.pkg-cost-update-btn');
+            const warnDot = row.querySelector('.pkg-summary-warn-dot');
+            if (warnDot) warnDot.style.display = (costUpdateBtn && costUpdateBtn.style.display !== 'none' && costUpdateBtn.dataset.newCost !== undefined) ? 'inline-block' : 'none';
 
             const isPositive = profitBadge.classList.contains('positive');
             const isNegative = profitBadge.classList.contains('negative');
@@ -10199,11 +10217,54 @@
         }
         window.setBulkPkgScope = setBulkPkgScope;
 
+        // Rounds a bulk-adjusted amount to a "clean" store price: down to the
+        // hundred below when the last two digits are 00-49, kept exactly on
+        // the half-hundred mark when they land on 50, and up to the hundred
+        // above when they're 51-99. e.g. 13,915 -> 13,900 · 812 -> 800 ·
+        // 850 -> 850 (unchanged) · 851 -> 900.
+        function roundBulkPrice(value) {
+            const rounded = Math.round(value);
+            const base = Math.floor(rounded / 100) * 100;
+            const rem = rounded - base;
+            if (rem <= 49) return base;
+            if (rem === 50) return base + 50;
+            return base + 100;
+        }
+        window.roundBulkPrice = roundBulkPrice;
+
+        // ---------- Auto Price-to-Cost margin sync (Cost update -> Price follows) ----------
+        // Whenever a package's Cost is refreshed from a live sync — the
+        // single "Update Cost" tap, "Update All Costs", the Games list
+        // "Pass" badge, or the "Auto Price Update" toggle's background
+        // sweep — Price is recomputed to track a steady 5% margin above
+        // the new Cost, whether Cost went up OR down. Rounds UP to a clean
+        // 50-MMK grid (…00 / …50 endings — matches how prices already look
+        // in this store, no odd …90-style numbers) so the margin never
+        // dips below 5%, while a hard ceiling keeps it from ever drifting
+        // past 7% even for very small Cost values. In normal use (costs in
+        // the thousands+) that 50-MMK step usually lands the badge at 5%,
+        // occasionally 6% for smaller packages — never below 5%, never
+        // above 7%. Manually typing into Price or Cost by hand is never
+        // touched by this — it only fires on a live cost sync.
+        const AUTO_PRICE_MARGIN_PCT = 5;
+
+        function autoPriceForCost(cost) {
+            if (!cost || cost <= 0) return 0;
+            const rawTarget = cost * (1 + AUTO_PRICE_MARGIN_PCT / 100); // exact 5% above cost
+            const hardCeiling = cost * 1.07; // margin must never drift past 7%
+            const step = 50; // round up to a clean 50-MMK grid (…00 / …50 endings, no odd …90-style prices)
+            let price = Math.ceil(rawTarget / step) * step;
+            if (price > hardCeiling) price = Math.ceil(rawTarget); // step rounding would overshoot 7% (tiny Cost values) — fall back to the exact 5% price instead
+            return price;
+        }
+        window.autoPriceForCost = autoPriceForCost;
+
         // Shifts every matched row's Price or Cost by the given percentage —
-        // rounds to the nearest Kyat and skips rows where the field is blank
-        // or zero, so an unset package never gets a value invented for it.
-        // Reuses updatePackageProfit() per row so the profit badge AND the
-        // collapsed summary line (via syncPkgSummary) both stay in sync.
+        // rounds to a clean price via roundBulkPrice() (see above) and skips
+        // rows where the field is blank or zero, so an unset package never
+        // gets a value invented for it. Reuses updatePackageProfit() per row
+        // so the profit badge AND the collapsed summary line (via
+        // syncPkgSummary) both stay in sync.
         function applyBulkPkgAdjust() {
             const pctInput = document.getElementById('bulk-pkg-percent');
             const pct = Number(pctInput.value);
@@ -10223,7 +10284,16 @@
                 const input = row.querySelector(fieldClass);
                 const current = Number(input.value);
                 if (!current || current <= 0) return;
-                input.value = Math.max(0, Math.round(current * (1 + pct / 100)));
+                const newValue = Math.max(0, roundBulkPrice(current * (1 + pct / 100)));
+                input.value = newValue;
+                // Adjusting Cost by bulk % shifts the sell Price too, so the
+                // margin stays pinned at ~5% (autoPriceForCost) instead of
+                // drifting further from it every time a bulk cost change
+                // lands. Adjusting Price directly is left as a pure % shift
+                // with no Cost side-effect, same as before.
+                if (bulkPkgField === 'cost') {
+                    row.querySelector('.pkg-price').value = autoPriceForCost(newValue);
+                }
                 updatePackageProfit(input);
                 changed++;
             });
@@ -10231,10 +10301,46 @@
             if (changed === 0) {
                 window.showToast(`No packages had a ${bulkPkgField === 'price' ? 'Price' : 'Cost'} set to adjust`, 'fail');
             } else {
-                window.showToast(`Updated ${changed} package(s) ${pct > 0 ? '+' : ''}${pct}% ✓`, 'success');
+                const priceNote = bulkPkgField === 'cost' ? ' (Price re-synced to ~5% margin)' : '';
+                window.showToast(`Updated ${changed} package(s) ${pct > 0 ? '+' : ''}${pct}%${priceNote} ✓`, 'success');
             }
         }
         window.applyBulkPkgAdjust = applyBulkPkgAdjust;
+
+        // One-tap fix for every package in this game, across every tab:
+        // recomputes Price straight from its current Cost via
+        // autoPriceForCost() so every row lands on the same ~5% margin,
+        // instead of whatever margin got baked in from older manual price
+        // edits or bulk % moves made before this feature existed. Rows with
+        // no Cost set are skipped (nothing to compute a target from), and a
+        // row already sitting exactly on the target is left untouched so
+        // the toast count only reflects rows that actually moved.
+        function resyncAllPricesToMargin() {
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+            if (rows.length === 0) {
+                window.showToast('No packages to resync', 'fail');
+                return;
+            }
+            if (!confirm(`This overwrites Price on every package (all tabs) to hold a ~${AUTO_PRICE_MARGIN_PCT}% margin above its current Cost. Continue?`)) return;
+            let changed = 0, skipped = 0;
+            rows.forEach(row => {
+                const costInput = row.querySelector('.pkg-cost');
+                const priceInput = row.querySelector('.pkg-price');
+                const cost = Number(costInput.value);
+                if (!cost || cost <= 0) { skipped++; return; }
+                const newPrice = autoPriceForCost(cost);
+                if (Number(priceInput.value) === newPrice) return;
+                priceInput.value = newPrice;
+                updatePackageProfit(priceInput);
+                changed++;
+            });
+            if (changed === 0) {
+                window.showToast(skipped ? `Already synced — ${skipped} row(s) skipped (no Cost set)` : 'Every price already matches the target margin', 'success');
+            } else {
+                window.showToast(`${changed} price(s) re-synced to ~${AUTO_PRICE_MARGIN_PCT}% margin ✓${skipped ? ` (${skipped} skipped — no Cost)` : ''}`, 'success');
+            }
+        }
+        window.resyncAllPricesToMargin = resyncAllPricesToMargin;
 
         // One-tap reorder: swaps the row with its immediate neighbor. Simpler
         // and more reliable than drag on a small phone screen (which fights
@@ -16920,11 +17026,13 @@
             const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
             if (rows.length === 0) return;
 
-            // Clear any update buttons left over from a previous check.
+            // Clear any update buttons (and their collapsed-row warning dots)
+            // left over from a previous check.
             rows.forEach(row => {
                 const u = row.querySelector('.pkg-cost-update-btn');
                 u.style.display = 'none';
                 delete u.dataset.newCost;
+                syncPkgSummary(row);
             });
             const allBtn = document.getElementById('pkg-apply-all-cost-btn');
             if (allBtn) allBtn.style.display = 'none';
@@ -16943,6 +17051,7 @@
                     u.dataset.newCost = liveCost;
                     u.innerHTML = `<svg class="ui-icon" style="width:11px;height:11px;stroke:#fff;"><use href="#icon-refresh"></use></svg> Update Cost → ${liveCost.toLocaleString()} MMK`;
                     u.style.display = 'flex';
+                    syncPkgSummary(row);
                     return true;
                 };
 
@@ -17061,31 +17170,37 @@
         window.enforceMinPriceMargin = enforceMinPriceMargin;
 
         // Applies one row's pending live-price update (set by checkLivePriceChanges)
-        // to its Cost field, refreshes the profit badge, and hides the button.
-        // Price is left exactly as-is — the 4% floor only affects the profit
-        // badge / summary grid color (red when below it), it never changes
-        // the actual Price value. Admin can raise Price by hand if they want.
+        // to its Cost field, then recomputes Price to hold a steady ~5%
+        // margin via autoPriceForCost() (see above) — so a supplier cost
+        // change flows through to the sell Price automatically instead of
+        // silently shrinking or ballooning the margin over time. Admin can
+        // still type a different Price by hand afterward if they want.
         function applyCostUpdate(btn, silent = false) {
             const newCost = btn.dataset.newCost;
             if (newCost === undefined) return;
             const row = btn.closest('.package-row');
             const costInput = row.querySelector('.pkg-cost');
+            const priceInput = row.querySelector('.pkg-price');
             costInput.value = newCost;
-
-            updatePackageProfit(costInput);
+            // Price follows Cost to keep a steady ~5% margin (see
+            // autoPriceForCost above) instead of drifting whenever a live
+            // cost sync lands — admin can still overwrite Price by hand
+            // afterward if they want a different number.
+            priceInput.value = autoPriceForCost(Number(newCost));
             btn.style.display = 'none';
             delete btn.dataset.newCost;
-            if (!silent) window.showToast('Cost updated', 'success');
+
+            updatePackageProfit(costInput);
+            if (!silent) window.showToast('Cost & Price updated', 'success');
         }
         window.applyCostUpdate = applyCostUpdate;
 
         // Applies every row's pending live-price update in one tap, instead
         // of tapping "Update Cost" on each row one by one. Reuses
-        // applyCostUpdate per row so the profit badge stays in sync. Price
-        // values are never touched — only Cost updates and the profit badge
-        // / summary grid color (red below 4%) refresh. Each row is applied
-        // silently so only the single summary toast below shows, instead of
-        // queuing up one toast per row.
+        // applyCostUpdate per row so the profit badge, Price (via
+        // autoPriceForCost) and collapsed-row warning dot all stay in sync.
+        // Each row is applied silently so only the single summary toast
+        // below shows, instead of queuing up one toast per row.
         function applyAllCostUpdates() {
             const buttons = Array.from(document.querySelectorAll('.pkg-cost-update-btn'))
                 .filter(u => u.dataset.newCost !== undefined && u.style.display !== 'none');
@@ -17096,7 +17211,7 @@
             if (allBtn) allBtn.style.display = 'none';
             const statusEl = document.getElementById('pkg-price-check-status');
             if (statusEl) { statusEl.style.color = 'var(--text-muted)'; statusEl.innerText = 'All costs updated.'; }
-            window.showToast(`${buttons.length} cost(s) updated`, 'success');
+            window.showToast(`${buttons.length} cost & price update(s) applied`, 'success');
         }
         window.applyAllCostUpdates = applyAllCostUpdates;
 
