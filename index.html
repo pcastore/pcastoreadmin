@@ -817,7 +817,7 @@
         /* Game list: image-only tiles. Tapping one opens a small action sheet
            (Edit / Delete) instead of jumping straight into the editor. */
         .game-image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 130px)); gap: 12px; }
-        .game-image-tile { aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: var(--bg-subtle); border: 1px solid var(--fill-soft); cursor: pointer; box-shadow: var(--shadow-soft); }
+        .game-image-tile { aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--bg-subtle); border: 1px solid var(--fill-soft); cursor: pointer; box-shadow: var(--shadow-soft); }
         .game-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
         /* Neat segmented tab bar for the Games list page (Direct / Voucher) -
            was previously only switchable via the sidebar's picker sheet,
@@ -1218,7 +1218,7 @@
 
         /* Reorder-games grid: small 2-column cards matching the Store's game
            grid look, draggable by pointer (touch + mouse). */
-        .game-reorder-grid { display: grid; grid-template-columns: repeat(var(--reorder-cols, 2), 1fr); gap: 10px; transition: grid-template-columns 0.1s ease; }
+        .game-reorder-grid { display: grid; grid-template-columns: repeat(var(--reorder-cols, 3), 1fr); gap: 10px; transition: grid-template-columns 0.1s ease; }
         .game-reorder-card { position: relative; background: var(--surface); border: 1px solid var(--fill-soft); border-radius: 14px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; transition: box-shadow 0.15s ease; }
         .game-reorder-card:active { cursor: grabbing; }
         .game-reorder-card.dragging { box-shadow: var(--shadow-soft); opacity: 0.92; }
@@ -1816,7 +1816,7 @@
         <div class="logo" id="store-switcher-btn" onclick="openStoreSwitcherSheet()" style="cursor:pointer;">
             <div class="logo-icon" id="header-logo-icon">
                 <svg class="ui-icon" id="header-logo-default-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg>
-                <img id="header-logo-img" src="" alt="PCA Store" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
+                <img id="header-logo-img" src="" alt="PCA Store" loading="lazy" decoding="async" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
             </div>
             <span id="store-switcher-label">PCA Store 1</span>
             <svg class="ui-icon" style="width:13px;height:13px;flex-shrink:0;color:var(--text-muted);"><use href="#icon-chevron-down"></use></svg>
@@ -2160,7 +2160,7 @@
                     <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Facebook</label>
                     <div style="display:flex;gap:8px;align-items:center;margin:6px 0 4px;">
                         <div class="pkg-img-preview" style="width:44px;height:44px;" onclick="document.getElementById('social-facebook-file').click()">
-                            <img class="pkg-img-tag" id="social-facebook-img-tag" src="" style="display:none;">
+                            <img class="pkg-img-tag" id="social-facebook-img-tag" src="" loading="lazy" decoding="async" style="display:none;">
                             <span class="pkg-img-placeholder" id="social-facebook-img-placeholder">+ Icon</span>
                         </div>
                         <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
@@ -2173,7 +2173,7 @@
                     <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Telegram</label>
                     <div style="display:flex;gap:8px;align-items:center;margin:6px 0 4px;">
                         <div class="pkg-img-preview" style="width:44px;height:44px;" onclick="document.getElementById('social-telegram-file').click()">
-                            <img class="pkg-img-tag" id="social-telegram-img-tag" src="" style="display:none;">
+                            <img class="pkg-img-tag" id="social-telegram-img-tag" src="" loading="lazy" decoding="async" style="display:none;">
                             <span class="pkg-img-placeholder" id="social-telegram-img-placeholder">+ Icon</span>
                         </div>
                         <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
@@ -2186,7 +2186,7 @@
                     <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">TikTok</label>
                     <div style="display:flex;gap:8px;align-items:center;margin:6px 0 4px;">
                         <div class="pkg-img-preview" style="width:44px;height:44px;" onclick="document.getElementById('social-tiktok-file').click()">
-                            <img class="pkg-img-tag" id="social-tiktok-img-tag" src="" style="display:none;">
+                            <img class="pkg-img-tag" id="social-tiktok-img-tag" src="" loading="lazy" decoding="async" style="display:none;">
                             <span class="pkg-img-placeholder" id="social-tiktok-img-placeholder">+ Icon</span>
                         </div>
                         <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
@@ -2256,7 +2256,7 @@
                     <label class="img-update-box" id="logo-img-update-box" for="edit-logo-file">
                         <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                         <span class="img-update-label">Image Update</span>
-                        <img id="edit-logo-preview" src="" alt="Preview" style="display:none;">
+                        <img id="edit-logo-preview" src="" alt="Preview" loading="lazy" decoding="async" style="display:none;">
                         <span class="img-update-change" id="logo-img-update-change" style="display:none;">
                             <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
                         </span>
@@ -2277,7 +2277,7 @@
                     <label class="img-update-box logo-square" id="support-avatar-img-update-box" for="edit-support-avatar-file" style="border-radius:50%;width:96px;max-width:96px;overflow:hidden;">
                         <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                         <span class="img-update-label">Image Update</span>
-                        <img id="edit-support-avatar-preview" src="" alt="Preview" style="display:none;object-fit:cover;">
+                        <img id="edit-support-avatar-preview" src="" alt="Preview" loading="lazy" decoding="async" style="display:none;object-fit:cover;">
                         <span class="img-update-change" id="support-avatar-img-update-change" style="display:none;">
                             <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
                         </span>
@@ -2591,7 +2591,7 @@
                 <div class="modal-body">
                     <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
                         <div style="width:56px;height:56px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);">
-                            <img id="game-action-sheet-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+                            <img id="game-action-sheet-img" src="" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;">
                         </div>
                         <div style="min-width:0;">
                             <div id="game-action-sheet-name" style="font-size:15px;font-weight:600;color:var(--text-primary);word-break:break-word;"></div>
@@ -2604,7 +2604,7 @@
             </div>
         </div>
 
-        <!-- REORDER GAMES MODAL: drag-and-drop grid, same 2-column card look
+        <!-- REORDER GAMES MODAL: drag-and-drop grid, same 3-column card look
              as the Store's game grid, so what admin arranges here is exactly
              what customers see. -->
         <div class="modal-overlay" id="game-reorder-modal-overlay" onclick="if(event.target===this) closeGameReorder()">
@@ -2969,7 +2969,7 @@
             <div class="udp-profile-card">
                 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
                     <div class="user-avatar" id="ud-avatar" style="width:64px;height:64px;">
-                        <img id="ud-avatar-img" src="" alt="" style="display:none;">
+                        <img id="ud-avatar-img" src="" alt="" loading="lazy" decoding="async" style="display:none;">
                         <svg class="ui-icon" id="ud-avatar-icon" style="width:28px;height:28px;"><use href="#icon-users"></use></svg>
                     </div>
                     <div style="min-width:0;flex:1;">
@@ -3201,7 +3201,7 @@
                         <label class="img-update-box ratio-square" id="game-img-update-box" for="edit-game-file">
                             <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                             <span class="img-update-label">Image Update</span>
-                            <img id="edit-game-preview" src="" alt="Preview" style="display:none;">
+                            <img id="edit-game-preview" src="" alt="Preview" loading="lazy" decoding="async" style="display:none;">
                             <span class="img-update-change" id="game-img-update-change" style="display:none;">
                                 <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
                             </span>
@@ -3214,7 +3214,7 @@
                         <label class="img-update-box ratio-banner" id="game-banner-update-box" for="edit-game-banner-file">
                             <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                             <span class="img-update-label">Banner Update</span>
-                            <img id="edit-game-banner-preview" src="" alt="Banner preview" style="display:none;">
+                            <img id="edit-game-banner-preview" src="" alt="Banner preview" loading="lazy" decoding="async" style="display:none;">
                             <span class="img-update-change" id="game-banner-update-change" style="display:none;">
                                 <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
                             </span>
@@ -3599,7 +3599,7 @@
                 <label class="img-update-box logo-square" id="payment-img-update-box" for="edit-payment-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">Image Update</span>
-                    <img id="edit-payment-preview" src="" alt="Preview" style="display:none;">
+                    <img id="edit-payment-preview" src="" alt="Preview" loading="lazy" decoding="async" style="display:none;">
                     <span class="img-update-change" id="payment-img-update-change" style="display:none;">
                         <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
                     </span>
@@ -3617,7 +3617,7 @@
                 <label class="img-update-box logo-square" id="payment-qr-update-box" for="edit-payment-qr-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">QR Update</span>
-                    <img id="edit-payment-qr-preview" src="" alt="Preview" style="display:none;">
+                    <img id="edit-payment-qr-preview" src="" alt="Preview" loading="lazy" decoding="async" style="display:none;">
                     <span class="img-update-change" id="payment-qr-update-change" style="display:none;">
                         <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
                     </span>
@@ -3734,10 +3734,13 @@
                 <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(points, 0 = off)</span></label>
                 <input type="number" id="jcplays-low-balance-alert" placeholder="e.g. 5000" step="1" min="0" title="Header will show a warning when the smile points balance drops below this amount">
 
-                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
-                    <input type="checkbox" id="jcplays-enabled" style="width:auto;" checked>
-                    <span>Enabled — turn off to fully hide JCPlays (nav tab, wallet card, game-link picker) everywhere in the app</span>
-                </label>
+                <div class="switch-row" style="margin-top:14px;">
+                    <span class="switch-label" style="flex:1;font-weight:400;">Enabled — turn off to fully hide JCPlays (nav tab, wallet card, game-link picker) everywhere in the app</span>
+                    <label class="toggle-switch" style="flex-shrink:0;">
+                        <input type="checkbox" id="jcplays-enabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
                 <p id="jcplays-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
             </div>
             <div class="modal-footer">
@@ -3780,10 +3783,13 @@
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('g2bulk-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
-                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
-                    <input type="checkbox" id="g2bulk-enabled" style="width:auto;" checked>
-                    <span>Enabled — turn off to fully hide G2Bulk (nav tab, wallet card, game-link picker) everywhere in the app</span>
-                </label>
+                <div class="switch-row" style="margin-top:14px;">
+                    <span class="switch-label" style="flex:1;font-weight:400;">Enabled — turn off to fully hide G2Bulk (nav tab, wallet card, game-link picker) everywhere in the app</span>
+                    <label class="toggle-switch" style="flex-shrink:0;">
+                        <input type="checkbox" id="g2bulk-enabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-g2bulk-btn" onclick="verifyG2BulkKey()">Verify Key</button>
@@ -3819,10 +3825,13 @@
                 <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(USD, 0 = off)</span></label>
                 <input type="number" id="fazercard-low-balance-alert" placeholder="e.g. 20" step="1" min="0" title="Header will show a warning when the wallet balance drops below this amount">
 
-                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
-                    <input type="checkbox" id="fazercard-enabled" style="width:auto;" checked>
-                    <span>Enabled — turn off to fully hide FazerCards (wallet card, game-link picker) everywhere in the app</span>
-                </label>
+                <div class="switch-row" style="margin-top:14px;">
+                    <span class="switch-label" style="flex:1;font-weight:400;">Enabled — turn off to fully hide FazerCards (wallet card, game-link picker) everywhere in the app</span>
+                    <label class="toggle-switch" style="flex-shrink:0;">
+                        <input type="checkbox" id="fazercard-enabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
 
                 <!-- Account webhook: PUT/DELETE /api/v2/account/webhook, POST
                      /api/v2/account/webhook/secret/regenerate, GET
@@ -3833,10 +3842,13 @@
                      last regenerate call returned. -->
                 <label style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">Webhook URL <span style="font-weight:400;color:var(--text-muted);">(FazerCards pushes order/delivery events here)</span></label>
                 <input type="text" id="fazercard-webhook-url" placeholder="https://your-worker.workers.dev/fazercard-webhook" autocomplete="off">
-                <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-                    <input type="checkbox" id="fazercard-webhook-enabled" style="width:auto;">
-                    <span>Webhook enabled</span>
-                </label>
+                <div class="switch-row" style="margin-top:8px;">
+                    <span class="switch-label" style="flex:1;font-weight:400;">Webhook enabled</span>
+                    <label class="toggle-switch" style="flex-shrink:0;">
+                        <input type="checkbox" id="fazercard-webhook-enabled">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
                 <div style="display:flex;gap:8px;margin-top:8px;">
                     <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="save-fazercard-webhook-btn" onclick="saveFazerCardWebhook()">Save Webhook</button>
                     <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="delete-fazercard-webhook-btn" onclick="deleteFazerCardWebhook()">Remove Webhook</button>
@@ -3912,10 +3924,13 @@
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('aluu-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
-                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
-                    <input type="checkbox" id="aluu-enabled" style="width:auto;" checked>
-                    <span>Enabled — turn off to fully hide Aluu.in (wallet card, game-link picker) everywhere in the app</span>
-                </label>
+                <div class="switch-row" style="margin-top:14px;">
+                    <span class="switch-label" style="flex:1;font-weight:400;">Enabled — turn off to fully hide Aluu.in (wallet card, game-link picker) everywhere in the app</span>
+                    <label class="toggle-switch" style="flex-shrink:0;">
+                        <input type="checkbox" id="aluu-enabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-aluu-btn" onclick="verifyAluuKey()">Verify Key</button>
@@ -3950,10 +3965,13 @@
                 <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(USD, 0 = off)</span></label>
                 <input type="number" id="bay2game-low-balance-alert" placeholder="e.g. 20" step="1" min="0" title="Header will show a warning when the wallet balance drops below this amount">
 
-                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
-                    <input type="checkbox" id="bay2game-enabled" style="width:auto;" checked>
-                    <span>Enabled — turn off to fully hide Bay2Game (wallet card, game-link picker) everywhere in the app</span>
-                </label>
+                <div class="switch-row" style="margin-top:14px;">
+                    <span class="switch-label" style="flex:1;font-weight:400;">Enabled — turn off to fully hide Bay2Game (wallet card, game-link picker) everywhere in the app</span>
+                    <label class="toggle-switch" style="flex-shrink:0;">
+                        <input type="checkbox" id="bay2game-enabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" id="verify-bay2game-btn" onclick="verifyBay2gameKey()">Verify Key</button>
@@ -3989,10 +4007,13 @@
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('tg-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
-                <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
-                    <input type="checkbox" id="tg-enabled" style="width:auto;">
-                    <span>Enabled — send new orders to Telegram automatically</span>
-                </label>
+                <div class="switch-row" style="margin-top:14px;">
+                    <span class="switch-label" style="flex:1;font-weight:400;">Enabled — send new orders to Telegram automatically</span>
+                    <label class="toggle-switch" style="flex-shrink:0;">
+                        <input type="checkbox" id="tg-enabled">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
                 <p id="tg-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:8px;"></p>
             </div>
             <div class="modal-footer">
@@ -4711,7 +4732,7 @@
                 const isYou = a.username === currentAdminUsername;
                 if (isYou) currentAdminAvatarUrl = a.avatarUrl || null;
                 const initial = escapeHtml((a.username || '?').trim().charAt(0).toUpperCase() || '?');
-                const avatarInner = a.avatarUrl ? `<img src="${a.avatarUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">` : initial;
+                const avatarInner = a.avatarUrl ? `<img src="${a.avatarUrl}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : initial;
                 return `
                 <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
@@ -5542,6 +5563,12 @@
                 if (Object.keys(USERS).length) renderAdminUsersList();
                 renderOrdersList();
                 checkOrdersAutoDelete(newOrders);
+                // loadDashboardStats() now reads straight from this ORDERS cache
+                // instead of re-fetching the collection itself (see its own
+                // comment) - so if Dashboard/Orders is the page currently open,
+                // refresh its stats here now that the cache has new data.
+                const activePageNow = document.querySelector('.page-section.active')?.id;
+                if ((activePageNow === 'dashboard' || activePageNow === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
 
                 // NOTE: Sending new Pending orders to Telegram used to happen here
                 // in the browser. That's now handled server-side by the standalone
@@ -5985,7 +6012,7 @@
                                 </div>
                                 ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
                                 ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);">View on Map</a></p>` : ''}
-                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" loading="lazy" decoding="async" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
                                 ${Array.isArray(data.deliveredCodes) && data.deliveredCodes.length ? `<div style="margin-top:8px;padding:10px;background:var(--fill-soft);border-radius:8px;">
                                     <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px;">Delivered Voucher Code${data.deliveredCodes.length > 1 ? 's' : ''} — copy &amp; send to customer</div>
                                     ${data.deliveredCodes.map(c => `<div class="mono" style="font-size:13px;padding:4px 0;word-break:break-all;">${escapeHtml(String(c))}</div>`).join('')}
@@ -7711,7 +7738,7 @@
                                         <div class="od-cell"><div class="od-label">Payment</div><div class="od-value">${t.paymentMethod || 'N/A'}</div></div>
                                     </div>
                                     ${t.receiptUrl ? `<a href="${t.receiptUrl}" target="_blank" title="View full screenshot" style="flex-shrink:0;width:90px;height:90px;border-radius:12px;overflow:hidden;display:block;background:var(--bg-subtle);border:1px solid var(--border-glass);">
-                                        <img src="${t.receiptUrl}" alt="Receipt" style="width:100%;height:100%;object-fit:cover;">
+                                        <img src="${t.receiptUrl}" alt="Receipt" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">
                                     </a>` : ''}
                                 </div>
                                 <p style="color:var(--text-secondary); font-size:12px;">Requested: ${dateStr}</p>
@@ -8035,10 +8062,16 @@
             return p ? (Number(p.cost) || 0) : null;
         }
 
+        // Was awaiting a fresh getDocs(collection(db,"orders")) here on every
+        // single Dashboard/Orders tab switch - a full network round-trip +
+        // re-parse of every order doc, even though fetchOrders()'s onSnapshot
+        // listener already keeps ORDERS live in memory (same pattern
+        // renderAnalytics below already relies on). That redundant fetch was
+        // the stutter/freeze felt right at the moment of switching tabs.
+        // Reading straight from ORDERS removes the network round-trip.
         async function loadDashboardStats() {
             try {
                 renderDayProgress();
-                const snap = await getDocs(collection(db, "orders"));
                 let todaySales = 0, yesterdaySales = 0, pending = 0, processing = 0, completed = 0, fail = 0, today = 0, yesterdayOrders = 0;
                 let todayProfit = 0, yesterdayProfit = 0;
                 const now = new Date();
@@ -8055,8 +8088,7 @@
                 const revenueByDay = {}; dayKeys.forEach(k => revenueByDay[k] = 0);
                 const revenueByGame = {};
 
-                snap.forEach((docSnap) => {
-                    const data = docSnap.data();
+                Object.values(ORDERS).forEach((data) => {
                     if (!matchesCurrentStore(data)) return;
                     const price = Number(data.price) || 0;
                     const dayStr = data.timestamp ? data.timestamp.toDate().toDateString() : null;
@@ -9058,7 +9090,25 @@
             });
         }
 
+        // Firestore onSnapshot for a full collection fires once per doc change in
+        // a burst (initial load, then every edit/sold-toggle), and this list was
+        // rebuilding its entire innerHTML + every thumbnail image on each one -
+        // same stutter class of bug already fixed for Orders/Games/Users, just
+        // missed here. Coalesce bursts into a single settled render.
+        let accountsRenderScheduled = null;
         function renderAccountsList() {
+            clearTimeout(accountsRenderScheduled);
+            const container = document.getElementById('admin-accounts-container');
+            attachScrollTouchGuard(container);
+            const runWhenSettled = () => {
+                if (container && container._isTouching) { accountsRenderScheduled = setTimeout(runWhenSettled, 150); return; }
+                renderAccountsListImpl();
+            };
+            accountsRenderScheduled = setTimeout(runWhenSettled, 60);
+        }
+        window.renderAccountsList = renderAccountsList;
+
+        function renderAccountsListImpl() {
             const container = document.getElementById('admin-accounts-container');
             if (!container) return;
             const searchTerm = (document.getElementById('account-search')?.value || '').trim().toLowerCase();
@@ -9094,7 +9144,6 @@
             }).join('');
             initScrollReveal(container);
         }
-        window.renderAccountsList = renderAccountsList;
 
         function renderAccountGalleryEditor() {
             const wrap = document.getElementById('edit-account-gallery');
@@ -9103,7 +9152,7 @@
             editingAccountImages.forEach((url, idx) => {
                 const thumb = document.createElement('div');
                 thumb.className = 'acct-gallery-thumb';
-                thumb.innerHTML = `<img src="${url}" alt=""><span class="acct-gallery-remove" onclick="event.stopPropagation(); removeAccountImage(${idx})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>`;
+                thumb.innerHTML = `<img src="${url}" alt="" loading="lazy" decoding="async"><span class="acct-gallery-remove" onclick="event.stopPropagation(); removeAccountImage(${idx})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>`;
                 wrap.insertBefore(thumb, addTile);
             });
         }
@@ -9527,7 +9576,7 @@
                         <div class="pkg-summary-head">
                             <div class="pkg-summary-label">
                                 <div class="pkg-summary-thumb">
-                                    <img class="pkg-summary-thumb-img" src="${image}" style="${image ? '' : 'display:none;'}">
+                                    <img class="pkg-summary-thumb-img" src="${image}" loading="lazy" decoding="async" style="${image ? '' : 'display:none;'}">
                                     <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
                                 </div>
                                 <span class="pkg-summary-name">${amount || 'Unnamed package'}</span>
@@ -9561,7 +9610,7 @@
                             </div>
                             <div class="pkg-row-media">
                                 <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
-                                    <img class="pkg-img-tag" src="${image}" style="${image ? '' : 'display:none;'}">
+                                    <img class="pkg-img-tag" src="${image}" loading="lazy" decoding="async" style="${image ? '' : 'display:none;'}">
                                     <span class="pkg-img-placeholder" style="${image ? 'display:none;' : ''}">+ Image</span>
                                 </div>
                                 <input type="file" accept="image/*" class="pkg-img-file" style="display:none;" onchange="handlePackageImageSelect(this)">
@@ -10709,12 +10758,12 @@
         // saved here is exactly what customers see.
         let reorderGameIds = [];
 
-        // Card-size slider: 100% = 2 columns (biggest cards), 10% = 10 columns
+        // Card-size slider: 100% = 3 columns (biggest cards), 10% = 10 columns
         // (smallest). Value is persisted so the admin's preferred density
         // sticks between sessions.
         function reorderColsFromSize(sizePct) {
             const pct = Math.min(100, Math.max(10, Number(sizePct) || 100));
-            return Math.round(2 + (100 - pct) / 100 * 8);
+            return Math.round(3 + (100 - pct) / 90 * 7);
         }
         function applyReorderSize(sizePct) {
             const grid = document.getElementById('game-reorder-grid');
@@ -11264,7 +11313,7 @@
                     } else {
                         const uname = m.adminUsername || '';
                         const initial = escapeHtml((uname || 'A').trim().charAt(0).toUpperCase() || 'A');
-                        const inner = m.adminAvatar ? `<img src="${escapeHtml(m.adminAvatar)}" alt="">` : initial;
+                        const inner = m.adminAvatar ? `<img src="${escapeHtml(m.adminAvatar)}" alt="" loading="lazy" decoding="async">` : initial;
                         avatarBadge = `<span class="sc-msg-avatar" title="${escapeHtml(uname || 'Admin')}">${inner}</span>`;
                     }
                 }
@@ -11474,7 +11523,7 @@
                     <div class="admin-card">
                         <div class="ac-header"><span class="ac-id">${p.name}</span></div>
                         <div class="ac-body" style="display:flex;gap:10px;align-items:center;">
-                            ${p.image ? `<div style="width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);"><img src="${p.image}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>` : ''}
+                            ${p.image ? `<div style="width:56px;height:56px;flex-shrink:0;border-radius:8px;overflow:hidden;background:var(--bg-subtle);border:1px solid var(--fill-soft);"><img src="${p.image}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;display:block;"></div>` : ''}
                             <div>
                                 <p><b>Number:</b> ${p.number}</p>
                                 <p><b>Account Name:</b> ${p.accountName}</p>
@@ -12234,7 +12283,7 @@
                                 </div>
                             </div>
                             ${o.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${o.serverRegion}</span></p>` : ''}
-                            ${o.receiptUrl ? `<p><b>Receipt:</b> <a href="${o.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${o.receiptUrl}" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                            ${o.receiptUrl ? `<p><b>Receipt:</b> <a href="${o.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${o.receiptUrl}" loading="lazy" decoding="async" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
                         </div>
                     </div>
                 `;
@@ -12396,7 +12445,7 @@
             const label = status === 'verified' ? 'Verified' : status === 'rejected' ? 'Rejected' : 'Pending Review';
             el.innerHTML = `
                 <div style="margin-bottom:10px;"><span class="badge ${cls}">${statusBadgeHtml(cls, label)}</span></div>
-                ${u.kycNrcUrl ? `<img src="${u.kycNrcUrl}" alt="Submitted NRC" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-bottom:10px;cursor:pointer;" onclick="window.open('${u.kycNrcUrl}','_blank')">` : ''}
+                ${u.kycNrcUrl ? `<img src="${u.kycNrcUrl}" alt="Submitted NRC" loading="lazy" decoding="async" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-bottom:10px;cursor:pointer;" onclick="window.open('${u.kycNrcUrl}','_blank')">` : ''}
                 <div style="display:flex;gap:8px;">
                     ${status !== 'verified' ? `<button class="btn btn-outline" onclick="setUserKycStatus('verified')">Approve</button>` : ''}
                     ${status !== 'rejected' ? `<button class="btn btn-danger" onclick="setUserKycStatus('rejected')">Reject</button>` : ''}
