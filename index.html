@@ -3582,6 +3582,9 @@
                 <input type="text" id="edit-payment-number" placeholder="e.g. 09123456789">
                 <label>Account Name</label>
                 <input type="text" id="edit-payment-accountname" placeholder="e.g. Mg Mg Aung">
+                <label>Availability Note (shown to customers)</label>
+                <input type="text" id="edit-payment-availability" placeholder="e.g. Reviewed 7:00 AM - 12:00 AM, or Available 24/7">
+                <p style="font-size:12px;color:var(--text-secondary);margin-top:-6px;">Shown under this method at checkout so customers know when a receipt will be reviewed. Leave blank to hide.</p>
 
                 <label>Logo Image (optional)</label>
                 <label class="img-update-box logo-square" id="payment-img-update-box" for="edit-payment-file">
@@ -11457,6 +11460,7 @@
                             <div>
                                 <p><b>Number:</b> ${p.number}</p>
                                 <p><b>Account Name:</b> ${p.accountName}</p>
+                                ${p.availabilityNote ? `<p><b>Availability:</b> ${p.availabilityNote}</p>` : ''}
                             </div>
                         </div>
                         <div class="ac-footer">
@@ -17593,6 +17597,7 @@
                 document.getElementById('edit-payment-name').value = p.name;
                 document.getElementById('edit-payment-number').value = p.number;
                 document.getElementById('edit-payment-accountname').value = p.accountName;
+                document.getElementById('edit-payment-availability').value = p.availabilityNote || '';
                 if (p.image) {
                     preview.src = p.image; preview.style.display = 'block';
                     updateBox.classList.add('has-image'); changeBadge.style.display = 'flex';
@@ -17613,6 +17618,7 @@
                 document.getElementById('edit-payment-name').value = '';
                 document.getElementById('edit-payment-number').value = '';
                 document.getElementById('edit-payment-accountname').value = '';
+                document.getElementById('edit-payment-availability').value = '';
                 preview.src = '';
                 preview.style.display = 'none';
                 updateBox.classList.remove('has-image');
@@ -17635,6 +17641,7 @@
             const name = document.getElementById('edit-payment-name').value.trim();
             const number = document.getElementById('edit-payment-number').value.trim();
             const accountName = document.getElementById('edit-payment-accountname').value.trim();
+            const availabilityNote = document.getElementById('edit-payment-availability').value.trim();
 
             if (!name || !number || !accountName) { window.showToast('Please fill in all fields', 'fail'); return; }
 
@@ -17653,7 +17660,7 @@
                     qrImageUrl = await uploadImageToImgBB(editingPaymentQrImageFile, 'payment-qr-upload-status');
                 }
 
-                const data = { name, number, accountName, image: imageUrl, qrImage: qrImageUrl };
+                const data = { name, number, accountName, availabilityNote, image: imageUrl, qrImage: qrImageUrl };
                 if (paymentId) {
                     await updateDoc(doc(db, "paymentMethods", paymentId), data);
                     logAdminActivity('Edited payment method', name);
