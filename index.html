@@ -1286,6 +1286,13 @@
            translateY(0) and none render identically, so this doesn't visibly
            move the modal or reset its open/close animation. */
         .modal-overlay.show .modal-box.pkg-editing-open { transform: none; }
+        /* #edit-packages-list (the scrollable packages box itself) also carries
+           its own permanent `transform: translateZ(0)` (GPU layer for smooth
+           scrolling) - a third containing-block source the two fixes above
+           don't touch, so the overlay was still getting trapped inside this
+           list's own box instead of the viewport. Cancel it too while any row
+           inside is open for editing. */
+        #edit-packages-list.pkg-editing-open { transform: none; }
         .pkg-card { background: var(--surface-strong); width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; border-radius: 14px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
         .pkg-card-header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500; color: var(--text-primary); padding-bottom: 2px; }
         .pkg-card-close { font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 2px 8px; display: inline-flex; align-items: center; justify-content: center; }
@@ -3135,6 +3142,8 @@
                     <p style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">App Link (optional)</p>
                     <label style="margin-top:0;">Android Package <span style="font-weight:400;color:var(--text-muted);">(e.g. com.mobile.legends)</span></label>
                     <input type="text" id="edit-game-app-android-package" placeholder="com.mobile.legends">
+                    <label>Android Scheme <span style="font-weight:400;color:var(--text-muted);">(custom URL scheme, without "://")</span></label>
+                    <input type="text" id="edit-game-app-android-scheme" placeholder="e.g. mlbb">
                     <label>Android Store URL <span style="font-weight:400;color:var(--text-muted);">(optional — auto-built from package name if blank)</span></label>
                     <input type="text" id="edit-game-app-android-store-url" placeholder="https://play.google.com/store/apps/details?id=...">
                     <label>iOS Scheme <span style="font-weight:400;color:var(--text-muted);">(custom URL scheme, without "://")</span></label>
@@ -9839,6 +9848,8 @@
             row.classList.add('editing');
             const hostModal = row.closest('.modal-box');
             if (hostModal) hostModal.classList.add('pkg-editing-open');
+            const hostList = row.closest('#edit-packages-list');
+            if (hostList) hostList.classList.add('pkg-editing-open');
             applyPkgCardViewportFix();
         }
         window.expandPackageRow = expandPackageRow;
@@ -9885,6 +9896,10 @@
             // but this keeps it correct if that ever changes).
             if (hostModal && !hostModal.querySelector('.package-row.editing')) {
                 hostModal.classList.remove('pkg-editing-open');
+            }
+            const hostList = row.closest('#edit-packages-list');
+            if (hostList && !hostList.querySelector('.package-row.editing')) {
+                hostList.classList.remove('pkg-editing-open');
             }
             const overlay = row.querySelector('.pkg-card-overlay');
             overlay.style.height = '';
@@ -10276,6 +10291,7 @@
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = g.description || '';
                 document.getElementById('edit-game-app-android-package').value = g.appAndroidPackage || '';
+                document.getElementById('edit-game-app-android-scheme').value = g.appAndroidScheme || '';
                 document.getElementById('edit-game-app-android-store-url').value = g.appAndroidStoreUrl || '';
                 document.getElementById('edit-game-app-ios-scheme').value = g.appIosScheme || '';
                 document.getElementById('edit-game-app-ios-store-url').value = g.appIosStoreUrl || '';
@@ -10403,6 +10419,7 @@
                 renderGameCategorySelect();
                 document.getElementById('edit-game-description').value = '';
                 document.getElementById('edit-game-app-android-package').value = '';
+                document.getElementById('edit-game-app-android-scheme').value = '';
                 document.getElementById('edit-game-app-android-store-url').value = '';
                 document.getElementById('edit-game-app-ios-scheme').value = '';
                 document.getElementById('edit-game-app-ios-store-url').value = '';
@@ -10574,6 +10591,7 @@
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
             const appAndroidPackage = document.getElementById('edit-game-app-android-package').value.trim();
+            const appAndroidScheme = document.getElementById('edit-game-app-android-scheme').value.trim();
             const appAndroidStoreUrl = document.getElementById('edit-game-app-android-store-url').value.trim();
             const appIosScheme = document.getElementById('edit-game-app-ios-scheme').value.trim();
             const appIosStoreUrl = document.getElementById('edit-game-app-ios-store-url').value.trim();
@@ -10641,7 +10659,7 @@
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], bay2gameCode: bay2gameCode || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', appAndroidPackage: appAndroidPackage || '', appAndroidStoreUrl: appAndroidStoreUrl || '', appIosScheme: appIosScheme || '', appIosStoreUrl: appIosStoreUrl || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', aluuCode: aluuCode || '', aluuServerMode: pendingAluuServerMode || '', aluuServerOptions: pendingAluuServerOptions || [], bay2gameCode: bay2gameCode || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', appAndroidPackage: appAndroidPackage || '', appAndroidScheme: appAndroidScheme || '', appAndroidStoreUrl: appAndroidStoreUrl || '', appIosScheme: appIosScheme || '', appIosStoreUrl: appIosStoreUrl || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -17850,6 +17868,7 @@
             renderGameCategorySelect();
             document.getElementById('edit-game-description').value = base.description || '';
             document.getElementById('edit-game-app-android-package').value = base.appAndroidPackage || '';
+            document.getElementById('edit-game-app-android-scheme').value = base.appAndroidScheme || '';
             document.getElementById('edit-game-app-android-store-url').value = base.appAndroidStoreUrl || '';
             document.getElementById('edit-game-app-ios-scheme').value = base.appIosScheme || '';
             document.getElementById('edit-game-app-ios-store-url').value = base.appIosStoreUrl || '';
