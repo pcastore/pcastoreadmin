@@ -3187,12 +3187,15 @@
                     </label>
                 </div>
 
-                <!-- Aluu.in-specific: /create takes a separate charname field
+                <!-- Shared "requires character name" flag: G2Bulk's Top-up order
+                     endpoint (POST /v1/games/:code/order) has an optional
+                     `charname` field for games that need it, and Aluu.in's
+                     /create takes an equivalent charname field
                      (requiresCharName per-product per Aluu.in's docs) distinct
-                     from serverid. Only shown/relevant for Aluu.in-linked games. -->
+                     from serverid. Shown for both providers; hidden otherwise. -->
                 <div class="switch-row" id="requires-charname-row" style="display:none;">
                     <div>
-                        <span class="switch-label">Requires Character Name <span style="font-weight:400;color:var(--text-muted);">(Aluu.in)</span></span>
+                        <span class="switch-label">Requires Character Name</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="edit-game-charname">
@@ -4627,15 +4630,27 @@
         async function initLoginGate() {
             try {
                 const snap = await getDoc(doc(db, "settings", "adminAuth"));
-                loginGateEnabled = !!(snap.exists() && snap.data().loginEnabled);
+                // FAIL-CLOSED: a missing settings/adminAuth doc (first run, doc
+                // deleted, typo'd path, etc.) now means login IS required.
+                // Only an explicit { loginEnabled: false } written by the toggle
+                // turns the gate off — absence/silence never implies "open".
+                loginGateEnabled = !snap.exists() || snap.data().loginEnabled !== false;
             } catch (e) {
-                console.error('Could not read admin login setting, defaulting to open:', e);
-                loginGateEnabled = false;
+                // FAIL-CLOSED: a read error (offline, permission issue, rules
+                // misconfigured, etc.) also defaults to requiring login rather
+                // than opening the panel.
+                console.error('Could not read admin login setting, defaulting to locked:', e);
+                loginGateEnabled = true;
             }
             renderAdminLoginStatus();
             if (!loginGateEnabled) {
-                // Skip the gate entirely. Still sign in anonymously in the background
-                // so Firestore rules requiring request.auth != null keep working.
+                // Admin has explicitly turned login off via the toggle. Still sign
+                // in anonymously in the background so Firestore rules requiring
+                // request.auth != null keep working.
+                // NOTE: this alone is only real protection once Firestore rules
+                // distinguish a verified admin from an anonymous user — checking
+                // request.auth != null is not enough on its own (see Firestore
+                // rules audit item).
                 document.getElementById('login-screen').classList.add('hidden');
                 try { await signInAnonymously(auth); } catch (e) { console.error('Anonymous sign-in failed:', e); }
                 if (!adminAppStarted) { adminAppStarted = true; startAdminApp(); }
@@ -5867,6 +5882,10 @@
                     actionButtons = `<button class="btn btn-outline" onclick="checkFazerCardOrderStatus('${orderId}', '${data.fazercardOrderId}')">Check FazerCards Status (${data.fazercardStatus || 'processing'})</button>
                                       <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
+                } else if (data.status === 'Processing' && data.fazercardGiftOrderId) {
+                    actionButtons = `<button class="btn btn-outline" onclick="checkFazerCardGiftCardOrderStatus('${orderId}', '${data.fazercardGiftOrderId}')">Check FazerCards Status (${data.fazercardGiftStatus || 'processing'})</button>
+                                      <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
+                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Processing' && data.aluuPartnerOrderId) {
                     actionButtons = `<button class="btn btn-outline" onclick="checkAluuOrderStatus('${orderId}', '${data.aluuPartnerOrderId}')">Check Aluu.in Status (${data.aluuStatus || 'pending'})</button>
                                       <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
@@ -5904,6 +5923,8 @@
                         ? `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})" title="Re-check in case G2Bulk actually finished it after we marked this Fail">Recheck G2Bulk Status</button>`
                         : (data.status === 'Fail' && data.fazercardOrderId)
                         ? `<button class="btn btn-outline" onclick="checkFazerCardOrderStatus('${orderId}', '${data.fazercardOrderId}')" title="Re-check in case FazerCards actually finished it after we marked this Fail">Recheck FazerCards Status</button>`
+                        : (data.status === 'Fail' && data.fazercardGiftOrderId)
+                        ? `<button class="btn btn-outline" onclick="checkFazerCardGiftCardOrderStatus('${orderId}', '${data.fazercardGiftOrderId}')" title="Re-check in case FazerCards actually finished it after we marked this Fail">Recheck FazerCards Status</button>`
                         : (data.status === 'Fail' && data.aluuPartnerOrderId)
                         ? `<button class="btn btn-outline" onclick="checkAluuOrderStatus('${orderId}', '${data.aluuPartnerOrderId}')" title="Re-check in case Aluu.in actually finished it after we marked this Fail">Recheck Aluu.in Status</button>`
                         : '';
@@ -5998,6 +6019,10 @@
                                     ${data.fazercardOrderId ? `<div class="od-cell">
                                         <div class="od-label">FazerCards Order ID</div>
                                         <div class="od-value mono">${data.fazercardOrderId}</div>
+                                    </div>` : ''}
+                                    ${data.fazercardGiftOrderId ? `<div class="od-cell">
+                                        <div class="od-label">FazerCards Gift Card Order ID</div>
+                                        <div class="od-value mono">${data.fazercardGiftOrderId}</div>
                                     </div>` : ''}
                                     ${data.aluuOrderId ? `<div class="od-cell">
                                         <div class="od-label">Aluu.in Order ID</div>
@@ -6184,6 +6209,7 @@
                         catalogue_name: order.g2bulkCatalogueName,
                         player_id: order.playerId,
                         server_id: order.serverId || undefined,
+                        charname: order.charName || undefined,
                         remark: `PCA Store order ${orderId}`,
                         callback_url: callbackUrl
                     })
@@ -6207,12 +6233,17 @@
             // idempotency key is a backstop, not a guarantee for every possible
             // failure mode); surface it clearly instead so the admin can
             // reconcile manually via G2Bulk's dashboard/order_id.
-            const g2bulkOrderId = data.order?.order_id;
+            // G2Bulk's POST /v1/games/:code/order response is flat
+            // (order_id/status at the top level, no "order" wrapper) — the
+            // `data.order?.x` reads below are a defensive fallback only, in
+            // case a future API version nests it; `data.order_id`/`data.status`
+            // are what the documented response actually returns.
+            const g2bulkOrderId = data.order_id ?? data.order?.order_id;
             try {
                 await updateDoc(doc(db, "orders", orderId), {
                     status: "Processing",
                     g2bulkOrderId: g2bulkOrderId || null,
-                    g2bulkStatus: data.order?.status || 'PENDING'
+                    g2bulkStatus: data.status || data.order?.status || 'PENDING'
                 });
                 window.showToast('Order placed with G2Bulk — checking for completion...', 'success');
 
@@ -6609,6 +6640,7 @@
                     fazercardGiftStatus: orderObj.status || 'unknown'
                 });
                 window.showToast('FazerCards accepted the order — check the console/FazerCards dashboard for the code.', 'success');
+                if (fazercardGiftOrderId) pollFazerCardGiftCardOrder(orderId, fazercardGiftOrderId, 5); // ~5 tries, 4s apart = 20s
                 return 'processing';
             } catch (error) {
                 console.error("FazerCards gift card order accepted but saving failed:", error);
@@ -6618,6 +6650,54 @@
             }
         }
         window.placeFazerCardGiftCardOrder = placeFazerCardGiftCardOrder;
+
+        // Mirrors checkFazerCardOrderStatus/pollFazerCardOrder above, for gift
+        // card orders - same GET /orders/{orderId} endpoint (shared across
+        // both FazerCards order types), but reads codes out of order.cards on
+        // completion since gift cards deliver a code instead of a top-up
+        // confirmation. The same failed/cancelled/refund/refunded set from
+        // the top-up flow is treated as terminal failure here too, since the
+        // gift card docs don't spell out their own status enum either.
+        async function checkFazerCardGiftCardOrderStatus(orderId, fazercardGiftOrderId, silent = false) {
+            if (!FAZERCARD_SETTINGS.apiKey) {
+                if (!silent) window.showToast('Add your FazerCards API key first.', 'fail');
+                return;
+            }
+            try {
+                const data = await fazercardRequest(`/orders/${encodeURIComponent(fazercardGiftOrderId)}`);
+                const orderObj = data.order || data;
+                const status = (orderObj.status || '').toLowerCase();
+                const codes = (orderObj.cards || data.cards || orderObj.codes || data.codes || [])
+                    .map(c => (typeof c === 'string' ? c : (c.code || c.pin || c.serial || JSON.stringify(c))));
+
+                if (status === 'completed' || codes.length) {
+                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), fazercardGiftStatus: status || 'completed', deliveredCodes: codes });
+                    window.showToast('Gift card delivered ✓', 'success');
+                    editTelegramOrderMessage(orderId, 'Success');
+                } else if (status === 'failed' || status === 'cancelled' || status === 'refund' || status === 'refunded') {
+                    await markOrderFailedWithRefund(orderId, { fazercardGiftStatus: status });
+                    if (!silent) window.showToast('FazerCards gift card order failed/refunded.', 'fail');
+                    editTelegramOrderMessage(orderId, 'Fail');
+                } else {
+                    await updateDoc(doc(db, "orders", orderId), { fazercardGiftStatus: status || 'processing' });
+                    if (!silent) window.showToast('Still processing on FazerCards (' + (status || 'processing') + ')...');
+                }
+                return status;
+            } catch (error) {
+                console.error("FazerCards gift card status check error:", error);
+                if (!silent) window.showToast(error.message || 'Could not reach FazerCards to check status.', 'fail');
+            }
+        }
+        window.checkFazerCardGiftCardOrderStatus = checkFazerCardGiftCardOrderStatus;
+
+        async function pollFazerCardGiftCardOrder(orderId, fazercardGiftOrderId, triesLeft) {
+            if (triesLeft <= 0) return;
+            await new Promise(r => setTimeout(r, 4000));
+            const status = await checkFazerCardGiftCardOrderStatus(orderId, fazercardGiftOrderId, true);
+            if (status !== 'completed' && status !== 'failed' && status !== 'cancelled' && status !== 'refunded') {
+                pollFazerCardGiftCardOrder(orderId, fazercardGiftOrderId, triesLeft - 1);
+            }
+        }
 
         // Background auto-sync, same fallback role as autoPollG2BulkOrders -
         // quietly re-checks every "Processing" order with a fazercardOrderId
@@ -15513,7 +15593,7 @@
             document.getElementById('g2bulk-voucher-fulfill-section').style.display = provider === 'g2bulk_voucher' ? 'block' : 'none';
             document.getElementById('fazercard-fulfill-section').style.display = provider === 'fazercard' ? 'block' : 'none';
             document.getElementById('aluu-fulfill-section').style.display = provider === 'aluu' ? 'block' : 'none';
-            document.getElementById('requires-charname-row').style.display = provider === 'aluu' ? '' : 'none';
+            document.getElementById('requires-charname-row').style.display = (provider === 'aluu' || provider === 'g2bulk') ? '' : 'none';
             document.getElementById('bay2game-fulfill-section').style.display = provider === 'bay2game' ? 'block' : 'none';
             document.getElementById('fazercard-giftcard-fulfill-section').style.display = provider === 'fazercard_giftcard' ? 'block' : 'none';
             // Package rows no longer follow this tab (each has its own
@@ -16212,7 +16292,11 @@
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: code })
                     });
                     const fieldsData = await fieldsRes.json();
-                    const g2bulkFields = (fieldsData.info && Array.isArray(fieldsData.info.fields)) ? fieldsData.info.fields : [];
+                    // Documented response shape is flat ({fields: [...], notes}),
+                    // not nested under "info" — keep the old path as a fallback
+                    // only in case an older/alternate response shape shows up.
+                    const g2bulkFields = Array.isArray(fieldsData.fields) ? fieldsData.fields
+                        : (fieldsData.info && Array.isArray(fieldsData.info.fields)) ? fieldsData.info.fields : [];
                     const needsG2BulkServerId = g2bulkFields.some(k => /server/i.test(k));
                     // Requires Player ID was never auto-enabled here (unlike
                     // Bay2Game's import) - every Direct provider's create-order
@@ -17696,14 +17780,25 @@
                 return 'error';
             }
 
-            // The exact field JCPlays puts the code under isn't confirmed for
-            // every product, so try the common shapes and always keep the
-            // full raw response too - the code (or the raw JSON as a
-            // fallback) is what actually needs to reach the customer, so it
-            // must never be silently lost here even if this list is missing
-            // a key.
-            const redeemCode = data.code || data.pin || data.serial || data.voucher_code || data.card_code
+            // Redeem-code extraction, confirmed against JCPlay's own API docs
+            // (createorder response example): for SmileCode/voucher products
+            // the codes come back as `codes` (an array) and/or `info` (the
+            // same code(s) as a comma-separated string). The guessed fields
+            // below (`code`/`pin`/`serial`/`voucher_code`/`card_code`) are
+            // NOT real JCPlay fields and were silently never matching -
+            // every voucher-type JCPlays order (e.g. PUBG Mobile "Starlight",
+            // SmileCode) was resolving to Success with an empty code even
+            // though JCPlays had already charged the balance and generated
+            // one. Kept as a defensive fallback below in case some product's
+            // response ever varies; the full raw response is always saved
+            // too so a code is never silently lost even if this is still
+            // wrong for some product.
+            const codesArray = Array.isArray(data.codes) ? data.codes.filter(Boolean)
+                : (data.data && Array.isArray(data.data.codes) ? data.data.codes.filter(Boolean) : []);
+            const redeemCode = codesArray[0] || data.info || (data.data && data.data.info)
+                || data.code || data.pin || data.serial || data.voucher_code || data.card_code
                 || (data.data && (data.data.code || data.data.pin || data.data.serial)) || '';
+            const deliveredCodesList = codesArray.length ? codesArray : (redeemCode ? [redeemCode] : []);
 
             // JCPlays confirmed the order and charged the balance. From this
             // point on we must NOT let the admin click "Start Processing" again
@@ -17723,7 +17818,7 @@
                     // already reads for G2Bulk vouchers, so the code shows up
                     // automatically on the customer's Success screen / Order
                     // Detail without the admin needing to copy/paste it by hand.
-                    deliveredCodes: redeemCode ? [redeemCode] : []
+                    deliveredCodes: deliveredCodesList
                 });
                 window.showToast(redeemCode ? 'JCPlays code delivered ✓ — customer can see it now' : 'JCPlays confirmed, but no code field was recognized — check Raw Response on the order', redeemCode ? 'success' : 'fail');
                 return 'success';
