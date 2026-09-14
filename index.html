@@ -9703,9 +9703,6 @@
                                     <span class="pkg-img-placeholder" style="${image ? 'display:none;' : ''}">+ Image</span>
                                 </div>
                                 <input type="file" accept="image/*" class="pkg-img-file" style="display:none;" onchange="handlePackageImageSelect(this)">
-                                <div class="pkg-img-url-wrap" style="display:flex;flex:1;min-width:150px;align-items:center;gap:6px;">
-                                    <input type="url" class="pkg-img-url" placeholder="Image URL (https://...)" value="${image}" oninput="updatePackageImageUrl(this)" style="width:100%;padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:11px;background:var(--surface);color:var(--text-primary);">
-                                </div>
                                 <div class="pkg-media-right">
                                     <div class="pkg-type-toggle">
                                         <button type="button" class="pkg-type-opt ${type !== 'package' ? 'active' : ''}" data-value="currency" onclick="setPkgType(this,'currency')" title="How this package's card looks in the Store grid">
@@ -9851,16 +9848,12 @@
             try {
                 const url = await uploadPackageImageToImgBB(file);
                 wrap.dataset.url = url;
-                const urlInput = row.querySelector('.pkg-img-url');
-                if (urlInput) urlInput.value = url;
                 imgTag.src = url;
                 removeLink.style.display = 'block';
             } catch (error) {
                 console.error('Package image upload failed:', error);
                 window.showToast(error.message || 'Image upload failed', 'fail');
                 wrap.dataset.url = '';
-                const urlInput = row.querySelector('.pkg-img-url');
-                if (urlInput) urlInput.value = '';
                 imgTag.style.display = 'none';
                 placeholder.style.display = 'block';
             } finally {
@@ -9869,41 +9862,6 @@
             }
         }
         window.handlePackageImageSelect = handlePackageImageSelect;
-
-        // Lets admins paste a public image URL instead of uploading a local file.
-        // The URL is stored in the same data-url field used by saveGame().
-        function updatePackageImageUrl(inputEl) {
-            const row = inputEl.closest('.package-row');
-            const wrap = row.querySelector('.pkg-img-preview');
-            const imgTag = wrap.querySelector('.pkg-img-tag');
-            const placeholder = wrap.querySelector('.pkg-img-placeholder');
-            const removeLink = row.querySelector('.pkg-img-remove');
-            const url = inputEl.value.trim();
-            wrap.dataset.url = url;
-            if (url) {
-                imgTag.src = url;
-                imgTag.style.display = 'block';
-                placeholder.style.display = 'none';
-                removeLink.style.display = 'block';
-                imgTag.onerror = () => {
-                    imgTag.style.display = 'none';
-                    placeholder.textContent = 'Image URL invalid';
-                    placeholder.style.display = 'block';
-                };
-                imgTag.onload = () => {
-                    imgTag.style.display = 'block';
-                    placeholder.style.display = 'none';
-                };
-            } else {
-                imgTag.removeAttribute('src');
-                imgTag.style.display = 'none';
-                placeholder.textContent = '+ Image';
-                placeholder.style.display = 'block';
-                removeLink.style.display = 'none';
-            }
-            syncPkgSummary(row);
-        }
-        window.updatePackageImageUrl = updatePackageImageUrl;
 
         // Same ImgBB upload as uploadImageToImgBB(), but without a fixed status
         // element ID — package rows are created dynamically so there's no single
@@ -9924,14 +9882,9 @@
             const row = linkEl.closest('.package-row');
             const wrap = row.querySelector('.pkg-img-preview');
             wrap.dataset.url = '';
-            const urlInput = row.querySelector('.pkg-img-url');
-            if (urlInput) urlInput.value = '';
-            wrap.querySelector('.pkg-img-tag').removeAttribute('src');
             wrap.querySelector('.pkg-img-tag').style.display = 'none';
-            wrap.querySelector('.pkg-img-placeholder').textContent = '+ Image';
             wrap.querySelector('.pkg-img-placeholder').style.display = 'block';
             linkEl.style.display = 'none';
-            syncPkgSummary(row);
         }
         window.removePackageImage = removePackageImage;
 
