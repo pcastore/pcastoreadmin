@@ -5871,7 +5871,9 @@
                 // orders are done and just show their final status.
                 let actionButtons;
                 if (data.status === 'Processing' && data.g2bulkOrderId) {
-                    actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})">Check G2Bulk Status (${data.g2bulkStatus || 'PENDING'})</button>
+                    const g2bulkTotal = Number(data.g2bulkSubOrdersTotal) || 1;
+                    const g2bulkStatusLabel = g2bulkTotal > 1 ? `${Number(data.g2bulkSubOrdersDone) || 0}/${g2bulkTotal} units done` : (data.g2bulkStatus || 'PENDING');
+                    actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}')">Check G2Bulk Status (${g2bulkStatusLabel})</button>
                                       <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself (e.g. via the G2Bulk Telegram bot) and don't want to wait on the API check">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Processing' && data.g2bulkVoucherPollUrl) {
@@ -5920,7 +5922,7 @@
                     // checkG2BulkOrderStatus() already flips the local status to
                     // Success/Fail based on whatever G2Bulk actually reports.
                     const recheckBtn = (data.status === 'Fail' && data.g2bulkOrderId)
-                        ? `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}', ${data.g2bulkOrderId})" title="Re-check in case G2Bulk actually finished it after we marked this Fail">Recheck G2Bulk Status</button>`
+                        ? `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}')" title="Re-check in case G2Bulk actually finished it after we marked this Fail">Recheck G2Bulk Status</button>`
                         : (data.status === 'Fail' && data.fazercardOrderId)
                         ? `<button class="btn btn-outline" onclick="checkFazerCardOrderStatus('${orderId}', '${data.fazercardOrderId}')" title="Re-check in case FazerCards actually finished it after we marked this Fail">Recheck FazerCards Status</button>`
                         : (data.status === 'Fail' && data.fazercardGiftOrderId)
@@ -6012,9 +6014,11 @@
                                         <div class="od-label">Order ID</div>
                                         <div class="od-value mono">${orderId}</div>
                                     </div>
-                                    ${data.g2bulkOrderId ? `<div class="od-cell">
-                                        <div class="od-label">G2Bulk Order ID</div>
-                                        <div class="od-value mono">${data.g2bulkOrderId}</div>
+                                    ${data.g2bulkOrderId ? `<div class="od-cell${Array.isArray(data.g2bulkSubOrders) && data.g2bulkSubOrders.length > 1 ? ' span-2' : ''}">
+                                        <div class="od-label">G2Bulk Order ID${Array.isArray(data.g2bulkSubOrders) && data.g2bulkSubOrders.length > 1 ? ` (${data.g2bulkSubOrders.length} units)` : ''}</div>
+                                        <div class="od-value mono">${Array.isArray(data.g2bulkSubOrders) && data.g2bulkSubOrders.length > 1
+                                            ? data.g2bulkSubOrders.map(s => `#${s.index}: ${s.g2bulkOrderId ? escapeHtml(String(s.g2bulkOrderId)) : 'placing...'}${s.result ? ` (${s.result})` : ''}`).join('<br>')
+                                            : escapeHtml(String(data.g2bulkOrderId))}</div>
                                     </div>` : ''}
                                     ${data.fazercardOrderId ? `<div class="od-cell">
                                         <div class="od-label">FazerCards Order ID</div>
@@ -6168,6 +6172,17 @@
         // happens, which updates Firestore server-side - so the order flips to
         // Success/Fail even if nobody has this admin panel open at all. The polling
         // below still runs as a harmless backup for whoever does have it open.
+        // G2Bulk's game top-up endpoint only ever accepts quantity=1 per call -
+        // there's no quantity param on it (unlike the voucher/giftcard purchase
+        // endpoint, which does take one). So a "60 UC x 5" order is placed as 5
+        // separate G2Bulk calls here, one per unit, each tagged with its own
+        // remark suffix (`#1`, `#2`, ...) so the webhook/status-check side can
+        // tell which unit a given response belongs to.
+        //
+        // Progress is saved to orders/{id}.g2bulkSubOrders after every unit so
+        // a retry (the admin clicking Start Processing again after an error)
+        // resumes from the first not-yet-placed unit instead of re-placing -
+        // and re-paying G2Bulk's balance for - units that already went through.
         async function placeG2BulkOrder(orderId, order, btnElement) {
             if (!G2BULK_SETTINGS.enabled) {
                 window.showToast('G2Bulk is turned off (Dashboard → G2Bulk API Key → Settings). Fulfill this order manually or re-enable it.', 'fail');
@@ -6180,82 +6195,97 @@
             }
             if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
 
-            // Reuse the same idempotency key on a retry (order already carries one
-            // from a prior failed attempt) so G2Bulk can't charge twice for it.
-            const idempotencyKey = order.g2bulkIdempotencyKey || crypto.randomUUID();
-            if (!order.g2bulkIdempotencyKey) {
-                try {
-                    await updateDoc(doc(db, "orders", orderId), { g2bulkIdempotencyKey: idempotencyKey });
-                } catch (error) {
-                    console.error("Save idempotency key error:", error);
-                }
+            const quantity = Math.max(1, Number(order.quantity) || 1);
+            const existing = Array.isArray(order.g2bulkSubOrders) ? order.g2bulkSubOrders : [];
+            const subOrders = [];
+            for (let i = 1; i <= quantity; i++) {
+                subOrders.push(existing.find(s => s && s.index === i) || { index: i });
             }
 
             // If a webhook is configured, G2Bulk pushes COMPLETED/FAILED to it the
-            // instant the order finishes — no need to keep this admin tab open. The
-            // orderId is round-tripped through `remark`, which G2Bulk echoes back
-            // verbatim in the callback payload, so the Worker can map it straight
-            // back to this Firestore doc without an extra lookup.
+            // instant each unit finishes — no need to keep this admin tab open. The
+            // orderId+unit is round-tripped through `remark`, which G2Bulk echoes
+            // back verbatim in the callback payload, so the Worker can map it
+            // straight back to the right slot in this Firestore doc.
             const callbackUrl = G2BULK_SETTINGS.webhookUrl
                 ? `${G2BULK_SETTINGS.webhookUrl}?secret=${encodeURIComponent(G2BULK_SETTINGS.webhookSecret)}`
                 : undefined;
 
-            let data;
-            try {
-                const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(order.g2bulkGameCode)}/order`, {
-                    method: 'POST',
-                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'X-Idempotency-Key': idempotencyKey, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        catalogue_name: order.g2bulkCatalogueName,
-                        player_id: order.playerId,
-                        server_id: order.serverId || undefined,
-                        charname: order.charName || undefined,
-                        remark: `PCA Store order ${orderId}`,
-                        callback_url: callbackUrl
-                    })
-                });
-                data = await res.json();
-                if (!res.ok || data.success === false) {
-                    throw new Error(data.message || 'G2Bulk rejected the order');
+            for (const sub of subOrders) {
+                if (sub.g2bulkOrderId) continue; // already placed successfully on a prior attempt
+
+                // Reuse the same idempotency key on a retry of THIS unit (kept
+                // once generated) so G2Bulk can't charge twice for it.
+                if (!sub.idempotencyKey) sub.idempotencyKey = `${orderId}-u${sub.index}-${crypto.randomUUID().slice(0, 8)}`;
+
+                let data;
+                try {
+                    const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(order.g2bulkGameCode)}/order`, {
+                        method: 'POST',
+                        headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'X-Idempotency-Key': sub.idempotencyKey, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            catalogue_name: order.g2bulkCatalogueName,
+                            player_id: order.playerId,
+                            server_id: order.serverId || undefined,
+                            charname: order.charName || undefined,
+                            remark: `PCA Store order ${orderId}#${sub.index}`,
+                            callback_url: callbackUrl
+                        })
+                    });
+                    data = await res.json();
+                    if (!res.ok || data.success === false) {
+                        throw new Error(data.message || 'G2Bulk rejected the order');
+                    }
+                } catch (error) {
+                    // Failed before G2Bulk confirmed/accepted this unit (network
+                    // error, or G2Bulk itself rejected it) - save whatever units
+                    // DID get placed before this one so a retry resumes here.
+                    console.error("G2Bulk place order error:", error);
+                    try {
+                        await updateDoc(doc(db, "orders", orderId), { quantity, g2bulkSubOrders: subOrders });
+                    } catch (saveError) {
+                        console.error("Save partial g2bulkSubOrders progress error:", saveError);
+                    }
+                    window.showToast(`G2Bulk order failed (unit ${sub.index}/${quantity}): ` + error.message, 'fail');
+                    if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
+                    return 'error';
                 }
-            } catch (error) {
-                // Failed before G2Bulk confirmed/accepted the order (network error,
-                // or G2Bulk itself rejected it) - the same idempotency key will be
-                // reused on retry, so it's safe to let the admin click again.
-                console.error("G2Bulk place order error:", error);
-                window.showToast('G2Bulk order failed: ' + error.message, 'fail');
-                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
-                return 'error';
+
+                sub.g2bulkOrderId = data.order_id ?? data.order?.order_id ?? null;
+                sub.status = data.status || data.order?.status || 'PENDING';
             }
 
-            // G2Bulk has accepted the order at this point. Saving locally from
+            // G2Bulk has accepted every unit at this point. Saving locally from
             // here on - if this fails, don't invite a blind retry (the
-            // idempotency key is a backstop, not a guarantee for every possible
+            // idempotency keys are a backstop, not a guarantee for every possible
             // failure mode); surface it clearly instead so the admin can
-            // reconcile manually via G2Bulk's dashboard/order_id.
-            // G2Bulk's POST /v1/games/:code/order response is flat
-            // (order_id/status at the top level, no "order" wrapper) — the
-            // `data.order?.x` reads below are a defensive fallback only, in
-            // case a future API version nests it; `data.order_id`/`data.status`
-            // are what the documented response actually returns.
-            const g2bulkOrderId = data.order_id ?? data.order?.order_id;
+            // reconcile manually via G2Bulk's dashboard/order_ids.
             try {
                 await updateDoc(doc(db, "orders", orderId), {
                     status: "Processing",
-                    g2bulkOrderId: g2bulkOrderId || null,
-                    g2bulkStatus: data.status || data.order?.status || 'PENDING'
+                    quantity,
+                    g2bulkSubOrders: subOrders,
+                    g2bulkSubOrdersTotal: quantity,
+                    g2bulkSubOrdersDone: 0,
+                    // Kept for back-compat with anything still reading a single
+                    // id/status (e.g. older order-detail views) - reflects unit #1.
+                    g2bulkOrderId: subOrders[0].g2bulkOrderId || null,
+                    g2bulkStatus: subOrders[0].status || 'PENDING'
                 });
-                window.showToast('Order placed with G2Bulk — checking for completion...', 'success');
+                window.showToast(
+                    quantity > 1 ? `${quantity} units placed with G2Bulk — checking for completion...` : 'Order placed with G2Bulk — checking for completion...',
+                    'success'
+                );
 
-                if (g2bulkOrderId) {
-                    pollG2BulkOrder(orderId, g2bulkOrderId, 5); // ~5 tries, 4s apart = 20s
+                if (subOrders.some(s => s.g2bulkOrderId)) {
+                    pollG2BulkOrder(orderId, 5); // ~5 tries, 4s apart = 20s
                 }
                 return 'processing';
             } catch (error) {
                 console.error("G2Bulk order accepted but saving the result failed:", error);
                 window.showInfoDialog(
                     'Order Accepted, But Not Saved',
-                    `G2Bulk accepted this order${g2bulkOrderId ? ' (order_id: ' + g2bulkOrderId + ')' : ''}, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order — refresh the page instead; if it's still stuck, check the order_id directly on G2Bulk's dashboard before doing anything else.`
+                    `G2Bulk accepted this order (order_id${quantity > 1 ? 's' : ''}: ${subOrders.map(s => s.g2bulkOrderId).filter(Boolean).join(', ') || '—'}), but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order — refresh the page instead; if it's still stuck, check the order_id(s) directly on G2Bulk's dashboard before doing anything else.`
                 );
                 if (btnElement) btnElement.innerText = "Refresh Page";
                 // Left disabled on purpose - see note above.
@@ -6296,36 +6326,90 @@
         }
         window.markOrderFailedWithRefund = markOrderFailedWithRefund;
 
-        // Checks G2Bulk's order status once and applies it to the local order doc.
+        // Checks G2Bulk's status for every not-yet-terminal unit of this order
+        // (a plain single-quantity order has just one) and applies the result.
         // silent=true is used by the background auto-poller below, so it doesn't
         // pop a toast every ~25s for orders that are still just "processing".
-        async function checkG2BulkOrderStatus(orderId, g2bulkOrderId, silent = false) {
+        async function checkG2BulkOrderStatus(orderId, silent = false) {
             if (!G2BULK_SETTINGS.apiKey) {
                 if (!silent) window.showToast('Add your G2Bulk API key first.', 'fail');
                 return;
             }
             try {
-                const res = await fetch('https://api.g2bulk.com/v1/games/order/status', {
-                    method: 'POST',
-                    headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order_id: g2bulkOrderId })
-                });
-                const data = await res.json();
-                const status = (data.order?.status || data.status || '').toUpperCase();
+                const snap = await getDoc(doc(db, "orders", orderId));
+                if (!snap.exists()) return;
+                const order = snap.data();
+                if (order.status === 'Success' || order.status === 'Fail') return order.status.toUpperCase();
 
-                if (status === 'COMPLETED') {
-                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), g2bulkStatus: status });
-                    window.showToast('G2Bulk order completed ✓', 'success');
+                const total = Number(order.g2bulkSubOrdersTotal) || 1;
+                const subOrders = Array.isArray(order.g2bulkSubOrders) && order.g2bulkSubOrders.length
+                    ? order.g2bulkSubOrders.map(s => ({ ...s }))
+                    : [{ index: 1, g2bulkOrderId: order.g2bulkOrderId }]; // old-style single-order doc
+
+                for (const sub of subOrders) {
+                    if (sub.result || !sub.g2bulkOrderId) continue; // already terminal, or never got an id
+                    const res = await fetch('https://api.g2bulk.com/v1/games/order/status', {
+                        method: 'POST',
+                        headers: { 'X-API-Key': G2BULK_SETTINGS.apiKey, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: sub.g2bulkOrderId })
+                    });
+                    const data = await res.json();
+                    const unitStatus = (data.order?.status || data.status || '').toUpperCase();
+                    if (unitStatus === 'COMPLETED') sub.result = 'COMPLETED';
+                    else if (unitStatus === 'FAILED' || unitStatus === 'REFUNDED') sub.result = 'FAILED';
+                    if (total > 1) await new Promise(r => setTimeout(r, 300)); // stagger multi-unit calls a touch
+                }
+
+                const doneCount = subOrders.filter(s => s.result).length;
+                if (doneCount < total) {
+                    await updateDoc(doc(db, "orders", orderId), { g2bulkSubOrders: subOrders, g2bulkSubOrdersDone: doneCount });
+                    if (!silent) window.showToast(total > 1 ? `Still processing (${doneCount}/${total} units done)...` : 'Still processing on G2Bulk...');
+                    return 'PROCESSING';
+                }
+
+                const failedCount = subOrders.filter(s => s.result === 'FAILED').length;
+                if (failedCount === 0) {
+                    await updateDoc(doc(db, "orders", orderId), {
+                        status: "Success", confirmedAt: serverTimestamp(), g2bulkStatus: 'COMPLETED',
+                        g2bulkSubOrders: subOrders, g2bulkSubOrdersDone: doneCount
+                    });
+                    if (!silent) window.showToast('G2Bulk order completed ✓', 'success');
                     editTelegramOrderMessage(orderId, 'Success');
-                } else if (status === 'FAILED' || status === 'REFUNDED') {
-                    await markOrderFailedWithRefund(orderId, { g2bulkStatus: status });
+                    return 'COMPLETED';
+                } else if (failedCount === total) {
+                    await markOrderFailedWithRefund(orderId, { g2bulkStatus: 'FAILED', g2bulkSubOrders: subOrders, g2bulkSubOrdersDone: doneCount });
                     if (!silent) window.showToast('G2Bulk order failed/refunded.', 'fail');
                     editTelegramOrderMessage(orderId, 'Fail');
+                    return 'FAILED';
                 } else {
-                    await updateDoc(doc(db, "orders", orderId), { g2bulkStatus: status || 'PROCESSING' });
-                    if (!silent) window.showToast('Still processing on G2Bulk (' + (status || 'PROCESSING') + ')...');
+                    // Partial: some units delivered, some didn't. The order stays
+                    // Success (the customer did receive `total - failedCount`
+                    // units) with a note, refunded for just the failed units'
+                    // share of the price - a full order-level refund would
+                    // double-pay for the already-delivered units.
+                    const price = Number(order.price) || 0;
+                    const perUnitRefund = Math.round(price / total);
+                    const refundTotal = perUnitRefund * failedCount;
+                    const statusNote = `Delivered ${total - failedCount}/${total} units - ${failedCount} failed`
+                        + (order.paidFromWallet ? ` (${refundTotal.toLocaleString()} MMK refunded to wallet).` : ' - refund needs manual review (not a wallet payment).');
+                    await runTransaction(db, async (tx) => {
+                        const orderRef = doc(db, "orders", orderId);
+                        const freshSnap = await tx.get(orderRef);
+                        if (!freshSnap.exists()) return;
+                        const fresh = freshSnap.data();
+                        if (fresh.status === 'Success' || fresh.status === 'Fail') return; // resolved elsewhere already
+                        if (order.paidFromWallet === true && refundTotal > 0 && order.userId) {
+                            tx.set(doc(db, "users", order.userId), { walletBalance: increment(refundTotal) }, { merge: true });
+                        }
+                        tx.update(orderRef, {
+                            status: 'Success', confirmedAt: serverTimestamp(), g2bulkStatus: 'PARTIAL', statusNote,
+                            g2bulkSubOrders: subOrders, g2bulkSubOrdersDone: doneCount
+                        });
+                    });
+                    if (!silent) window.showToast(`Partially delivered — ${statusNote}`, 'fail');
+                    editTelegramOrderMessage(orderId, 'Success');
+                    return 'PARTIAL';
                 }
-                return status;
             } catch (error) {
                 console.error("G2Bulk status check error:", error);
                 if (!silent) window.showToast('Could not reach G2Bulk to check status.', 'fail');
@@ -7186,7 +7270,7 @@
             g2bulkAutoPollRunning = true;
             try {
                 for (const o of pending) {
-                    await checkG2BulkOrderStatus(o.id, o.g2bulkOrderId, true);
+                    await checkG2BulkOrderStatus(o.id, true);
                     await new Promise(r => setTimeout(r, 600)); // stagger calls, don't hammer G2Bulk's API
                 }
             } finally {
@@ -7195,12 +7279,12 @@
         }
         setInterval(autoPollG2BulkOrders, 25000);
 
-        async function pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft) {
+        async function pollG2BulkOrder(orderId, triesLeft) {
             if (triesLeft <= 0) return;
             await new Promise(r => setTimeout(r, 4000));
-            const status = await checkG2BulkOrderStatus(orderId, g2bulkOrderId);
-            if (status === 'COMPLETED' || status === 'FAILED' || status === 'REFUNDED') return;
-            pollG2BulkOrder(orderId, g2bulkOrderId, triesLeft - 1);
+            const status = await checkG2BulkOrderStatus(orderId);
+            if (status === 'COMPLETED' || status === 'FAILED' || status === 'PARTIAL' || status === 'REFUNDED') return;
+            pollG2BulkOrder(orderId, triesLeft - 1);
         }
 
         // ---------- G2Bulk Giftcards & Vouchers auto-fulfillment ----------
@@ -12451,9 +12535,11 @@
                                     <div class="od-label">Order ID</div>
                                     <div class="od-value mono">${orderId}</div>
                                 </div>
-                                ${o.g2bulkOrderId ? `<div class="od-cell">
-                                    <div class="od-label">G2Bulk Order ID</div>
-                                    <div class="od-value mono">${o.g2bulkOrderId}</div>
+                                ${o.g2bulkOrderId ? `<div class="od-cell${Array.isArray(o.g2bulkSubOrders) && o.g2bulkSubOrders.length > 1 ? ' span-2' : ''}">
+                                    <div class="od-label">G2Bulk Order ID${Array.isArray(o.g2bulkSubOrders) && o.g2bulkSubOrders.length > 1 ? ` (${o.g2bulkSubOrders.length} units)` : ''}</div>
+                                    <div class="od-value mono">${Array.isArray(o.g2bulkSubOrders) && o.g2bulkSubOrders.length > 1
+                                        ? o.g2bulkSubOrders.map(s => `#${s.index}: ${s.g2bulkOrderId ? escapeHtml(String(s.g2bulkOrderId)) : 'placing...'}${s.result ? ` (${s.result})` : ''}`).join('<br>')
+                                        : escapeHtml(String(o.g2bulkOrderId))}</div>
                                 </div>` : ''}
                                 <div class="od-cell">
                                     <div class="od-label">Transaction ID</div>
