@@ -1955,6 +1955,9 @@
         <div class="nav-item" id="group-game" onclick="openNavGroupSheet('game')">
             <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> <span class="nav-label">Game</span>
         </div>
+        <div class="nav-item" id="group-account" style="display:none;" onclick="openNavGroupSheet('account')">
+            <svg class="ui-icon"><use href="#icon-tag"></use></svg> <span class="nav-label">Account</span>
+        </div>
         <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
             <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Wallet</span>
         </div>
@@ -2480,7 +2483,13 @@
                         <input type="text" id="new-admin-username" placeholder="username" autocapitalize="none" autocorrect="off" autocomplete="off">
                         <label style="margin-top:14px;">Temporary Password</label>
                         <input type="password" id="new-admin-password" placeholder="At least 6 characters" autocomplete="new-password">
-                        <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">The new admin can sign in with this username/password right away, and should scan the Authenticator QR shown next before sharing it.</p>
+                        <label style="margin-top:14px;">Access</label>
+                        <select id="new-admin-role">
+                            <option value="full">Full Access (everything)</option>
+                            <option value="product" selected>Product Admin (top-ups only, no Game Accounts)</option>
+                            <option value="account">Account Admin (Game Accounts only)</option>
+                        </select>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">The new admin can sign in with this username/password right away, and should scan the Authenticator QR shown next before sharing it. Access can be changed later from this list.</p>
                         <p id="add-admin-error" class="login-msg-error" style="display:none;"></p>
                     </div>
                     <!-- Step 2: QR to scan -->
@@ -2682,6 +2691,66 @@
                     </div>
                     <div id="game-reorder-grid" class="game-reorder-grid"></div>
                     <button type="button" class="btn btn-primary" id="save-game-order-btn" style="margin-top:16px;" onclick="saveGameOrder()">Save Order</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCOUNT DASHBOARD PAGE — the 'account' role's own landing page,
+             separate from the Product side's Dashboard (see currentAdminRole
+             / applyRoleRestrictions). Stats are computed purely from
+             GAME_ACCOUNTS / SELL_REQUESTS / ORDERS in renderAccountDashboard(). -->
+        <div id="account-dashboard" class="page-section">
+            <h2 class="title-header">
+                <span>Account Overview</span>
+            </h2>
+            <div class="stat-grid">
+                <div class="stat-card" style="cursor:pointer;" onclick="showPage('account-list')">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Total Accounts</span>
+                        <div class="stat-card-icon" style="background:#3B82F6;"><svg class="ui-icon"><use href="#icon-tag"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="acct-stat-total">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">All listings</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Available</span>
+                        <div class="stat-card-icon" style="background:#34D399;"><svg class="ui-icon"><use href="#icon-check"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="acct-stat-available">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">Not yet sold</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Sold</span>
+                        <div class="stat-card-icon" style="background:#8B5CF6;"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="acct-stat-sold">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">All-time</span></div>
+                </div>
+                <div class="stat-card" style="cursor:pointer;" onclick="showPage('account-list')">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Pending Orders</span>
+                        <div class="stat-card-icon" style="background:#FB923C;"><svg class="ui-icon"><use href="#icon-cart"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="acct-stat-pending-orders">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">Awaiting confirmation</span></div>
+                </div>
+                <div class="stat-card" style="cursor:pointer;" onclick="showPage('account-list')">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Sell Requests</span>
+                        <div class="stat-card-icon" style="background:#6366F1;"><svg class="ui-icon"><use href="#icon-users"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="acct-stat-sellreq">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">Awaiting review</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Total Sales</span>
+                        <div class="stat-card-icon" style="background:#10B981;"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="acct-stat-sales">...</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text">Confirmed account sales</span></div>
                 </div>
             </div>
         </div>
@@ -3073,6 +3142,14 @@
              the admin can keep using either channel interchangeably. -->
         <div id="supportchat-list" class="page-section">
             <h2 class="title-header">Support Chat</h2>
+            <!-- Product and Account are two fully separate threads/collections
+                 (see supportChatListView / SUPPORT_CHAT_LIST_COLLECTIONS below).
+                 Only a full-access admin sees this toggle - the 'account' and
+                 'product' roles are hard-pinned to their own collection. -->
+            <div class="pkg-type-tabs" id="supportchat-view-tabs" style="display:none;margin-bottom:10px;">
+                <button class="pkg-type-tab active" id="supportchat-view-tab-product" onclick="switchSupportChatListView('product')">Product</button>
+                <button class="pkg-type-tab" id="supportchat-view-tab-account" onclick="switchSupportChatListView('account')">Account</button>
+            </div>
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="supportchat-search" placeholder="Search by name, ID, or message..." autocomplete="off" oninput="renderSupportChatList()">
@@ -4299,13 +4376,24 @@
             'payment-list': 'group-wallet', 'topup-list': 'group-wallet', 'coupon-list': 'group-wallet',
             'user-list': 'group-userlist', 'tier-list': 'group-userlist', 'activity-log': 'group-userlist',
             'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting',
-            'account-list': 'group-game', 'supportchat-list': 'group-supportchat'
+            'account-list': 'group-game', 'account-dashboard': 'group-account', 'supportchat-list': 'group-supportchat'
         };
+        // Pages an 'account' role admin may open, and pages a 'product' role
+        // admin may NOT open — see applyRoleRestrictions(). Kept as a
+        // whitelist/blacklist pair so a stray direct showPage(...) call
+        // (e.g. from an old bookmark or a stat-card onclick) can't cross
+        // into the other admin's side.
+        const ACCOUNT_ROLE_PAGES = ['account-dashboard', 'account-list', 'supportchat-list'];
+        const PRODUCT_ROLE_BLOCKED_PAGES = ['account-dashboard', 'account-list'];
         function showPage(pageId) {
+            if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(pageId)) pageId = 'account-dashboard';
+            if (currentAdminRole === 'product' && PRODUCT_ROLE_BLOCKED_PAGES.includes(pageId)) pageId = 'dashboard';
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            const groupBtn = document.getElementById(PAGE_TO_NAV_GROUP[pageId] || `btn-${pageId}`);
+            const navGroupId = (currentAdminRole === 'account' && (pageId === 'account-list' || pageId === 'account-dashboard'))
+                ? 'group-account' : (PAGE_TO_NAV_GROUP[pageId] || `btn-${pageId}`);
+            const groupBtn = document.getElementById(navGroupId);
             if (groupBtn) groupBtn.classList.add('active');
             window.scrollTo(0,0);
             if ((pageId === 'dashboard' || pageId === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
@@ -4328,6 +4416,10 @@
                 { label: 'Direct', icon: '#icon-gamepad', run: () => showGameListTab('direct') },
                 { label: 'Voucher', icon: '#icon-gift', run: () => showGameListTab('voucher') },
                 { label: 'Accounts', icon: '#icon-tag', run: () => showPage('account-list') }
+            ]},
+            account: { title: 'Account', items: [
+                { label: 'Dashboard', icon: '#icon-trending-up', run: () => showPage('account-dashboard') },
+                { label: 'Listings & Requests', icon: '#icon-tag', run: () => showPage('account-list') }
             ]},
             wallet: { title: 'Wallet', items: [
                 { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
@@ -4356,7 +4448,13 @@
             document.getElementById('nav-group-sheet-title').innerText = group.title;
             const list = document.getElementById('nav-group-sheet-list');
             list.innerHTML = '';
-            group.items.forEach(it => {
+            // A 'product' admin sees the Game group for Direct/Voucher catalogue
+            // management, but never the "Accounts" shortcut inside it — that
+            // side is walled off to the 'account' role's own Account nav item.
+            const items = (groupKey === 'game' && currentAdminRole === 'product')
+                ? group.items.filter(it => it.label !== 'Accounts')
+                : group.items;
+            items.forEach(it => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;border:1px solid var(--fill-soft);border-radius:12px;background:var(--surface);cursor:pointer;font-size:14px;font-weight:600;color:var(--text-primary);text-align:left;';
@@ -4378,6 +4476,37 @@
         }
         window.openNavGroupSheet = openNavGroupSheet;
         window.closeNavGroupSheet = closeNavGroupSheet;
+
+        // ---------- Role-based access (Full / Product / Account) ----------
+        // Shows only the sidebar groups this admin's role is allowed to use,
+        // and moves them off any page (default-active 'dashboard', or a page
+        // left over from before a role change) that role can't see. This is a
+        // client-side UI gate only — Firestore rules are the real security
+        // boundary and should mirror this split before it's relied on for
+        // anything sensitive (flagged separately to the store owner).
+        const ALL_NAV_GROUPS = ['group-dashboard', 'group-game', 'group-account', 'group-wallet', 'group-api', 'group-userlist', 'group-supportchat', 'group-setting'];
+        const NAV_GROUPS_BY_ROLE = {
+            full: ALL_NAV_GROUPS,
+            product: ['group-dashboard', 'group-game', 'group-wallet', 'group-api', 'group-userlist', 'group-supportchat', 'group-setting'],
+            account: ['group-account', 'group-supportchat']
+        };
+        function applyRoleRestrictions() {
+            const visible = NAV_GROUPS_BY_ROLE[currentAdminRole] || ALL_NAV_GROUPS;
+            ALL_NAV_GROUPS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = visible.includes(id) ? '' : 'none';
+            });
+            const activeEl = document.querySelector('.page-section.active');
+            const activeId = activeEl ? activeEl.id : null;
+            if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(activeId)) {
+                showPage('account-dashboard');
+            } else if (currentAdminRole !== 'account' && activeId === 'account-dashboard') {
+                showPage('dashboard');
+            } else if (currentAdminRole === 'product' && activeId === 'account-list') {
+                showPage('dashboard');
+            }
+        }
+        window.applyRoleRestrictions = applyRoleRestrictions;
 
         // ---------- Store Switcher (Store 1 / Store 2) ----------
         // Tracks which store's data the admin is currently viewing. This is
@@ -4762,6 +4891,12 @@
         // knows exactly which admin made it.
         let currentAdminUsername = null;
         let currentAdminAvatarUrl = null;
+        // 'full' (everything), 'product' (top-up side only), or 'account'
+        // (Game Accounts side only) — resolved from the signed-in admin's
+        // adminUsernames doc in routeAfterAuth(). Admins created before this
+        // field existed have no `role` at all, which is treated as 'full' so
+        // nobody gets locked out by the upgrade.
+        let currentAdminRole = 'full';
         let currentAdminIP = null;
         let pendingEnrollSecret = null;
 
@@ -4906,6 +5041,8 @@
                 if (isYou) currentAdminAvatarUrl = a.avatarUrl || null;
                 const initial = escapeHtml((a.username || '?').trim().charAt(0).toUpperCase() || '?');
                 const avatarInner = a.avatarUrl ? `<img src="${a.avatarUrl}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : initial;
+                const role = a.role || 'full';
+                const roleSafe = a.username.replace(/'/g, "\\'");
                 return `
                 <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
@@ -4930,10 +5067,38 @@
                             ${!isYou ? `<button type="button" onclick="revokeAdmin('${a.username.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--danger);font-size:11px;font-weight:600;cursor:pointer;padding:0;">Revoke</button>` : ''}
                         </div>
                     </div>
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-glass);display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:11.5px;color:var(--text-secondary);">Access</span>
+                        <select onchange="updateAdminRole('${roleSafe}', this.value)" style="flex:1;padding:5px 8px;font-size:12px;border:1px solid var(--fill-soft);border-radius:6px;background:var(--surface);color:var(--text-primary);">
+                            <option value="full" ${role === 'full' ? 'selected' : ''}>Full Access (everything)</option>
+                            <option value="product" ${role === 'product' ? 'selected' : ''}>Product Admin (top-ups only)</option>
+                            <option value="account" ${role === 'account' ? 'selected' : ''}>Account Admin (Game Accounts only)</option>
+                        </select>
+                    </div>
                 </div>`;
             }).join('');
         }
         window.renderAdminAccountsList = renderAdminAccountsList;
+
+        // Changes what an admin is allowed to see (Product vs Account
+        // Selling vs Full Access — see currentAdminRole / applyRoleRestrictions).
+        // Purely a client-side UI gate, same trust model as the rest of this
+        // panel's admin system (no backend/custom-claims check).
+        async function updateAdminRole(username, role) {
+            try {
+                await setDoc(doc(db, "adminUsernames", username), { role }, { merge: true });
+                await logAdminActivity('Changed admin access', `${username} -> ${role}`);
+                if (username === currentAdminUsername) {
+                    currentAdminRole = role;
+                    applyRoleRestrictions();
+                }
+                window.showToast('Access updated ✓', 'success');
+            } catch (e) {
+                console.error('Update admin role error:', e);
+                window.showToast('Failed to update access.', 'fail');
+            }
+        }
+        window.updateAdminRole = updateAdminRole;
 
         // Removes only the adminUsernames/{username} mapping doc, so that
         // username can no longer sign in. The underlying Firebase Auth
@@ -4998,6 +5163,8 @@
         function openAddAdminModal() {
             document.getElementById('new-admin-username').value = '';
             document.getElementById('new-admin-password').value = '';
+            const roleSelect = document.getElementById('new-admin-role');
+            if (roleSelect) roleSelect.value = 'product';
             document.getElementById('add-admin-error').style.display = 'none';
             document.getElementById('add-admin-step-form').style.display = '';
             document.getElementById('add-admin-step-qr').style.display = 'none';
@@ -5031,6 +5198,8 @@
             const btn = document.getElementById('create-admin-btn');
             const username = usernameInput.value.trim().toLowerCase();
             const password = passwordInput.value;
+            const roleSelect = document.getElementById('new-admin-role');
+            const role = roleSelect ? roleSelect.value : 'product';
             errEl.style.display = 'none';
             if (!username || !/^[a-z0-9_.]{3,}$/.test(username)) {
                 errEl.textContent = 'Username: at least 3 characters, letters/numbers/._ only.';
@@ -5057,6 +5226,7 @@
                 await setDoc(doc(db, "adminUsernames", username), {
                     email,
                     totpSecret,
+                    role,
                     createdBy: currentAdminUsername || 'unknown',
                     createdAt: serverTimestamp()
                 });
@@ -5477,6 +5647,7 @@
                 if (!usnap.empty) {
                     currentAdminUsername = usnap.docs[0].id;
                     currentAdminAvatarUrl = usnap.docs[0].data().avatarUrl || null;
+                    currentAdminRole = usnap.docs[0].data().role || 'full';
                 }
             } catch (e) { console.error('Admin username lookup error:', e); }
 
@@ -5576,6 +5747,7 @@
                 currentAdminUsername = null;
                 currentAdminAvatarUrl = null;
                 currentAdminIP = null;
+                currentAdminRole = 'full';
                 activityLogListenerAttached = false;
             }
         });
@@ -5736,6 +5908,7 @@
                 if (Object.keys(USERS).length) renderAdminUsersList();
                 renderOrdersList();
                 checkOrdersAutoDelete(newOrders);
+                if (window.renderAccountDashboard) window.renderAccountDashboard();
                 // loadDashboardStats() now reads straight from this ORDERS cache
                 // instead of re-fetching the collection itself (see its own
                 // comment) - so if Dashboard/Orders is the page currently open,
@@ -9622,6 +9795,14 @@
                     images: editingAccountImages,
                     status: sold ? 'sold' : 'available'
                 };
+                if (!id) {
+                    // Ownership is fixed at creation time - whichever admin
+                    // lists it is who a buyer's "Ask about this account"
+                    // messages get routed to (see the account-chat
+                    // thread-per-admin routing in Store.html). Never
+                    // reassigned on a later edit, even by a different admin.
+                    data.postedByAdmin = currentAdminUsername || '';
+                }
                 if (id) {
                     await updateDoc(doc(db, "gameAccounts", id), data);
                     logAdminActivity('Edited game account', `${gameName} — ${title}`);
@@ -9696,12 +9877,41 @@
                 snap.forEach(docSnap => { map[docSnap.id] = docSnap.data(); });
                 SELL_REQUESTS = map;
                 renderSellRequestsList();
+                renderAccountDashboard();
             }, (error) => {
                 console.error("Sell requests listener error:", error);
                 const el = document.getElementById('admin-sellrequests-container');
                 if (el) el.innerHTML = '<p class="empty-msg" style="color:red;">Could not load sell requests. Check connection.</p>';
             });
         }
+
+        // ---------- Account Dashboard (the 'account' role's own Dashboard) ----------
+        // Pulls only from GAME_ACCOUNTS / SELL_REQUESTS / ORDERS — never
+        // touches top-up sales, so a Product-side admin's numbers never leak
+        // in here and vice versa. Safe to call before those caches are
+        // populated (renders zeros, then live-updates as each listener fires).
+        function renderAccountDashboard() {
+            const totalEl = document.getElementById('acct-stat-total');
+            if (!totalEl) return; // page not in this build / not yet rendered
+            const accounts = Object.values(GAME_ACCOUNTS);
+            const total = accounts.length;
+            const sold = accounts.filter(a => (a.status || 'available') === 'sold').length;
+            const available = total - sold;
+            const sellReqPending = Object.values(SELL_REQUESTS).filter(r => (r.status || 'pending') === 'pending').length;
+            let pendingOrders = 0, totalSales = 0;
+            Object.values(ORDERS).forEach(o => {
+                if (o.orderType !== 'gameAccount') return;
+                if (o.status === 'Pending' || o.status === 'Processing') pendingOrders++;
+                if (o.status === 'Success') totalSales += Number(o.price) || 0;
+            });
+            document.getElementById('acct-stat-total').innerText = total.toLocaleString();
+            document.getElementById('acct-stat-available').innerText = available.toLocaleString();
+            document.getElementById('acct-stat-sold').innerText = sold.toLocaleString();
+            document.getElementById('acct-stat-pending-orders').innerText = pendingOrders.toLocaleString();
+            document.getElementById('acct-stat-sellreq').innerText = sellReqPending.toLocaleString();
+            document.getElementById('acct-stat-sales').innerText = totalSales.toLocaleString() + ' MMK';
+        }
+        window.renderAccountDashboard = renderAccountDashboard;
 
         let sellRequestsRenderScheduled = null;
         function renderSellRequestsList() {
@@ -11809,9 +12019,45 @@
         // schema, so a reply from either place reaches the customer and
         // either place stays in sync. ----------
         let supportChatListenerAttached = false;
-        let SUPPORT_CHATS = []; // cached summary docs for search/re-render
+        let SUPPORT_CHATS = []; // cached summary docs for search/re-render (Product thread - supportChats/{guestId})
+        let supportChatAccountListenerAttached = false;
+        let SUPPORT_CHATS_ACCOUNT = []; // same, for the separate Account thread - supportChatsAccount/{guestId}
         let supportChatMsgUnsub = null; // messages listener for whichever thread is open
         let currentSupportChatGuestId = null;
+        let currentSupportChatCollection = 'supportChats'; // which collection the currently-open thread belongs to
+
+        // Which collection backs the Chat list a given admin role/view sees.
+        // 'account' role and 'full' role viewing the Account tab both read
+        // supportChatsAccount; everyone else reads the legacy supportChats
+        // collection (kept as-is per the decision to leave old mixed history
+        // there rather than migrate it).
+        let supportChatListView = 'product'; // only meaningful for the 'full' role's tab toggle
+        function activeSupportChatCollection() {
+            if (currentAdminRole === 'account') return 'supportChatsAccount';
+            if (currentAdminRole === 'product') return 'supportChats';
+            return supportChatListView === 'account' ? 'supportChatsAccount' : 'supportChats';
+        }
+        // An account thread is routed to a specific admin (adminKey =
+        // that admin's username) or left as the shared 'general' inbox any
+        // account-role admin can pick up. A 'full' role admin sees every
+        // thread regardless of routing (oversight); anyone else viewing the
+        // Account tab sees only their own threads + 'general'. Threads from
+        // before this split (no adminKey field yet) are treated as
+        // 'general' too, so they don't just disappear from every inbox.
+        function visibleAccountChats() {
+            if (currentAdminRole === 'full') return SUPPORT_CHATS_ACCOUNT;
+            return SUPPORT_CHATS_ACCOUNT.filter(c => !c.adminKey || c.adminKey === 'general' || c.adminKey === currentAdminUsername);
+        }
+        function activeSupportChatList() {
+            return activeSupportChatCollection() === 'supportChatsAccount' ? visibleAccountChats() : SUPPORT_CHATS;
+        }
+        function switchSupportChatListView(view) {
+            supportChatListView = (view === 'account') ? 'account' : 'product';
+            document.getElementById('supportchat-view-tab-product')?.classList.toggle('active', supportChatListView === 'product');
+            document.getElementById('supportchat-view-tab-account')?.classList.toggle('active', supportChatListView === 'account');
+            renderSupportChatList();
+        }
+        window.switchSupportChatListView = switchSupportChatListView;
 
         // Notification sounds (received / sent) - generated with WebAudio so
         // no external audio file needs to be hosted. Browsers block audio
@@ -11862,13 +12108,21 @@
         // actually a logged-in customer, so their profile name/photo is
         // shown instead of the bare Guest-XXXX id. Falls back through
         // userName (Store.html-supplied display name) to the raw id.
+        // c.id is the Firestore doc id - for supportChatsAccount that's now
+        // a composite `${guestId}__${adminKey}` thread id, not the guest's
+        // real id, so the actual guestId to look up in USERS is c.userId
+        // when present (falls back to c.id for the legacy supportChats
+        // collection, and for any pre-split account doc that predates the
+        // userId field).
         function resolveChatDisplayName(c) {
-            const u = USERS[c.id];
+            const gid = (c && c.userId) || (c && c.id);
+            const u = USERS[gid];
             if (u && u.name && u.name.trim()) return u.name.trim();
-            return (c && c.userName) || (c && c.id) || 'Guest';
+            return (c && c.userName) || gid || 'Guest';
         }
         function resolveChatAvatar(c) {
-            const u = USERS[c.id];
+            const gid = (c && c.userId) || (c && c.id);
+            const u = USERS[gid];
             return (u && u.photo) ? u.photo : null;
         }
 
@@ -11896,6 +12150,12 @@
             return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
         }
 
+        function updateSupportChatNavDot() {
+            const unreadCount = SUPPORT_CHATS.filter(c => c.unreadByAdmin).length + SUPPORT_CHATS_ACCOUNT.filter(c => c.unreadByAdmin).length;
+            const dot = document.getElementById('supportchat-nav-dot');
+            if (dot) dot.style.display = unreadCount > 0 ? 'block' : 'none';
+        }
+
         function listenSupportChats() {
             if (supportChatListenerAttached) return;
             supportChatListenerAttached = true;
@@ -11920,13 +12180,11 @@
                 supportChatFirstLoad = false;
                 renderSupportChatList();
                 renderSupportChatThreadTyping();
-                const unreadCount = SUPPORT_CHATS.filter(c => c.unreadByAdmin).length;
-                const dot = document.getElementById('supportchat-nav-dot');
-                if (dot) dot.style.display = unreadCount > 0 ? 'block' : 'none';
+                updateSupportChatNavDot();
             }, (error) => {
                 console.error("Support chats listener error:", error);
                 const container = document.getElementById('supportchat-threads-container');
-                if (container) container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load conversations.</p>';
+                if (container && activeSupportChatCollection() === 'supportChats') container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load conversations.</p>';
             });
             // Re-checks staleness even with no new snapshot, so the "Customer is
             // typing..." row disappears on its own ~3s after they pause, not
@@ -11934,12 +12192,47 @@
             setInterval(renderSupportChatThreadTyping, 1000);
         }
 
+        // Mirrors listenSupportChats() above for the separate Account thread
+        // (supportChatsAccount/{guestId}) - same shape, own cache/dedupe state
+        // so the two never cross-contaminate each other's "new message" sound
+        // or first-load skip.
+        let supportChatAccountFirstLoad = true;
+        const supportChatAccountLastKnownMsgAt = {};
+        function listenSupportChatsAccount() {
+            if (supportChatAccountListenerAttached) return;
+            supportChatAccountListenerAttached = true;
+            const q = query(collection(db, "supportChatsAccount"), orderBy("lastMessageAt", "desc"));
+            onSnapshot(q, (snap) => {
+                SUPPORT_CHATS_ACCOUNT = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (!supportChatAccountFirstLoad) {
+                    SUPPORT_CHATS_ACCOUNT.forEach(c => {
+                        const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
+                        const prev = supportChatAccountLastKnownMsgAt[c.id] || 0;
+                        if (c.lastSender === 'user' && at > prev) playChatSound('receive');
+                    });
+                }
+                SUPPORT_CHATS_ACCOUNT.forEach(c => {
+                    const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
+                    supportChatAccountLastKnownMsgAt[c.id] = at;
+                });
+                supportChatAccountFirstLoad = false;
+                renderSupportChatList();
+                renderSupportChatThreadTyping();
+                updateSupportChatNavDot();
+            }, (error) => {
+                console.error("Support chats (account) listener error:", error);
+                const container = document.getElementById('supportchat-threads-container');
+                if (container && activeSupportChatCollection() === 'supportChatsAccount') container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load conversations.</p>';
+            });
+        }
+
         // Shows/hides the "Customer is typing..." row in whichever thread is
         // currently open, based on that guest's cached userTypingAt.
         function renderSupportChatThreadTyping() {
             const el = document.getElementById('supportchat-thread-typing');
             if (!el || !currentSupportChatGuestId) { if (el) el.classList.remove('show'); return; }
-            const chat = SUPPORT_CHATS.find(c => c.id === currentSupportChatGuestId);
+            const list = currentSupportChatCollection === 'supportChatsAccount' ? SUPPORT_CHATS_ACCOUNT : SUPPORT_CHATS;
+            const chat = list.find(c => c.id === currentSupportChatGuestId);
             const typingAt = chat && chat.userTypingAt && chat.userTypingAt.toMillis ? chat.userTypingAt.toMillis() : null;
             const isTyping = typingAt !== null && (Date.now() - typingAt) < TYPING_STALE_MS;
             el.classList.toggle('show', isTyping);
@@ -11956,32 +12249,57 @@
             if (!input.value.trim()) {
                 if (adminTypingWriteAt !== 0) {
                     adminTypingWriteAt = 0;
-                    setDoc(doc(db, "supportChats", guestId), { adminTypingAt: null }, { merge: true }).catch(() => {});
+                    setDoc(doc(db, currentSupportChatCollection, guestId), { adminTypingAt: null }, { merge: true }).catch(() => {});
                 }
                 return;
             }
             if (now - adminTypingWriteAt < TYPING_THROTTLE_MS) return;
             adminTypingWriteAt = now;
-            setDoc(doc(db, "supportChats", guestId), { adminTypingAt: serverTimestamp() }, { merge: true }).catch(() => {});
+            setDoc(doc(db, currentSupportChatCollection, guestId), { adminTypingAt: serverTimestamp() }, { merge: true }).catch(() => {});
         }
         window.handleAdminChatTyping = handleAdminChatTyping;
+
+        // Legacy heuristic, kept only for the small "Account" badge shown on
+        // Product-tab rows: customers who share Game-Account context (a sell
+        // request, or an order against a listing) but whose history predates
+        // the Account thread being split into its own collection - so a
+        // full-access admin browsing Product can still tell those old mixed
+        // threads apart. Plays no role in which collection either Chat list
+        // now reads from - that's activeSupportChatCollection() above.
+        function getAccountContextGuestIds() {
+            const ids = new Set();
+            Object.values(SELL_REQUESTS).forEach(r => { if (r.userId) ids.add(r.userId); });
+            Object.values(ORDERS).forEach(o => { if (o.orderType === 'gameAccount' && o.userId) ids.add(o.userId); });
+            return ids;
+        }
+        function hasNonAccountOrderActivity(guestId) {
+            return Object.values(ORDERS).some(o => o.userId === guestId && o.orderType !== 'gameAccount');
+        }
 
         function renderSupportChatList() {
             const container = document.getElementById('supportchat-threads-container');
             if (!container) return;
+            const viewTabs = document.getElementById('supportchat-view-tabs');
+            if (viewTabs) viewTabs.style.display = (currentAdminRole === 'account' || currentAdminRole === 'product') ? 'none' : 'flex';
+            const viewingAccount = activeSupportChatCollection() === 'supportChatsAccount';
             const term = (document.getElementById('supportchat-search')?.value || '').trim().toLowerCase();
-            let list = SUPPORT_CHATS;
+            let list = activeSupportChatList();
             if (term) {
                 list = list.filter(c =>
                     resolveChatDisplayName(c).toLowerCase().includes(term) ||
                     (c.id || '').toLowerCase().includes(term) ||
+                    (c.userId || '').toLowerCase().includes(term) ||
                     (c.lastMessage || '').toLowerCase().includes(term)
                 );
             }
             if (list.length === 0) {
-                container.innerHTML = `<p class="empty-msg">${term ? 'No matching conversations.' : 'No support chats yet.'}</p>`;
+                container.innerHTML = `<p class="empty-msg">${term ? 'No matching conversations.' : (viewingAccount ? 'No account-related conversations yet.' : 'No support chats yet.')}</p>`;
                 return;
             }
+            // Legacy badge only makes sense on the Product list (see
+            // getAccountContextGuestIds above) - the Account list is already
+            // 100% account-context by construction.
+            const acctIdsForBadge = viewingAccount ? new Set() : getAccountContextGuestIds();
             container.innerHTML = list.map(c => {
                 const unread = !!c.unreadByAdmin;
                 const name = resolveChatDisplayName(c);
@@ -11991,12 +12309,19 @@
                 const when = c.lastMessageAt && c.lastMessageAt.toDate ? timeAgoShort(c.lastMessageAt.toDate()) : '';
                 const fromLabel = c.lastSender === 'admin' ? 'You: ' : '';
                 const avatarInner = avatar ? `<img src="${avatar}" loading="lazy" decoding="async" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial;
+                const acctBadge = viewingAccount
+                    ? `<span style="font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent);flex-shrink:0;">${(c.adminKey && c.adminKey !== 'general') ? escapeHtml(c.adminKey) : 'General'}</span>`
+                    : ((currentAdminRole !== 'account' && acctIdsForBadge.has(c.id))
+                        ? '<span style="font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent);flex-shrink:0;">Account</span>' : '');
                 return `
-                    <div class="admin-card" style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;" onclick="openSupportChatThread('${c.id}')">
+                    <div class="admin-card" style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;" onclick="openSupportChatThread('${c.id}', '${activeSupportChatCollection()}')">
                         <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden;">${avatarInner}</div>
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                                <span style="font-weight:${unread ? '700' : '500'};font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
+                                <span style="display:flex;align-items:center;gap:6px;min-width:0;">
+                                    <span style="font-weight:${unread ? '700' : '500'};font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
+                                    ${acctBadge}
+                                </span>
                                 <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;">${when}</span>
                             </div>
                             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px;">
@@ -12122,12 +12447,13 @@
         // the same cleanup Store.html runs on the customer side.
         const SUPPORT_CHAT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
         const supportChatCleanupDoneFor = new Set();
-        async function cleanupOldSupportChatMessages(guestId) {
-            if (!guestId || supportChatCleanupDoneFor.has(guestId)) return;
-            supportChatCleanupDoneFor.add(guestId);
+        async function cleanupOldSupportChatMessages(guestId, collectionName) {
+            const cleanupKey = collectionName + ':' + guestId;
+            if (!guestId || supportChatCleanupDoneFor.has(cleanupKey)) return;
+            supportChatCleanupDoneFor.add(cleanupKey);
             try {
                 const cutoff = new Date(Date.now() - SUPPORT_CHAT_RETENTION_MS);
-                const q = query(collection(db, "supportChats", guestId, "messages"), where("timestamp", "<", cutoff));
+                const q = query(collection(db, collectionName, guestId, "messages"), where("timestamp", "<", cutoff));
                 const snap = await getDocs(q);
                 if (snap.empty) return;
                 const batch = writeBatch(db);
@@ -12138,18 +12464,19 @@
             }
         }
 
-        function openSupportChatThread(guestId) {
+        function openSupportChatThread(guestId, collectionName) {
             currentSupportChatGuestId = guestId;
+            currentSupportChatCollection = collectionName || activeSupportChatCollection();
             adminTypingWriteAt = 0;
-            const chat = SUPPORT_CHATS.find(c => c.id === guestId);
+            const chat = activeSupportChatList().find(c => c.id === guestId);
             document.getElementById('supportchat-thread-title').innerText = chat ? resolveChatDisplayName(chat) : guestId;
             document.getElementById('supportchat-thread-messages').innerHTML = '<p class="empty-msg">Loading...</p>';
             document.getElementById('supportchat-thread-overlay').classList.add('show');
             renderSupportChatThreadTyping();
 
             if (supportChatMsgUnsub) { supportChatMsgUnsub(); supportChatMsgUnsub = null; }
-            cleanupOldSupportChatMessages(guestId);
-            const q = query(collection(db, "supportChats", guestId, "messages"), orderBy("timestamp", "asc"));
+            cleanupOldSupportChatMessages(guestId, currentSupportChatCollection);
+            const q = query(collection(db, currentSupportChatCollection, guestId, "messages"), orderBy("timestamp", "asc"));
             supportChatMsgUnsub = onSnapshot(q, (snap) => {
                 const msgs = snap.docs.map(d => d.data());
                 renderSupportChatThreadMessages(msgs);
@@ -12159,14 +12486,13 @@
                 snap.docs.forEach(d => {
                     const data = d.data();
                     if (data.sender === 'user' && data.seenByAdmin !== true) {
-                        updateDoc(doc(db, "supportChats", guestId, "messages", d.id), { seenByAdmin: true }).catch(() => {});
+                        updateDoc(doc(db, currentSupportChatCollection, guestId, "messages", d.id), { seenByAdmin: true }).catch(() => {});
                     }
                 });
             }, (error) => console.error("Support chat thread listener error:", error));
 
-            const chatDoc = SUPPORT_CHATS.find(c => c.id === guestId);
-            if (chatDoc && chatDoc.unreadByAdmin) {
-                updateDoc(doc(db, "supportChats", guestId), { unreadByAdmin: false }).catch(() => {});
+            if (chat && chat.unreadByAdmin) {
+                updateDoc(doc(db, currentSupportChatCollection, guestId), { unreadByAdmin: false }).catch(() => {});
             }
         }
         window.openSupportChatThread = openSupportChatThread;
@@ -12176,7 +12502,7 @@
             document.getElementById('supportchat-thread-typing').classList.remove('show');
             if (supportChatMsgUnsub) { supportChatMsgUnsub(); supportChatMsgUnsub = null; }
             if (currentSupportChatGuestId && adminTypingWriteAt !== 0) {
-                setDoc(doc(db, "supportChats", currentSupportChatGuestId), { adminTypingAt: null }, { merge: true }).catch(() => {});
+                setDoc(doc(db, currentSupportChatCollection, currentSupportChatGuestId), { adminTypingAt: null }, { merge: true }).catch(() => {});
             }
             adminTypingWriteAt = 0;
             currentSupportChatGuestId = null;
@@ -12187,15 +12513,16 @@
             const input = document.getElementById('supportchat-thread-input');
             const text = input.value.trim();
             const guestId = currentSupportChatGuestId;
+            const collectionName = currentSupportChatCollection;
             if (!text || !guestId) return;
             input.value = '';
             adminTypingWriteAt = 0;
             try {
-                await addDoc(collection(db, "supportChats", guestId, "messages"), {
+                await addDoc(collection(db, collectionName, guestId, "messages"), {
                     sender: 'admin', text, timestamp: serverTimestamp(), sentToTelegram: false,
                     adminUsername: currentAdminUsername || '', adminAvatar: currentAdminAvatarUrl || ''
                 });
-                await setDoc(doc(db, "supportChats", guestId), {
+                await setDoc(doc(db, collectionName, guestId), {
                     lastMessage: text, lastMessageAt: serverTimestamp(), lastSender: 'admin', unreadByAdmin: false, adminTypingAt: null,
                     lastAdminUsername: currentAdminUsername || '', lastAdminAvatar: currentAdminAvatarUrl || ''
                 }, { merge: true });
@@ -18995,6 +19322,7 @@
         // once an authenticated admin has actually signed in (see the auth
         // gate above) — nothing here runs against Firestore before that.
         function startAdminApp() {
+            applyRoleRestrictions();
             loadDashboardStats();
             fetchOrders();
             fetchWalletTopups();
@@ -19021,6 +19349,7 @@
             listenTierSettings();
             listenActivityLog();
             listenSupportChats();
+            listenSupportChatsAccount();
             listenAdminAccounts();
             listenAutoUpdatePricesSetting();
             startAdminHeartbeat();
