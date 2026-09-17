@@ -2637,6 +2637,32 @@
             </div>
         </div>
 
+        <!-- Admin Permissions Modal: opened by tapping an admin's card in the
+             Admin Accounts list (Full Access only). Lets the owner toggle
+             each nav-group Access Permission on/off individually for that
+             one admin - saved to adminUsernames/{username}.permissions and
+             enforced in applyRoleRestrictions(). Full Access admins are
+             never restricted by this (see applyRoleRestrictions), so the
+             toggles are shown disabled with an explanatory note for them. -->
+        <div class="modal-overlay" id="admin-permissions-modal-overlay" onclick="if(event.target===this) closeAdminPermissionsModal()">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Access Permission — <span id="admin-permissions-username">—</span></h3>
+                    <div class="modal-close" onclick="closeAdminPermissionsModal()">
+                        <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <p id="admin-permissions-note" style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Choose exactly which sections this admin can open. Off = hidden for them, even if their Access level would normally include it.</p>
+                    <div id="admin-permissions-list" style="display:flex;flex-direction:column;gap:2px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="save-admin-permissions-btn" onclick="saveAdminPermissions()">Save</button>
+                    <button class="btn btn-outline" onclick="closeAdminPermissionsModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <!-- JCPLAYS PAGE (SmileCoin-compatible reseller — same pattern as G2Bulk above) -->
         <div id="jcplays" class="page-section">
             <h2 class="title-header">JCPlays</h2>
@@ -4725,7 +4751,17 @@
 
         function applyRoleRestrictions() {
             const roleVisible = NAV_GROUPS_BY_ROLE[currentAdminRole] || ALL_NAV_GROUPS;
-            const visible = currentAdminRole === 'full' ? roleVisible : roleVisible.filter(isTabAllowedByOwner);
+            let visible = currentAdminRole === 'full' ? roleVisible : roleVisible.filter(isTabAllowedByOwner);
+            // Per-admin Access Permission overrides (adminUsernames/{username}.permissions,
+            // set from the Admin Permissions modal on that admin's card in the
+            // Admin Accounts list) - a further narrowing on top of the role
+            // default and the owner's global Tab Access, exactly like
+            // isTabAllowedByOwner above but scoped to just this one admin.
+            // Missing/null permissions (not set yet, or admin is Full Access -
+            // which is never restricted) means "no override, use role default".
+            if (currentAdminRole !== 'full' && window.currentAdminPermissions) {
+                visible = visible.filter(id => window.currentAdminPermissions[id] !== false);
+            }
             ALL_NAV_GROUPS.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = visible.includes(id) ? '' : 'none';
@@ -5143,6 +5179,15 @@
         // makes the SDK detect that case and transparently fall back to
         // long-polling instead of hanging indefinitely.
         const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+        // Exposed on window so the earlier, non-module <script> block (which
+        // defines listenTabAccessSettings()/saveTabAccessSettings() and calls
+        // these as bare identifiers) can resolve them - module top-level
+        // bindings are NOT visible to classic scripts otherwise, which was
+        // causing "ReferenceError: onSnapshot is not defined" there.
+        window.db = db;
+        window.doc = doc;
+        window.onSnapshot = onSnapshot;
+        window.setDoc = setDoc;
         const auth = getAuth(app);
         // Keep the admin signed in across app restarts / closed tabs. This is
         // stored in the browser's IndexedDB, so it only clears if the admin
@@ -5261,6 +5306,11 @@
         // field existed have no `role` at all, which is treated as 'full' so
         // nobody gets locked out by the upgrade.
         window.currentAdminRole = 'full';
+        // Per-admin Access Permission overrides for the signed-in admin (see
+        // applyRoleRestrictions()) - null means no override saved yet, so the
+        // role's default group visibility applies unchanged. Loaded in
+        // routeAfterAuth() and kept live-in-sync by listenAdminAccounts().
+        window.currentAdminPermissions = null;
         let currentAdminIP = null;
         let pendingEnrollSecret = null;
 
@@ -5344,6 +5394,14 @@
             const q = query(collection(db, "adminUsernames"));
             onSnapshot(q, (snap) => {
                 ADMIN_ACCOUNTS = snap.docs.map(d => ({ username: d.id, ...d.data() }));
+                // If the owner changes MY OWN permissions while I'm signed in
+                // elsewhere, pick that up live - same idea as Tab Access
+                // above getting yanked out from under a signed-in admin.
+                const mine = ADMIN_ACCOUNTS.find(a => a.username === currentAdminUsername);
+                if (mine) {
+                    window.currentAdminPermissions = mine.permissions || null;
+                    applyRoleRestrictions();
+                }
                 renderAdminAccountsList();
             }, (error) => {
                 console.error('Admin accounts listener error:', error);
@@ -5428,10 +5486,10 @@
                                 <span class="role-toggle-title">${label}</span>
                             </button>`;
                 return `
-                <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;">
+                <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;cursor:pointer;" onclick="openAdminPermissionsModal('${a.username.replace(/'/g, "\\'")}')" title="Tap to set Access Permission">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                         <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                            <label style="position:relative;cursor:pointer;flex-shrink:0;" title="Change ${escapeHtml(a.username)}'s avatar">
+                            <label style="position:relative;cursor:pointer;flex-shrink:0;" title="Change ${escapeHtml(a.username)}'s avatar" onclick="event.stopPropagation()">
                                 <div id="admin-avatar-${escapeHtml(a.username)}" style="width:38px;height:38px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;">${avatarInner}</div>
                                 <input type="file" accept="image/*" style="display:none;" onchange="handleAdminAvatarSelect(this,'${a.username.replace(/'/g, "\\'")}')">
                                 <span style="position:absolute;bottom:-2px;right:-2px;width:15px;height:15px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card, var(--surface));">
@@ -5445,20 +5503,115 @@
                                 <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Last login: ${lastLogin}${a.lastLoginIp ? ' · IP: ' + escapeHtml(a.lastLoginIp) : ''}</div>
                             </div>
                         </div>
-                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;" onclick="event.stopPropagation()">
                             <span style="font-size:10.5px;font-weight: 600;padding:3px 8px;border-radius:6px;white-space:nowrap;background:${has2fa ? 'var(--accent-soft)' : 'var(--danger-soft)'};color:${has2fa ? 'var(--accent)' : 'var(--danger)'};">${has2fa ? '2FA enabled' : 'Not set up yet'}</span>
                             <button type="button" onclick="resetAdminTotp('${a.username.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:0;">Reset 2FA</button>
                             ${canRevoke ? `<button type="button" onclick="revokeAdmin('${a.username.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--danger);font-size:11px;font-weight:600;cursor:pointer;padding:0;">Revoke</button>` : ''}
                         </div>
                     </div>
-                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-glass);">
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-glass);" onclick="event.stopPropagation()">
                         <span style="font-size:11.5px;color:var(--text-secondary);display:block;margin-bottom:6px;">Access</span>
                         <div class="role-toggle compact">${roleOpt('full', 'Full')}${roleOpt('product', 'Product')}${roleOpt('account', 'Account')}</div>
+                    </div>
+                    <div style="margin-top:8px;font-size:11px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:4px;">
+                        <svg class="ui-icon" style="width:12px;height:12px;"><use href="#icon-shield"></use></svg>
+                        Tap card to set Access Permission
                     </div>
                 </div>`;
             }).join('');
         }
         window.renderAdminAccountsList = renderAdminAccountsList;
+
+        // ---------- Admin Permissions modal (per-admin group toggles) ----------
+        // Opened by tapping an admin's card (see renderAdminAccountsList).
+        // Holds pending checkbox edits in memory until Save is tapped, same
+        // as Tab Access's own list does with saveTabAccessSettings().
+        let adminPermissionsTarget = null; // username currently open in the modal
+        let adminPermissionsPending = {};  // { 'group-dashboard': true/false, ... }
+
+        function openAdminPermissionsModal(username) {
+            if (!canManageAdmins()) { window.showToast('Only Full Access admins can change access permissions.', 'fail'); return; }
+            const admin = ADMIN_ACCOUNTS.find(a => a.username === username);
+            if (!admin) return;
+            adminPermissionsTarget = username;
+            const isFull = (admin.role || 'full') === 'full';
+            // Baseline = what this admin's Access level would show by
+            // default (before any per-admin override); an explicit `false`
+            // in their saved permissions narrows that further. This mirrors
+            // applyRoleRestrictions()'s own roleVisible -> permissions logic,
+            // so the toggle states shown here always match what's actually
+            // enforced.
+            const roleVisible = NAV_GROUPS_BY_ROLE[admin.role || 'full'] || ALL_NAV_GROUPS;
+            const saved = admin.permissions || {};
+            adminPermissionsPending = {};
+            ALL_NAV_GROUPS.forEach(id => { adminPermissionsPending[id] = roleVisible.includes(id) && saved[id] !== false; });
+            document.getElementById('admin-permissions-username').textContent = username;
+            document.getElementById('admin-permissions-note').textContent = isFull
+                ? 'Full Access admins always see every section — permissions here have no effect until their Access level is changed to Product or Account.'
+                : "Choose exactly which sections this admin can open. Off = hidden for them, even if their Access level would normally include it.";
+            renderAdminPermissionsList(roleVisible, isFull);
+            document.getElementById('save-admin-permissions-btn').style.display = isFull ? 'none' : '';
+            document.getElementById('admin-permissions-modal-overlay').classList.add('show');
+        }
+        window.openAdminPermissionsModal = openAdminPermissionsModal;
+
+        function renderAdminPermissionsList(roleVisible, isFull) {
+            const list = document.getElementById('admin-permissions-list');
+            if (!list) return;
+            list.innerHTML = ALL_NAV_GROUPS.map(id => {
+                const inRole = roleVisible.includes(id);
+                // A group this admin's Access level never includes (e.g. "Account"
+                // for a Product admin) is shown checked-off and disabled, since
+                // turning it "on" here can't grant something their role blocks.
+                const disabled = isFull || !inRole;
+                const checked = inRole && adminPermissionsPending[id];
+                return `
+                <div class="switch-row" style="padding:8px 0;${!inRole ? 'opacity:0.5;' : ''}">
+                    <span class="switch-label">${NAV_GROUP_LABELS[id] || id}</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="toggleAdminPermissionPending('${id}', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleAdminPermissionPending(groupId, checked) {
+            adminPermissionsPending[groupId] = checked;
+        }
+        window.toggleAdminPermissionPending = toggleAdminPermissionPending;
+
+        function closeAdminPermissionsModal() {
+            document.getElementById('admin-permissions-modal-overlay').classList.remove('show');
+            adminPermissionsTarget = null;
+            adminPermissionsPending = {};
+        }
+        window.closeAdminPermissionsModal = closeAdminPermissionsModal;
+
+        async function saveAdminPermissions() {
+            if (!canManageAdmins()) { window.showToast('Only Full Access admins can change access permissions.', 'fail'); return; }
+            const username = adminPermissionsTarget;
+            if (!username) return;
+            const btn = document.getElementById('save-admin-permissions-btn');
+            const original = btn.innerText;
+            btn.disabled = true; btn.innerText = 'Saving...';
+            try {
+                // Stored as explicit true/false for every group (not just the
+                // false ones) so a later Access-level change doesn't silently
+                // reinterpret an old override against a different roleVisible
+                // baseline - see openAdminPermissionsModal()'s own read-back.
+                await setDoc(doc(db, "adminUsernames", username), { permissions: { ...adminPermissionsPending } }, { merge: true });
+                await logAdminActivity('Updated access permissions', username);
+                window.showToast('Access permissions saved ✓', 'success');
+                closeAdminPermissionsModal();
+            } catch (e) {
+                console.error('Save admin permissions error:', e);
+                window.showToast('Failed to save access permissions.', 'fail');
+            } finally {
+                btn.disabled = false; btn.innerText = original;
+            }
+        }
+        window.saveAdminPermissions = saveAdminPermissions;
 
         // Only a Full Access admin may add, revoke, or reassign other
         // admins' access — see the Admin Accounts card / applyRoleRestrictions.
@@ -6060,6 +6213,7 @@
                     currentAdminUsername = usnap.docs[0].id;
                     currentAdminAvatarUrl = usnap.docs[0].data().avatarUrl || null;
                     currentAdminRole = usnap.docs[0].data().role || 'full';
+                    window.currentAdminPermissions = usnap.docs[0].data().permissions || null;
                 }
             } catch (e) { console.error('Admin username lookup error:', e); }
 
@@ -6160,6 +6314,7 @@
                 currentAdminAvatarUrl = null;
                 currentAdminIP = null;
                 currentAdminRole = 'full';
+                window.currentAdminPermissions = null;
                 activityLogListenerAttached = false;
             }
         });
