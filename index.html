@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- TEMPORARY DEBUG TOOL - remove after diagnosing the dashboard issue.
+         Adds a floating console button so JS errors are visible directly on
+         the phone, without needing a computer + USB debugging. Loaded as a
+         plain script (not type="module") so it still runs even if the main
+         Firebase module script below fails to execute at all. -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PCA Store - Admin</title>
     <style>
@@ -4861,7 +4868,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getMessaging, getToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
@@ -4889,7 +4896,15 @@
         window.toggleImgBBKeyReveal = toggleImgBBKeyReveal;
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        // Using initializeFirestore (not the plain getFirestore) so we can pass
+        // experimentalAutoDetectLongPolling. Some networks/VPNs allow normal
+        // HTTPS through but silently break Firestore's default streaming
+        // connection (WebChannel) - the page loads fine, auth works, but
+        // onSnapshot() never delivers data and never errors either, which is
+        // exactly the "stuck on ..." symptom this was causing. This setting
+        // makes the SDK detect that case and transparently fall back to
+        // long-polling instead of hanging indefinitely.
+        const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
         const auth = getAuth(app);
         // Keep the admin signed in across app restarts / closed tabs. This is
         // stored in the browser's IndexedDB, so it only clears if the admin
