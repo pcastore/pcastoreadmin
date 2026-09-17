@@ -669,7 +669,7 @@
         }
         #admin-accounts-container .admin-card:last-child { margin-bottom: 0; }
         .acct-card-row { display:flex; align-items:center; gap:10px; cursor:pointer; }
-        .acct-card-thumb { width:52px; height:52px; border-radius:10px; object-fit:cover; flex-shrink:0; background:var(--bg-subtle); }
+        .acct-card-thumb { width:92px; height:52px; border-radius:6px; object-fit:cover; flex-shrink:0; background:var(--bg-subtle); }
         .acct-card-info { min-width:0; flex:1; }
         .acct-card-title { font-size:13.5px; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .acct-card-meta { font-size:11.5px; color:var(--text-secondary); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -707,11 +707,11 @@
         .sr-confirmed-display { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; color:#059669; }
         .sr-confirmed-display svg { width:18px; height:18px; flex-shrink:0; }
         .acct-gallery-row { display:flex; gap:8px; overflow-x:auto; padding:2px; -webkit-overflow-scrolling:touch; }
-        .acct-gallery-thumb { position:relative; width:64px; height:64px; border-radius:10px; overflow:hidden; flex-shrink:0; background:var(--bg-subtle-2); border:1px solid var(--fill-soft); }
+        .acct-gallery-thumb { position:relative; width:114px; height:64px; border-radius:6px; overflow:hidden; flex-shrink:0; background:var(--bg-subtle-2); border:1px solid var(--fill-soft); }
         .acct-gallery-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
         .acct-gallery-remove { position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; cursor:pointer; }
         .acct-gallery-remove svg { width:11px; height:11px; stroke:#fff; }
-        .acct-gallery-add { width:64px; height:64px; border-radius:10px; border:2px dashed var(--border-dashed); background:var(--bg-subtle-2); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
+        .acct-gallery-add { width:114px; height:64px; border-radius:6px; border:2px dashed var(--border-dashed); background:var(--bg-subtle-2); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
         .acct-gallery-add svg { width:20px; height:20px; color:var(--text-secondary); }
 
         /* Bulk order selection (Pending orders only) + sticky action bar */
@@ -1997,6 +1997,17 @@
         </div>
         <div class="nav-item" id="group-account" style="display:none;" onclick="openNavGroupSheet('account')">
             <svg class="ui-icon"><use href="#icon-tag"></use></svg> <span class="nav-label">Account</span>
+        </div>
+        <!-- Account-role-only split of the "Account" bundle above into two
+             standalone icons (fuller nav feel on a role that only has a
+             handful of pages) — Full Access keeps the single grouped icon
+             as-is. Both hidden by default; shown/hidden together with
+             group-account by applyRoleRestrictions(). -->
+        <div class="nav-item" id="group-account-dashboard" style="display:none;" onclick="showPage('account-dashboard')">
+            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> <span class="nav-label">Dashboard</span>
+        </div>
+        <div class="nav-item" id="group-account-listings" style="display:none;" onclick="showPage('account-list')">
+            <svg class="ui-icon"><use href="#icon-tag"></use></svg> <span class="nav-label">Listings</span>
         </div>
         <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
             <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Wallet</span>
@@ -4488,7 +4499,7 @@
         // into the other admin's side. 'api-docs' is blocked for 'product'
         // too — API Keys/docs are Full-Access-only regardless of role (see
         // the 'API Keys' filter in renderNavGroupSheet below).
-        const ACCOUNT_ROLE_PAGES = ['account-dashboard', 'account-list', 'supportchat-list'];
+        const ACCOUNT_ROLE_PAGES = ['account-dashboard', 'account-list', 'supportchat-list', 'payment-list'];
         const PRODUCT_ROLE_BLOCKED_PAGES = ['account-dashboard', 'account-list', 'api-docs'];
         function showPage(pageId) {
             if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(pageId)) pageId = 'account-dashboard';
@@ -4505,8 +4516,9 @@
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            const navGroupId = (currentAdminRole === 'account' && (pageId === 'account-list' || pageId === 'account-dashboard'))
-                ? 'group-account' : (PAGE_TO_NAV_GROUP[pageId] || `btn-${pageId}`);
+            const navGroupId = (currentAdminRole === 'account' && pageId === 'account-dashboard')
+                ? 'group-account-dashboard' : (currentAdminRole === 'account' && pageId === 'account-list')
+                ? 'group-account-listings' : (PAGE_TO_NAV_GROUP[pageId] || `btn-${pageId}`);
             const groupBtn = document.getElementById(navGroupId);
             if (groupBtn) groupBtn.classList.add('active');
             window.scrollTo(0,0);
@@ -4569,10 +4581,15 @@
             // "API Keys" (api-docs) holds the raw G2Bulk/JCPlays credentials,
             // so it's hidden from anyone but a Full Access admin — see
             // PRODUCT_ROLE_BLOCKED_PAGES for the matching direct-nav guard.
+            // An 'account' admin's Wallet group is Payment Methods only —
+            // Top Up and Coupons stay behind Product/Full Access. See
+            // ACCOUNT_ROLE_PAGES for the matching direct-nav guard.
             const items = (groupKey === 'game' && currentAdminRole === 'product')
                 ? group.items.filter(it => it.label !== 'Accounts')
                 : (groupKey === 'api' && currentAdminRole !== 'full')
                 ? group.items.filter(it => it.label !== 'API Keys')
+                : (groupKey === 'wallet' && currentAdminRole === 'account')
+                ? group.items.filter(it => it.label === 'Payment')
                 : group.items;
             items.forEach(it => {
                 const btn = document.createElement('button');
@@ -4608,7 +4625,7 @@
         const NAV_GROUPS_BY_ROLE = {
             full: ALL_NAV_GROUPS,
             product: ['group-dashboard', 'group-game', 'group-wallet', 'group-api', 'group-userlist', 'group-supportchat', 'group-setting'],
-            account: ['group-account', 'group-supportchat']
+            account: ['group-account', 'group-wallet', 'group-supportchat']
         };
         // Which page a non-Full-Access admin lands on if the group they were
         // sitting in gets switched off from underneath them (owner toggles
@@ -4702,6 +4719,17 @@
                 const el = document.getElementById(id);
                 if (el) el.style.display = visible.includes(id) ? '' : 'none';
             });
+            // Account role sees the two split icons instead of the bundled
+            // "Account" sheet icon — same group-account Tab Access
+            // permission, just presented as separate top-level nav items.
+            // Full Access (and any other role) never sees the split icons.
+            const showSplitAccountIcons = currentAdminRole === 'account' && visible.includes('group-account');
+            const acctDashIcon = document.getElementById('group-account-dashboard');
+            const acctListIcon = document.getElementById('group-account-listings');
+            if (acctDashIcon) acctDashIcon.style.display = showSplitAccountIcons ? '' : 'none';
+            if (acctListIcon) acctListIcon.style.display = showSplitAccountIcons ? '' : 'none';
+            const groupAccountIcon = document.getElementById('group-account');
+            if (groupAccountIcon && currentAdminRole === 'account') groupAccountIcon.style.display = 'none';
             applySettingsCardVisibility();
             const activeEl = document.querySelector('.page-section.active');
             const activeId = activeEl ? activeEl.id : null;
@@ -10035,8 +10063,13 @@
             const container = document.getElementById('admin-accounts-container');
             if (!container) return;
             const searchTerm = (document.getElementById('account-search')?.value || '').trim().toLowerCase();
+            // An 'account' role admin only ever sees accounts they personally
+            // listed — ownership is fixed at creation via postedByAdmin (see
+            // saveGameAccount()). Full/Product both keep full oversight of
+            // every listing.
             const ids = Object.keys(GAME_ACCOUNTS).filter(id => {
                 const a = GAME_ACCOUNTS[id];
+                if (currentAdminRole === 'account' && a.postedByAdmin !== currentAdminUsername) return false;
                 if (!searchTerm) return true;
                 return (a.gameName || '').toLowerCase().includes(searchTerm) || (a.title || '').toLowerCase().includes(searchTerm);
             }).sort((a, b) => {
@@ -12511,7 +12544,7 @@
                 osc.frequency.value = freq;
                 const start = now + i * 0.09;
                 gain.gain.setValueAtTime(0, start);
-                gain.gain.linearRampToValueAtTime(0.18, start + 0.01);
+                gain.gain.linearRampToValueAtTime(0.45, start + 0.01);
                 gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
                 osc.connect(gain).connect(ctx.destination);
                 osc.start(start);
