@@ -670,6 +670,35 @@
         .acct-status-badge { font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:20px; flex-shrink:0; white-space:nowrap; }
         .acct-status-badge.available { background:rgba(52,211,153,0.15); color:#059669; }
         .acct-status-badge.sold { background:rgba(251,113,133,0.15); color:#E11D48; }
+        .acct-status-badge.pending { background:rgba(251,191,36,0.16); color:#B45309; }
+        .acct-status-badge.confirmed { background:rgba(52,211,153,0.15); color:#059669; }
+        .acct-status-badge.rejected { background:rgba(251,113,133,0.15); color:#E11D48; }
+        .acct-status-badge.listed { background:rgba(76,154,255,0.16); color:#1877F2; }
+
+        /* Sell Requests sub-tab inside the Game Accounts page — a header
+           tab-bar that swaps between the existing marketplace listings and
+           the incoming "sell my account" leads, instead of a separate
+           sidebar page. */
+        .acct-subtab-bar { display:flex; gap:6px; background:var(--fill-soft); border-radius:14px; padding:4px; margin-bottom:14px; }
+        .acct-subtab { flex:1; text-align:center; padding:9px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--text-secondary); cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:center; gap:6px; }
+        .acct-subtab.active { background:var(--surface); color:var(--accent); box-shadow:var(--shadow-soft); }
+        .acct-subtab .acct-subtab-count { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:20px; background:rgba(251,191,36,0.18); color:#B45309; }
+        .acct-subtab.active .acct-subtab-count { background:var(--accent-soft); color:var(--accent); }
+
+        /* Sell-request review modal (bigger than the standard modal-box so
+           the ID / selfie video / screenshots stay readable). */
+        .sr-detail-box { max-width:560px; }
+        .sr-section-title { font-size:12.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.03em; margin:16px 0 8px; }
+        .sr-section-title:first-child { margin-top:0; }
+        .sr-kv-row { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--border-glass); font-size:13px; }
+        .sr-kv-row:last-child { border-bottom:none; }
+        .sr-kv-row span:first-child { color:var(--text-secondary); flex-shrink:0; }
+        .sr-kv-row span:last-child { font-weight:600; text-align:right; }
+        .sr-media-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .sr-media-grid img, .sr-media-grid video { width:100%; height:120px; object-fit:cover; border-radius:10px; background:var(--bg-subtle); cursor:pointer; }
+        .sr-confirm-box { background:var(--fill-soft); border-radius:14px; padding:12px; margin-top:6px; }
+        .sr-confirmed-display { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; color:#059669; }
+        .sr-confirmed-display svg { width:18px; height:18px; flex-shrink:0; }
         .acct-gallery-row { display:flex; gap:8px; overflow-x:auto; padding:2px; -webkit-overflow-scrolling:touch; }
         .acct-gallery-thumb { position:relative; width:64px; height:64px; border-radius:10px; overflow:hidden; flex-shrink:0; background:var(--bg-subtle-2); border:1px solid var(--fill-soft); }
         .acct-gallery-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -943,6 +972,30 @@
         .sc-bubble.image-bubble { padding: 4px; background: transparent !important; border: none !important; }
         .sc-bubble.image-bubble img { display: block; max-width: 200px; max-height: 260px; width: 100%; border-radius: 12px; cursor: pointer; }
         .sc-bubble.image-bubble .sc-bubble-time { position: static; display: flex; justify-content: flex-end; margin-top: 2px; font-size: 9.5px; color: var(--text-muted); opacity: 1; }
+
+        /* Multi-photo "collage" bubble — mirrors the store's chat widget so
+           a customer sending several photos at once shows as one grid here
+           too, instead of one full-size bubble per photo. */
+        .chat-img-collage { display: grid; gap: 3px; width: 200px; border-radius: 12px; overflow: hidden; }
+        .chat-img-collage.n1 { width: auto; }
+        .chat-img-collage.n1 .chat-img-tile { border-radius: 12px; }
+        .chat-img-collage.n1 .chat-img-tile img { max-width: 200px; max-height: 260px; width: 100%; }
+        .chat-img-collage.n2 { grid-template-columns: 1fr 1fr; height: 135px; }
+        .chat-img-collage.n3 { grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr; height: 195px; }
+        .chat-img-collage.n3 .chat-img-tile:first-child { grid-row: 1 / 3; }
+        .chat-img-collage.n4up { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; height: 195px; }
+        .chat-img-tile { position: relative; cursor: pointer; overflow: hidden; background: var(--bg-subtle); }
+        .chat-img-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .chat-img-tile .chat-img-more { position: absolute; inset: 0; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+
+        .chat-img-viewer-overlay { display: none; position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; }
+        .chat-img-viewer-overlay.show { display: flex; }
+        .chat-img-viewer-overlay img { max-width: 92vw; max-height: 78vh; object-fit: contain; border-radius: 6px; }
+        .chat-img-viewer-close { position: absolute; top: 18px; right: 18px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.14); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .chat-img-viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.14); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; user-select: none; }
+        .chat-img-viewer-nav.prev { left: 12px; }
+        .chat-img-viewer-nav.next { right: 12px; }
+        .chat-img-viewer-counter { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 13px; background: rgba(255,255,255,0.14); padding: 4px 12px; border-radius: 20px; }
         .sc-msg-avatar { position: absolute; top: -7px; left: -7px; width: 17px; height: 17px; border-radius: 50%; overflow: hidden; border: 2px solid var(--bg-card, var(--surface)); background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700; color: #fff; line-height: 1; }
         .sc-msg-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .sc-inputrow { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--fill-soft); margin-top: 8px; flex-shrink: 0; }
@@ -2644,17 +2697,116 @@
             <h2 class="title-header">
                 <span>Game Accounts</span>
             </h2>
-            <div class="pkg-actions-row" style="margin:-8px 0 14px;">
-                <button class="btn btn-primary" onclick="openAccountEditor()">+ Add Account</button>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
-                <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
-                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="account-search" placeholder="Search by game or title..." autocomplete="off" oninput="renderAccountsList()">
+
+            <!-- Sub-tabs: "Listings" is the buyer-facing marketplace (unchanged
+                 below); "Sell Requests" is where a customer's own "Sell Your
+                 Account" submission from the store lands — never auto-listed,
+                 admin reviews it here, negotiates the price with the seller
+                 over Support Chat, then locks in the confirmed price. -->
+            <div class="acct-subtab-bar">
+                <div class="acct-subtab active" id="acct-subtab-listings" onclick="switchAccountSubTab('listings')">
+                    <span>Listings</span>
+                </div>
+                <div class="acct-subtab" id="acct-subtab-sellreq" onclick="switchAccountSubTab('sellreq')">
+                    <span>Sell Requests</span>
+                    <span class="acct-subtab-count" id="sellreq-pending-count" style="display:none;">0</span>
                 </div>
             </div>
-            <div id="admin-accounts-container">
-                <p class="empty-msg">Loading accounts...</p>
+
+            <div id="acct-tab-listings">
+                <div class="pkg-actions-row" style="margin:-8px 0 14px;">
+                    <button class="btn btn-primary" onclick="openAccountEditor()">+ Add Account</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                    <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="account-search" placeholder="Search by game or title..." autocomplete="off" oninput="renderAccountsList()">
+                    </div>
+                </div>
+                <div id="admin-accounts-container">
+                    <p class="empty-msg">Loading accounts...</p>
+                </div>
+            </div>
+
+            <div id="acct-tab-sellreq" style="display:none;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                    <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="sellreq-search" placeholder="Search by game, title or seller..." autocomplete="off" oninput="renderSellRequestsList()">
+                    </div>
+                </div>
+                <div id="admin-sellrequests-container">
+                    <p class="empty-msg">Loading sell requests...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SELL REQUEST DETAIL MODAL — full submission from the store's
+             "Sell Your Account" form: listing info, seller contact, and the
+             seller-identity verification (NRC front/back, holding-ID video,
+             GPS location) kept for admin records only. Price negotiation
+             itself happens in Support Chat (see "Message Seller"); once
+             admin and seller agree, the confirmed price is entered here and
+             locked with a checkmark — the seller never has an edit control
+             for it in the first place, so there's nothing for them to change. -->
+        <div class="modal-overlay" id="sellreq-detail-overlay" onclick="if(event.target===this) closeSellRequestDetail()">
+            <div class="modal-box sr-detail-box">
+                <div class="modal-header">
+                    <h3 id="sr-detail-title">Sell Request</h3>
+                    <div class="modal-close" onclick="closeSellRequestDetail()">
+                        <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <span class="acct-status-badge" id="sr-detail-status" style="margin-bottom:10px;display:inline-block;"></span>
+
+                    <div class="sr-section-title">Listing</div>
+                    <div class="sr-kv-row"><span>Game</span><span id="sr-detail-game">—</span></div>
+                    <div class="sr-kv-row"><span>Title</span><span id="sr-detail-listtitle">—</span></div>
+                    <div class="sr-kv-row"><span>Asking Price</span><span id="sr-detail-askprice">—</span></div>
+                    <div class="sr-kv-row" style="display:block;">
+                        <span style="display:block;margin-bottom:4px;">Description</span>
+                        <span id="sr-detail-desc" style="display:block;text-align:left;font-weight:400;color:var(--text-primary);white-space:pre-wrap;">—</span>
+                    </div>
+                    <img id="sr-detail-photo" src="" style="display:none;width:100%;max-height:220px;object-fit:contain;border-radius:10px;background:var(--bg-subtle);margin-top:8px;cursor:pointer;">
+
+                    <div class="sr-section-title">Seller</div>
+                    <div class="sr-kv-row"><span>Name</span><span id="sr-detail-sellername">—</span></div>
+                    <div class="sr-kv-row"><span>Contact</span><span id="sr-detail-contact">—</span></div>
+                    <div class="sr-kv-row"><span>Submitted</span><span id="sr-detail-submitted">—</span></div>
+                    <button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="messageSellRequestSeller()">💬 Message Seller (negotiate price)</button>
+
+                    <div class="sr-section-title">Identity Verification (seller-only, never shown to buyers)</div>
+                    <div class="sr-media-grid">
+                        <img id="sr-detail-kyc-front" src="" alt="NRC front" onclick="window.open(this.src,'_blank')">
+                        <img id="sr-detail-kyc-back" src="" alt="NRC back" onclick="window.open(this.src,'_blank')">
+                    </div>
+                    <video id="sr-detail-kyc-video" src="" muted playsinline controls style="width:100%;margin-top:8px;border-radius:10px;background:#000;max-height:220px;"></video>
+                    <div class="sr-kv-row" style="margin-top:6px;"><span>Location</span><span id="sr-detail-location">—</span></div>
+
+                    <div class="sr-section-title">Price Confirmation</div>
+                    <div class="sr-confirm-box">
+                        <div id="sr-confirmed-view" style="display:none;">
+                            <div class="sr-confirmed-display">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12l3 3 5-6"></path></svg>
+                                <span id="sr-confirmed-amount">Confirmed: 0 MMK</span>
+                            </div>
+                            <p style="font-size:11.5px;color:var(--text-secondary);margin-top:6px;">Locked — the seller has no way to edit this price. Tap below only if the negotiated amount actually changes.</p>
+                            <button type="button" class="btn btn-outline" style="margin-top:8px;" onclick="unlockSellRequestPriceEdit()">Change confirmed price</button>
+                            <button type="button" class="btn btn-primary" style="margin-top:8px;width:100%;" onclick="listSellRequestToStore()">📋 List to Store</button>
+                            <p id="sr-already-listed-note" style="display:none;font-size:11.5px;color:#1877F2;font-weight:600;margin-top:8px;">✓ Already listed to Store — this creates a separate, new listing.</p>
+                        </div>
+                        <div id="sr-confirm-input-row">
+                            <label style="margin-top:0;">Confirmed Price (MMK)</label>
+                            <input type="number" id="sr-confirm-price-input" min="0" placeholder="e.g. 150000">
+                            <button type="button" class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="confirmSellRequestPrice()">✓ Confirm Price</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" id="sr-reject-btn" onclick="rejectSellRequest()">Reject</button>
+                    <button class="btn btn-outline" onclick="closeSellRequestDetail()">Close</button>
+                </div>
             </div>
         </div>
 
@@ -9390,7 +9542,12 @@
         }
         window.updateAccountCustomField = updateAccountCustomField;
 
-        function openAccountEditor(id = null) {
+        function openAccountEditor(id = null, prefill = null) {
+            // A normal open (Add Account button, or tapping an existing
+            // listing) always clears any stale sell-request link so it can't
+            // leak into an unrelated save; listSellRequestToStore() sets the
+            // link itself right after this call returns.
+            if (!prefill) pendingListSellRequestSourceId = null;
             document.getElementById('edit-account-id').value = id || '';
             document.getElementById('edit-account-file').value = '';
             document.getElementById('account-upload-status').style.display = 'none';
@@ -9410,16 +9567,16 @@
                 editingAccountCustomFields = Array.isArray(a.customFields) ? a.customFields.map(f => ({ label: f.label || '', value: f.value || '' })) : [];
                 deleteBtn.style.display = 'block';
             } else {
-                document.getElementById('account-editor-title').innerText = 'Add Account';
-                document.getElementById('edit-account-gamename').value = '';
-                document.getElementById('edit-account-title').value = '';
-                document.getElementById('edit-account-price').value = '';
+                document.getElementById('account-editor-title').innerText = prefill ? 'List Account (from Sell Request)' : 'Add Account';
+                document.getElementById('edit-account-gamename').value = prefill?.gameName || '';
+                document.getElementById('edit-account-title').value = prefill?.title || '';
+                document.getElementById('edit-account-price').value = prefill?.price || '';
                 document.getElementById('edit-account-rank').value = '';
                 document.getElementById('edit-account-server').value = '';
-                document.getElementById('edit-account-description').value = '';
+                document.getElementById('edit-account-description').value = prefill?.description || '';
                 document.getElementById('edit-account-skins').value = '';
                 document.getElementById('edit-account-sold').checked = false;
-                editingAccountImages = [];
+                editingAccountImages = Array.isArray(prefill?.images) ? prefill.images.slice() : [];
                 editingAccountCustomFields = [];
                 deleteBtn.style.display = 'none';
             }
@@ -9431,6 +9588,7 @@
 
         function closeAccountEditor() {
             document.getElementById('account-editor-modal-overlay').classList.remove('show');
+            pendingListSellRequestSourceId = null;
         }
         window.closeAccountEditor = closeAccountEditor;
 
@@ -9470,6 +9628,19 @@
                 } else {
                     await addDoc(collection(db, "gameAccounts"), data);
                     logAdminActivity('Added game account', `${gameName} — ${title}`);
+                    // If this "Add" started from a confirmed sell request's
+                    // "List to Store" button, mark that request as listed so
+                    // it's clear at a glance it's already live in the store.
+                    if (pendingListSellRequestSourceId) {
+                        try {
+                            await updateDoc(doc(db, "sellRequests", pendingListSellRequestSourceId), {
+                                status: 'listed',
+                                listedAt: serverTimestamp()
+                            });
+                        } catch (e) {
+                            console.error("Mark sell request as listed error:", e);
+                        }
+                    }
                 }
                 window.showToast('Account saved!', 'success');
                 closeAccountEditor();
@@ -9506,6 +9677,296 @@
             });
         }
         window.deleteCurrentAccount = deleteCurrentAccount;
+
+        // ---------- Sell Requests (Game Accounts → "Sell Requests" sub-tab) ----------
+        // Reviews leads from the store's "Sell Your Account" form (Firestore
+        // collection "sellRequests"). These never touch the buyer-facing
+        // GAME_ACCOUNTS marketplace directly — a customer sends their info,
+        // admin negotiates the real price with them over Support Chat, then
+        // locks it in here as confirmedPrice/status:'confirmed'. The seller
+        // never had an edit control for price in their own submission, so
+        // once confirmed there's nothing on their side that can change it;
+        // only an admin can re-open it via "Change confirmed price".
+        let SELL_REQUESTS = {};
+        let currentSellRequestId = null;
+
+        function listenSellRequests() {
+            onSnapshot(collection(db, "sellRequests"), (snap) => {
+                const map = {};
+                snap.forEach(docSnap => { map[docSnap.id] = docSnap.data(); });
+                SELL_REQUESTS = map;
+                renderSellRequestsList();
+            }, (error) => {
+                console.error("Sell requests listener error:", error);
+                const el = document.getElementById('admin-sellrequests-container');
+                if (el) el.innerHTML = '<p class="empty-msg" style="color:red;">Could not load sell requests. Check connection.</p>';
+            });
+        }
+
+        let sellRequestsRenderScheduled = null;
+        function renderSellRequestsList() {
+            clearTimeout(sellRequestsRenderScheduled);
+            const container = document.getElementById('admin-sellrequests-container');
+            attachScrollTouchGuard(container);
+            const runWhenSettled = () => {
+                if (container && container._isTouching) { sellRequestsRenderScheduled = setTimeout(runWhenSettled, 150); return; }
+                renderSellRequestsListImpl();
+            };
+            sellRequestsRenderScheduled = setTimeout(runWhenSettled, 60);
+        }
+        window.renderSellRequestsList = renderSellRequestsList;
+
+        function sellRequestStatusLabel(status) {
+            if (status === 'listed') return 'Listed';
+            if (status === 'confirmed') return 'Confirmed';
+            if (status === 'rejected') return 'Rejected';
+            return 'Pending';
+        }
+
+        function renderSellRequestsListImpl() {
+            const container = document.getElementById('admin-sellrequests-container');
+            if (!container) return;
+            const searchTerm = (document.getElementById('sellreq-search')?.value || '').trim().toLowerCase();
+            const ids = Object.keys(SELL_REQUESTS).filter(id => {
+                const r = SELL_REQUESTS[id];
+                if (!searchTerm) return true;
+                return (r.game || '').toLowerCase().includes(searchTerm) ||
+                       (r.title || '').toLowerCase().includes(searchTerm) ||
+                       (r.userName || '').toLowerCase().includes(searchTerm);
+            }).sort((a, b) => {
+                const ra = SELL_REQUESTS[a], rb = SELL_REQUESTS[b];
+                // Pending first (needs attention), newest first within a status.
+                const statusRank = { pending: 0, confirmed: 1, listed: 2, rejected: 3 };
+                const rankDiff = (statusRank[ra.status] ?? 0) - (statusRank[rb.status] ?? 0);
+                if (rankDiff !== 0) return rankDiff;
+                return (rb.createdAt?.seconds || 0) - (ra.createdAt?.seconds || 0);
+            });
+
+            // Badge the tab itself with the count still awaiting review.
+            const pendingCount = Object.values(SELL_REQUESTS).filter(r => (r.status || 'pending') === 'pending').length;
+            const countEl = document.getElementById('sellreq-pending-count');
+            if (countEl) {
+                if (pendingCount > 0) { countEl.style.display = 'inline-flex'; countEl.textContent = String(pendingCount); }
+                else { countEl.style.display = 'none'; }
+            }
+
+            if (ids.length === 0) {
+                container.innerHTML = searchTerm
+                    ? '<p class="empty-msg">No sell requests match your search.</p>'
+                    : '<p class="empty-msg">No sell requests yet. Submissions from the store\'s "Sell" tab will show up here.</p>';
+                return;
+            }
+            container.innerHTML = ids.map(id => {
+                const r = SELL_REQUESTS[id];
+                const status = r.status || 'pending';
+                const priceLine = (status === 'confirmed' || status === 'listed')
+                    ? `${Number(r.confirmedPrice || 0).toLocaleString()} MMK ✓`
+                    : `${Number(r.price || 0).toLocaleString()} MMK (asking)`;
+                return `
+                    <div class="admin-card acct-card-row" onclick="openSellRequestDetail('${id}')">
+                        <img class="acct-card-thumb" src="${r.photoUrl || ''}" alt="" loading="lazy" decoding="async">
+                        <div class="acct-card-info">
+                            <div class="acct-card-title">${escapeHtml(r.title || 'Untitled')}</div>
+                            <div class="acct-card-meta">${escapeHtml(r.game || '')} • ${escapeHtml(r.userName || r.userId || '')}</div>
+                            <div class="acct-card-price">${priceLine}</div>
+                        </div>
+                        <span class="acct-status-badge ${status}">${sellRequestStatusLabel(status)}</span>
+                    </div>
+                `;
+            }).join('');
+            initScrollReveal(container);
+        }
+
+        function switchAccountSubTab(tab) {
+            const listingsTab = document.getElementById('acct-subtab-listings');
+            const sellreqTab = document.getElementById('acct-subtab-sellreq');
+            const listingsPane = document.getElementById('acct-tab-listings');
+            const sellreqPane = document.getElementById('acct-tab-sellreq');
+            const showSellReq = tab === 'sellreq';
+            listingsTab.classList.toggle('active', !showSellReq);
+            sellreqTab.classList.toggle('active', showSellReq);
+            listingsPane.style.display = showSellReq ? 'none' : '';
+            sellreqPane.style.display = showSellReq ? '' : 'none';
+            if (showSellReq) renderSellRequestsList();
+        }
+        window.switchAccountSubTab = switchAccountSubTab;
+
+        function openSellRequestDetail(id) {
+            const r = SELL_REQUESTS[id];
+            if (!r) return;
+            currentSellRequestId = id;
+            const status = r.status || 'pending';
+
+            document.getElementById('sr-detail-title').innerText = r.title || 'Sell Request';
+            const statusBadge = document.getElementById('sr-detail-status');
+            statusBadge.className = `acct-status-badge ${status}`;
+            statusBadge.textContent = sellRequestStatusLabel(status);
+
+            document.getElementById('sr-detail-game').textContent = r.game || '—';
+            document.getElementById('sr-detail-listtitle').textContent = r.title || '—';
+            document.getElementById('sr-detail-askprice').textContent = r.price ? `${Number(r.price).toLocaleString()} MMK` : '—';
+            document.getElementById('sr-detail-desc').textContent = r.description || '—';
+
+            const photo = document.getElementById('sr-detail-photo');
+            if (r.photoUrl) { photo.src = r.photoUrl; photo.style.display = 'block'; photo.onclick = () => window.open(r.photoUrl, '_blank'); }
+            else { photo.style.display = 'none'; }
+
+            document.getElementById('sr-detail-sellername').textContent = r.userName || r.userId || '—';
+            document.getElementById('sr-detail-contact').textContent = r.contact || '—';
+            document.getElementById('sr-detail-submitted').textContent = r.createdAt?.seconds
+                ? new Date(r.createdAt.seconds * 1000).toLocaleString()
+                : '—';
+
+            const kycFront = document.getElementById('sr-detail-kyc-front');
+            const kycBack = document.getElementById('sr-detail-kyc-back');
+            kycFront.src = r.sellerKycNrcFrontUrl || '';
+            kycBack.src = r.sellerKycNrcBackUrl || '';
+            const kycVideo = document.getElementById('sr-detail-kyc-video');
+            kycVideo.src = r.sellerKycVideoUrl || '';
+
+            const locEl = document.getElementById('sr-detail-location');
+            if (r.sellerKycLocation && r.sellerKycLocation.lat != null) {
+                const { lat, lng } = r.sellerKycLocation;
+                locEl.innerHTML = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--accent);font-weight:600;">View on map ↗</a>`;
+            } else {
+                locEl.textContent = '—';
+            }
+
+            // Price confirmation section: show the locked, checkmarked view
+            // once confirmed; otherwise show the input the admin fills in
+            // after negotiating with the seller over chat.
+            const confirmedView = document.getElementById('sr-confirmed-view');
+            const inputRow = document.getElementById('sr-confirm-input-row');
+            const priceInput = document.getElementById('sr-confirm-price-input');
+            if (status === 'confirmed' || status === 'listed') {
+                document.getElementById('sr-confirmed-amount').textContent = `Confirmed: ${Number(r.confirmedPrice || 0).toLocaleString()} MMK`;
+                confirmedView.style.display = 'block';
+                inputRow.style.display = 'none';
+            } else {
+                confirmedView.style.display = 'none';
+                inputRow.style.display = 'block';
+                priceInput.value = r.confirmedPrice || r.price || '';
+            }
+            const listedNote = document.getElementById('sr-already-listed-note');
+            if (listedNote) listedNote.style.display = status === 'listed' ? 'block' : 'none';
+
+            const rejectBtn = document.getElementById('sr-reject-btn');
+            rejectBtn.style.display = (status === 'rejected' || status === 'listed') ? 'none' : '';
+
+            document.getElementById('sellreq-detail-overlay').classList.add('show');
+        }
+        window.openSellRequestDetail = openSellRequestDetail;
+
+        function closeSellRequestDetail() {
+            document.getElementById('sellreq-detail-overlay').classList.remove('show');
+            currentSellRequestId = null;
+        }
+        window.closeSellRequestDetail = closeSellRequestDetail;
+
+        // Re-opens the input on an already-confirmed request, for the rare
+        // case the negotiated price genuinely changes later.
+        function unlockSellRequestPriceEdit() {
+            const r = SELL_REQUESTS[currentSellRequestId];
+            document.getElementById('sr-confirmed-view').style.display = 'none';
+            const inputRow = document.getElementById('sr-confirm-input-row');
+            inputRow.style.display = 'block';
+            document.getElementById('sr-confirm-price-input').value = r ? (r.confirmedPrice || '') : '';
+        }
+        window.unlockSellRequestPriceEdit = unlockSellRequestPriceEdit;
+
+        async function confirmSellRequestPrice() {
+            const id = currentSellRequestId;
+            if (!id) return;
+            const raw = document.getElementById('sr-confirm-price-input').value.trim();
+            const price = Number(raw);
+            if (!raw || !Number.isFinite(price) || price <= 0) {
+                window.showToast('Confirmed price ထည့်ပါ', 'fail');
+                return;
+            }
+            try {
+                await updateDoc(doc(db, "sellRequests", id), {
+                    status: 'confirmed',
+                    confirmedPrice: price,
+                    confirmedAt: serverTimestamp()
+                });
+                const r = SELL_REQUESTS[id];
+                logAdminActivity('Confirmed sell-request price', `${(r && r.title) || id} — ${price.toLocaleString()} MMK`);
+                window.showToast('Price confirmed ✓', 'success');
+                openSellRequestDetail(id); // refresh the modal into the locked view
+            } catch (error) {
+                console.error("Confirm sell request price error:", error);
+                window.showToast(error.message || 'Failed to confirm price.', 'fail');
+            }
+        }
+        window.confirmSellRequestPrice = confirmSellRequestPrice;
+
+        // ---------- List to Store ----------
+        // Only an admin can push a sell request onto the buyer-facing
+        // marketplace — this is the explicit "post it" action, separate from
+        // just confirming a price with the seller. It hands the already-
+        // uploaded game/title/price/photo/description into the same Account
+        // Editor used by "+ Add Account", pre-filled, so admin isn't retyping
+        // it; admin can still adjust anything (add more photos, rank/server,
+        // skins) before saving. Saving marks the original sell request as
+        // "listed" so it's clear at a glance it's already live.
+        let pendingListSellRequestSourceId = null;
+
+        function listSellRequestToStore() {
+            const id = currentSellRequestId;
+            const r = SELL_REQUESTS[id];
+            if (!r) return;
+            const status = r.status || 'pending';
+            if (status !== 'confirmed' && status !== 'listed') {
+                window.showToast('Confirm the price with the seller first.', 'fail');
+                return;
+            }
+            closeSellRequestDetail();
+            openAccountEditor(null, {
+                gameName: r.game || '',
+                title: r.title || '',
+                price: r.confirmedPrice || r.price || '',
+                description: r.description || '',
+                images: r.photoUrl ? [r.photoUrl] : []
+            });
+            pendingListSellRequestSourceId = id;
+        }
+        window.listSellRequestToStore = listSellRequestToStore;
+
+        function rejectSellRequest() {
+            const id = currentSellRequestId;
+            if (!id) return;
+            const r = SELL_REQUESTS[id];
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Reject this sell request?',
+                message: 'The seller keeps their submission on file, but it will be marked as rejected.',
+                confirmText: 'Reject',
+                onConfirm: async () => {
+                    try {
+                        await updateDoc(doc(db, "sellRequests", id), { status: 'rejected' });
+                        logAdminActivity('Rejected sell request', (r && r.title) || id);
+                        window.showToast('Sell request rejected.', 'success');
+                        closeSellRequestDetail();
+                    } catch (error) {
+                        console.error("Reject sell request error:", error);
+                        window.showToast(error.message || 'Failed to reject.', 'fail');
+                    }
+                }
+            });
+        }
+        window.rejectSellRequest = rejectSellRequest;
+
+        // Jumps straight into Support Chat with this seller so the admin can
+        // negotiate the real price — this is the "chat to agree the price"
+        // step the confirmed-price field above is filled in from.
+        function messageSellRequestSeller() {
+            const r = SELL_REQUESTS[currentSellRequestId];
+            if (!r || !r.userId) { window.showToast('No linked chat user for this request.', 'fail'); return; }
+            closeSellRequestDetail();
+            showPage('supportchat-list');
+            openSupportChatThread(r.userId);
+        }
+        window.messageSellRequestSeller = messageSellRequestSeller;
 
         // Keeps the Flash Sale settings card's game dropdown in sync with the
         // live games list, without losing whatever the admin currently has
@@ -11549,6 +12010,58 @@
         }
         window.renderSupportChatList = renderSupportChatList;
 
+        // ---------- Chat photo collage + full-screen viewer ----------
+        // Mirrors the same helper in Store.html so a customer's multi-photo
+        // send renders as one grid bubble here too, instead of one
+        // full-size bubble per photo. Tapping a tile opens the viewer at
+        // that photo, with prev/next to flip through the rest of the set.
+        const CHAT_IMG_GROUPS = {};
+        let chatImgGroupCounter = 0;
+        let chatImgViewerUrls = [];
+        let chatImgViewerIndex = 0;
+
+        function chatImageCollageHTML(urls) {
+            if (!urls || !urls.length) return '';
+            const groupId = 'cig' + (chatImgGroupCounter++);
+            CHAT_IMG_GROUPS[groupId] = urls;
+            const n = urls.length;
+            const shown = urls.slice(0, 4);
+            const extra = n - 4;
+            const layoutClass = n === 1 ? 'n1' : n === 2 ? 'n2' : n === 3 ? 'n3' : 'n4up';
+            const tiles = shown.map((url, i) => {
+                const overlay = (i === 3 && extra > 0) ? `<span class="chat-img-more">+${extra}</span>` : '';
+                return `<div class="chat-img-tile" onclick="event.stopPropagation();openChatImageViewer('${groupId}',${i})"><img src="${escapeHtml(url)}" alt="Photo" loading="lazy">${overlay}</div>`;
+            }).join('');
+            return `<div class="chat-img-collage ${layoutClass}">${tiles}</div>`;
+        }
+
+        function openChatImageViewer(groupId, index) {
+            const urls = CHAT_IMG_GROUPS[groupId] || [];
+            if (!urls.length) return;
+            chatImgViewerUrls = urls;
+            chatImgViewerIndex = index;
+            renderChatImageViewer();
+            document.getElementById('chat-img-viewer-overlay').classList.add('show');
+        }
+        window.openChatImageViewer = openChatImageViewer;
+
+        function renderChatImageViewer() {
+            document.getElementById('chat-img-viewer-img').src = chatImgViewerUrls[chatImgViewerIndex];
+            const counter = document.getElementById('chat-img-viewer-counter');
+            const multi = chatImgViewerUrls.length > 1;
+            counter.style.display = multi ? 'block' : 'none';
+            counter.textContent = `${chatImgViewerIndex + 1} / ${chatImgViewerUrls.length}`;
+            document.getElementById('chat-img-viewer-prev').style.visibility = (multi && chatImgViewerIndex > 0) ? 'visible' : 'hidden';
+            document.getElementById('chat-img-viewer-next').style.visibility = (multi && chatImgViewerIndex < chatImgViewerUrls.length - 1) ? 'visible' : 'hidden';
+        }
+
+        function chatImageViewerPrev() { if (chatImgViewerIndex > 0) { chatImgViewerIndex--; renderChatImageViewer(); } }
+        window.chatImageViewerPrev = chatImageViewerPrev;
+        function chatImageViewerNext() { if (chatImgViewerIndex < chatImgViewerUrls.length - 1) { chatImgViewerIndex++; renderChatImageViewer(); } }
+        window.chatImageViewerNext = chatImageViewerNext;
+        function closeChatImageViewer() { document.getElementById('chat-img-viewer-overlay').classList.remove('show'); }
+        window.closeChatImageViewer = closeChatImageViewer;
+
         function renderSupportChatThreadMessages(msgs) {
             const box = document.getElementById('supportchat-thread-messages');
             if (!box) return;
@@ -11588,11 +12101,14 @@
                     }
                 }
                 const botLabel = (mine && m.isBot) ? `<span class="sc-bubble-bot-label" style="display:block;font-size:10px;opacity:0.75;margin:-2px 0 3px;">Auto-reply 🤖</span>` : '';
-                // Photo message (Store.html's camera-icon upload): m.imageUrl
-                // is set instead of text. Render as a thumbnail that opens
-                // full size on tap, same treatment as Store.html's own bubbles.
-                if (m.imageUrl) {
-                    return `<div class="sc-bubble image-bubble ${mine ? 'mine' : 'theirs'}">${avatarBadge}<img src="${escapeHtml(m.imageUrl)}" alt="Photo" loading="lazy" onclick="window.open('${escapeHtml(m.imageUrl)}','_blank')"><span class="sc-bubble-time">${time}${tick}</span></div>`;
+                // Photo message(s) (Store.html's camera-icon upload, one or
+                // several picked at once): m.imageUrls (array) or the legacy
+                // single m.imageUrl is set instead of text. Multiple photos
+                // render as one collage bubble — see chatImageCollageHTML()
+                // below — instead of one full-size bubble per photo.
+                const imgUrls = Array.isArray(m.imageUrls) ? m.imageUrls.filter(Boolean) : (m.imageUrl ? [m.imageUrl] : []);
+                if (imgUrls.length) {
+                    return `<div class="sc-bubble image-bubble ${mine ? 'mine' : 'theirs'}">${avatarBadge}${chatImageCollageHTML(imgUrls)}<span class="sc-bubble-time">${time}${tick}</span></div>`;
                 }
                 const safe = escapeHtml(m.text || '');
                 return `<div class="sc-bubble ${mine ? 'mine' : 'theirs'}">${avatarBadge}${botLabel}${safe}<span class="sc-bubble-time">${time}${tick}</span></div>`;
@@ -18484,6 +19000,7 @@
             fetchWalletTopups();
             listenGames();
             listenGameAccounts();
+            listenSellRequests();
             listenNotifications();
             listenAnnouncementsAdmin();
             listenPaymentMethods();
@@ -18638,5 +19155,17 @@
             autoPollG2BulkOrders();
         });
     </script>
+    <!-- Full-screen chat photo viewer (single photo, or a collage tile) —
+         shared by every image bubble in the Support Chat thread; see
+         chatImageCollageHTML() / openChatImageViewer() in the script above. -->
+    <div class="chat-img-viewer-overlay" id="chat-img-viewer-overlay" onclick="if(event.target===this) closeChatImageViewer()">
+        <div class="chat-img-viewer-close" onclick="closeChatImageViewer()">
+            <svg class="ui-icon" style="width:18px;height:18px;stroke:#fff;"><use href="#icon-close"></use></svg>
+        </div>
+        <div class="chat-img-viewer-nav prev" id="chat-img-viewer-prev" onclick="chatImageViewerPrev()">‹</div>
+        <img id="chat-img-viewer-img" src="" alt="Photo">
+        <div class="chat-img-viewer-nav next" id="chat-img-viewer-next" onclick="chatImageViewerNext()">›</div>
+        <div class="chat-img-viewer-counter" id="chat-img-viewer-counter" style="display:none;"></div>
+    </div>
 </body>
 </html>
