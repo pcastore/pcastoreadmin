@@ -6002,6 +6002,22 @@
             }
         }
 
+        // Shows a real error on the Dashboard stat cards instead of leaving
+        // them on their initial "..." placeholder forever. Previously an
+        // onSnapshot failure only wrote into the Orders-page container
+        // (ordersContainer), so if you were sitting on the Overview/Dashboard
+        // tab when the listener failed, every stat card just stayed on "..."
+        // with nothing on screen telling you it had actually failed.
+        function showDashboardLoadError(message) {
+            ['stat-total-sales', 'stat-today', 'stat-total-orders', 'stat-total-customers', 'stat-total-profit'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = '⚠️ Error';
+            });
+            if (window.showToast) window.showToast(message, 'fail');
+            console.error('Dashboard load error:', message);
+        }
+        window.showDashboardLoadError = showDashboardLoadError;
+
         function fetchOrders() {
             if (ordersListenerAttached) {
                 window.showToast('Orders update automatically ✓');
@@ -6009,8 +6025,21 @@
             }
             ordersListenerAttached = true;
 
+            // If onSnapshot never calls back at all — no success, no error —
+            // e.g. a blocked request that just hangs, or a stalled connection,
+            // the dashboard used to sit on "..." with zero indication anything
+            // was wrong. Flip to a visible error after a reasonable wait.
+            let ordersSnapshotReceived = false;
+            const ordersLoadTimeoutId = setTimeout(() => {
+                if (!ordersSnapshotReceived) {
+                    showDashboardLoadError('Still waiting on order data after 10s — check your connection, VPN/ad-blocker, or sign-in.');
+                }
+            }, 10000);
+
             const q = query(collection(db, "orders"));
             onSnapshot(q, (querySnapshot) => {
+                ordersSnapshotReceived = true;
+                clearTimeout(ordersLoadTimeoutId);
                 const newOrders = {};
                 querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                 ORDERS = newOrders;
@@ -6042,8 +6071,14 @@
                 // order before either saves its idempotency key, risking a
                 // double charge.
             }, (error) => {
+                clearTimeout(ordersLoadTimeoutId);
                 console.error("Data Fetch Error: ", error);
                 ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
+                showDashboardLoadError('Could not load orders (' + (error.code || error.message || 'unknown error') + ').');
+                // Allow a manual retry (e.g. tapping Refresh, or re-opening the
+                // page) instead of leaving this permanently "attached" to a
+                // listener that already failed and will never call back again.
+                ordersListenerAttached = false;
             });
         }
 
@@ -8769,6 +8804,7 @@
                 renderCategoryDonut(revenueByGame);
             } catch (error) {
                 console.error("Dashboard stats error: ", error);
+                showDashboardLoadError('Error computing dashboard stats: ' + (error.message || error));
             }
 
             // Wallet balances load independently so a G2Bulk/JCPlays hiccup
