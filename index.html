@@ -2413,6 +2413,23 @@
 
             <div class="admin-card" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:15px;font-weight: 600;">Push Notifications</span>
+                </div>
+                <div class="switch-row" style="margin-top:12px;">
+                    <div>
+                        <span class="switch-label">Alert this device</span>
+                        <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် Order/Message အသစ်ဝင်တိုင်း ဒီ device ပေါ်မှာ Push notification တိုက်ရိုက်ရောက်မှာဖြစ်ပါတယ် — admin panel ကိုမဖွင့်ထားရင်တောင် ရောက်ပါမယ်။</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="admin-push-toggle" onchange="toggleAdminPushNotifications(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <p id="admin-push-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
+            </div>
+
+            <div class="admin-card" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
                     <span style="font-size:15px;font-weight: 600;">Auto Price Update</span>
                 </div>
                 <div class="switch-row" style="margin-top:12px;">
@@ -4846,6 +4863,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getMessaging, getToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA2mwdZ2tAoZ3_6HNl43fUSi9t_ZkRita4",
@@ -4877,6 +4895,99 @@
         // stored in the browser's IndexedDB, so it only clears if the admin
         // explicitly signs out or clears site data — never just from closing the app.
         setPersistence(auth, browserLocalPersistence).catch((e) => console.error('Auth persistence error:', e));
+
+        // ---------- Admin push notifications (FCM) ----------
+        // Same idea as Store.html's customer push toggle, but the token is
+        // saved to adminDevices/{token} instead of a users/{id} doc, and
+        // telegram-worker.js's cron sweep pushes to every doc in that
+        // collection whenever it would otherwise send a new-order/topup/
+        // support-message card to Telegram - so the admin gets a real device
+        // notification even with this panel (and Telegram) both closed.
+        // Same VAPID key pair as Store.html (same Firebase project).
+        const FCM_VAPID_KEY = "BPEfKUCGbR5lny1p59iD3QnSA-EoPoPTbztAN1mmPtDhYexYvam7JLMd_7J8o1D_xCOtI0YBhWkCNYt7SlIzJlg";
+        let messaging = null;
+        let messagingReady = (async () => {
+            try {
+                if (await isMessagingSupported()) messaging = getMessaging(app);
+            } catch (e) { console.error("FCM support check error:", e); }
+        })();
+
+        function adminPushSupported() {
+            try { return 'serviceWorker' in navigator && 'Notification' in window && typeof Notification !== 'undefined'; }
+            catch (e) { return false; }
+        }
+        function adminPushEnabled() {
+            try { return adminPushSupported() && Notification.permission === 'granted' && localStorage.getItem('pca_admin_push_opt_in') === '1'; }
+            catch (e) { return false; }
+        }
+        function renderAdminPushToggleUI() {
+            const toggle = document.getElementById('admin-push-toggle');
+            const statusEl = document.getElementById('admin-push-status');
+            if (!toggle || !statusEl) return;
+            if (!adminPushSupported()) {
+                toggle.checked = false;
+                toggle.disabled = true;
+                statusEl.textContent = 'Not supported on this browser';
+                return;
+            }
+            toggle.disabled = false;
+            const perm = Notification.permission;
+            if (perm === 'granted' && adminPushEnabled()) {
+                toggle.checked = true;
+                statusEl.textContent = 'On — new orders/messages will alert this device even when the panel is closed';
+            } else if (perm === 'denied') {
+                toggle.checked = false;
+                toggle.disabled = true;
+                statusEl.textContent = 'Blocked — enable notifications for this site in your browser settings';
+            } else {
+                toggle.checked = false;
+                statusEl.textContent = 'Off — tap to enable';
+            }
+        }
+        window.renderAdminPushToggleUI = renderAdminPushToggleUI;
+
+        async function registerAdminFcmToken() {
+            try {
+                await messagingReady;
+                if (!messaging) return;
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: registration });
+                if (!token) return;
+                await setDoc(doc(db, "adminDevices", token), {
+                    token, addedAt: serverTimestamp(), username: currentAdminUsername || 'admin'
+                }, { merge: true });
+            } catch (error) { console.error("Admin FCM token registration error:", error); }
+        }
+
+        async function toggleAdminPushNotifications(checked) {
+            if (!adminPushSupported()) { renderAdminPushToggleUI(); return; }
+            if (!checked) {
+                try { localStorage.setItem('pca_admin_push_opt_in', '0'); } catch (e) {}
+                renderAdminPushToggleUI();
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                window.showToast('Notifications are blocked — enable them in your browser settings', 'fail');
+                renderAdminPushToggleUI();
+                return;
+            }
+            if (Notification.permission === 'granted') {
+                try { localStorage.setItem('pca_admin_push_opt_in', '1'); } catch (e) {}
+                await registerAdminFcmToken();
+                renderAdminPushToggleUI();
+                return;
+            }
+            const result = await Notification.requestPermission();
+            if (result === 'granted') {
+                try { localStorage.setItem('pca_admin_push_opt_in', '1'); } catch (e) {}
+                await registerAdminFcmToken();
+            } else {
+                window.showToast('Notifications permission was not granted', 'fail');
+            }
+            renderAdminPushToggleUI();
+        }
+        window.toggleAdminPushNotifications = toggleAdminPushNotifications;
+
         const ordersContainer = document.getElementById('orders-container');
 
         // ---------- Admin login gate ----------
@@ -8584,36 +8695,52 @@
                 const revenueByGame = {};
 
                 Object.values(ORDERS).forEach((data) => {
-                    if (!matchesCurrentStore(data)) return;
-                    const price = Number(data.price) || 0;
-                    const dayStr = data.timestamp ? data.timestamp.toDate().toDateString() : null;
-                    const isToday = dayStr === todayStr;
-                    const isYesterday = dayStr === yesterdayStr;
+                    // Guard each order individually - a single malformed doc
+                    // (e.g. a timestamp field that isn't a real Firestore
+                    // Timestamp, from an older/manual write) used to throw
+                    // here and abort the whole forEach, which left every
+                    // stat card stuck on its initial "..." forever since
+                    // nothing after the loop ever ran. Now a bad doc is
+                    // skipped and logged instead of freezing the dashboard.
+                    try {
+                        if (!matchesCurrentStore(data)) return;
+                        const price = Number(data.price) || 0;
+                        let dayStr = null;
+                        if (data.timestamp) {
+                            dayStr = typeof data.timestamp.toDate === 'function'
+                                ? data.timestamp.toDate().toDateString()
+                                : new Date(data.timestamp).toDateString();
+                        }
+                        const isToday = dayStr === todayStr;
+                        const isYesterday = dayStr === yesterdayStr;
 
-                    if (data.status === 'Success') {
-                        completed++;
-                        if (isToday) todaySales += price;
-                        if (isYesterday) yesterdaySales += price;
-                        if (dayStr && dayStr in revenueByDay) revenueByDay[dayStr] += price;
-                        const g = data.game || 'Other';
-                        revenueByGame[g] = (revenueByGame[g] || 0) + price;
+                        if (data.status === 'Success') {
+                            completed++;
+                            if (isToday) todaySales += price;
+                            if (isYesterday) yesterdaySales += price;
+                            if (dayStr && dayStr in revenueByDay) revenueByDay[dayStr] += price;
+                            const g = data.game || 'Other';
+                            revenueByGame[g] = (revenueByGame[g] || 0) + price;
 
-                        if (isToday || isYesterday) {
-                            const cost = resolveOrderCost(data);
-                            if (cost !== null) {
-                                if (isToday) todayProfit += (price - cost);
-                                if (isYesterday) yesterdayProfit += (price - cost);
+                            if (isToday || isYesterday) {
+                                const cost = resolveOrderCost(data);
+                                if (cost !== null) {
+                                    if (isToday) todayProfit += (price - cost);
+                                    if (isYesterday) yesterdayProfit += (price - cost);
+                                }
                             }
                         }
-                    }
-                    else if (data.status === 'Pending') { pending++; }
-                    else if (data.status === 'Processing') { processing++; }
-                    else if (data.status === 'Fail') { fail++; }
+                        else if (data.status === 'Pending') { pending++; }
+                        else if (data.status === 'Processing') { processing++; }
+                        else if (data.status === 'Fail') { fail++; }
 
-                    if (isToday) today++;
-                    if (isYesterday) yesterdayOrders++;
-                    const custKey = data.userPhone || data.userName;
-                    if (custKey) customers.add(custKey);
+                        if (isToday) today++;
+                        if (isYesterday) yesterdayOrders++;
+                        const custKey = data.userPhone || data.userName;
+                        if (custKey) customers.add(custKey);
+                    } catch (orderErr) {
+                        console.error('Dashboard stats: skipped a malformed order', data && data.id, orderErr);
+                    }
                 });
 
                 const totalOrders = pending + processing + completed + fail;
@@ -19323,6 +19450,11 @@
         // gate above) — nothing here runs against Firestore before that.
         function startAdminApp() {
             applyRoleRestrictions();
+            renderAdminPushToggleUI();
+            // Re-register silently if this device already opted in before -
+            // the browser won't re-prompt, it just hands back a (possibly
+            // refreshed) token, same pattern as Store.html's customer push.
+            if (adminPushEnabled()) registerAdminFcmToken();
             loadDashboardStats();
             fetchOrders();
             fetchWalletTopups();
