@@ -4537,9 +4537,32 @@
         // the 'API Keys' filter in renderNavGroupSheet below).
         const ACCOUNT_ROLE_PAGES = ['account-dashboard', 'account-list', 'supportchat-list', 'payment-list'];
         const PRODUCT_ROLE_BLOCKED_PAGES = ['account-dashboard', 'account-list', 'api-docs'];
+        // Lets a per-admin Access Permission override (adminUsernames/{username}
+        // .permissions, set from the Admin Permissions modal — see
+        // openAdminPermissionsModal) grant a page the admin's preset Access
+        // level (full/product/account) wouldn't otherwise show, by bypassing
+        // the role-based redirects in showPage()/applyRoleRestrictions()
+        // below. 'api-docs' is deliberately excluded — it holds raw G2Bulk/
+        // JCPlays API keys/secrets, which stay Full-Access-only no matter
+        // what any toggle says, same as PRODUCT_ROLE_BLOCKED_PAGES already
+        // enforced before this feature existed.
+        function pageGrantedByPermission(pageId) {
+            if (!window.currentAdminPermissions || pageId === 'api-docs') return false;
+            const perm = window.currentAdminPermissions;
+            // Account Listings/Dashboard both live under the single "Account"
+            // toggle regardless of which nav group they'd normally map to for
+            // this role (account-list maps to group-game for Full/Product -
+            // see PAGE_TO_NAV_GROUP above - since it's normally reached via
+            // the Game group's "Accounts" sub-item for those roles).
+            if (pageId === 'account-list' || pageId === 'account-dashboard') return perm['group-account'] === true;
+            const group = PAGE_TO_NAV_GROUP[pageId];
+            return !!(group && perm[group] === true);
+        }
+        window.pageGrantedByPermission = pageGrantedByPermission;
         function showPage(pageId) {
-            if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(pageId)) pageId = 'account-dashboard';
-            if (currentAdminRole === 'product' && PRODUCT_ROLE_BLOCKED_PAGES.includes(pageId)) pageId = 'dashboard';
+            const grantedByPermission = pageGrantedByPermission(pageId);
+            if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(pageId) && !grantedByPermission) pageId = 'account-dashboard';
+            if (currentAdminRole === 'product' && PRODUCT_ROLE_BLOCKED_PAGES.includes(pageId) && !grantedByPermission) pageId = 'dashboard';
             // Owner-disabled Tab Access re-check: even a direct showPage(...)
             // call (stat-card onclick, old bookmark) can't land a non-Full
             // admin on a group the owner has switched off — see
@@ -4621,11 +4644,11 @@
             // An 'account' admin's Wallet group is Payment Methods only —
             // Top Up and Coupons stay behind Product/Full Access. See
             // ACCOUNT_ROLE_PAGES for the matching direct-nav guard.
-            const items = (groupKey === 'game' && currentAdminRole === 'product')
+            const items = (groupKey === 'game' && currentAdminRole === 'product' && !pageGrantedByPermission('account-list'))
                 ? group.items.filter(it => it.label !== 'Accounts')
                 : (groupKey === 'api' && currentAdminRole !== 'full')
                 ? group.items.filter(it => it.label !== 'API Keys')
-                : (groupKey === 'wallet' && currentAdminRole === 'account')
+                : (groupKey === 'wallet' && currentAdminRole === 'account' && !(window.currentAdminPermissions && window.currentAdminPermissions['group-wallet'] === true))
                 ? group.items.filter(it => it.label === 'Payment')
                 : group.items;
             items.forEach(it => {
@@ -4754,13 +4777,23 @@
             let visible = currentAdminRole === 'full' ? roleVisible : roleVisible.filter(isTabAllowedByOwner);
             // Per-admin Access Permission overrides (adminUsernames/{username}.permissions,
             // set from the Admin Permissions modal on that admin's card in the
-            // Admin Accounts list) - a further narrowing on top of the role
-            // default and the owner's global Tab Access, exactly like
-            // isTabAllowedByOwner above but scoped to just this one admin.
-            // Missing/null permissions (not set yet, or admin is Full Access -
-            // which is never restricted) means "no override, use role default".
+            // Admin Accounts list). Unlike the role default above, an explicit
+            // `true` here ADDS a group even outside this admin's preset Access
+            // level (full/product/account) — not just narrows it — so the
+            // owner can hand any single admin exactly the sections they need.
+            // An explicit `false` always revokes, even if the role would
+            // normally include it. Either way the owner's global Tab Access
+            // switch (isTabAllowedByOwner) still wins - it's a store-wide
+            // kill-switch, above any one admin's permissions. Missing/null
+            // permissions (not set yet, or Full Access - never restricted)
+            // means "no override, use role default" unchanged.
             if (currentAdminRole !== 'full' && window.currentAdminPermissions) {
-                visible = visible.filter(id => window.currentAdminPermissions[id] !== false);
+                const perm = window.currentAdminPermissions;
+                visible = ALL_NAV_GROUPS.filter(id => {
+                    if (perm[id] === true) return isTabAllowedByOwner(id);
+                    if (perm[id] === false) return false;
+                    return visible.includes(id);
+                });
             }
             ALL_NAV_GROUPS.forEach(id => {
                 const el = document.getElementById(id);
@@ -4794,11 +4827,11 @@
             const activeId = activeEl ? activeEl.id : null;
             const activeGroup = (currentAdminRole === 'account' && (activeId === 'account-list' || activeId === 'account-dashboard'))
                 ? 'group-account' : (PAGE_TO_NAV_GROUP[activeId] || null);
-            if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(activeId)) {
+            if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(activeId) && !pageGrantedByPermission(activeId)) {
                 showPage('account-dashboard');
             } else if (currentAdminRole !== 'account' && activeId === 'account-dashboard') {
                 showPage('dashboard');
-            } else if (currentAdminRole === 'product' && activeId === 'account-list') {
+            } else if (currentAdminRole === 'product' && activeId === 'account-list' && !pageGrantedByPermission(activeId)) {
                 showPage('dashboard');
             } else if (currentAdminRole !== 'full' && activeGroup && !visible.includes(activeGroup) && visible.length) {
                 showPage(FALLBACK_PAGE_FOR_GROUP[visible[0]] || 'dashboard');
@@ -5535,41 +5568,36 @@
             if (!admin) return;
             adminPermissionsTarget = username;
             const isFull = (admin.role || 'full') === 'full';
-            // Baseline = what this admin's Access level would show by
-            // default (before any per-admin override); an explicit `false`
-            // in their saved permissions narrows that further. This mirrors
-            // applyRoleRestrictions()'s own roleVisible -> permissions logic,
-            // so the toggle states shown here always match what's actually
-            // enforced.
+            // Baseline = what this admin's Access level would show by default
+            // (before any per-admin override). A saved explicit true/false
+            // always wins over that baseline - true GRANTS a group even
+            // outside their Access level, false always revokes it, matching
+            // applyRoleRestrictions()'s own grant/revoke logic exactly, so the
+            // toggle states shown here always match what's actually enforced.
             const roleVisible = NAV_GROUPS_BY_ROLE[admin.role || 'full'] || ALL_NAV_GROUPS;
             const saved = admin.permissions || {};
             adminPermissionsPending = {};
-            ALL_NAV_GROUPS.forEach(id => { adminPermissionsPending[id] = roleVisible.includes(id) && saved[id] !== false; });
+            ALL_NAV_GROUPS.forEach(id => { adminPermissionsPending[id] = typeof saved[id] === 'boolean' ? saved[id] : roleVisible.includes(id); });
             document.getElementById('admin-permissions-username').textContent = username;
             document.getElementById('admin-permissions-note').textContent = isFull
                 ? 'Full Access admins always see every section — permissions here have no effect until their Access level is changed to Product or Account.'
-                : "Choose exactly which sections this admin can open. Off = hidden for them, even if their Access level would normally include it.";
-            renderAdminPermissionsList(roleVisible, isFull);
+                : 'Choose exactly which sections this admin can open — including sections outside their Access level below. Off = hidden for them either way.';
+            renderAdminPermissionsList(isFull);
             document.getElementById('save-admin-permissions-btn').style.display = isFull ? 'none' : '';
             document.getElementById('admin-permissions-modal-overlay').classList.add('show');
         }
         window.openAdminPermissionsModal = openAdminPermissionsModal;
 
-        function renderAdminPermissionsList(roleVisible, isFull) {
+        function renderAdminPermissionsList(isFull) {
             const list = document.getElementById('admin-permissions-list');
             if (!list) return;
             list.innerHTML = ALL_NAV_GROUPS.map(id => {
-                const inRole = roleVisible.includes(id);
-                // A group this admin's Access level never includes (e.g. "Account"
-                // for a Product admin) is shown checked-off and disabled, since
-                // turning it "on" here can't grant something their role blocks.
-                const disabled = isFull || !inRole;
-                const checked = inRole && adminPermissionsPending[id];
+                const checked = !!adminPermissionsPending[id];
                 return `
-                <div class="switch-row" style="padding:8px 0;${!inRole ? 'opacity:0.5;' : ''}">
+                <div class="switch-row" style="padding:8px 0;">
                     <span class="switch-label">${NAV_GROUP_LABELS[id] || id}</span>
                     <label class="toggle-switch">
-                        <input type="checkbox" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="toggleAdminPermissionPending('${id}', this.checked)">
+                        <input type="checkbox" ${checked ? 'checked' : ''} ${isFull ? 'disabled' : ''} onchange="toggleAdminPermissionPending('${id}', this.checked)">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>`;
