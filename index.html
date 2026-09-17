@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- TEMPORARY DEBUG TOOL - remove after diagnosing the dashboard issue.
-         Adds a floating console button so JS errors are visible directly on
-         the phone, without needing a computer + USB debugging. Loaded as a
-         plain script (not type="module") so it still runs even if the main
-         Firebase module script below fails to execute at all. -->
+    <!-- Mobile in-page console (Eruda). Kept permanently so future errors can
+         be diagnosed straight from the phone (tap the floating button in the
+         corner → Console / Network tabs) without needing a computer + USB
+         debugging. Loaded as a plain script (not type="module") so it still
+         runs even if the main Firebase module script below fails entirely. -->
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
