@@ -2452,37 +2452,43 @@
             </div>
 
             <div class="admin-card" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="togglePushNotificationSettings()">
                     <span style="font-size:15px;font-weight: 600;">Push Notifications</span>
+                    <svg class="ui-icon" id="push-notif-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
-                <div class="switch-row" style="margin-top:12px;">
-                    <div>
-                        <span class="switch-label">Alert this device</span>
-                        <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် Order/Message အသစ်ဝင်တိုင်း ဒီ device ပေါ်မှာ Push notification တိုက်ရိုက်ရောက်မှာဖြစ်ပါတယ် — admin panel ကိုမဖွင့်ထားရင်တောင် ရောက်ပါမယ်။</p>
+                <div id="push-notif-body" style="display:none;margin-top:12px;">
+                    <div class="switch-row">
+                        <div>
+                            <span class="switch-label">Alert this device</span>
+                            <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် Order/Message အသစ်ဝင်တိုင်း ဒီ device ပေါ်မှာ Push notification တိုက်ရိုက်ရောက်မှာဖြစ်ပါတယ် — admin panel ကိုမဖွင့်ထားရင်တောင် ရောက်ပါမယ်။</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="admin-push-toggle" onchange="toggleAdminPushNotifications(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="admin-push-toggle" onchange="toggleAdminPushNotifications(this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
+                    <p id="admin-push-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
                 </div>
-                <p id="admin-push-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
             </div>
 
             <div class="admin-card" id="settings-card-autoprice" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAutoPriceSettings()">
                     <span style="font-size:15px;font-weight: 600;">Auto Price Update</span>
+                    <svg class="ui-icon" id="autoprice-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
-                <div class="switch-row" style="margin-top:12px;">
-                    <div>
-                        <span class="switch-label">Auto-apply price updates</span>
-                        <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် admin panel ဝင်တိုင်း G2Bulk/JCPlays/Voucher ရဲ့ ဈေးနှုန်း update ရှိနေတဲ့ package တွေရဲ့ Cost ကို auto update လုပ်ပေးမှာဖြစ်ပါတယ် (Price ကိုတော့ မထိပါ)။ ပိတ်ထားရင် Games list ထဲက "Pass" ခလုတ်ကို manual နှိပ်ပြီးမှ update လုပ်ရပါမယ်။</p>
+                <div id="autoprice-body" style="display:none;margin-top:12px;">
+                    <div class="switch-row">
+                        <div>
+                            <span class="switch-label">Auto-apply price updates</span>
+                            <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် admin panel ဝင်တိုင်း G2Bulk/JCPlays/Voucher ရဲ့ ဈေးနှုန်း update ရှိနေတဲ့ package တွေရဲ့ Cost ကို auto update လုပ်ပေးမှာဖြစ်ပါတယ် (Price ကိုတော့ မထိပါ)။ ပိတ်ထားရင် Games list ထဲက "Pass" ခလုတ်ကို manual နှိပ်ပြီးမှ update လုပ်ရပါမယ်။</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoupdate-prices-toggle" onchange="onAutoUpdatePricesToggle(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="autoupdate-prices-toggle" onchange="onAutoUpdatePricesToggle(this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
+                    <p id="autoupdate-prices-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
                 </div>
-                <p id="autoupdate-prices-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
             </div>
 
             <div class="admin-card" id="settings-card-adminlogin" style="margin-top:14px;">
@@ -8349,6 +8355,24 @@
             if (!isOpen && !walletExpireSettingsLoaded) loadWalletExpireSettings();
         }
         window.toggleWalletExpireSettings = toggleWalletExpireSettings;
+
+        function togglePushNotificationSettings() {
+            const body = document.getElementById('push-notif-body');
+            const chevron = document.getElementById('push-notif-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.togglePushNotificationSettings = togglePushNotificationSettings;
+
+        function toggleAutoPriceSettings() {
+            const body = document.getElementById('autoprice-body');
+            const chevron = document.getElementById('autoprice-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleAutoPriceSettings = toggleAutoPriceSettings;
 
         async function loadWalletExpireSettings() {
             walletExpireSettingsLoaded = true;
