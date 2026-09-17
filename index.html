@@ -6002,22 +6002,6 @@
             }
         }
 
-        // Shows a real error on the Dashboard stat cards instead of leaving
-        // them on their initial "..." placeholder forever. Previously an
-        // onSnapshot failure only wrote into the Orders-page container
-        // (ordersContainer), so if you were sitting on the Overview/Dashboard
-        // tab when the listener failed, every stat card just stayed on "..."
-        // with nothing on screen telling you it had actually failed.
-        function showDashboardLoadError(message) {
-            ['stat-total-sales', 'stat-today', 'stat-total-orders', 'stat-total-customers', 'stat-total-profit'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerText = '⚠️ Error';
-            });
-            if (window.showToast) window.showToast(message, 'fail');
-            console.error('Dashboard load error:', message);
-        }
-        window.showDashboardLoadError = showDashboardLoadError;
-
         function fetchOrders() {
             if (ordersListenerAttached) {
                 window.showToast('Orders update automatically ✓');
@@ -6025,21 +6009,8 @@
             }
             ordersListenerAttached = true;
 
-            // If onSnapshot never calls back at all — no success, no error —
-            // e.g. a blocked request that just hangs, or a stalled connection,
-            // the dashboard used to sit on "..." with zero indication anything
-            // was wrong. Flip to a visible error after a reasonable wait.
-            let ordersSnapshotReceived = false;
-            const ordersLoadTimeoutId = setTimeout(() => {
-                if (!ordersSnapshotReceived) {
-                    showDashboardLoadError('Still waiting on order data after 10s — check your connection, VPN/ad-blocker, or sign-in.');
-                }
-            }, 10000);
-
             const q = query(collection(db, "orders"));
             onSnapshot(q, (querySnapshot) => {
-                ordersSnapshotReceived = true;
-                clearTimeout(ordersLoadTimeoutId);
                 const newOrders = {};
                 querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                 ORDERS = newOrders;
@@ -6071,14 +6042,8 @@
                 // order before either saves its idempotency key, risking a
                 // double charge.
             }, (error) => {
-                clearTimeout(ordersLoadTimeoutId);
                 console.error("Data Fetch Error: ", error);
                 ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
-                showDashboardLoadError('Could not load orders (' + (error.code || error.message || 'unknown error') + ').');
-                // Allow a manual retry (e.g. tapping Refresh, or re-opening the
-                // page) instead of leaving this permanently "attached" to a
-                // listener that already failed and will never call back again.
-                ordersListenerAttached = false;
             });
         }
 
@@ -8677,6 +8642,33 @@
             document.querySelectorAll('.' + className).forEach(el => { el.innerText = value; });
         }
 
+        // Always replace the initial skeleton placeholders before attempting
+        // the first async Firestore read. A slow/offline listener should show
+        // a truthful empty dashboard (0) instead of leaving every card at
+        // "..." indefinitely.
+        function resetDashboardStatsToEmpty() {
+            const values = {
+                'stat-total-sales': '0 MMK',
+                'stat-today': '0',
+                'stat-total-orders': '0',
+                'stat-total-customers': '0',
+                'stat-total-profit': '0 MMK'
+            };
+            Object.entries(values).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = value;
+            });
+            ['stat-revenue-delta-wrap', 'stat-orders-delta-wrap', 'stat-profit-delta-wrap']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '<span class="stat-card-sub-text">vs. yesterday</span>';
+                });
+            setStatByClass('js-stat-pending', 0);
+            setStatByClass('js-stat-processing', 0);
+            setStatByClass('js-stat-completed', 0);
+            setStatByClass('js-stat-fail', 0);
+        }
+
         // Renders a "+N% / -N%" pill comparing today's value against
         // yesterday's. Returns '' (no pill) when there's nothing to compare.
         function deltaBadgeHtml(curr, prev) {
@@ -8711,6 +8703,7 @@
         // the stutter/freeze felt right at the moment of switching tabs.
         // Reading straight from ORDERS removes the network round-trip.
         async function loadDashboardStats() {
+            resetDashboardStatsToEmpty();
             try {
                 renderDayProgress();
                 let todaySales = 0, yesterdaySales = 0, pending = 0, processing = 0, completed = 0, fail = 0, today = 0, yesterdayOrders = 0;
@@ -8804,7 +8797,9 @@
                 renderCategoryDonut(revenueByGame);
             } catch (error) {
                 console.error("Dashboard stats error: ", error);
-                showDashboardLoadError('Error computing dashboard stats: ' + (error.message || error));
+                // Keep the dashboard usable when Firestore is temporarily
+                // unavailable or a legacy document has an unexpected shape.
+                resetDashboardStatsToEmpty();
             }
 
             // Wallet balances load independently so a G2Bulk/JCPlays hiccup
