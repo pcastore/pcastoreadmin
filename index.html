@@ -5022,7 +5022,7 @@
         // adminUsernames doc in routeAfterAuth(). Admins created before this
         // field existed have no `role` at all, which is treated as 'full' so
         // nobody gets locked out by the upgrade.
-        let currentAdminRole = 'full';
+        window.currentAdminRole = 'full';
         let currentAdminIP = null;
         let pendingEnrollSecret = null;
 
