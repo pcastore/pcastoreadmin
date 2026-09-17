@@ -2012,6 +2012,16 @@
         <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
             <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Wallet</span>
         </div>
+        <!-- Account-role-only replacement for the "Wallet" bundle above — an
+             'account' admin only ever has Payment Methods behind that icon
+             (see renderNavGroupSheet's wallet filter), so it's shown as a
+             direct "Payment" tab instead of a bundle icon that opens a
+             one-item picker sheet. Full Access / Product keep the bundled
+             Wallet icon as-is. Hidden by default; shown/hidden together
+             with group-wallet by applyRoleRestrictions(). -->
+        <div class="nav-item" id="group-wallet-payment" style="display:none;" onclick="showPage('payment-list')">
+            <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Payment</span>
+        </div>
         <div class="nav-item" id="group-api" onclick="openNavGroupSheet('api')">
             <svg class="ui-icon"><use href="#icon-plug"></use></svg> <span class="nav-label">API</span>
             <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
@@ -4518,7 +4528,8 @@
             document.getElementById(pageId).classList.add('active');
             const navGroupId = (currentAdminRole === 'account' && pageId === 'account-dashboard')
                 ? 'group-account-dashboard' : (currentAdminRole === 'account' && pageId === 'account-list')
-                ? 'group-account-listings' : (PAGE_TO_NAV_GROUP[pageId] || `btn-${pageId}`);
+                ? 'group-account-listings' : (currentAdminRole === 'account' && pageId === 'payment-list')
+                ? 'group-wallet-payment' : (PAGE_TO_NAV_GROUP[pageId] || `btn-${pageId}`);
             const groupBtn = document.getElementById(navGroupId);
             if (groupBtn) groupBtn.classList.add('active');
             window.scrollTo(0,0);
@@ -4730,6 +4741,18 @@
             if (acctListIcon) acctListIcon.style.display = showSplitAccountIcons ? '' : 'none';
             const groupAccountIcon = document.getElementById('group-account');
             if (groupAccountIcon && currentAdminRole === 'account') groupAccountIcon.style.display = 'none';
+            // Account role sees a direct "Payment" tab instead of the
+            // bundled "Wallet" icon — that bundle only ever has one item
+            // (Payment) reachable by this role anyway (see
+            // renderNavGroupSheet's wallet filter), so skip the extra
+            // picker-sheet tap. Same group-wallet Tab Access permission,
+            // just presented as a standalone top-level nav item. Full
+            // Access / Product never see this split icon.
+            const showWalletPaymentIcon = currentAdminRole === 'account' && visible.includes('group-wallet');
+            const walletPaymentIcon = document.getElementById('group-wallet-payment');
+            if (walletPaymentIcon) walletPaymentIcon.style.display = showWalletPaymentIcon ? '' : 'none';
+            const groupWalletIcon = document.getElementById('group-wallet');
+            if (groupWalletIcon && currentAdminRole === 'account') groupWalletIcon.style.display = 'none';
             applySettingsCardVisibility();
             const activeEl = document.querySelector('.page-section.active');
             const activeId = activeEl ? activeEl.id : null;
@@ -13073,6 +13096,15 @@
         }
 
         // ---------- Payment Methods ----------
+        // Which Firestore collection backs this page for the signed-in
+        // admin. An 'account' role admin manages their OWN payment methods
+        // (used for account-marketplace purchases) in a separate
+        // "accountPaymentMethods" collection — entirely independent from
+        // the Owner's main-store "paymentMethods" used at Product/Top Up
+        // checkout. Full Access and Product admins always see the Owner's.
+        function paymentMethodsCollectionName() {
+            return currentAdminRole === 'account' ? 'accountPaymentMethods' : 'paymentMethods';
+        }
         let PAYMENT_METHODS = {};
         let paymentListenerAttached = false;
 
@@ -13133,12 +13165,12 @@
                 ids.forEach((id, idx) => {
                     // Normalize everyone to a clean sequential order first (handles legacy docs with no order field)
                     if (PAYMENT_METHODS[id].order !== idx) {
-                        batch.update(doc(db, "paymentMethods", id), { order: idx });
+                        batch.update(doc(db, paymentMethodsCollectionName(), id), { order: idx });
                     }
                 });
                 // Then swap the two target positions
-                batch.update(doc(db, "paymentMethods", ids[i]), { order: j });
-                batch.update(doc(db, "paymentMethods", ids[j]), { order: i });
+                batch.update(doc(db, paymentMethodsCollectionName(), ids[i]), { order: j });
+                batch.update(doc(db, paymentMethodsCollectionName(), ids[j]), { order: i });
                 await batch.commit();
             } catch (error) {
                 console.error("Reorder payment method error:", error);
@@ -13150,7 +13182,7 @@
         function listenPaymentMethods() {
             if (paymentListenerAttached) return;
             paymentListenerAttached = true;
-            onSnapshot(collection(db, "paymentMethods"), (snap) => {
+            onSnapshot(collection(db, paymentMethodsCollectionName()), (snap) => {
                 const newMethods = {};
                 snap.forEach(docSnap => { newMethods[docSnap.id] = docSnap.data(); });
                 PAYMENT_METHODS = newMethods;
@@ -19327,12 +19359,12 @@
 
                 const data = { name, number, accountName, availabilityNote, image: imageUrl, qrImage: qrImageUrl };
                 if (paymentId) {
-                    await updateDoc(doc(db, "paymentMethods", paymentId), data);
+                    await updateDoc(doc(db, paymentMethodsCollectionName(), paymentId), data);
                     logAdminActivity('Edited payment method', name);
                 } else {
                     const existingOrders = Object.values(PAYMENT_METHODS).map(p => p.order).filter(o => typeof o === 'number');
                     data.order = existingOrders.length ? Math.max(...existingOrders) + 1 : 0;
-                    await addDoc(collection(db, "paymentMethods"), data);
+                    await addDoc(collection(db, paymentMethodsCollectionName()), data);
                     logAdminActivity('Added payment method', name);
                 }
                 window.showToast('Payment method saved!', 'success');
@@ -19356,7 +19388,7 @@
                 onConfirm: async () => {
                     try {
                         const pmName = PAYMENT_METHODS[paymentId]?.name || paymentId;
-                        await deleteDoc(doc(db, "paymentMethods", paymentId));
+                        await deleteDoc(doc(db, paymentMethodsCollectionName(), paymentId));
                         logAdminActivity('Deleted payment method', pmName);
                         window.showToast('Payment method deleted', 'cancel');
                     } catch (error) {
@@ -19377,7 +19409,7 @@
                 confirmText: 'Delete',
                 onConfirm: async () => {
                     try {
-                        await deleteDoc(doc(db, "paymentMethods", paymentId));
+                        await deleteDoc(doc(db, paymentMethodsCollectionName(), paymentId));
                         window.showToast('Payment method deleted', 'cancel');
                         closePaymentEditor();
                     } catch (error) {
