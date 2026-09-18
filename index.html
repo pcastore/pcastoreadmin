@@ -149,7 +149,12 @@
                 radial-gradient(42% 34% at 88% 18%, var(--mesh-2) 0%, transparent 72%),
                 radial-gradient(46% 38% at 30% 92%, var(--mesh-3) 0%, transparent 70%),
                 var(--bg-app);
-            transition: background 0.4s ease;
+            /* No transition here on purpose: this is a full-viewport,
+               3-gradient composite, and animating the `background` shorthand
+               isn't GPU-compositable - the browser has to repaint the whole
+               screen on every frame for the transition's duration. That was
+               a big part of the theme-switch freeze; it now snaps instantly
+               while the smaller surfaces above still crossfade smoothly. */
         }
         ::selection { background: var(--accent-soft); color: var(--accent); }
 
@@ -182,7 +187,15 @@
         html.theme-transition input,
         html.theme-transition select,
         html.theme-transition textarea {
-            transition: background-color 0.4s ease, background-image 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, fill 0.4s ease, stroke 0.4s ease !important;
+            /* box-shadow and background-image were dropped from this list -
+               both force a full repaint of every matched element on every
+               animation frame (unlike background-color/color/border-color,
+               which paint far cheaper), and with 5 richer glass themes now
+               (bigger blur radii, gradient-based shadows) animating them
+               across all these surfaces at once is what was freezing the
+               screen for a second-plus when picking a theme. Colors still
+               crossfade smoothly; shadows/gradients now just snap instantly. */
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, fill 0.4s ease, stroke 0.4s ease !important;
         }
 
         /* Generic glass-panel helper: translucent fill + blur + a bright
