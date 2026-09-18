@@ -5357,8 +5357,9 @@
         // dependency (unlike uploadImageToImgBB above, which requires one),
         // since this fires straight from a small circle in the accounts list.
         async function uploadAdminAvatarToImgBB(file) {
+            const compressed = await compressImageFile(file, { maxDim: 400, quality: 0.85 });
             const form = new FormData();
-            form.append('image', file);
+            form.append('image', compressed);
             const res = await fetch(IMGBB_UPLOAD_URL, { method: 'POST', body: form });
             const data = await res.json();
             if (!data.success) throw new Error(data.error?.message || 'Avatar upload failed');
@@ -11198,8 +11199,9 @@
         // element ID — package rows are created dynamically so there's no single
         // #id to write status text into.
         async function uploadPackageImageToImgBB(file) {
+            const compressed = await compressImageFile(file);
             const form = new FormData();
-            form.append('image', file);
+            form.append('image', compressed);
             const res = await fetch(IMGBB_UPLOAD_URL, { method: 'POST', body: form });
             const data = await res.json();
             if (!data.success) throw new Error(data.error?.message || 'Upload failed');
@@ -12067,15 +12069,59 @@
             stopVoucherEditorStockRefresh();
         }
 
+        // Resizes + re-encodes an image file entirely in the browser (canvas)
+        // before it's sent to ImgBB, so a raw 3-5MB phone photo turns into a
+        // ~20-60KB file instead. maxDim caps the longest side (package/game
+        // icons are only ever shown small, so anything above ~800px is wasted
+        // bytes); quality is JPEG quality 0-1. Falls back to the original file
+        // untouched if the browser can't do canvas/toBlob for any reason
+        // (very old browsers, non-image files, decode errors, etc.) so an
+        // upload never hard-fails just because compression didn't work.
+        async function compressImageFile(file, { maxDim = 800, quality = 0.82 } = {}) {
+            if (!file || !file.type || !file.type.startsWith('image/')) return file;
+            // Animated GIFs would lose their animation if re-encoded via canvas
+            // (canvas only ever captures a single frame) - upload those as-is.
+            if (file.type === 'image/gif') return file;
+            try {
+                const bitmap = await createImageBitmap(file);
+                let { width, height } = bitmap;
+                if (width > maxDim || height > maxDim) {
+                    const scale = maxDim / Math.max(width, height);
+                    width = Math.round(width * scale);
+                    height = Math.round(height * scale);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(bitmap, 0, 0, width, height);
+                bitmap.close?.();
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+                if (!blob) return file; // toBlob can resolve null on decode failure - keep the original
+                // Only actually swap in the compressed version if it's smaller -
+                // a tiny already-optimized source image shouldn't get bigger.
+                if (blob.size >= file.size) return file;
+                const newName = file.name.replace(/\.\w+$/, '') + '.jpg';
+                return new File([blob], newName, { type: 'image/jpeg' });
+            } catch (err) {
+                console.warn('Image compression skipped, uploading original:', err);
+                return file;
+            }
+        }
+
         // Uploads a phone photo to a free image host (ImgBB) and resolves with its direct URL.
         // No Firebase Storage / Blaze plan involved.
         async function uploadImageToImgBB(file, statusElId = 'upload-status') {
             const statusEl = document.getElementById(statusElId);
             statusEl.style.display = 'block';
+            statusEl.innerText = 'Compressing photo...';
+
+            const compressed = await compressImageFile(file);
             statusEl.innerText = 'Uploading photo...';
 
             const form = new FormData();
-            form.append('image', file);
+            form.append('image', compressed);
 
             const res = await fetch(IMGBB_UPLOAD_URL, {
                 method: 'POST',
