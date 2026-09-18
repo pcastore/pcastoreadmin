@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PCA Store - Admin</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
         html { -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
 
@@ -219,97 +219,122 @@
         }
         .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         
+        /* ===== Login gate — "Access Ticket" redesign ==========================
+           Concept: PCA Store's whole business is redeeming digital vouchers
+           and top-up codes, so the login card borrows that object's own
+           language — a perforated ticket-stub edge, a brass token mark,
+           ledger-line fields — instead of a generic SaaS split-panel with a
+           decorative illustration. Warm ink + brass palette, one accent color
+           doing all the work. Single centered card (no dual-column hero),
+           one page-load entrance, no per-field hover flourish. */
+        :root {
+            --lg-ink-0: #15121C;
+            --lg-ink-1: #1C1722;
+            --lg-ink-2: #241D2B;
+            --lg-line: rgba(232,163,61,0.16);
+            --lg-brass: #E8A33D;
+            --lg-brass-deep: #C97F1E;
+            --lg-jade: #3ED9A0;
+            --lg-text: #F5EEE0;
+            --lg-muted: #9A8FA0;
+        }
         /* Login gate — covers the whole admin panel until an authenticated
            admin signs in. Nothing behind it loads/queries Firestore before that. */
         #login-screen {
             position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px;
-            background: radial-gradient(120% 100% at 50% 0%, #14172A 0%, #05060B 55%, #000 100%);
+            background: radial-gradient(120% 100% at 50% 0%, var(--lg-ink-1) 0%, var(--lg-ink-0) 55%, #0A0810 100%);
             overflow: hidden;
         }
         #login-screen.hidden { display: none; }
         @keyframes gateDotBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
 
-        /* Static gradient-mesh backdrop — soft blurred colour blobs behind the
-           login card, no motion, echoing the same mesh look used elsewhere
-           in the panel (see the --mesh-* tokens on body::before). */
+        /* Static gradient-mesh backdrop — soft warm blobs, no motion. */
         .login-mesh {
             position: absolute; inset: 0; z-index: 0; pointer-events: none;
             background:
-                radial-gradient(40% 34% at 14% 12%, rgba(76,154,255,0.28) 0%, transparent 70%),
-                radial-gradient(44% 36% at 88% 20%, rgba(168,85,247,0.22) 0%, transparent 72%),
-                radial-gradient(42% 34% at 22% 92%, rgba(45,212,191,0.18) 0%, transparent 70%),
-                radial-gradient(46% 38% at 92% 88%, rgba(76,154,255,0.2) 0%, transparent 70%);
+                radial-gradient(38% 32% at 12% 10%, rgba(232,163,61,0.16) 0%, transparent 70%),
+                radial-gradient(42% 34% at 90% 18%, rgba(62,217,160,0.08) 0%, transparent 72%),
+                radial-gradient(40% 34% at 20% 94%, rgba(201,127,30,0.14) 0%, transparent 70%),
+                radial-gradient(44% 36% at 94% 90%, rgba(232,163,61,0.1) 0%, transparent 70%);
             filter: blur(4px);
         }
-        /* ---- Login card: split layout (form left, illustration right).
-           Re-themed as a dark glass "atom" card so the ambient orbiting-
-           electron backdrop shows through behind it, instead of a plain
-           opaque white card that clashed with the dark atom animation.
-           Stacks to a single column on narrow screens, hiding the
-           illustration panel to save space. */
+        @keyframes ticketRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        /* ---- Login card: single centered "ticket stub" — a perforated notch
+           row + dashed tear-line stand in for the old illustration panel,
+           grounding the card in the product's own voucher/top-up business. */
         .login-card {
-            position: relative; z-index: 1; display: flex; width: 100%; max-width: 760px;
-            min-height: 480px; background: rgba(13,17,32,0.68); border-radius: 28px; overflow: hidden;
-            border: 1px solid rgba(120,170,255,0.16);
-            -webkit-backdrop-filter: blur(24px) saturate(150%);
-            backdrop-filter: blur(24px) saturate(150%);
-            box-shadow: 0 40px 90px -24px rgba(0,0,0,0.75), 0 0 70px -18px rgba(76,154,255,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+            position: relative; z-index: 1; width: 100%; max-width: 380px;
+            background: var(--lg-ink-1); border-radius: 22px; overflow: hidden;
+            border: 1px solid var(--lg-line);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            backdrop-filter: blur(20px) saturate(140%);
+            box-shadow: 0 40px 90px -24px rgba(0,0,0,0.75), 0 0 60px -20px rgba(232,163,61,0.18), inset 0 1px 0 rgba(255,255,255,0.04);
+            animation: ticketRise 0.5s cubic-bezier(0.16,1,0.3,1);
         }
-        .login-card-left { flex: 1 1 50%; padding: 46px 42px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-        .login-card-right {
-            flex: 1 1 50%; background: linear-gradient(165deg, rgba(35,48,90,0.5) 0%, rgba(8,11,22,0.55) 100%);
-            border-left: 1px solid rgba(255,255,255,0.07);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 40px 34px; position: relative; text-align: center;
+        /* Perforation strip: a row of punched half-circles cut from the card's
+           own background color, sitting above a dashed tear-line — the "tear
+           here" edge of a voucher stub. */
+        .login-card::before {
+            content: ''; display: block; height: 14px; margin-top: 14px;
+            background-image: radial-gradient(circle at 10px 7px, var(--lg-ink-0) 6px, transparent 6.5px);
+            background-size: 20px 14px; background-repeat: repeat-x;
         }
-        @media (max-width: 760px) {
-            .login-card { flex-direction: column; max-width: 380px; min-height: 0; }
-            .login-card-right { display: none; }
-            .login-card-left { padding: 38px 26px; }
+        .login-card::after {
+            content: ''; display: block; height: 0; margin: 0 18px 0;
+            border-top: 1.5px dashed rgba(232,163,61,0.28);
         }
-        .login-box .logo-icon { background: var(--accent, #4C6FFF); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 0 18px; box-shadow: 0 0 22px -2px rgba(76,154,255,0.65); }
-        .login-box h2 { text-align: center; font-size: 25px; font-weight: 700; color: #F3F6FF; margin-bottom: 6px; letter-spacing: -0.3px; }
-        .login-box p.sub { text-align: center; font-size: 13px; color: rgba(230,236,255,0.55); margin-bottom: 24px; }
-        .login-box label { font-size: 12px; font-weight: 500; color: rgba(230,236,255,0.45); display: block; margin-bottom: 7px; }
+        .login-card-left { padding: 22px 30px 40px; display: flex; flex-direction: column; min-width: 0; }
+        .login-box .logo-icon {
+            width: 46px; height: 46px; border-radius: 50%; margin: 4px auto 16px;
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 32% 28%, #FFD98C 0%, var(--lg-brass) 45%, var(--lg-brass-deep) 100%);
+            box-shadow: 0 0 0 4px rgba(232,163,61,0.12), 0 10px 22px -6px rgba(232,163,61,0.55);
+        }
+        .login-box .logo-icon svg { width: 22px; height: 22px; stroke: #241705; }
+        .login-box h2 { font-family: 'Space Grotesk', 'Poppins', sans-serif; text-align: center; font-size: 23px; font-weight: 700; color: var(--lg-text); margin-bottom: 6px; letter-spacing: -0.2px; }
+        .login-box p.sub { text-align: center; font-size: 12.5px; color: var(--lg-muted); margin-bottom: 26px; line-height: 1.5; }
+        .login-box label { font-size: 11.5px; font-weight: 500; color: var(--lg-muted); display: block; margin-bottom: 7px; }
         .login-box .field-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-        .login-box .forgot-link { font-size: 12px; font-weight: 500; color: #6FA3FF; text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
+        .login-box .forgot-link { font-size: 12px; font-weight: 500; color: var(--lg-brass); text-decoration: none; cursor: pointer; background: none; border: none; padding: 0; }
         .login-box .forgot-link:hover { text-decoration: underline; }
-        .login-box .field-wrap { position: relative; margin-bottom: 16px; }
+        .login-box .field-wrap { position: relative; margin-bottom: 18px; }
+        /* Ledger-line fields: an underline only, not a boxed pill — reads like
+           a line on a redemption slip instead of the usual rounded SaaS input. */
         .login-box input {
-            width: 100%; padding: 13px 14px; border: 1.5px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.055);
-            color: #F3F6FF; border-radius: 11px; font-size: 14px; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+            width: 100%; padding: 10px 2px; border: none; border-bottom: 1.5px solid var(--lg-line); background: transparent;
+            color: var(--lg-text); border-radius: 0; font-size: 15px; transition: border-color 0.15s ease;
         }
         .login-box .field-wrap input { margin-bottom: 0; }
-        .login-box .field-wrap.has-toggle input { padding-right: 42px; }
-        .login-box input::placeholder { color: rgba(230,236,255,0.32); }
-        .login-box input:focus { outline: none; border-color: var(--accent, #4C6FFF); background: rgba(255,255,255,0.08); box-shadow: 0 0 0 3px rgba(76,154,255,0.18), 0 0 18px -4px rgba(76,154,255,0.55); }
+        .login-box .field-wrap.has-toggle input { padding-right: 36px; }
+        .login-box input::placeholder { color: rgba(154,143,160,0.55); }
+        .login-box input:focus { outline: none; border-color: var(--lg-brass); }
         .login-box .pw-toggle-btn {
-            position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px;
-            border: none; background: transparent; color: rgba(230,236,255,0.45); display: flex; align-items: center; justify-content: center;
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 32px; height: 32px;
+            border: none; background: transparent; color: var(--lg-muted); display: flex; align-items: center; justify-content: center;
             cursor: pointer; border-radius: 8px;
         }
-        .login-box .pw-toggle-btn:hover { color: #6FA3FF; background: rgba(111,163,255,0.12); }
+        .login-box .pw-toggle-btn:hover { color: var(--lg-brass); }
         .login-box .pw-toggle-btn svg { width: 18px; height: 18px; }
-        .login-box .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-        .login-box .remember-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent, #4C6FFF); cursor: pointer; margin: 0; }
-        .login-box .remember-row label { font-size: 13px; color: rgba(230,236,255,0.55); margin: 0; cursor: pointer; }
+        .login-box .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 22px; }
+        .login-box .remember-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--lg-brass); cursor: pointer; margin: 0; }
+        .login-box .remember-row label { font-size: 13px; color: var(--lg-muted); margin: 0; cursor: pointer; }
         .login-box button {
-            width: 100%; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 15px; border: none;
-            background: var(--accent, #4C6FFF); color: #fff; cursor: pointer;
-            box-shadow: 0 10px 26px -6px rgba(76,154,255,0.6), 0 0 30px -10px rgba(76,154,255,0.5);
+            width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 15px; border: none;
+            background: linear-gradient(180deg, #F0B454 0%, var(--lg-brass) 55%, var(--lg-brass-deep) 100%); color: #241705; cursor: pointer;
+            box-shadow: 0 10px 24px -8px rgba(232,163,61,0.6);
             transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
         .login-box button:active { transform: translateY(1px); }
-        .login-box button:disabled { opacity: 0.6; box-shadow: none; }
-        .login-box .login-footnote { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; font-size: 12px; color: rgba(230,236,255,0.4); }
-        .login-box .login-footnote svg { width: 13px; height: 13px; }
+        .login-box button:disabled { opacity: 0.55; box-shadow: none; }
+        .login-box .login-footnote { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 20px; font-size: 11.5px; color: var(--lg-muted); }
+        .login-box .login-footnote svg { width: 13px; height: 13px; color: var(--lg-jade); }
         #login-error { color: #FF8A8A; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
         .login-msg-error { color: #FF8A8A; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
-        .login-msg-info { font-size: 13px; color: rgba(243,246,255,0.9); text-align: center; margin-bottom: 16px; line-height: 1.5; }
-        .login-msg-hint { font-size: 12px; color: rgba(230,236,255,0.45); text-align: center; margin: -6px 0 14px; }
-        .login-secondary-btn { background: rgba(255,255,255,0.08) !important; color: #F3F6FF !important; margin-top: 8px; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.1) !important; }
-        .mfa-secret-box { background: rgba(255,255,255,0.055); border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
-        .mfa-secret-box span { font-family: monospace; font-size: 15px; font-weight: 600; letter-spacing: 1px; color: #6FA3FF; }
+        .login-msg-info { font-size: 13px; color: var(--lg-text); text-align: center; margin-bottom: 16px; line-height: 1.5; }
+        .login-msg-hint { font-size: 12px; color: var(--lg-muted); text-align: center; margin: -6px 0 14px; }
+        .login-secondary-btn { background: rgba(255,255,255,0.05) !important; color: var(--lg-text) !important; margin-top: 8px; box-shadow: none !important; border: 1px solid var(--lg-line) !important; }
+        .mfa-secret-box { background: rgba(255,255,255,0.04); border: 1px dashed var(--lg-line); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
+        .mfa-secret-box span { font-family: 'Courier New', monospace; font-size: 15px; font-weight: 600; letter-spacing: 1px; color: var(--lg-brass); }
         /* Segmented 6-digit OTP input — replaces the old single free-text field.
            Bigger tap targets and auto-advance make entry far less error-prone
            on mobile than a single 6-char box, and it accepts a full paste
@@ -318,35 +343,20 @@
         .otp-box {
             width: 15%; max-width: 46px; aspect-ratio: 1 / 1; padding: 0; text-align: center;
             font-size: 20px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 0;
-            border: 1.5px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.055);
-            color: #F3F6FF; border-radius: 11px; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+            border: 1.5px solid var(--lg-line); background: rgba(255,255,255,0.03);
+            color: var(--lg-text); border-radius: 11px; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
         }
-        .otp-box:focus { outline: none; border-color: var(--accent, #4C6FFF); background: rgba(255,255,255,0.08); box-shadow: 0 0 0 3px rgba(76,154,255,0.18), 0 0 18px -4px rgba(76,154,255,0.55); }
-        .otp-box.otp-filled { border-color: rgba(111,163,255,0.5); }
+        .otp-box:focus { outline: none; border-color: var(--lg-brass); background: rgba(255,255,255,0.06); box-shadow: 0 0 0 3px rgba(232,163,61,0.16); }
+        .otp-box.otp-filled { border-color: rgba(232,163,61,0.5); }
         .otp-paste-btn {
             width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
             padding: 10px; margin-bottom: 16px; border-radius: 10px; font-weight: 600; font-size: 13px;
-            border: 1px solid rgba(111,163,255,0.35); background: rgba(111,163,255,0.1); color: #6FA3FF; cursor: pointer;
+            border: 1px solid rgba(232,163,61,0.3); background: rgba(232,163,61,0.08); color: var(--lg-brass); cursor: pointer;
             transition: background 0.15s ease;
         }
-        .otp-paste-btn:hover { background: rgba(111,163,255,0.18); }
+        .otp-paste-btn:hover { background: rgba(232,163,61,0.15); }
         .otp-paste-btn svg { width: 15px; height: 15px; }
 
-        /* ---- Right-panel illustration: a small orbiting-atom graphic (glowing
-           nucleus + elliptical orbit rings), echoing the ambient backdrop
-           animation so the whole card commits to one "atom" visual language
-           instead of a generic dashboard mockup. */
-        .login-illustration { width: 190px; height: 190px; position: relative; margin-bottom: 26px; }
-        .login-illustration svg { width: 100%; height: 100%; overflow: visible; }
-        .login-illustration .orbit-group { transform-origin: 95px 95px; animation: orbitSpin 22s linear infinite; }
-        .login-illustration .twinkle { animation: twinkleFade 2.6s ease-in-out infinite; }
-        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes twinkleFade { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.9; } }
-        .login-card-right h3 { font-size: 17px; font-weight: 700; color: #F3F6FF; margin-bottom: 8px; }
-        .login-card-right p { font-size: 12.5px; color: rgba(230,236,255,0.5); line-height: 1.6; max-width: 240px; }
-        .login-dots { display: flex; align-items: center; gap: 6px; margin-top: 22px; }
-        .login-dots span { display: block; height: 6px; width: 6px; border-radius: 999px; background: rgba(255,255,255,0.18); }
-        .login-dots span.active { width: 20px; background: var(--accent, #4C6FFF); box-shadow: 0 0 10px -1px rgba(76,154,255,0.8); }
 
         /* Header */
         /* transform: translateZ(0) promotes the sticky header to its own
@@ -1624,27 +1634,27 @@
              reveals login-box, same end state the old tap-counter used to
              reach. -->
         <div id="gate-code-overlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:24px;" onclick="if(event.target===this) closeGateCodeModal()">
-            <div style="background:rgba(13,17,32,0.92);border:1px solid rgba(120,170,255,0.16);border-radius:20px;padding:22px 20px;width:100%;max-width:280px;text-align:center;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 30px 70px -20px rgba(0,0,0,0.7);">
-                <p style="color:#F3F6FF;font-size:14px;font-weight: 600;margin-bottom:14px;">Enter code</p>
-                <input type="text" inputmode="numeric" id="gate-code-input" maxlength="8" autocomplete="off" style="width:100%;text-align:center;letter-spacing:4px;font-size:18px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#F3F6FF;margin-bottom:12px;">
+            <div style="background:rgba(28,23,34,0.92);border:1px solid rgba(232,163,61,0.16);border-radius:20px;padding:22px 20px;width:100%;max-width:280px;text-align:center;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 30px 70px -20px rgba(0,0,0,0.7);">
+                <p style="color:#F5EEE0;font-size:14px;font-weight: 600;margin-bottom:14px;">Enter code</p>
+                <input type="text" inputmode="numeric" id="gate-code-input" maxlength="8" autocomplete="off" style="width:100%;text-align:center;letter-spacing:4px;font-size:18px;padding:10px;border-radius:10px;border:1px solid rgba(232,163,61,0.2);background:rgba(255,255,255,0.05);color:#F5EEE0;margin-bottom:12px;">
                 <p id="gate-code-error" style="display:none;color:#FF6B6B;font-size:12px;margin-bottom:10px;">Wrong code</p>
-                <button type="button" onclick="submitGateCode()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#4C6FFF;color:#fff;font-weight: 600;font-size:14px;cursor:pointer;">Confirm</button>
+                <button type="button" onclick="submitGateCode()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#E8A33D;color:#241705;font-weight: 700;font-size:14px;cursor:pointer;">Confirm</button>
             </div>
         </div>
         <div class="login-card" id="login-box" style="display:none;">
             <div class="login-card-left login-box">
                 <div class="logo-icon">
-                    <svg class="ui-icon" style="width:20px;height:20px;stroke:#fff;"><use href="#icon-shield"></use></svg>
+                    <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v8M9.5 10.2c0-1.2 1.1-2.2 2.5-2.2s2.5 1 2.5 2.2c0 2.4-5 1.8-5 4.3 0 1.2 1.1 2.2 2.5 2.2s2.5-1 2.5-2.2"></path></svg>
                 </div>
 
                 <!-- Step 1: email + password -->
                 <div id="step-login">
-                    <h2>Login</h2>
-                    <p class="sub">Sign in to manage orders, games &amp; G2Bulk</p>
+                    <h2>Access Console</h2>
+                    <p class="sub">Sign in to manage orders, top-ups &amp; vouchers</p>
                     <p id="login-error" class="login-msg-error"></p>
                     <form id="login-form" onsubmit="handleAdminLogin(); return false;">
                         <label for="login-username">Username</label>
-                        <input type="text" id="login-username" autocomplete="username" placeholder="Enter your username" autocapitalize="none" autocorrect="off" style="margin-bottom:16px;">
+                        <input type="text" id="login-username" autocomplete="username" placeholder="Enter your username" autocapitalize="none" autocorrect="off" style="margin-bottom:18px;">
                         <div class="field-row">
                             <label for="login-password" style="margin-bottom:0;">Password</label>
                             <button type="button" class="forgot-link" onclick="handleForgotPassword()">Forgot password?</button>
@@ -1659,7 +1669,7 @@
                             <input type="checkbox" id="login-remember-me">
                             <label for="login-remember-me">Remember me</label>
                         </div>
-                        <button type="submit" id="login-btn">Login</button>
+                        <button type="submit" id="login-btn">Sign In</button>
                     </form>
                 </div>
 
@@ -1670,7 +1680,7 @@
                     <div id="mfa-qr-box" style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:12px;margin:10px 0;">
                         <div id="mfa-qr-code"></div>
                     </div>
-                    <p class="login-msg-hint" style="text-align:center;">Can't scan? <button type="button" onclick="toggleMfaManualKey()" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Enter key manually</button></p>
+                    <p class="login-msg-hint" style="text-align:center;">Can't scan? <button type="button" onclick="toggleMfaManualKey()" style="background:none;border:none;color:var(--lg-brass);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Enter key manually</button></p>
                     <div class="mfa-secret-box" id="mfa-secret-box" style="display:none;">
                         <span id="mfa-secret-key">—</span>
                         <button type="button" class="login-secondary-btn" style="margin-top:8px;padding:6px 14px;font-size:12px;" onclick="copyMfaSecret('mfa-secret-key', this)">Copy key</button>
@@ -1720,110 +1730,6 @@
                     <svg class="ui-icon"><use href="#icon-lock"></use></svg>
                     Secured with 2-step verification
                 </p>
-            </div>
-
-            <!-- Right panel: decorative dashboard illustration, echoes the
-                 reference mock's "progress" visual but themed to order tracking. -->
-            <div class="login-card-right">
-                <div class="login-illustration" aria-hidden="true">
-                    <svg viewBox="0 0 190 190" fill="none">
-                        <defs>
-                            <radialGradient id="meshBlobA" cx="35%" cy="30%" r="65%">
-                                <stop offset="0%" stop-color="#6FA3FF" stop-opacity="0.55"/>
-                                <stop offset="100%" stop-color="#6FA3FF" stop-opacity="0"/>
-                            </radialGradient>
-                            <radialGradient id="meshBlobB" cx="65%" cy="70%" r="60%">
-                                <stop offset="0%" stop-color="#A855F7" stop-opacity="0.4"/>
-                                <stop offset="100%" stop-color="#A855F7" stop-opacity="0"/>
-                            </radialGradient>
-                            <radialGradient id="meshBlobC" cx="70%" cy="25%" r="55%">
-                                <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.35"/>
-                                <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
-                            </radialGradient>
-                            <radialGradient id="planetGrad" cx="38%" cy="35%" r="72%">
-                                <stop offset="0%" stop-color="#4C9AFF"/>
-                                <stop offset="55%" stop-color="#1E4FD9"/>
-                                <stop offset="100%" stop-color="#050B23"/>
-                            </radialGradient>
-                            <linearGradient id="ringGradBack" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0"/>
-                                <stop offset="50%" stop-color="#7DE8FF" stop-opacity="0.8"/>
-                                <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
-                            </linearGradient>
-                            <linearGradient id="ringGradFront" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stop-color="#BFF2FF" stop-opacity="0"/>
-                                <stop offset="50%" stop-color="#EAFBFF" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#BFF2FF" stop-opacity="0"/>
-                            </linearGradient>
-                            <filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
-                                <feGaussianBlur stdDeviation="1.3" result="blur"/>
-                                <feMerge>
-                                    <feMergeNode in="blur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                        </defs>
-
-                        <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobA)"/>
-                        <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobB)"/>
-                        <rect x="0" y="0" width="190" height="190" fill="url(#meshBlobC)"/>
-
-                        <!-- static + twinkling stars -->
-                        <g fill="#ffffff">
-                            <circle cx="20" cy="24" r="1" opacity="0.5"/>
-                            <circle cx="168" cy="30" r="1.2" class="twinkle"/>
-                            <circle cx="150" cy="152" r="1" opacity="0.4"/>
-                            <circle cx="24" cy="142" r="1.3" class="twinkle"/>
-                            <circle cx="95" cy="12" r="0.9" opacity="0.5"/>
-                            <circle cx="178" cy="95" r="1" class="twinkle"/>
-                            <circle cx="12" cy="95" r="0.9" opacity="0.4"/>
-                        </g>
-
-                        <!-- ring: back half (behind the planet) -->
-                        <g transform="rotate(-18 95 95)">
-                            <ellipse cx="95" cy="95" rx="80" ry="21" fill="none" stroke="url(#ringGradBack)" stroke-width="2.6" opacity="0.75" filter="url(#ringGlow)"/>
-                        </g>
-
-                        <!-- planet body with a soft terminator shadow -->
-                        <circle cx="95" cy="95" r="40" fill="url(#planetGrad)"/>
-                        <path d="M95 55a40 40 0 0 1 0 80 44 44 0 0 0 0-80z" fill="#000814" opacity="0.35"/>
-
-                        <!-- ring: front arc (passes over the planet's lower half) -->
-                        <g transform="rotate(-18 95 95)">
-                            <ellipse cx="95" cy="95" rx="80" ry="21" fill="none" stroke="url(#ringGradFront)" stroke-width="2.8" stroke-dasharray="167 168" opacity="0.95" filter="url(#ringGlow)"/>
-                        </g>
-
-                        <!-- orbiting stones, rotating together around the planet -->
-                        <g class="orbit-group">
-                            <g transform="translate(95 95) rotate(0) translate(85 0)">
-                                <polygon points="-3,-2 2,-3 4,1 1,4 -3,2" fill="#2B3352"/>
-                            </g>
-                            <g transform="translate(95 95) rotate(48) translate(70 0)">
-                                <polygon points="-2,-2 2,-2 3,1 0,3 -3,1" fill="#3A4468"/>
-                            </g>
-                            <g transform="translate(95 95) rotate(95) translate(87 0)">
-                                <polygon points="-2,-1 1,-3 3,0 2,3 -2,2" fill="#232A47"/>
-                            </g>
-                            <g transform="translate(95 95) rotate(150) translate(76 0)">
-                                <polygon points="-3,0 -1,-3 2,-2 3,1 0,3" fill="#3A4468"/>
-                            </g>
-                            <g transform="translate(95 95) rotate(205) translate(86 0)">
-                                <polygon points="-2,-2 2,-2 3,0 1,3 -2,2" fill="#2B3352"/>
-                            </g>
-                            <g transform="translate(95 95) rotate(260) translate(72 0)">
-                                <polygon points="-2,0 0,-3 3,-1 2,2 -1,3" fill="#454F79"/>
-                            </g>
-                            <g transform="translate(95 95) rotate(310) translate(82 0)">
-                                <polygon points="-3,-1 1,-3 3,1 0,3 -2,1" fill="#2B3352"/>
-                            </g>
-                        </g>
-                    </svg>
-                </div>
-                <h3>Track Every Order in Real Time</h3>
-                <p>Manage games, top-ups &amp; G2Bulk deliveries — all from one secured dashboard.</p>
-                <div class="login-dots">
-                    <span class="active"></span><span></span><span></span>
-                </div>
             </div>
         </div>
     </div>
@@ -2776,7 +2682,7 @@
                 <div class="api-doc-info">
                     <span class="api-doc-title">ImgBB API Key</span>
                 </div>
-                <span class="api-doc-static-key" id="imgbb-key-display" onclick="toggleImgBBKeyReveal()">••••••••</span>
+                <span class="api-doc-static-key">Server-side (Worker)</span>
             </div>
         </div>
 
@@ -5201,19 +5107,11 @@
             appId: "1:666629360027:web:23dcf1dc1f9ebeb86cb93e"
         };
 
-        // Free image hosting for game photos (no Firebase Storage / Blaze plan needed).
-        // Get your own free key at https://api.imgbb.com/ (email signup, ~1 minute, no card).
-        const IMGBB_API_KEY = "3c061bbc2b77dfb4bcb5d9b8e6509a33";
-
-        // The ImgBB key is a hardcoded constant (not a Firestore setting like the
-        // others), so it's just displayed - masked by default, tap to reveal.
-        let imgbbKeyRevealed = false;
-        function toggleImgBBKeyReveal() {
-            imgbbKeyRevealed = !imgbbKeyRevealed;
-            const el = document.getElementById('imgbb-key-display');
-            if (el) el.innerText = imgbbKeyRevealed ? IMGBB_API_KEY : '•'.repeat(Math.min(IMGBB_API_KEY.length, 20));
-        }
-        window.toggleImgBBKeyReveal = toggleImgBBKeyReveal;
+        // Free image hosting for game/admin photos (no Firebase Storage / Blaze
+        // plan needed). Uploads go through the imgbb-functions Cloudflare Worker
+        // instead of calling api.imgbb.com directly, so the ImgBB API key stays
+        // server-side (same pattern as store.html) instead of sitting in this file.
+        const IMGBB_UPLOAD_URL = 'https://imgbb-functions.pca-game-store.workers.dev';
 
         const app = initializeApp(firebaseConfig);
         // Using initializeFirestore (not the plain getFirestore) so we can pass
@@ -5461,7 +5359,7 @@
         async function uploadAdminAvatarToImgBB(file) {
             const form = new FormData();
             form.append('image', file);
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: form });
+            const res = await fetch(IMGBB_UPLOAD_URL, { method: 'POST', body: form });
             const data = await res.json();
             if (!data.success) throw new Error(data.error?.message || 'Avatar upload failed');
             return data.data.url;
@@ -11300,12 +11198,9 @@
         // element ID — package rows are created dynamically so there's no single
         // #id to write status text into.
         async function uploadPackageImageToImgBB(file) {
-            if (!IMGBB_API_KEY || IMGBB_API_KEY === "YOUR_IMGBB_API_KEY") {
-                throw new Error("Add your free ImgBB API key first (see IMGBB_API_KEY at the top of the Firebase script). Get one at https://api.imgbb.com/");
-            }
             const form = new FormData();
             form.append('image', file);
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: form });
+            const res = await fetch(IMGBB_UPLOAD_URL, { method: 'POST', body: form });
             const data = await res.json();
             if (!data.success) throw new Error(data.error?.message || 'Upload failed');
             return data.data.url;
@@ -12175,9 +12070,6 @@
         // Uploads a phone photo to a free image host (ImgBB) and resolves with its direct URL.
         // No Firebase Storage / Blaze plan involved.
         async function uploadImageToImgBB(file, statusElId = 'upload-status') {
-            if (!IMGBB_API_KEY || IMGBB_API_KEY === "YOUR_IMGBB_API_KEY") {
-                throw new Error("Add your free ImgBB API key first (see IMGBB_API_KEY at the top of the Firebase script). Get one at https://api.imgbb.com/");
-            }
             const statusEl = document.getElementById(statusElId);
             statusEl.style.display = 'block';
             statusEl.innerText = 'Uploading photo...';
@@ -12185,7 +12077,7 @@
             const form = new FormData();
             form.append('image', file);
 
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            const res = await fetch(IMGBB_UPLOAD_URL, {
                 method: 'POST',
                 body: form
             });
