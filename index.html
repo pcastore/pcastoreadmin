@@ -222,40 +222,40 @@
         /* ===== Login gate — "Access Ticket" redesign ==========================
            Concept: PCA Store's whole business is redeeming digital vouchers
            and top-up codes, so the login card borrows that object's own
-           language — a perforated ticket-stub edge, a brass token mark,
-           ledger-line fields — instead of a generic SaaS split-panel with a
-           decorative illustration. Warm ink + brass palette, one accent color
-           doing all the work. Single centered card (no dual-column hero),
-           one page-load entrance, no per-field hover flourish. */
+           language — a perforated ticket-stub edge, a token mark, ledger-line
+           fields — instead of a generic SaaS split-panel with a decorative
+           illustration. Light Purple + White palette, one accent color doing
+           all the work. Single centered card (no dual-column hero), one
+           page-load entrance, no per-field hover flourish. */
         :root {
-            --lg-ink-0: #15121C;
-            --lg-ink-1: #1C1722;
-            --lg-ink-2: #241D2B;
-            --lg-line: rgba(232,163,61,0.16);
-            --lg-brass: #E8A33D;
-            --lg-brass-deep: #C97F1E;
-            --lg-jade: #3ED9A0;
-            --lg-text: #F5EEE0;
-            --lg-muted: #9A8FA0;
+            --lg-ink-0: #F3EFFC;
+            --lg-ink-1: #FFFFFF;
+            --lg-ink-2: #F6F1FE;
+            --lg-line: rgba(124,58,237,0.14);
+            --lg-brass: #8B5CF6;
+            --lg-brass-deep: #6D28D9;
+            --lg-jade: #7C3AED;
+            --lg-text: #2E1F45;
+            --lg-muted: #8C80A6;
         }
         /* Login gate — covers the whole admin panel until an authenticated
            admin signs in. Nothing behind it loads/queries Firestore before that. */
         #login-screen {
             position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px;
-            background: radial-gradient(120% 100% at 50% 0%, var(--lg-ink-1) 0%, var(--lg-ink-0) 55%, #0A0810 100%);
+            background: radial-gradient(120% 100% at 50% 0%, #FBF9FF 0%, var(--lg-ink-0) 55%, #ECE3FB 100%);
             overflow: hidden;
         }
         #login-screen.hidden { display: none; }
         @keyframes gateDotBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
 
-        /* Static gradient-mesh backdrop — soft warm blobs, no motion. */
+        /* Static gradient-mesh backdrop — soft lavender blobs, no motion. */
         .login-mesh {
             position: absolute; inset: 0; z-index: 0; pointer-events: none;
             background:
-                radial-gradient(38% 32% at 12% 10%, rgba(232,163,61,0.16) 0%, transparent 70%),
-                radial-gradient(42% 34% at 90% 18%, rgba(62,217,160,0.08) 0%, transparent 72%),
-                radial-gradient(40% 34% at 20% 94%, rgba(201,127,30,0.14) 0%, transparent 70%),
-                radial-gradient(44% 36% at 94% 90%, rgba(232,163,61,0.1) 0%, transparent 70%);
+                radial-gradient(38% 32% at 12% 10%, rgba(139,92,246,0.16) 0%, transparent 70%),
+                radial-gradient(42% 34% at 90% 18%, rgba(196,181,253,0.3) 0%, transparent 72%),
+                radial-gradient(40% 34% at 20% 94%, rgba(109,40,217,0.1) 0%, transparent 70%),
+                radial-gradient(44% 36% at 94% 90%, rgba(216,180,254,0.28) 0%, transparent 70%);
             filter: blur(4px);
         }
         @keyframes ticketRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -268,7 +268,7 @@
             border: 1px solid var(--lg-line);
             -webkit-backdrop-filter: blur(20px) saturate(140%);
             backdrop-filter: blur(20px) saturate(140%);
-            box-shadow: 0 40px 90px -24px rgba(0,0,0,0.75), 0 0 60px -20px rgba(232,163,61,0.18), inset 0 1px 0 rgba(255,255,255,0.04);
+            box-shadow: 0 40px 90px -24px rgba(109,40,217,0.16), 0 0 60px -20px rgba(139,92,246,0.22), inset 0 1px 0 rgba(255,255,255,0.7);
             animation: ticketRise 0.5s cubic-bezier(0.16,1,0.3,1);
         }
         /* Perforation strip: a row of punched half-circles cut from the card's
@@ -281,16 +281,16 @@
         }
         .login-card::after {
             content: ''; display: block; height: 0; margin: 0 18px 0;
-            border-top: 1.5px dashed rgba(232,163,61,0.28);
+            border-top: 1.5px dashed rgba(124,58,237,0.22);
         }
         .login-card-left { padding: 22px 30px 40px; display: flex; flex-direction: column; min-width: 0; }
         .login-box .logo-icon {
             width: 46px; height: 46px; border-radius: 50%; margin: 4px auto 16px;
             display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(circle at 32% 28%, #FFD98C 0%, var(--lg-brass) 45%, var(--lg-brass-deep) 100%);
-            box-shadow: 0 0 0 4px rgba(232,163,61,0.12), 0 10px 22px -6px rgba(232,163,61,0.55);
+            background: radial-gradient(circle at 32% 28%, #C4B5FD 0%, var(--lg-brass) 45%, var(--lg-brass-deep) 100%);
+            box-shadow: 0 0 0 4px rgba(139,92,246,0.14), 0 10px 22px -6px rgba(139,92,246,0.45);
         }
-        .login-box .logo-icon svg { width: 22px; height: 22px; stroke: #241705; }
+        .login-box .logo-icon svg { width: 22px; height: 22px; stroke: #ffffff; }
         .login-box h2 { font-family: 'Space Grotesk', 'Poppins', sans-serif; text-align: center; font-size: 23px; font-weight: 700; color: var(--lg-text); margin-bottom: 6px; letter-spacing: -0.2px; }
         .login-box p.sub { text-align: center; font-size: 12.5px; color: var(--lg-muted); margin-bottom: 26px; line-height: 1.5; }
         .login-box label { font-size: 11.5px; font-weight: 500; color: var(--lg-muted); display: block; margin-bottom: 7px; }
@@ -306,7 +306,7 @@
         }
         .login-box .field-wrap input { margin-bottom: 0; }
         .login-box .field-wrap.has-toggle input { padding-right: 36px; }
-        .login-box input::placeholder { color: rgba(154,143,160,0.55); }
+        .login-box input::placeholder { color: rgba(140,128,166,0.75); }
         .login-box input:focus { outline: none; border-color: var(--lg-brass); }
         .login-box .pw-toggle-btn {
             position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 32px; height: 32px;
@@ -320,20 +320,20 @@
         .login-box .remember-row label { font-size: 13px; color: var(--lg-muted); margin: 0; cursor: pointer; }
         .login-box button {
             width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 15px; border: none;
-            background: linear-gradient(180deg, #F0B454 0%, var(--lg-brass) 55%, var(--lg-brass-deep) 100%); color: #241705; cursor: pointer;
-            box-shadow: 0 10px 24px -8px rgba(232,163,61,0.6);
+            background: linear-gradient(180deg, #A78BFA 0%, var(--lg-brass) 55%, var(--lg-brass-deep) 100%); color: #ffffff; cursor: pointer;
+            box-shadow: 0 10px 24px -8px rgba(139,92,246,0.5);
             transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
         .login-box button:active { transform: translateY(1px); }
         .login-box button:disabled { opacity: 0.55; box-shadow: none; }
         .login-box .login-footnote { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 20px; font-size: 11.5px; color: var(--lg-muted); }
         .login-box .login-footnote svg { width: 13px; height: 13px; color: var(--lg-jade); }
-        #login-error { color: #FF8A8A; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
-        .login-msg-error { color: #FF8A8A; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        #login-error { color: #E11D48; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
+        .login-msg-error { color: #E11D48; font-size: 13px; margin-bottom: 10px; display: none; text-align: center; }
         .login-msg-info { font-size: 13px; color: var(--lg-text); text-align: center; margin-bottom: 16px; line-height: 1.5; }
         .login-msg-hint { font-size: 12px; color: var(--lg-muted); text-align: center; margin: -6px 0 14px; }
-        .login-secondary-btn { background: rgba(255,255,255,0.05) !important; color: var(--lg-text) !important; margin-top: 8px; box-shadow: none !important; border: 1px solid var(--lg-line) !important; }
-        .mfa-secret-box { background: rgba(255,255,255,0.04); border: 1px dashed var(--lg-line); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
+        .login-secondary-btn { background: var(--lg-ink-2) !important; color: var(--lg-text) !important; margin-top: 8px; box-shadow: none !important; border: 1px solid var(--lg-line) !important; }
+        .mfa-secret-box { background: var(--lg-ink-2); border: 1px dashed var(--lg-line); border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 10px; word-break: break-all; }
         .mfa-secret-box span { font-family: 'Courier New', monospace; font-size: 15px; font-weight: 600; letter-spacing: 1px; color: var(--lg-brass); }
         /* Segmented 6-digit OTP input — replaces the old single free-text field.
            Bigger tap targets and auto-advance make entry far less error-prone
@@ -343,18 +343,18 @@
         .otp-box {
             width: 15%; max-width: 46px; aspect-ratio: 1 / 1; padding: 0; text-align: center;
             font-size: 20px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 0;
-            border: 1.5px solid var(--lg-line); background: rgba(255,255,255,0.03);
+            border: 1.5px solid var(--lg-line); background: var(--lg-ink-2);
             color: var(--lg-text); border-radius: 11px; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
         }
-        .otp-box:focus { outline: none; border-color: var(--lg-brass); background: rgba(255,255,255,0.06); box-shadow: 0 0 0 3px rgba(232,163,61,0.16); }
-        .otp-box.otp-filled { border-color: rgba(232,163,61,0.5); }
+        .otp-box:focus { outline: none; border-color: var(--lg-brass); background: #ffffff; box-shadow: 0 0 0 3px rgba(139,92,246,0.16); }
+        .otp-box.otp-filled { border-color: rgba(139,92,246,0.5); }
         .otp-paste-btn {
             width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
             padding: 10px; margin-bottom: 16px; border-radius: 10px; font-weight: 600; font-size: 13px;
-            border: 1px solid rgba(232,163,61,0.3); background: rgba(232,163,61,0.08); color: var(--lg-brass); cursor: pointer;
+            border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.08); color: var(--lg-brass); cursor: pointer;
             transition: background 0.15s ease;
         }
-        .otp-paste-btn:hover { background: rgba(232,163,61,0.15); }
+        .otp-paste-btn:hover { background: rgba(139,92,246,0.15); }
         .otp-paste-btn svg { width: 15px; height: 15px; }
 
 
@@ -1439,6 +1439,18 @@
            (see canManageAdmins()). Looks like a switched-off control. */
         .role-toggle-opt[disabled] { cursor: not-allowed; opacity: 0.5; }
         .role-toggle-opt[disabled].active { opacity: 0.85; }
+
+        /* ---- Roles & Permissions overview (Settings) ---- */
+        .roles-legend-chip { display: flex; gap: 8px; align-items: baseline; font-size: 12px; line-height: 1.4; }
+        .roles-legend-chip b { flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); }
+        .roles-legend-chip span { color: var(--text-secondary); }
+        .roles-overview-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--fill-soft); }
+        .roles-overview-row:last-child { border-bottom: none; }
+        .roles-overview-row .roles-overview-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .roles-overview-badges { display: flex; gap: 5px; flex-shrink: 0; }
+        .role-badge { font-size: 10.5px; font-weight: 700; padding: 3px 7px; border-radius: 6px; white-space: nowrap; display: flex; align-items: center; gap: 3px; }
+        .role-badge-on { background: var(--accent-soft); color: var(--accent); }
+        .role-badge-off { background: var(--fill-soft); color: var(--text-muted); opacity: 0.7; }
         .pkg-img-remove { flex-shrink: 0; font-size: 11px; color: var(--danger); cursor: pointer; white-space: nowrap; }
         .pkg-profit-badge.negative { background: var(--danger-soft); color: var(--danger-strong); }
         .pkg-cost-update-btn { margin-top: 4px; width: 100%; border: none; border-radius: 6px; padding: 5px 6px; font-size: 11px; font-weight: 600; color: #fff; background: #FF9500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; animation: pkgUpdatePulse 1.4s ease-in-out infinite; }
@@ -1626,19 +1638,19 @@
              casual visitors. The real boundary is Firebase Auth + the TOTP
              step + Firestore rules. -->
         <div id="gate-decoy-row" style="position:relative;z-index:1;display:flex;align-items:center;gap:10px;padding:14px 22px;user-select:none;">
-            <span aria-hidden="true" style="color:rgba(255,255,255,0.3);font-size:15px;line-height:1;cursor:default;">→</span>
+            <span aria-hidden="true" style="color:rgba(46,31,69,0.28);font-size:15px;line-height:1;cursor:default;">→</span>
             <button type="button" id="gate-dot-btn" onclick="openGateCodeModal()" style="width:9px;height:9px;padding:0;border:none;border-radius:50%;background:#FF3B3B;box-shadow:0 0 6px 1px rgba(255,59,59,0.7);animation:gateDotBlink 2.2s ease-in-out infinite;cursor:pointer;"></button>
         </div>
         <!-- Code prompt: appears above the login-screen (higher z-index) when
              the dot is tapped. Correct code hides this + the decoy row and
              reveals login-box, same end state the old tap-counter used to
              reach. -->
-        <div id="gate-code-overlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:24px;" onclick="if(event.target===this) closeGateCodeModal()">
-            <div style="background:rgba(28,23,34,0.92);border:1px solid rgba(232,163,61,0.16);border-radius:20px;padding:22px 20px;width:100%;max-width:280px;text-align:center;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 30px 70px -20px rgba(0,0,0,0.7);">
-                <p style="color:#F5EEE0;font-size:14px;font-weight: 600;margin-bottom:14px;">Enter code</p>
-                <input type="text" inputmode="numeric" id="gate-code-input" maxlength="8" autocomplete="off" style="width:100%;text-align:center;letter-spacing:4px;font-size:18px;padding:10px;border-radius:10px;border:1px solid rgba(232,163,61,0.2);background:rgba(255,255,255,0.05);color:#F5EEE0;margin-bottom:12px;">
-                <p id="gate-code-error" style="display:none;color:#FF6B6B;font-size:12px;margin-bottom:10px;">Wrong code</p>
-                <button type="button" onclick="submitGateCode()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#E8A33D;color:#241705;font-weight: 700;font-size:14px;cursor:pointer;">Confirm</button>
+        <div id="gate-code-overlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(46,31,69,0.35);align-items:center;justify-content:center;padding:24px;" onclick="if(event.target===this) closeGateCodeModal()">
+            <div style="background:rgba(255,255,255,0.96);border:1px solid rgba(124,58,237,0.16);border-radius:20px;padding:22px 20px;width:100%;max-width:280px;text-align:center;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 30px 70px -20px rgba(109,40,217,0.35);">
+                <p style="color:#2E1F45;font-size:14px;font-weight: 600;margin-bottom:14px;">Enter code</p>
+                <input type="text" inputmode="numeric" id="gate-code-input" maxlength="8" autocomplete="off" style="width:100%;text-align:center;letter-spacing:4px;font-size:18px;padding:10px;border-radius:10px;border:1px solid rgba(124,58,237,0.25);background:#F6F1FE;color:#2E1F45;margin-bottom:12px;">
+                <p id="gate-code-error" style="display:none;color:#E11D48;font-size:12px;margin-bottom:10px;">Wrong code</p>
+                <button type="button" onclick="submitGateCode()" style="width:100%;padding:10px;border:none;border-radius:10px;background:#8B5CF6;color:#ffffff;font-weight: 700;font-size:14px;cursor:pointer;">Confirm</button>
             </div>
         </div>
         <div class="login-card" id="login-box" style="display:none;">
@@ -2450,20 +2462,48 @@
                 </div>
             </div>
 
+            <!-- Roles & Permissions overview: read-only reference showing
+                 exactly what each built-in Access level (Full/Product/Account)
+                 sees by default, so an owner can check this before assigning
+                 a role instead of guessing. Pulled live from the same
+                 NAV_GROUPS_BY_ROLE / NAV_GROUP_LABELS constants that actually
+                 enforce access — see renderRolesOverview() — so it can never
+                 drift out of sync with the real behaviour. Full Access only,
+                 same as Admin Accounts below. -->
+            <div class="admin-card" style="margin-top:14px;" id="roles-overview-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleRolesOverview()">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-shield"></use></svg>
+                        <span style="font-size:15px;font-weight: 600;">Roles &amp; Permissions</span>
+                    </div>
+                    <svg class="ui-icon" id="roles-overview-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="roles-overview-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">What each Access level sees by default. A per-admin override below (tap their card) can grant or hide any section on top of this.</p>
+                    <div id="roles-overview-legend" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+                    <div id="roles-overview-list" style="display:flex;flex-direction:column;"></div>
+                </div>
+            </div>
+
             <!-- Admin Accounts: list every admin (username, email, 2FA status,
                  last login) plus a count, and a way to add a new admin. Full
                  Access only — see canManageAdmins() / renderAdminAccountsList. -->
             <div class="admin-card" style="margin-top:14px;" id="admin-accounts-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAdminAccounts()">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-users"></use></svg>
                         <span style="font-size:15px;font-weight: 600;">Admin Accounts</span>
                         <span id="admin-accounts-count" style="font-size:11.5px;font-weight: 700;padding:2px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);">0</span>
                     </div>
-                    <button class="btn btn-primary" id="add-admin-btn" style="flex:unset;padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="openAddAdminModal()">+ Add Admin</button>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button class="btn btn-primary" id="add-admin-btn" style="flex:unset;padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="event.stopPropagation();openAddAdminModal()">+ Add Admin</button>
+                        <svg class="ui-icon" id="admin-accounts-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;flex-shrink:0;"><use href="#icon-chevron-down"></use></svg>
+                    </div>
                 </div>
-                <div id="admin-accounts-list" style="margin-top:12px;">
-                    <p class="empty-msg">Loading admins...</p>
+                <div id="admin-accounts-body" style="display:none;margin-top:12px;">
+                    <div id="admin-accounts-list">
+                        <p class="empty-msg">Loading admins...</p>
+                    </div>
                 </div>
             </div>
 
@@ -2472,15 +2512,18 @@
                  on top of the fixed role rules above. Full Access only —
                  see canManageAdmins() / renderTabAccessSettings(). -->
             <div class="admin-card" style="margin-top:14px;" id="tab-access-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleTabAccess()">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-shield"></use></svg>
                         <span style="font-size:15px;font-weight: 600;">Tab Access</span>
                     </div>
+                    <svg class="ui-icon" id="tab-access-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
-                <p style="font-size:12px;color:var(--text-secondary);margin:8px 0 12px;">Choose which sidebar sections Product/Account admins can open. Full Access admins always see everything.</p>
-                <div id="tab-access-list" style="display:flex;flex-direction:column;gap:2px;"></div>
-                <button class="btn btn-primary" id="save-tab-access-btn" style="margin-top:10px;" onclick="saveTabAccessSettings()">Save Tab Access</button>
+                <div id="tab-access-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Choose which sidebar sections Product/Account admins can open. Full Access admins always see everything.</p>
+                    <div id="tab-access-list" style="display:flex;flex-direction:column;gap:2px;"></div>
+                    <button class="btn btn-primary" id="save-tab-access-btn" style="margin-top:10px;" onclick="saveTabAccessSettings()">Save Tab Access</button>
+                </div>
             </div>
         </div>
 
@@ -4455,7 +4498,7 @@
         // too — API Keys/docs are Full-Access-only regardless of role (see
         // the 'API Keys' filter in renderNavGroupSheet below).
         const ACCOUNT_ROLE_PAGES = ['account-dashboard', 'account-list', 'supportchat-list', 'payment-list'];
-        const PRODUCT_ROLE_BLOCKED_PAGES = ['account-dashboard', 'account-list', 'api-docs'];
+        const PRODUCT_ROLE_BLOCKED_PAGES = ['account-dashboard', 'account-list', 'api-docs', 'supportchat-list'];
         // Lets a per-admin Access Permission override (adminUsernames/{username}
         // .permissions, set from the Admin Permissions modal — see
         // openAdminPermissionsModal) grant a page the admin's preset Access
@@ -4603,7 +4646,14 @@
         const ALL_NAV_GROUPS = ['group-dashboard', 'group-game', 'group-account', 'group-wallet', 'group-api', 'group-userlist', 'group-supportchat', 'group-setting'];
         const NAV_GROUPS_BY_ROLE = {
             full: ALL_NAV_GROUPS,
-            product: ['group-dashboard', 'group-game', 'group-wallet', 'group-api', 'group-userlist', 'group-supportchat', 'group-setting'],
+            // 'group-supportchat' removed: the general Support Chat inbox
+            // (supportChats collection, opened from the store's sidebar
+            // "Support Chat") now reaches Full Access only — see
+            // visibleAccountChats()/activeSupportChatCollection() and the
+            // matching PRODUCT_ROLE_BLOCKED_PAGES entry below. A Product
+            // admin who genuinely needs it can still be granted it
+            // individually via that admin's Access Permission overrides.
+            product: ['group-dashboard', 'group-game', 'group-wallet', 'group-api', 'group-userlist', 'group-setting'],
             account: ['group-account', 'group-wallet', 'group-supportchat']
         };
         // Which page a non-Full-Access admin lands on if the group they were
@@ -4627,6 +4677,54 @@
             'group-wallet': 'Wallet', 'group-api': 'API', 'group-userlist': 'Userlist',
             'group-supportchat': 'Support Chat', 'group-setting': 'Setting'
         };
+
+        // One-line description per built-in role, shown above the matrix.
+        // Purely descriptive text — NAV_GROUPS_BY_ROLE above is what's
+        // actually enforced; keep this in sync by hand if that ever changes.
+        const ROLE_DESCRIPTIONS = {
+            full: 'Sees and can manage everything, including other admins.',
+            product: 'Catalogue, orders, wallet &amp; API — no customer accounts, no raw API keys.',
+            account: 'Customer accounts, wallet payments &amp; support chat only.'
+        };
+        const ROLE_LABELS = { full: 'Full', product: 'Product', account: 'Account' };
+
+        // Read-only reference table: which of the 3 built-in roles sees each
+        // sidebar section by default. Built straight from NAV_GROUPS_BY_ROLE /
+        // NAV_GROUP_LABELS (the same constants applyRoleRestrictions() itself
+        // reads), so this can never show something the app doesn't actually do.
+        // A per-admin override (Admin Accounts → tap a card) can still grant
+        // or hide any section on top of whatever this shows.
+        function renderRolesOverview() {
+            const legend = document.getElementById('roles-overview-legend');
+            if (legend) {
+                legend.innerHTML = Object.keys(ROLE_LABELS).map(role => `
+                    <div class="roles-legend-chip"><b>${ROLE_LABELS[role]}</b><span>${ROLE_DESCRIPTIONS[role]}</span></div>
+                `).join('');
+            }
+            const list = document.getElementById('roles-overview-list');
+            if (!list) return;
+            list.innerHTML = ALL_NAV_GROUPS.map(groupId => {
+                const badges = Object.keys(ROLE_LABELS).map(role => {
+                    const on = (NAV_GROUPS_BY_ROLE[role] || []).includes(groupId);
+                    return `<span class="role-badge ${on ? 'role-badge-on' : 'role-badge-off'}">${on ? '✓' : '✕'} ${ROLE_LABELS[role]}</span>`;
+                }).join('');
+                return `
+                <div class="roles-overview-row">
+                    <span class="roles-overview-label">${NAV_GROUP_LABELS[groupId] || groupId}</span>
+                    <div class="roles-overview-badges">${badges}</div>
+                </div>`;
+            }).join('');
+        }
+        window.renderRolesOverview = renderRolesOverview;
+
+        function toggleRolesOverview() {
+            const body = document.getElementById('roles-overview-body');
+            const chevron = document.getElementById('roles-overview-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleRolesOverview = toggleRolesOverview;
         let TAB_ACCESS_SETTINGS = {};
         let tabAccessListenerAttached = false;
         function isTabAllowedByOwner(groupId) {
@@ -4654,6 +4752,15 @@
                 </div>`).join('');
         }
         window.renderTabAccessSettings = renderTabAccessSettings;
+
+        function toggleTabAccess() {
+            const body = document.getElementById('tab-access-body');
+            const chevron = document.getElementById('tab-access-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleTabAccess = toggleTabAccess;
         async function saveTabAccessSettings() {
             if (!canManageAdmins()) { window.showToast('Only Full Access admins can change tab access.', 'fail'); return; }
             const list = document.getElementById('tab-access-list');
@@ -4680,7 +4787,7 @@
         const SETTINGS_CARDS_OWNER_ONLY = [
             'settings-card-sociallinks', 'settings-card-referral', 'settings-card-flashsale',
             'settings-card-branding', 'settings-card-walletexpire', 'settings-card-receiptstyle',
-            'settings-card-autoprice', 'settings-card-adminlogin', 'admin-accounts-card', 'tab-access-card'
+            'settings-card-autoprice', 'settings-card-adminlogin', 'roles-overview-card', 'admin-accounts-card', 'tab-access-card'
         ];
         function applySettingsCardVisibility() {
             const isOwner = currentAdminRole === 'full';
@@ -5393,12 +5500,15 @@
 
         function renderAdminAccountsList() {
             const card = document.getElementById('admin-accounts-card');
+            const rolesCard = document.getElementById('roles-overview-card');
             // Only a Full Access admin may see or manage the admin list at
             // all — a Product/Account-scoped admin who happens to reach
             // Settings gets no trace of it. See canManageAdmins().
             const canManage = canManageAdmins();
             if (card) card.style.display = canManage ? '' : 'none';
+            if (rolesCard) rolesCard.style.display = canManage ? '' : 'none';
             if (!canManage) return;
+            renderRolesOverview();
             const container = document.getElementById('admin-accounts-list');
             const countEl = document.getElementById('admin-accounts-count');
             if (countEl) countEl.textContent = String(ADMIN_ACCOUNTS.length);
@@ -5466,6 +5576,15 @@
             }).join('');
         }
         window.renderAdminAccountsList = renderAdminAccountsList;
+
+        function toggleAdminAccounts() {
+            const body = document.getElementById('admin-accounts-body');
+            const chevron = document.getElementById('admin-accounts-chevron');
+            const isOpen = body.style.display !== 'none';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleAdminAccounts = toggleAdminAccounts;
 
         // ---------- Admin Permissions modal (per-admin group toggles) ----------
         // Opened by tapping an admin's card (see renderAdminAccountsList).
@@ -5806,6 +5925,7 @@
             document.getElementById('step-mfa-challenge').style.display = 'none';
             document.getElementById('login-password').value = '';
             applyRememberedUsername();
+            applyLockoutUI('login', 'login-btn', 'login-error', 'Sign In');
         }
 
         // ---------- TOTP (Google Authenticator compatible), pure Web Crypto ----------
@@ -6026,6 +6146,77 @@
         window.toggleSecretVisibility = toggleSecretVisibility;
 
         const REMEMBER_USERNAME_KEY = 'pca_admin_remember_username';
+
+        // ---------- Failed-attempt lockout (brute-force friction) ----------
+        // Applies to both the username/password step and the TOTP challenge
+        // step. Tracked in localStorage (not sessionStorage) so a refresh or
+        // new tab can't be used to reset the counter. Lockout escalates
+        // (30s -> 60s -> 120s ... capped at 10 min) instead of a single fixed
+        // delay, so repeated automated attempts get progressively slower
+        // rather than just retrying every 30s forever.
+        const LOCKOUT_KEY_PREFIX = 'pca_lockout_';
+        const LOCKOUT_MAX_ATTEMPTS = 5;
+        const LOCKOUT_BASE_SECONDS = 30;
+        const LOCKOUT_MAX_SECONDS = 600;
+        const lockoutTimers = {};
+
+        function getLockoutState(scope) {
+            try {
+                const raw = localStorage.getItem(LOCKOUT_KEY_PREFIX + scope);
+                return raw ? JSON.parse(raw) : { count: 0, lockUntil: 0 };
+            } catch (e) {
+                return { count: 0, lockUntil: 0 };
+            }
+        }
+        function setLockoutState(scope, state) {
+            try { localStorage.setItem(LOCKOUT_KEY_PREFIX + scope, JSON.stringify(state)); } catch (e) {}
+        }
+        function clearLockout(scope) {
+            setLockoutState(scope, { count: 0, lockUntil: 0 });
+            if (lockoutTimers[scope]) { clearInterval(lockoutTimers[scope]); delete lockoutTimers[scope]; }
+        }
+        function registerFailedAttempt(scope) {
+            const state = getLockoutState(scope);
+            state.count = (state.count || 0) + 1;
+            if (state.count >= LOCKOUT_MAX_ATTEMPTS) {
+                const tier = state.count - LOCKOUT_MAX_ATTEMPTS;
+                const seconds = Math.min(LOCKOUT_BASE_SECONDS * Math.pow(2, tier), LOCKOUT_MAX_SECONDS);
+                state.lockUntil = Date.now() + seconds * 1000;
+            }
+            setLockoutState(scope, state);
+            return state;
+        }
+        // Checks whether `scope` is currently locked out and, if so, disables
+        // `btnId` and shows a live countdown in `errId`. Returns true while
+        // locked (callers should stop and not attempt the request), false
+        // once the lockout has expired.
+        function applyLockoutUI(scope, btnId, errId, idleLabel) {
+            const state = getLockoutState(scope);
+            const remaining = state.lockUntil - Date.now();
+            const btn = document.getElementById(btnId);
+            const errEl = document.getElementById(errId);
+            if (remaining <= 0) return false;
+            if (btn) btn.disabled = true;
+            const tick = () => {
+                const secs = Math.ceil((getLockoutState(scope).lockUntil - Date.now()) / 1000);
+                if (secs <= 0) {
+                    clearInterval(lockoutTimers[scope]);
+                    delete lockoutTimers[scope];
+                    if (btn) { btn.disabled = false; btn.innerText = idleLabel; }
+                    if (errEl) errEl.style.display = 'none';
+                    return;
+                }
+                if (btn) btn.innerText = 'Try again in ' + secs + 's';
+                if (errEl) {
+                    errEl.textContent = 'Too many failed attempts. Please wait ' + secs + 's before trying again.';
+                    errEl.style.display = 'block';
+                }
+            };
+            tick();
+            if (lockoutTimers[scope]) clearInterval(lockoutTimers[scope]);
+            lockoutTimers[scope] = setInterval(tick, 1000);
+            return true;
+        }
         function applyRememberedUsername() {
             const userInput = document.getElementById('login-username');
             const rememberBox = document.getElementById('login-remember-me');
@@ -6071,6 +6262,9 @@
             const errEl = document.getElementById('login-error');
             const btn = document.getElementById('login-btn');
             errEl.style.display = 'none';
+            // Respect an active lockout before doing anything else — a locked
+            // account shouldn't still be able to trigger Firebase requests.
+            if (applyLockoutUI('login', 'login-btn', 'login-error', 'Sign In')) return;
             if (!username || !password) {
                 errEl.textContent = 'Enter both username and password.';
                 errEl.style.display = 'block';
@@ -6088,22 +6282,38 @@
                 // an "adminUsernames/{username}" doc ({ email: "...", totpSecret: "..." }).
                 const usernameSnap = await getDoc(doc(db, "adminUsernames", username));
                 if (!usernameSnap.exists() || !usernameSnap.data().email) {
-                    errEl.textContent = 'Wrong username or password.';
-                    errEl.style.display = 'block';
-                    btn.disabled = false;
-                    btn.innerText = 'Login';
+                    // Same generic message and same lockout path as a wrong
+                    // password below, so a caller can't tell "unknown
+                    // username" apart from "wrong password" (no account
+                    // enumeration via response differences or timing).
+                    registerFailedAttempt('login');
+                    if (!applyLockoutUI('login', 'login-btn', 'login-error', 'Sign In')) {
+                        errEl.textContent = 'Wrong username or password.';
+                        errEl.style.display = 'block';
+                        btn.disabled = false;
+                        btn.innerText = 'Sign In';
+                    }
                     return;
                 }
                 pendingUsername = username;
                 const email = usernameSnap.data().email;
                 await signInWithEmailAndPassword(auth, email, password);
+                // Correct credentials — clear this device's lockout counter.
+                clearLockout('login');
                 // onAuthStateChanged -> routeAfterAuth() takes it from here (TOTP step)
             } catch (error) {
+                // Logged for developers only; the on-screen message stays
+                // generic so a failed attempt never reveals whether the
+                // username exists, which field was wrong, or any other
+                // Firebase-internal detail to whoever is at the keyboard.
                 console.error('Admin login error:', error);
-                errEl.textContent = 'Wrong username or password. (' + (error.code || error.message || 'unknown error') + ')';
-                errEl.style.display = 'block';
-                btn.disabled = false;
-                btn.innerText = 'Login';
+                registerFailedAttempt('login');
+                if (!applyLockoutUI('login', 'login-btn', 'login-error', 'Sign In')) {
+                    errEl.textContent = 'Wrong username or password.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerText = 'Sign In';
+                }
             }
         }
         window.handleAdminLogin = handleAdminLogin;
@@ -6174,6 +6384,7 @@
             if (totpSecret) {
                 document.getElementById('step-mfa-enroll').style.display = 'none';
                 document.getElementById('step-mfa-challenge').style.display = '';
+                applyLockoutUI('mfa', 'mfa-challenge-btn', 'mfa-challenge-error', 'Verify & Sign In');
             } else {
                 pendingEnrollSecret = randomBase32Secret();
                 document.getElementById('mfa-secret-key').textContent = pendingEnrollSecret;
@@ -6216,6 +6427,7 @@
             const errEl = document.getElementById('mfa-challenge-error');
             const btn = document.getElementById('mfa-challenge-btn');
             errEl.style.display = 'none';
+            if (applyLockoutUI('mfa', 'mfa-challenge-btn', 'mfa-challenge-error', 'Verify & Sign In')) return;
             if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
             btn.disabled = true; btn.innerText = 'Verifying...';
             try {
@@ -6224,11 +6436,15 @@
                 const secret = !snap.empty ? snap.docs[0].data().totpSecret : null;
                 const ok = secret && await verifyTotpCode(secret, code);
                 if (!ok) {
-                    errEl.textContent = 'Wrong code.';
-                    errEl.style.display = 'block';
-                    btn.disabled = false; btn.innerText = 'Verify & Sign In';
+                    registerFailedAttempt('mfa');
+                    if (!applyLockoutUI('mfa', 'mfa-challenge-btn', 'mfa-challenge-error', 'Verify & Sign In')) {
+                        errEl.textContent = 'Wrong code.';
+                        errEl.style.display = 'block';
+                        btn.disabled = false; btn.innerText = 'Verify & Sign In';
+                    }
                     return;
                 }
+                clearLockout('mfa');
                 unlockAdminApp();
             } catch (e) {
                 console.error('MFA challenge error:', e);
@@ -12654,14 +12870,18 @@
             return supportChatListView === 'account' ? 'supportChatsAccount' : 'supportChats';
         }
         // An account thread is routed to a specific admin (adminKey =
-        // that admin's username) or left as the shared 'general' inbox any
-        // account-role admin can pick up. A 'full' role admin sees every
-        // thread regardless of routing (oversight); anyone else viewing the
-        // Account tab sees only their own threads + 'general'. Threads from
-        // before this split (no adminKey field yet) are treated as
+        // that admin's username) — automatically, to whichever admin posted
+        // that gameAccounts listing (see store.html's openAccountListingChat,
+        // which passes listing.postedByAdmin), or left as the shared
+        // 'general' inbox (opened from the Game Accounts page's own
+        // "Support" button, with no specific listing yet) any admin can pick
+        // up. Every role — Full Access included — sees only threads routed
+        // to their own username plus 'general': a chat addressed to one
+        // admin shouldn't ping every other admin's notifications, the owner
+        // especially while they're heads-down on something else. Threads
+        // from before this split (no adminKey field yet) are treated as
         // 'general' too, so they don't just disappear from every inbox.
         function visibleAccountChats() {
-            if (currentAdminRole === 'full') return SUPPORT_CHATS_ACCOUNT;
             return SUPPORT_CHATS_ACCOUNT.filter(c => !c.adminKey || c.adminKey === 'general' || c.adminKey === currentAdminUsername);
         }
         function activeSupportChatList() {
@@ -12767,7 +12987,7 @@
         }
 
         function updateSupportChatNavDot() {
-            const unreadCount = SUPPORT_CHATS.filter(c => c.unreadByAdmin).length + SUPPORT_CHATS_ACCOUNT.filter(c => c.unreadByAdmin).length;
+            const unreadCount = SUPPORT_CHATS.filter(c => c.unreadByAdmin).length + visibleAccountChats().filter(c => c.unreadByAdmin).length;
             const dot = document.getElementById('supportchat-nav-dot');
             if (dot) dot.style.display = unreadCount > 0 ? 'block' : 'none';
         }
@@ -12821,7 +13041,9 @@
             onSnapshot(q, (snap) => {
                 SUPPORT_CHATS_ACCOUNT = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (!supportChatAccountFirstLoad) {
+                    const mine = new Set(visibleAccountChats().map(c => c.id));
                     SUPPORT_CHATS_ACCOUNT.forEach(c => {
+                        if (!mine.has(c.id)) return;
                         const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
                         const prev = supportChatAccountLastKnownMsgAt[c.id] || 0;
                         if (c.lastSender === 'user' && at > prev) playChatSound('receive');
