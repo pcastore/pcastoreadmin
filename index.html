@@ -2599,6 +2599,35 @@
             </div>
         </div>
 
+        <!-- Telegram Link Modal: shows a short-lived 6-digit code the admin
+             DMs to the bot (/link CODE) to connect their own Telegram, so
+             telegram-worker.js's sweepSupportChatMessages() can forward a
+             support-chat message to the one admin it's addressed to instead
+             of one shared group — see openTelegramLinkModal(). Self-service
+             only: the code is generated for (and only usable by) whichever
+             admin's own card it was opened from. Closes itself the instant
+             the code is redeemed — see the live onSnapshot watch inside
+             openTelegramLinkModal(). -->
+        <div class="modal-overlay" id="telegram-link-modal-overlay" onclick="if(event.target===this) closeTelegramLinkModal()">
+            <div class="modal-box" style="max-width:340px;">
+                <div class="modal-header">
+                    <h3>Link Telegram</h3>
+                    <div class="modal-close" onclick="closeTelegramLinkModal()">
+                        <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;">Open the Support Chat bot in Telegram and send this code:</p>
+                    <div class="mfa-secret-box" style="font-size:28px;font-weight:700;letter-spacing:4px;padding:18px;">
+                        <span id="telegram-link-code">------</span>
+                    </div>
+                    <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:10px;">as <code style="background:var(--fill-soft);padding:2px 6px;border-radius:5px;">/link <span id="telegram-link-code-inline">------</span></code></p>
+                    <a id="telegram-link-open-btn" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="display:none;margin-top:14px;text-decoration:none;text-align:center;">Open Telegram</a>
+                    <p id="telegram-link-status" style="font-size:12.5px;color:var(--text-secondary);text-align:center;margin-top:14px;">Waiting for code · expires in <span id="telegram-link-countdown">5:00</span></p>
+                </div>
+            </div>
+        </div>
+
         <!-- Admin Permissions Modal: opened by tapping an admin's card in the
              Admin Accounts list (Full Access only). Lets the owner toggle
              each nav-group Access Permission on/off individually for that
@@ -4357,6 +4386,9 @@
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('tg-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
+                <label style="margin-top:14px;">Bot Username <span style="font-weight:400;color:var(--text-muted);">(optional — for the "Open Telegram" link button)</span></label>
+                <input type="text" id="tg-bot-username" placeholder="YourBotName_bot (no @)" autocomplete="off">
+
                 <div class="switch-row" style="margin-top:14px;">
                     <span class="switch-label" style="flex:1;font-weight:400;">Enabled — send new orders to Telegram automatically</span>
                     <label class="toggle-switch" style="flex-shrink:0;">
@@ -5201,7 +5233,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { initializeFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getMessaging, getToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
@@ -5540,6 +5572,19 @@
                                 <span class="role-toggle-check"><svg class="ui-icon"><use href="#icon-check"></use></svg></span>
                                 <span class="role-toggle-title">${label}</span>
                             </button>`;
+                // "Connected" — Telegram link status. Self-service: only
+                // this-is-you cards get a "Link Telegram" button, since only
+                // the account owner can prove control of a Telegram chat by
+                // DMing the code to the bot themselves. Any admin's card
+                // (including your own) can be unlinked from here — useful
+                // for an owner clearing a lost-phone admin's stale link.
+                const telegramLinked = !!a.telegramChatId;
+                const telegramLabel = telegramLinked
+                    ? escapeHtml(a.telegramName || 'Telegram') + (a.telegramUsername ? ` (@${escapeHtml(a.telegramUsername)})` : '')
+                    : 'Not connected';
+                const telegramAction = telegramLinked
+                    ? `<button type="button" onclick="unlinkAdminTelegram('${roleSafe}')" style="background:none;border:none;color:var(--danger);font-size:11px;font-weight:600;cursor:pointer;padding:0;">Unlink</button>`
+                    : (isYou ? `<button type="button" onclick="openTelegramLinkModal('${roleSafe}')" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:0;">Link Telegram</button>` : '');
                 return `
                 <div class="admin-card" style="padding:12px 14px;margin-bottom:8px;cursor:pointer;" onclick="openAdminPermissionsModal('${a.username.replace(/'/g, "\\'")}')" title="Tap to set Access Permission">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
@@ -5567,6 +5612,16 @@
                     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-glass);" onclick="event.stopPropagation()">
                         <span style="font-size:11.5px;color:var(--text-secondary);display:block;margin-bottom:6px;">Access</span>
                         <div class="role-toggle compact">${roleOpt('full', 'Full')}${roleOpt('product', 'Product')}${roleOpt('account', 'Account')}</div>
+                    </div>
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center;gap:8px;" onclick="event.stopPropagation()">
+                        <div style="min-width:0;">
+                            <span style="font-size:11.5px;color:var(--text-secondary);display:block;margin-bottom:3px;">Connected</span>
+                            <span style="font-size:12.5px;font-weight:600;color:${telegramLinked ? 'var(--text-primary)' : 'var(--text-muted)'};display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                <svg class="ui-icon" style="width:13px;height:13px;flex-shrink:0;color:${telegramLinked ? '#229ED9' : 'var(--text-muted)'};"><use href="#icon-send"></use></svg>
+                                Telegram — ${telegramLabel}
+                            </span>
+                        </div>
+                        ${telegramAction}
                     </div>
                     <div style="margin-top:8px;font-size:11px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:4px;">
                         <svg class="ui-icon" style="width:12px;height:12px;"><use href="#icon-shield"></use></svg>
@@ -5770,6 +5825,102 @@
             });
         }
         window.resetAdminTotp = resetAdminTotp;
+
+        // ---------- Telegram linking (per-admin support-chat routing) ----------
+        // Self-service: generates a short-lived 6-digit code on the CALLING
+        // admin's own adminUsernames doc (never someone else's — a Full
+        // Access admin managing another admin's card only ever sees that
+        // other admin's link *status*, not a "Link" button, since only the
+        // owner of a Telegram account can prove they control it). The admin
+        // DMs the code to the bot as /link 123456; telegram-worker.js
+        // redeems it and stamps telegramChatId/telegramName/telegramUsername
+        // back onto this same doc, which the onSnapshot watch below picks
+        // up live and closes the modal on its own — no manual "Done" tap
+        // needed, no polling from the client either.
+        let telegramLinkCountdownTimer = null;
+        let telegramLinkUnsub = null;
+        function openTelegramLinkModal(username) {
+            if (username !== currentAdminUsername) return; // self-service only — see comment above
+            const code = String(Math.floor(100000 + Math.random() * 900000));
+            const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+            setDoc(doc(db, "adminUsernames", username), { telegramLinkCode: code, telegramLinkCodeExpiresAt: expiresAt }, { merge: true })
+                .catch(e => { console.error('Telegram link code error:', e); window.showToast('Could not generate a code — try again.', 'fail'); });
+
+            document.getElementById('telegram-link-code').textContent = code;
+            document.getElementById('telegram-link-code-inline').textContent = code;
+            const openBtn = document.getElementById('telegram-link-open-btn');
+            if (TELEGRAM_SETTINGS.botUsername) {
+                openBtn.href = `https://t.me/${TELEGRAM_SETTINGS.botUsername}?start=link_${code}`;
+                openBtn.style.display = '';
+            } else {
+                openBtn.style.display = 'none';
+            }
+            const statusEl = document.getElementById('telegram-link-status');
+            const countdownEl = document.getElementById('telegram-link-countdown');
+            statusEl.style.display = '';
+            let secondsLeft = 5 * 60;
+            if (telegramLinkCountdownTimer) clearInterval(telegramLinkCountdownTimer);
+            const tick = () => {
+                const m = Math.floor(secondsLeft / 60), s = secondsLeft % 60;
+                countdownEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+                if (secondsLeft <= 0) {
+                    clearInterval(telegramLinkCountdownTimer);
+                    statusEl.textContent = 'Code expired — close and try again for a new one.';
+                }
+                secondsLeft--;
+            };
+            tick();
+            telegramLinkCountdownTimer = setInterval(tick, 1000);
+
+            // Live watch: the instant telegram-worker.js redeems the code and
+            // writes telegramChatId onto this doc, close the modal and
+            // refresh the list — the admin never has to tap anything.
+            if (telegramLinkUnsub) telegramLinkUnsub();
+            telegramLinkUnsub = onSnapshot(doc(db, "adminUsernames", username), (snap) => {
+                if (snap.exists() && snap.data().telegramChatId) {
+                    closeTelegramLinkModal();
+                    window.showToast('Telegram linked ✓', 'success');
+                }
+            });
+            document.getElementById('telegram-link-modal-overlay').classList.add('show');
+        }
+        window.openTelegramLinkModal = openTelegramLinkModal;
+
+        function closeTelegramLinkModal() {
+            document.getElementById('telegram-link-modal-overlay').classList.remove('show');
+            if (telegramLinkCountdownTimer) { clearInterval(telegramLinkCountdownTimer); telegramLinkCountdownTimer = null; }
+            if (telegramLinkUnsub) { telegramLinkUnsub(); telegramLinkUnsub = null; }
+        }
+        window.closeTelegramLinkModal = closeTelegramLinkModal;
+
+        // Disconnects an admin's Telegram (their own, or — Full Access only —
+        // any other admin's, e.g. after they leave or lose their phone) so
+        // support-chat forwards for them fall back to the shared Telegram
+        // chat instead of a phone nobody checks anymore.
+        function unlinkAdminTelegram(username) {
+            if (username !== currentAdminUsername && !canManageAdmins()) {
+                window.showToast('Only Full Access admins can unlink another admin\'s Telegram.', 'fail');
+                return;
+            }
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Unlink Telegram?',
+                message: `Support chat messages for "${username}" will go to the shared Telegram chat instead until they link again.`,
+                confirmText: 'Unlink',
+                onConfirm: async () => {
+                    try {
+                        await setDoc(doc(db, "adminUsernames", username), {
+                            telegramChatId: deleteField(), telegramName: deleteField(), telegramUsername: deleteField(), telegramLinkedAt: deleteField()
+                        }, { merge: true });
+                        window.showToast('Telegram unlinked ✓', 'success');
+                    } catch (e) {
+                        console.error('Unlink Telegram error:', e);
+                        window.showToast('Failed to unlink Telegram.', 'fail');
+                    }
+                }
+            });
+        }
+        window.unlinkAdminTelegram = unlinkAdminTelegram;
 
         // Keeps the visual role toggle in the Add Admin modal in sync with
         // the hidden <select id="new-admin-role">, so createNewAdmin()'s
@@ -16249,7 +16400,7 @@
         // there's no server to receive a webhook on (same browser-based-only
         // constraint as the rest of this app - see pca-store notes on the
         // Cloudflare Workers plan for a future always-on version).
-        let TELEGRAM_SETTINGS = { botToken: '', chatId: '', webhookUrl: '', webhookSecret: '', enabled: false };
+        let TELEGRAM_SETTINGS = { botToken: '', chatId: '', webhookUrl: '', webhookSecret: '', botUsername: '', enabled: false };
         let telegramListenerAttached = false;
         let telegramInitialOrdersSnapshotDone = false;
         let telegramPollingStarted = false;
@@ -16533,12 +16684,14 @@
                 document.getElementById('tg-chat-id').value = data.chatId || '';
                 document.getElementById('tg-webhook-url').value = data.webhookUrl || '';
                 document.getElementById('tg-webhook-secret').value = data.webhookSecret || '';
+                document.getElementById('tg-bot-username').value = data.botUsername || '';
                 document.getElementById('tg-enabled').checked = !!data.enabled;
                 TELEGRAM_SETTINGS = {
                     botToken: (data.botToken || '').trim(),
                     chatId: (data.chatId || '').trim(),
                     webhookUrl: (data.webhookUrl || '').trim(),
                     webhookSecret: (data.webhookSecret || '').trim(),
+                    botUsername: (data.botUsername || '').trim().replace(/^@/, ''),
                     enabled: !!data.enabled
                 };
                 // NOTE: getUpdates polling disabled here on purpose - the standalone
@@ -16566,6 +16719,7 @@
             const chatId = document.getElementById('tg-chat-id').value.trim();
             const webhookUrl = document.getElementById('tg-webhook-url').value.trim();
             const webhookSecret = document.getElementById('tg-webhook-secret').value.trim();
+            const botUsername = document.getElementById('tg-bot-username').value.trim().replace(/^@/, '');
             const enabled = document.getElementById('tg-enabled').checked;
             const btn = document.getElementById('save-tg-btn');
             const originalText = btn.innerText;
@@ -16586,7 +16740,7 @@
             btn.disabled = true;
             btn.innerText = 'Saving...';
             try {
-                await setDoc(doc(db, "settings", "telegramBot"), { botToken, chatId, webhookUrl, webhookSecret, enabled }, { merge: true });
+                await setDoc(doc(db, "settings", "telegramBot"), { botToken, chatId, webhookUrl, webhookSecret, botUsername, enabled }, { merge: true });
                 logAdminActivity('Saved Telegram Bot settings', enabled ? 'Enabled' : 'Disabled');
                 window.showToast('Telegram Bot settings saved!', 'success');
                 if (enabled && botToken) startTelegramPollingOnce();
