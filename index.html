@@ -545,11 +545,6 @@
 
         /* Admin Cards */
         .admin-card { background: var(--surface); border-radius: 18px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border-glass); box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
-        .faq-item-row { border: 1px solid var(--fill-soft); border-radius: 12px; padding: 10px; margin-bottom: 10px; }
-        .faq-item-row label { font-size: 11.5px; font-weight: 500; color: var(--text-secondary); display: block; margin: 6px 0 3px; }
-        .faq-item-row label:first-child { margin-top: 0; }
-        .faq-item-row textarea, .faq-item-row input[type="text"] { width: 100%; padding: 8px 10px; border: 1px solid var(--fill-soft); border-radius: 8px; font-size: 13px; resize: vertical; }
-        .faq-item-row .faq-item-del { font-size: 11px; color: var(--danger); cursor: pointer; float: right; }
 
         /* API tab: one row per credential (icon + name/description + action) */
         .api-doc-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 13px 14px; margin-bottom: 10px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
@@ -876,8 +871,19 @@
         /* Game list: image-only tiles. Tapping one opens a small action sheet
            (Edit / Delete) instead of jumping straight into the editor. */
         .game-image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .game-image-tile { aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--bg-subtle); border: 1px solid var(--fill-soft); cursor: pointer; box-shadow: var(--shadow-soft); }
+        .game-image-tile { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--bg-subtle); border: 1px solid var(--fill-soft); cursor: pointer; box-shadow: var(--shadow-soft); }
         .game-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* Count of server/region variants sharing this game's name — only
+           shown when there's more than one (see renderAdminGamesListImpl).
+           Sits in the card's top-left corner, above the image. */
+        .game-variant-count-badge {
+            position: absolute; top: 4px; left: 4px; z-index: 2;
+            min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; color: #fff;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            line-height: 1;
+        }
         /* Neat segmented tab bar for the Games list page (Direct / Voucher) -
            was previously only switchable via the sidebar's picker sheet,
            with no visible indicator of which list was showing. */
@@ -989,55 +995,6 @@
         .secret-toggle-btn:hover { background: var(--fill-soft); }
         .secret-toggle-btn svg { width: 17px; height: 17px; }
         .modal-footer { padding-top: 16px; display: flex; gap: 8px; }
-
-        /* Support Chat thread modal (see #supportchat-thread-overlay) */
-        .sc-messages { flex: 1; overflow-y: auto; min-height: 40vh; max-height: 55vh; padding: 4px 2px; display: flex; flex-direction: column; gap: 8px; }
-        .sc-bubble { position: relative; max-width: 78%; padding: 9px 13px 16px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; word-break: break-word; }
-        .sc-bubble.mine { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
-        .sc-bubble.theirs { align-self: flex-start; background: var(--fill-soft); color: var(--text-primary); border-bottom-left-radius: 4px; }
-        .sc-bubble-time { position: absolute; right: 12px; bottom: 4px; font-size: 9.5px; opacity: 0.7; display: flex; align-items: center; gap: 3px; }
-        .sc-tick { display: inline-flex; }
-        .sc-tick svg { width: 13px; height: 13px; display: block; }
-        .sc-tick.seen svg { color: #6FE0FF; opacity: 1; }
-        .sc-bubble.image-bubble { padding: 4px; background: transparent !important; border: none !important; }
-        .sc-bubble.image-bubble img { display: block; max-width: 200px; max-height: 260px; width: 100%; border-radius: 12px; cursor: pointer; }
-        .sc-bubble.image-bubble .sc-bubble-time { position: static; display: flex; justify-content: flex-end; margin-top: 2px; font-size: 9.5px; color: var(--text-muted); opacity: 1; }
-
-        /* Multi-photo "collage" bubble — mirrors the store's chat widget so
-           a customer sending several photos at once shows as one grid here
-           too, instead of one full-size bubble per photo. */
-        .chat-img-collage { display: grid; gap: 3px; width: 200px; border-radius: 12px; overflow: hidden; }
-        .chat-img-collage.n1 { width: auto; }
-        .chat-img-collage.n1 .chat-img-tile { border-radius: 12px; }
-        .chat-img-collage.n1 .chat-img-tile img { max-width: 200px; max-height: 260px; width: 100%; }
-        .chat-img-collage.n2 { grid-template-columns: 1fr 1fr; height: 135px; }
-        .chat-img-collage.n3 { grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr; height: 195px; }
-        .chat-img-collage.n3 .chat-img-tile:first-child { grid-row: 1 / 3; }
-        .chat-img-collage.n4up { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; height: 195px; }
-        .chat-img-tile { position: relative; cursor: pointer; overflow: hidden; background: var(--bg-subtle); }
-        .chat-img-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .chat-img-tile .chat-img-more { position: absolute; inset: 0; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
-
-        .chat-img-viewer-overlay { display: none; position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; }
-        .chat-img-viewer-overlay.show { display: flex; }
-        .chat-img-viewer-overlay img { max-width: 92vw; max-height: 78vh; object-fit: contain; border-radius: 6px; }
-        .chat-img-viewer-close { position: absolute; top: 18px; right: 18px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.14); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .chat-img-viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.14); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; user-select: none; }
-        .chat-img-viewer-nav.prev { left: 12px; }
-        .chat-img-viewer-nav.next { right: 12px; }
-        .chat-img-viewer-counter { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 13px; background: rgba(255,255,255,0.14); padding: 4px 12px; border-radius: 20px; }
-        .sc-msg-avatar { position: absolute; top: -7px; left: -7px; width: 17px; height: 17px; border-radius: 50%; overflow: hidden; border: 2px solid var(--bg-card, var(--surface)); background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700; color: #fff; line-height: 1; }
-        .sc-msg-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .sc-inputrow { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--fill-soft); margin-top: 8px; flex-shrink: 0; }
-        .sc-inputrow input { flex: 1; padding: 11px 14px; border-radius: 22px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); font-size: 14px; min-width: 0; }
-        .sc-send { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
-        .sc-typing { display: none; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); padding: 0 2px 6px; flex-shrink: 0; }
-        .sc-typing.show { display: flex; }
-        .sc-typing-dots { display: inline-flex; gap: 3px; }
-        .sc-typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.4; animation: scTypingBounce 1.2s infinite ease-in-out; }
-        .sc-typing-dots span:nth-child(2) { animation-delay: 0.15s; }
-        .sc-typing-dots span:nth-child(3) { animation-delay: 0.3s; }
-        @keyframes scTypingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-3px); opacity: 1; } }
 
         /* Custom "Image Update" upload control (replaces default Browse/Choose file input) */
         .img-update-input { display: none; }
@@ -1761,7 +1718,6 @@
         <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></symbol>
         <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
         <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></symbol>
-        <symbol id="icon-message-circle" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></symbol>
         <symbol id="icon-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></symbol>
         <symbol id="icon-megaphone" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></symbol>
         <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path></symbol>
@@ -1842,13 +1798,12 @@
                 <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
         </div>
-        <div class="logo" id="store-switcher-btn" onclick="openStoreSwitcherSheet()" style="cursor:pointer;">
+        <div class="logo" id="store-switcher-btn">
             <div class="logo-icon" id="header-logo-icon">
                 <svg class="ui-icon" id="header-logo-default-icon" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg>
                 <img id="header-logo-img" src="" alt="PCA Store" loading="lazy" decoding="async" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
             </div>
-            <span id="store-switcher-label">PCA Store 1</span>
-            <svg class="ui-icon" style="width:13px;height:13px;flex-shrink:0;color:var(--text-muted);"><use href="#icon-chevron-down"></use></svg>
+            <span id="store-switcher-label">PCA Store</span>
         </div>
         <div id="header-clock" title="Local time">
             <div class="digital-clock-time"><span id="header-clock-hh">--</span><span class="clock-colon">:</span><span id="header-clock-mm">--</span></div>
@@ -1860,6 +1815,7 @@
                 <svg class="ui-icon" style="width:20px;"><use href="#icon-bell"></use></svg>
                 <span class="low-balance-dot"></span>
             </div>
+            <div class="header-icon" id="my-account-btn" title="My Account" onclick="openMyAccountModal()"><svg class="ui-icon" style="width:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
             <div class="header-icon" id="theme-toggle-btn" title="Theme" onclick="openThemeSheet()"><svg class="ui-icon" id="theme-toggle-icon" style="width:20px;"><use href="#icon-palette"></use></svg></div>
             <div class="header-flame-wrap" title="Live"><img class="header-flame" src="data:image/webp;base64,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" alt=""></div>
             <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
@@ -1896,20 +1852,119 @@
         </div>
     </div>
 
-    <!-- Store Switcher Sheet: tapping the logo/store name in the header opens
-         this to pick which store's data (Orders/Users/Payment/Branding -
-         added in a later pass) the admin is currently viewing. Games,
-         Packages, and the G2Bulk/JCPlays/FazerCards API credentials stay
-         shared across both stores and are unaffected by this switch. -->
-    <div class="modal-overlay" id="store-switcher-sheet-overlay" onclick="if(event.target===this) closeStoreSwitcherSheet()">
+    <!-- My Account Modal: self-service avatar / 2FA / Telegram link for the
+         CURRENTLY SIGNED-IN admin only, reachable from the header icon
+         regardless of role — unlike the Admin Accounts card in Settings
+         (Full Access only), this never lists or touches any other admin,
+         and has no link to Settings/API-key content, so Product/Account
+         role admins get self-service without gaining any new visibility. -->
+    <div class="modal-overlay" id="my-account-modal-overlay" onclick="if(event.target===this) closeMyAccountModal()">
         <div class="modal-box" style="max-width:380px;">
             <div class="modal-header">
-                <h3>Switch Store</h3>
-                <div class="modal-close" onclick="closeStoreSwitcherSheet()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+                <h3>My Account</h3>
+                <div class="modal-close" onclick="closeMyAccountModal()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
             </div>
             <div class="modal-body">
-                <p style="font-size:12px;color:var(--text-secondary);margin:-4px 0 12px;">Games, Packages, and API credentials are shared — only Orders/Users/Payment/Branding will follow the selected store.</p>
-                <div id="store-switcher-sheet-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                    <label style="position:relative;cursor:pointer;flex-shrink:0;" title="Change avatar">
+                        <div id="my-account-avatar" style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:18px;">?</div>
+                        <input type="file" accept="image/*" style="display:none;" onchange="handleAdminAvatarSelect(this, currentAdminUsername)">
+                        <span style="position:absolute;bottom:-2px;right:-2px;width:17px;height:17px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card, var(--surface));">
+                            <svg class="ui-icon" style="width:9px;height:9px;color:#fff;"><use href="#icon-camera"></use></svg>
+                        </span>
+                    </label>
+                    <div style="min-width:0;">
+                        <div id="my-account-username" style="font-size:15px;font-weight:600;color:var(--text-primary);"></div>
+                        <div id="my-account-role" style="font-size:11.5px;color:var(--text-muted);margin-top:2px;"></div>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--border-glass);">
+                    <div>
+                        <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);display:block;">2FA</span>
+                        <span id="my-account-2fa-status" style="font-size:11px;color:var(--text-muted);"></span>
+                    </div>
+                    <button type="button" onclick="closeMyAccountModal(); resetAdminTotp(currentAdminUsername)" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Reset 2FA</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--border-glass);">
+                    <div style="min-width:0;">
+                        <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:5px;">
+                            <svg class="ui-icon" style="width:13px;height:13px;flex-shrink:0;color:#229ED9;"><use href="#icon-send"></use></svg>
+                            Telegram
+                        </span>
+                        <span id="my-account-telegram-status" style="font-size:11px;color:var(--text-muted);"></span>
+                    </div>
+                    <span id="my-account-telegram-action"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Keys re-auth gate: a fresh Authenticator code is required every
+         time the API Keys page is opened (see showPage's api-docs branch /
+         openApiKeysMfaGate), even within an already-signed-in session —
+         these keys can spend real money, so a login-time code alone isn't
+         enough. Uses the same OTP box widget as the login flow's MFA step. -->
+    <div class="modal-overlay" id="apikeys-mfa-modal-overlay" onclick="if(event.target===this) closeApiKeysMfaGate()">
+        <div class="modal-box" style="max-width:380px;">
+            <div class="modal-header">
+                <h3>Verify to Continue</h3>
+                <div class="modal-close" onclick="closeApiKeysMfaGate()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Opening API Keys needs a fresh Authenticator code every time — these keys can spend real money.</p>
+                <p id="apikeys-mfa-error" class="login-msg-error" style="display:none;"></p>
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">6-digit code</label>
+                <div class="otp-group" id="apikeys-mfa-otp">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                </div>
+                <input type="hidden" id="apikeys-mfa-code">
+                <button type="button" class="otp-paste-btn" onclick="pasteOtpCode('apikeys-mfa-otp','apikeys-mfa-code')">
+                    <svg class="ui-icon"><use href="#icon-copy"></use></svg> Paste code
+                </button>
+                <button type="button" class="btn btn-primary" style="width:100%;margin-top:12px;" id="apikeys-mfa-btn" onclick="confirmApiKeysMfa()">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Keys 2FA setup/regenerate: generates a NEW shared secret (separate
+         from any admin's personal login 2FA), shows its QR so it can be
+         scanned into an Authenticator app, and only saves it once a code
+         from that new secret is confirmed — so an owner can never lock
+         everyone out with a secret nobody actually captured. -->
+    <div class="modal-overlay" id="apikeys-setup-modal-overlay" onclick="if(event.target===this) closeApiKeysMfaSetup()">
+        <div class="modal-box" style="max-width:380px;">
+            <div class="modal-header">
+                <h3>API Keys 2FA</h3>
+                <div class="modal-close" onclick="closeApiKeysMfaSetup()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+            </div>
+            <div class="modal-body">
+                <p id="apikeys-setup-warning" style="font-size:12px;color:var(--warning, #d97706);margin:0 0 12px;display:none;">Regenerating replaces the current code — every admin will need to re-scan the new QR before they can open API Keys again.</p>
+                <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 12px;">Scan this into an Authenticator app (Google Authenticator, etc.), then confirm with the code it shows.</p>
+                <div id="apikeys-setup-qr-box" style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:12px;margin:0 0 10px;">
+                    <div id="apikeys-setup-qr-code"></div>
+                </div>
+                <button type="button" class="login-secondary-btn" style="margin-bottom:10px;" onclick="toggleApiKeysSetupManualKey()">Can't scan? Enter key manually</button>
+                <div class="mfa-secret-box" id="apikeys-setup-secret-box" style="display:none;"><span id="apikeys-setup-secret-text"></span></div>
+                <p id="apikeys-setup-error" class="login-msg-error" style="display:none;"></p>
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">Confirm with the 6-digit code</label>
+                <div class="otp-group" id="apikeys-setup-otp">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+                </div>
+                <input type="hidden" id="apikeys-setup-code">
+                <button type="button" class="otp-paste-btn" onclick="pasteOtpCode('apikeys-setup-otp','apikeys-setup-code')">
+                    <svg class="ui-icon"><use href="#icon-copy"></use></svg> Paste code
+                </button>
+                <button type="button" class="btn btn-primary" style="width:100%;margin-top:12px;" id="apikeys-setup-btn" onclick="confirmApiKeysMfaSetup()">Confirm &amp; Save</button>
             </div>
         </div>
     </div>
@@ -1959,10 +2014,6 @@
         </div>
         <div class="nav-item" id="group-userlist" onclick="openNavGroupSheet('userlist')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Userlist</span>
-        </div>
-        <div class="nav-item" id="group-supportchat" onclick="showPage('supportchat-list')">
-            <svg class="ui-icon"><use href="#icon-message-circle"></use></svg> <span class="nav-label">Chat</span>
-            <span class="nav-item-low-balance-dot" id="supportchat-nav-dot" title="Unread messages"></span>
         </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
             <svg class="ui-icon"><use href="#icon-gear"></use></svg> <span class="nav-label">Setting</span>
@@ -2320,40 +2371,6 @@
                 </div>
             </div>
 
-            <div class="admin-card" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSupportAvatarSettings()">
-                    <span style="font-size:15px;font-weight: 600;">Support Chat Avatar</span>
-                    <svg class="ui-icon" id="support-avatar-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
-                </div>
-                <div id="support-avatar-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px;">Shown to customers in the Support Chat header, in place of the plain "A" circle.</p>
-                    <label class="img-update-box logo-square" id="support-avatar-img-update-box" for="edit-support-avatar-file" style="border-radius:50%;width:96px;max-width:96px;overflow:hidden;">
-                        <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
-                        <span class="img-update-label">Image Update</span>
-                        <img id="edit-support-avatar-preview" src="" alt="Preview" loading="lazy" decoding="async" style="display:none;object-fit:cover;">
-                        <span class="img-update-change" id="support-avatar-img-update-change" style="display:none;">
-                            <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><use href="#icon-camera"></use></svg> Change
-                        </span>
-                    </label>
-                    <input type="file" id="edit-support-avatar-file" class="img-update-input" accept="image/*" onchange="previewSupportAvatarImage(event)">
-                    <p id="support-avatar-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
-                    <button class="btn btn-primary" id="save-support-avatar-btn" style="margin-top:10px;" onclick="saveSupportAvatar()">Save Avatar</button>
-                </div>
-            </div>
-
-            <div class="admin-card" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSupportFaqSettings()">
-                    <span style="font-size:15px;font-weight: 600;">Support Chat FAQ</span>
-                    <svg class="ui-icon" id="support-faq-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
-                </div>
-                <div id="support-faq-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px;">Quick-reply questions shown as tappable chips in the customer's Support Chat. Tapping one — or typing a message containing one of its keywords — gets an instant auto-answer, no admin needed online. Keywords: comma-separated words/phrases to match inside a customer's typed message.</p>
-                    <div id="support-faq-list"></div>
-                    <button type="button" class="btn btn-outline" style="width:100%;margin-top:4px;" onclick="addSupportFaqItem()">+ Add FAQ</button>
-                    <button class="btn btn-primary" id="save-support-faq-btn" style="margin-top:10px;width:100%;" onclick="saveSupportFaqSettings()">Save FAQ</button>
-                </div>
-            </div>
-
             <div class="admin-card" id="settings-card-walletexpire" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleWalletExpireSettings()">
                     <span style="font-size:15px;font-weight: 600;">Wallet Top Up Auto-Expire</span>
@@ -2368,6 +2385,21 @@
                     <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);margin-top:12px;">Expire after (days)</label>
                     <input type="number" id="wallet-expire-days" min="1" step="1" placeholder="3" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 14px;">
                     <button class="btn btn-primary" id="save-wallet-expire-btn" style="width:100%;" onclick="saveWalletExpireSettings()">Save</button>
+                </div>
+            </div>
+
+            <div class="admin-card" id="settings-card-storeaccounts" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleStoreAccountsSettings()">
+                    <span style="font-size:15px;font-weight: 600;">Game Accounts (Store Tab)</span>
+                    <svg class="ui-icon" id="store-accounts-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="store-accounts-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">While this is OFF, the store's Game Accounts tab only shows a "Coming Soon" message and customers can't browse, view or buy any listing. Turn it ON when the marketplace is ready.</p>
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="store-accounts-enabled" style="width:16px;height:16px;">
+                        <span style="font-size:13px;font-weight:500;">Open Game Accounts in the store</span>
+                    </label>
+                    <button class="btn btn-primary" id="save-store-accounts-btn" style="width:100%;margin-top:14px;" onclick="saveStoreAccountsSettings()">Save</button>
                 </div>
             </div>
 
@@ -2524,6 +2556,21 @@
                     <div id="tab-access-list" style="display:flex;flex-direction:column;gap:2px;"></div>
                     <button class="btn btn-primary" id="save-tab-access-btn" style="margin-top:10px;" onclick="saveTabAccessSettings()">Save Tab Access</button>
                 </div>
+            </div>
+
+            <!-- API Keys 2FA: the shared Authenticator code every admin must
+                 enter (fresh, every time) to open the API Keys page — a
+                 separate secret from anyone's personal login 2FA. Full
+                 Access only — see canManageAdmins() / listenApiKeysMfaSecret. -->
+            <div class="admin-card" style="margin-top:14px;" id="apikeys-mfa-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-key"></use></svg>
+                        <span style="font-size:15px;font-weight: 600;">API Keys 2FA</span>
+                    </div>
+                    <button class="btn btn-outline" id="apikeys-mfa-setup-btn" style="flex:unset;padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="openApiKeysMfaSetup()">Set Up</button>
+                </div>
+                <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;">A separate Authenticator code — not anyone's personal login code — required every time the API Keys page is opened, by whichever admin opens it. <span id="apikeys-mfa-status" style="font-weight:600;color:var(--text-primary);"></span></p>
             </div>
         </div>
 
@@ -2769,6 +2816,7 @@
                 <button class="btn btn-outline" onclick="openGameReorder()">↕ Reorder</button>
                 <button class="btn btn-outline" onclick="openAddServerPicker()">+ Add Server</button>
                 <button class="btn btn-outline" onclick="copyAllGameNames()">📋 Copy Names</button>
+                <button type="button" class="btn btn-outline" id="game-edit-mode-btn" onclick="toggleGameListEditMode()">✏️ Edit Mode: Off</button>
                 <button class="btn btn-primary" onclick="openGameEditor()">+ Add</button>
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
@@ -2912,7 +2960,7 @@
                  below); "Sell Requests" is where a customer's own "Sell Your
                  Account" submission from the store lands — never auto-listed,
                  admin reviews it here, negotiates the price with the seller
-                 over Support Chat, then locks in the confirmed price. -->
+                 directly (using the contact info below), then locks in the confirmed price. -->
             <div class="acct-subtab-bar">
                 <div class="acct-subtab active" id="acct-subtab-listings" onclick="switchAccountSubTab('listings')">
                     <span>Listings</span>
@@ -2955,7 +3003,7 @@
              "Sell Your Account" form: listing info, seller contact, and the
              seller-identity verification (NRC front/back, holding-ID video,
              GPS location) kept for admin records only. Price negotiation
-             itself happens in Support Chat (see "Message Seller"); once
+             itself happens outside the panel, using the seller's contact info; once
              admin and seller agree, the confirmed price is entered here and
              locked with a checkmark — the seller never has an edit control
              for it in the first place, so there's nothing for them to change. -->
@@ -2984,7 +3032,6 @@
                     <div class="sr-kv-row"><span>Name</span><span id="sr-detail-sellername">—</span></div>
                     <div class="sr-kv-row"><span>Contact</span><span id="sr-detail-contact">—</span></div>
                     <div class="sr-kv-row"><span>Submitted</span><span id="sr-detail-submitted">—</span></div>
-                    <button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="messageSellRequestSeller()">💬 Message Seller (negotiate price)</button>
 
                     <div class="sr-section-title">Identity Verification (seller-only, never shown to buyers)</div>
                     <div class="sr-media-grid">
@@ -3270,33 +3317,6 @@
             <h2 class="title-header" style="margin-top:20px;">Current Messages</h2>
             <div id="ticker-list-container">
                 <p class="empty-msg">Loading ticker messages...</p>
-            </div>
-        </div>
-
-        <!-- SUPPORT CHAT PAGE (Firebase Connected) — inbox for the Store app's
-             Support Widget "Support Chat" tab. Each customer gets one
-             supportChats/{guestId} summary doc (lastMessage/lastSender/
-             unreadByAdmin) plus a messages subcollection. Replying here
-             writes straight into that subcollection with sender:'admin',
-             same schema the Telegram-reply path in telegram-worker.js
-             already writes, so a customer sees the reply either way and
-             the admin can keep using either channel interchangeably. -->
-        <div id="supportchat-list" class="page-section">
-            <h2 class="title-header">Support Chat</h2>
-            <!-- Product and Account are two fully separate threads/collections
-                 (see supportChatListView / SUPPORT_CHAT_LIST_COLLECTIONS below).
-                 Only a full-access admin sees this toggle - the 'account' and
-                 'product' roles are hard-pinned to their own collection. -->
-            <div class="pkg-type-tabs" id="supportchat-view-tabs" style="display:none;margin-bottom:10px;">
-                <button class="pkg-type-tab active" id="supportchat-view-tab-product" onclick="switchSupportChatListView('product')">Product</button>
-                <button class="pkg-type-tab" id="supportchat-view-tab-account" onclick="switchSupportChatListView('account')">Account</button>
-            </div>
-            <div class="admin-search-wrap">
-                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="supportchat-search" placeholder="Search by name, ID, or message..." autocomplete="off" oninput="renderSupportChatList()">
-            </div>
-            <div id="supportchat-threads-container">
-                <p class="empty-msg">Loading conversations...</p>
             </div>
         </div>
 
@@ -3808,16 +3828,18 @@
                 <div class="pkg-actions-row">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
                     <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
+                    <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
+                    <!-- Pricing tools grouped together: Bulk % / Resync 5% / Check Prices all touch Cost-and-Price, so they read as one group instead of being scattered between row tools and provider imports. -->
                     <button class="btn btn-outline" onclick="openBulkPkgModal()" title="Cost/Price အားလုံးကို % တစ်ခုတည်းနဲ့ တစ်ခါတည်းချိန်ညှိပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-dollar"></use></svg> Bulk %</button>
                     <button class="btn btn-outline" onclick="resyncAllPricesToMargin()" title="Package အားလုံးရဲ့ Price ကို လက်ရှိ Cost အပေါ်မူတည်ပြီး ~5% margin ပြန်ရောက်အောင် ချိန်ညှိပေးမယ် (Cost မရှိသေးတဲ့ row တွေကိုတော့ ကျော်သွားမယ်)"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Resync 5%</button>
+                    <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
+                    <!-- Provider import + its own Debug button kept as adjacent pairs, instead of both Debug buttons being separated from the imports they check. -->
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
                     <button class="btn btn-outline" id="g2bulk-debug-btn" onclick="debugG2BulkServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ G2Bulk ရဲ့ fields/servers raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="fazercard-import-btn" onclick="importFazerCardCatalogue()" style="display:none;">Import from FazerCards</button>
                     <button class="btn btn-outline" id="fazercard-debug-btn" onclick="debugFazerCardServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ FazerCards ရဲ့ fields raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                     <button class="btn btn-outline" id="aluu-import-btn" onclick="importAluuCatalogue()" style="display:none;">Import from Aluu.in</button>
                     <button class="btn btn-outline" id="bay2game-import-btn" onclick="importBay2gameCatalogue()" style="display:none;">Import from Bay2Game</button>
-                    <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
-                    <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                 </div>
                 <button class="btn btn-primary" id="pkg-apply-all-cost-btn" onclick="applyAllCostUpdates()" style="display:none;width:100%;justify-content:center;gap:6px;background:#FF9500;"><svg class="ui-icon" style="width:14px;height:14px;stroke:#fff;"><use href="#icon-refresh"></use></svg> <span id="pkg-apply-all-cost-label">Update All Costs</span></button>
                 <p id="pkg-price-check-status" style="font-size:11px;color:var(--text-muted);margin:-4px 0 0;"></p>
@@ -3928,32 +3950,6 @@
     </div>
 
     <!-- Payment Method Editor Modal -->
-    <!-- Support Chat Thread Modal — opened from the Support Chat page list.
-         Reading/replying here writes to the same supportChats/{guestId}
-         Firestore schema the Telegram-reply flow uses (see
-         handleSupportChatReply in telegram-worker.js), so both channels
-         stay interchangeable. -->
-    <div class="modal-overlay" id="supportchat-thread-overlay" onclick="if(event.target===this) closeSupportChatThread()">
-        <div class="modal-box" style="max-height:82vh;">
-            <div class="modal-header">
-                <h3 id="supportchat-thread-title">Support Chat</h3>
-                <div class="modal-close" onclick="closeSupportChatThread()">
-                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
-                </div>
-            </div>
-            <div id="supportchat-thread-messages" class="sc-messages"></div>
-            <div class="sc-typing" id="supportchat-thread-typing">
-                <span class="sc-typing-dots"><span></span><span></span><span></span></span> Customer is typing...
-            </div>
-            <div class="sc-inputrow">
-                <input type="text" id="supportchat-thread-input" placeholder="Type a reply..." autocomplete="off" oninput="handleAdminChatTyping()" onkeydown="if(event.key==='Enter'){event.preventDefault();sendSupportChatReply();}">
-                <button type="button" class="sc-send" onclick="sendSupportChatReply()">
-                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-send"></use></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="payment-editor-modal-overlay" onclick="if(event.target===this) closePaymentEditor()">
         <div class="modal-box">
             <div class="modal-header">
@@ -4520,7 +4516,7 @@
             'payment-list': 'group-wallet', 'topup-list': 'group-wallet', 'coupon-list': 'group-wallet',
             'user-list': 'group-userlist', 'tier-list': 'group-userlist', 'activity-log': 'group-userlist',
             'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting',
-            'account-list': 'group-game', 'account-dashboard': 'group-account', 'supportchat-list': 'group-supportchat'
+            'account-list': 'group-game', 'account-dashboard': 'group-account'
         };
         // Pages an 'account' role admin may open, and pages a 'product' role
         // admin may NOT open — see applyRoleRestrictions(). Kept as a
@@ -4529,8 +4525,8 @@
         // into the other admin's side. 'api-docs' is blocked for 'product'
         // too — API Keys/docs are Full-Access-only regardless of role (see
         // the 'API Keys' filter in renderNavGroupSheet below).
-        const ACCOUNT_ROLE_PAGES = ['account-dashboard', 'account-list', 'supportchat-list', 'payment-list'];
-        const PRODUCT_ROLE_BLOCKED_PAGES = ['account-dashboard', 'account-list', 'api-docs', 'supportchat-list'];
+        const ACCOUNT_ROLE_PAGES = ['account-dashboard', 'account-list', 'payment-list'];
+        const PRODUCT_ROLE_BLOCKED_PAGES = ['account-dashboard', 'account-list', 'api-docs'];
         // Lets a per-admin Access Permission override (adminUsernames/{username}
         // .permissions, set from the Admin Permissions modal — see
         // openAdminPermissionsModal) grant a page the admin's preset Access
@@ -4553,7 +4549,15 @@
             return !!(group && perm[group] === true);
         }
         window.pageGrantedByPermission = pageGrantedByPermission;
-        function showPage(pageId) {
+        function showPage(pageId, skipApiKeysGate) {
+            // API Keys holds every third-party credential the store spends
+            // real money through (G2Bulk/FazerCards/Aluu.in/etc.) — even for
+            // an already-signed-in Full Access admin, require a fresh
+            // Authenticator code every single time this page is opened
+            // (see openApiKeysMfaGate/confirmApiKeysMfa), not just once at
+            // login. skipApiKeysGate=true is only ever passed by
+            // confirmApiKeysMfa() itself, right after a code just verified.
+            if (pageId === 'api-docs' && !skipApiKeysGate) { openApiKeysMfaGate(); return; }
             const grantedByPermission = pageGrantedByPermission(pageId);
             if (currentAdminRole === 'account' && !ACCOUNT_ROLE_PAGES.includes(pageId) && !grantedByPermission) pageId = 'account-dashboard';
             if (currentAdminRole === 'product' && PRODUCT_ROLE_BLOCKED_PAGES.includes(pageId) && !grantedByPermission) pageId = 'dashboard';
@@ -4599,8 +4603,7 @@
             ]},
             account: { title: 'Account', items: [
                 { label: 'Dashboard', icon: '#icon-trending-up', run: () => showPage('account-dashboard') },
-                { label: 'Listings & Requests', icon: '#icon-tag', run: () => showPage('account-list') },
-                { label: 'Support Chat', icon: '#icon-message-circle', run: () => showPage('supportchat-list') }
+                { label: 'Listings & Requests', icon: '#icon-tag', run: () => showPage('account-list') }
             ]},
             wallet: { title: 'Wallet', items: [
                 { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
@@ -4675,18 +4678,11 @@
         // client-side UI gate only — Firestore rules are the real security
         // boundary and should mirror this split before it's relied on for
         // anything sensitive (flagged separately to the store owner).
-        const ALL_NAV_GROUPS = ['group-dashboard', 'group-game', 'group-account', 'group-wallet', 'group-api', 'group-userlist', 'group-supportchat', 'group-setting'];
+        const ALL_NAV_GROUPS = ['group-dashboard', 'group-game', 'group-account', 'group-wallet', 'group-api', 'group-userlist', 'group-setting'];
         const NAV_GROUPS_BY_ROLE = {
             full: ALL_NAV_GROUPS,
-            // 'group-supportchat' removed: the general Support Chat inbox
-            // (supportChats collection, opened from the store's sidebar
-            // "Support Chat") now reaches Full Access only — see
-            // visibleAccountChats()/activeSupportChatCollection() and the
-            // matching PRODUCT_ROLE_BLOCKED_PAGES entry below. A Product
-            // admin who genuinely needs it can still be granted it
-            // individually via that admin's Access Permission overrides.
             product: ['group-dashboard', 'group-game', 'group-wallet', 'group-api', 'group-userlist', 'group-setting'],
-            account: ['group-account', 'group-wallet', 'group-supportchat']
+            account: ['group-account', 'group-wallet']
         };
         // Which page a non-Full-Access admin lands on if the group they were
         // sitting in gets switched off from underneath them (owner toggles
@@ -4694,7 +4690,7 @@
         const FALLBACK_PAGE_FOR_GROUP = {
             'group-dashboard': 'dashboard', 'group-game': 'dashboard', 'group-account': 'account-dashboard',
             'group-wallet': 'payment-list', 'group-api': 'g2bulk', 'group-userlist': 'user-list',
-            'group-supportchat': 'supportchat-list', 'group-setting': 'settings'
+            'group-setting': 'settings'
         };
 
         // ---------- Owner-controlled Tab Access ----------
@@ -4707,7 +4703,7 @@
         const NAV_GROUP_LABELS = {
             'group-dashboard': 'Dashboard', 'group-game': 'Game', 'group-account': 'Account',
             'group-wallet': 'Wallet', 'group-api': 'API', 'group-userlist': 'Userlist',
-            'group-supportchat': 'Support Chat', 'group-setting': 'Setting'
+            'group-setting': 'Setting'
         };
 
         // One-line description per built-in role, shown above the matrix.
@@ -4716,7 +4712,7 @@
         const ROLE_DESCRIPTIONS = {
             full: 'Sees and can manage everything, including other admins.',
             product: 'Catalogue, orders, wallet &amp; API — no customer accounts, no raw API keys.',
-            account: 'Customer accounts, wallet payments &amp; support chat only.'
+            account: 'Customer accounts &amp; wallet payments only.'
         };
         const ROLE_LABELS = { full: 'Full', product: 'Product', account: 'Account' };
 
@@ -4812,14 +4808,14 @@
 
         // ---------- Settings ("General") page — owner-only cards ----------
         // Non-owner admins (Product/Account role) who reach the Settings
-        // page only ever see the 3 cards every admin needs day-to-day
-        // (Support Chat Avatar, Support Chat FAQ, Push Notifications).
+        // page only ever see the card every admin needs day-to-day
+        // (Push Notifications).
         // Everything else — store branding, payments-adjacent settings,
         // and admin/tab management itself — is owner (Full Access) only.
         const SETTINGS_CARDS_OWNER_ONLY = [
             'settings-card-sociallinks', 'settings-card-referral', 'settings-card-flashsale',
             'settings-card-branding', 'settings-card-walletexpire', 'settings-card-receiptstyle',
-            'settings-card-autoprice', 'settings-card-adminlogin', 'roles-overview-card', 'admin-accounts-card', 'tab-access-card'
+            'settings-card-autoprice', 'settings-card-storeaccounts', 'settings-card-adminlogin', 'roles-overview-card', 'admin-accounts-card', 'tab-access-card', 'apikeys-mfa-card'
         ];
         function applySettingsCardVisibility() {
             const isOwner = currentAdminRole === 'full';
@@ -4897,79 +4893,18 @@
         }
         window.applyRoleRestrictions = applyRoleRestrictions;
 
-        // ---------- Store Switcher (Store 1 / Store 2) ----------
-        // Tracks which store's data the admin is currently viewing. This is
-        // step 1 of the multi-store setup: just the switcher UI + persisted
-        // selection. Games, Packages, and the G2Bulk/JCPlays/FazerCards API
-        // credentials are shared across both stores and don't change with
-        // this. A later pass wires Orders/Users/Payment/Branding to actually
-        // filter/save by whichever store is selected here (getCurrentStoreId()
-        // is the hook those changes will read from).
-        const STORES = [
-            { id: 'store1', label: 'Store 1' },
-            { id: 'store2', label: 'Store 2' }
-        ];
-        let currentStoreId = 'store1';
-        try { currentStoreId = localStorage.getItem('pca-admin-store') || 'store1'; } catch (e) {}
-
-        function getCurrentStoreId() { return currentStoreId; }
+        // ---------- Single store (Store 1 / Store 2 switcher removed) ----------
+        // The admin panel used to let the admin switch between two stores'
+        // worth of Orders/Users/Payment/Branding data. That's collapsed back
+        // down to a single store now — getCurrentStoreId()/matchesCurrentStore()
+        // are kept as harmless pass-throughs so the existing call sites that
+        // read them (order/top-up filtering, dashboard stats, analytics)
+        // don't need to change: every order now simply belongs to the one
+        // store, regardless of its storeId field.
+        function getCurrentStoreId() { return 'store1'; }
         window.getCurrentStoreId = getCurrentStoreId;
 
-        function renderStoreSwitcherLabel() {
-            const store = STORES.find(s => s.id === currentStoreId) || STORES[0];
-            const label = document.getElementById('store-switcher-label');
-            if (label) label.innerText = `PCA ${store.label}`;
-        }
-
-        function renderStoreSwitcherSheet() {
-            const list = document.getElementById('store-switcher-sheet-list');
-            list.innerHTML = '';
-            STORES.forEach(s => {
-                const isActive = s.id === currentStoreId;
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.style.cssText = `display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border:1.5px solid ${isActive ? 'var(--accent)' : 'var(--fill-soft)'};border-radius:12px;background:${isActive ? 'var(--accent-soft)' : 'var(--surface)'};cursor:pointer;font-size:14px;font-weight:600;color:var(--text-primary);text-align:left;`;
-                btn.innerHTML = `<span>${s.label}</span>` + (isActive ? `<svg class="ui-icon" style="width:16px;height:16px;margin-left:auto;stroke:var(--accent);"><use href="#icon-check"></use></svg>` : '');
-                btn.onclick = () => selectStore(s.id);
-                list.appendChild(btn);
-            });
-        }
-
-        function openStoreSwitcherSheet() {
-            renderStoreSwitcherSheet();
-            document.getElementById('store-switcher-sheet-overlay').classList.add('show');
-        }
-        function closeStoreSwitcherSheet() {
-            document.getElementById('store-switcher-sheet-overlay').classList.remove('show');
-        }
-        function selectStore(storeId) {
-            if (storeId === currentStoreId) { closeStoreSwitcherSheet(); return; }
-            currentStoreId = storeId;
-            try { localStorage.setItem('pca-admin-store', storeId); } catch (e) {}
-            renderStoreSwitcherLabel();
-            closeStoreSwitcherSheet();
-            window.showToast(`Switched to ${STORES.find(s => s.id === storeId).label}`, 'success');
-            // Refresh whichever store-scoped page is currently open so the
-            // switch is reflected immediately, without needing to navigate
-            // away and back.
-            const activePage = document.querySelector('.page-section.active')?.id;
-            if (activePage === 'order-list' || activePage === 'dashboard') { if (window.loadDashboardStats) window.loadDashboardStats(); }
-            if (activePage === 'order-list') { if (window.renderOrdersList) window.renderOrdersList(); }
-            if (activePage === 'analytics') { if (window.renderAnalytics) window.renderAnalytics(); }
-            if (activePage === 'topup-list') { if (window.renderTopupsList) window.renderTopupsList(); }
-        }
-        window.openStoreSwitcherSheet = openStoreSwitcherSheet;
-        window.closeStoreSwitcherSheet = closeStoreSwitcherSheet;
-        window.selectStore = selectStore;
-        document.addEventListener('DOMContentLoaded', renderStoreSwitcherLabel);
-
-        // An order "belongs" to whichever store its storeId field says. Orders
-        // with no storeId at all (anything saved before the store front(s)
-        // start tagging it) are treated as Store 1's, so existing/legacy data
-        // doesn't just disappear from view once this switch exists.
-        function matchesCurrentStore(order) {
-            return (order && order.storeId ? order.storeId : 'store1') === currentStoreId;
-        }
+        function matchesCurrentStore(order) { return true; }
         window.matchesCurrentStore = matchesCurrentStore;
 
         let toastQueue = [];
@@ -5382,7 +5317,6 @@
         // the Activity Log and IP login-alert features below so every write
         // knows exactly which admin made it.
         let currentAdminUsername = null;
-        let currentAdminAvatarUrl = null;
         // 'full' (everything), 'product' (top-up side only), or 'account'
         // (Game Accounts side only) — resolved from the signed-in admin's
         // adminUsernames doc in routeAfterAuth(). Admins created before this
@@ -5486,6 +5420,11 @@
                     applyRoleRestrictions();
                 }
                 renderAdminAccountsList();
+                // Keep the My Account modal's Telegram/2FA status live too,
+                // if it happens to be open (e.g. right after a link/reset
+                // completes) — same live-update pattern as the Admin
+                // Accounts card above, just for whichever admin is signed in.
+                if (document.getElementById('my-account-modal-overlay')?.classList.contains('show')) renderMyAccountModal();
             }, (error) => {
                 console.error('Admin accounts listener error:', error);
             });
@@ -5506,9 +5445,7 @@
         }
 
         // Each admin's own photo, stored on their adminUsernames/{username}
-        // doc as avatarUrl. Denormalized onto every chat message they send
-        // (see sendSupportChatReply) so customers see the right face per
-        // reply even if the admin later changes their photo.
+        // doc as avatarUrl.
         async function handleAdminAvatarSelect(inputEl, username) {
             const file = inputEl.files && inputEl.files[0];
             inputEl.value = '';
@@ -5518,7 +5455,6 @@
             try {
                 const avatarUrl = await uploadAdminAvatarToImgBB(file);
                 await setDoc(doc(db, "adminUsernames", username), { avatarUrl }, { merge: true });
-                if (username === currentAdminUsername) currentAdminAvatarUrl = avatarUrl;
                 logAdminActivity('Updated admin avatar', username);
                 window.showToast('Avatar updated ✓', 'success');
             } catch (error) {
@@ -5556,7 +5492,6 @@
                 const has2fa = !!a.totpSecret;
                 const lastLogin = a.lastLoginAt?.toDate ? a.lastLoginAt.toDate().toLocaleString() : 'Never';
                 const isYou = a.username === currentAdminUsername;
-                if (isYou) currentAdminAvatarUrl = a.avatarUrl || null;
                 const initial = escapeHtml((a.username || '?').trim().charAt(0).toUpperCase() || '?');
                 const avatarInner = a.avatarUrl ? `<img src="${a.avatarUrl}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : initial;
                 const role = a.role || 'full';
@@ -5922,6 +5857,53 @@
         }
         window.unlinkAdminTelegram = unlinkAdminTelegram;
 
+        // ---------- My Account modal (self-service, all roles) ----------
+        // Reuses the same self-service-gated functions the Admin Accounts
+        // card (Full Access only) uses for its own row — handleAdminAvatarSelect,
+        // resetAdminTotp, openTelegramLinkModal/unlinkAdminTelegram already
+        // only allow acting on currentAdminUsername when the caller isn't a
+        // Full Access admin, so calling them here with currentAdminUsername
+        // is exactly as safe as the existing "this is you" card. This modal
+        // never reads or shows any OTHER admin's row, and has no path into
+        // Settings/API-key content, so opening it up to every role adds no
+        // new exposure.
+        function renderMyAccountModal() {
+            const me = ADMIN_ACCOUNTS.find(a => a.username === currentAdminUsername) || {};
+            const avatarEl = document.getElementById('my-account-avatar');
+            const initial = escapeHtml((currentAdminUsername || '?').trim().charAt(0).toUpperCase() || '?');
+            if (avatarEl) {
+                avatarEl.innerHTML = me.avatarUrl
+                    ? `<img src="${me.avatarUrl}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">`
+                    : initial;
+            }
+            const roleLabels = { full: 'Full Access', product: 'Product', account: 'Account' };
+            document.getElementById('my-account-username').innerText = currentAdminUsername || '—';
+            document.getElementById('my-account-role').innerText = roleLabels[me.role || 'full'] || 'Full Access';
+
+            const has2fa = !!me.totpSecret;
+            document.getElementById('my-account-2fa-status').innerText = has2fa ? '2FA enabled' : 'Not set up yet';
+
+            const telegramLinked = !!me.telegramChatId;
+            document.getElementById('my-account-telegram-status').innerText = telegramLinked
+                ? escapeHtml(me.telegramName || 'Telegram') + (me.telegramUsername ? ` (@${escapeHtml(me.telegramUsername)})` : '')
+                : 'Not connected';
+            document.getElementById('my-account-telegram-action').innerHTML = telegramLinked
+                ? `<button type="button" onclick="unlinkAdminTelegram(currentAdminUsername)" style="background:none;border:none;color:var(--danger);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Unlink</button>`
+                : `<button type="button" onclick="closeMyAccountModal(); openTelegramLinkModal(currentAdminUsername)" style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Link Telegram</button>`;
+        }
+        window.renderMyAccountModal = renderMyAccountModal;
+
+        function openMyAccountModal() {
+            renderMyAccountModal();
+            document.getElementById('my-account-modal-overlay').classList.add('show');
+        }
+        window.openMyAccountModal = openMyAccountModal;
+
+        function closeMyAccountModal() {
+            document.getElementById('my-account-modal-overlay').classList.remove('show');
+        }
+        window.closeMyAccountModal = closeMyAccountModal;
+
         // Keeps the visual role toggle in the Add Admin modal in sync with
         // the hidden <select id="new-admin-role">, so createNewAdmin()'s
         // existing roleSelect.value read still works unchanged.
@@ -6162,6 +6144,178 @@
         }
         window.renderMfaQrCode = renderMfaQrCode;
 
+        // ---------- API Keys 2FA (shared secret, separate from login MFA) ----------
+        // A single Firestore-stored secret that gates the API Keys page,
+        // independent of any admin's personal login TOTP secret. Whoever
+        // opens the page — any Full Access admin, on any device, on a brand
+        // new session — must produce a current code from THIS secret, fresh,
+        // every time (see showPage's api-docs branch). Any Full Access admin
+        // can view its status, but only the admin who originally set it up
+        // (apiKeysMfaSetBy) may regenerate it — see openApiKeysMfaSetup.
+        let apiKeysMfaSecret = null;
+        let apiKeysMfaSetBy = null;
+        let pendingApiKeysMfaSecret = null;
+
+        function listenApiKeysMfaSecret() {
+            onSnapshot(doc(db, "settings", "apiKeysMfa"), (snap) => {
+                const data = snap.exists() ? snap.data() : null;
+                apiKeysMfaSecret = data ? data.secret : null;
+                apiKeysMfaSetBy = data ? data.setBy : null;
+                renderApiKeysMfaCard();
+            }, (error) => { console.error('API Keys MFA listener error:', error); });
+        }
+        window.listenApiKeysMfaSecret = listenApiKeysMfaSecret;
+
+        function renderApiKeysMfaCard() {
+            const statusEl = document.getElementById('apikeys-mfa-status');
+            const btn = document.getElementById('apikeys-mfa-setup-btn');
+            if (!statusEl || !btn) return;
+            // Before anything's set up, any Full Access admin who gets there
+            // first may do the initial setup (they become the setter). Once
+            // set, only that admin may regenerate — everyone else just sees
+            // status, with the button hidden.
+            const canRegen = !apiKeysMfaSecret || apiKeysMfaSetBy === currentAdminUsername;
+            if (!apiKeysMfaSecret) {
+                statusEl.textContent = 'Not set up yet — nobody can open API Keys until this is set up.';
+            } else if (apiKeysMfaSetBy === currentAdminUsername) {
+                statusEl.textContent = 'Currently set up by you.';
+            } else {
+                statusEl.textContent = `Currently set up by ${apiKeysMfaSetBy || 'another admin'} — only they can regenerate it.`;
+            }
+            btn.innerText = apiKeysMfaSecret ? 'Regenerate' : 'Set Up';
+            btn.style.display = canRegen ? '' : 'none';
+        }
+        window.renderApiKeysMfaCard = renderApiKeysMfaCard;
+
+        // ----- Verify-to-open gate (shown every time showPage('api-docs') runs) -----
+        function openApiKeysMfaGate() {
+            if (!apiKeysMfaSecret) {
+                window.showToast('Set up API Keys 2FA in Settings first.', 'fail');
+                return;
+            }
+            const errEl = document.getElementById('apikeys-mfa-error');
+            if (errEl) errEl.style.display = 'none';
+            const otpGroup = document.getElementById('apikeys-mfa-otp');
+            if (otpGroup) otpGroup.querySelectorAll('.otp-box').forEach(b => { b.value = ''; b.classList.remove('otp-filled'); });
+            document.getElementById('apikeys-mfa-code').value = '';
+            if (applyLockoutUI('apikeys-mfa', 'apikeys-mfa-btn', 'apikeys-mfa-error', 'Verify')) {
+                document.getElementById('apikeys-mfa-modal-overlay').classList.add('show');
+                return;
+            }
+            document.getElementById('apikeys-mfa-modal-overlay').classList.add('show');
+            setTimeout(() => document.querySelector('#apikeys-mfa-otp .otp-box')?.focus(), 50);
+        }
+        window.openApiKeysMfaGate = openApiKeysMfaGate;
+
+        function closeApiKeysMfaGate() {
+            document.getElementById('apikeys-mfa-modal-overlay').classList.remove('show');
+        }
+        window.closeApiKeysMfaGate = closeApiKeysMfaGate;
+
+        // 3 wrong codes locks this out for a flat 1 hour (not the 5-attempt
+        // exponential backoff used for login) — see registerFailedAttempt's
+        // optional overrides.
+        async function confirmApiKeysMfa() {
+            const code = document.getElementById('apikeys-mfa-code').value.trim();
+            const errEl = document.getElementById('apikeys-mfa-error');
+            const btn = document.getElementById('apikeys-mfa-btn');
+            errEl.style.display = 'none';
+            if (applyLockoutUI('apikeys-mfa', 'apikeys-mfa-btn', 'apikeys-mfa-error', 'Verify')) return;
+            if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
+            btn.disabled = true; btn.innerText = 'Verifying...';
+            try {
+                const ok = apiKeysMfaSecret && await verifyTotpCode(apiKeysMfaSecret, code);
+                if (!ok) {
+                    registerFailedAttempt('apikeys-mfa', 3, 3600, 3600);
+                    if (!applyLockoutUI('apikeys-mfa', 'apikeys-mfa-btn', 'apikeys-mfa-error', 'Verify')) {
+                        errEl.textContent = 'Wrong code.';
+                        errEl.style.display = 'block';
+                        btn.disabled = false; btn.innerText = 'Verify';
+                    }
+                    return;
+                }
+                clearLockout('apikeys-mfa');
+                btn.disabled = false; btn.innerText = 'Verify';
+                closeApiKeysMfaGate();
+                showPage('api-docs', true);
+            } catch (e) {
+                console.error('API Keys MFA verify error:', e);
+                errEl.textContent = 'Something went wrong. Try again.';
+                errEl.style.display = 'block';
+                btn.disabled = false; btn.innerText = 'Verify';
+            }
+        }
+        window.confirmApiKeysMfa = confirmApiKeysMfa;
+
+        // ----- Set up / regenerate (Full Access only, from Settings) -----
+        // Anyone Full Access can do the FIRST setup (no owner yet); after
+        // that, only apiKeysMfaSetBy may regenerate — everyone else is
+        // blocked here even if they reach this call directly, not just by
+        // the hidden button in renderApiKeysMfaCard.
+        function openApiKeysMfaSetup() {
+            if (!canManageAdmins()) { window.showToast('Only Full Access admins can manage this.', 'fail'); return; }
+            if (apiKeysMfaSecret && apiKeysMfaSetBy && apiKeysMfaSetBy !== currentAdminUsername) {
+                window.showToast(`Only ${apiKeysMfaSetBy} can regenerate this.`, 'fail');
+                return;
+            }
+            pendingApiKeysMfaSecret = randomBase32Secret();
+            document.getElementById('apikeys-setup-warning').style.display = apiKeysMfaSecret ? 'block' : 'none';
+            document.getElementById('apikeys-setup-secret-box').style.display = 'none';
+            document.getElementById('apikeys-setup-secret-text').innerText = pendingApiKeysMfaSecret;
+            document.getElementById('apikeys-setup-error').style.display = 'none';
+            const otpGroup = document.getElementById('apikeys-setup-otp');
+            otpGroup.querySelectorAll('.otp-box').forEach(b => { b.value = ''; b.classList.remove('otp-filled'); });
+            document.getElementById('apikeys-setup-code').value = '';
+            renderMfaQrCode(pendingApiKeysMfaSecret, 'API Keys', 'apikeys-setup-qr-code');
+            document.getElementById('apikeys-setup-modal-overlay').classList.add('show');
+        }
+        window.openApiKeysMfaSetup = openApiKeysMfaSetup;
+
+        function closeApiKeysMfaSetup() {
+            document.getElementById('apikeys-setup-modal-overlay').classList.remove('show');
+            pendingApiKeysMfaSecret = null;
+        }
+        window.closeApiKeysMfaSetup = closeApiKeysMfaSetup;
+
+        function toggleApiKeysSetupManualKey() {
+            const box = document.getElementById('apikeys-setup-secret-box');
+            if (box) box.style.display = box.style.display === 'none' ? '' : 'none';
+        }
+        window.toggleApiKeysSetupManualKey = toggleApiKeysSetupManualKey;
+
+        // Only persists the new secret once a code generated FROM it is
+        // confirmed — otherwise a mistyped/unscanned QR could lock every
+        // admin, owner included, out of API Keys.
+        async function confirmApiKeysMfaSetup() {
+            const code = document.getElementById('apikeys-setup-code').value.trim();
+            const errEl = document.getElementById('apikeys-setup-error');
+            const btn = document.getElementById('apikeys-setup-btn');
+            errEl.style.display = 'none';
+            if (!pendingApiKeysMfaSecret) { closeApiKeysMfaSetup(); return; }
+            if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
+            btn.disabled = true; btn.innerText = 'Verifying...';
+            try {
+                const ok = await verifyTotpCode(pendingApiKeysMfaSecret, code);
+                if (!ok) {
+                    errEl.textContent = 'Wrong code — make sure you scanned the QR above.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false; btn.innerText = 'Confirm & Save';
+                    return;
+                }
+                await setDoc(doc(db, "settings", "apiKeysMfa"), { secret: pendingApiKeysMfaSecret, updatedAt: Date.now(), setBy: currentAdminUsername }, { merge: true });
+                window.showToast('API Keys 2FA saved.', 'success');
+                closeApiKeysMfaSetup();
+            } catch (e) {
+                console.error('API Keys MFA setup error:', e);
+                errEl.textContent = 'Something went wrong. Try again.';
+                errEl.style.display = 'block';
+                btn.disabled = false; btn.innerText = 'Confirm & Save';
+                return;
+            }
+            btn.disabled = false; btn.innerText = 'Confirm & Save';
+        }
+        window.confirmApiKeysMfaSetup = confirmApiKeysMfaSetup;
+
         // Copies the exact secret text so it can be pasted into an authenticator
         // app instead of hand-typed — hand-typing a 16-char Base32 string is
         // where dropped/duplicated characters (and "key too short" errors) come from.
@@ -6203,7 +6357,9 @@
             // Maps each OTP group id to the id of the button that should fire.
             const AUTO_SUBMIT_BTN = {
                 'mfa-enroll-otp': 'mfa-enroll-btn',
-                'mfa-challenge-otp': 'mfa-challenge-btn'
+                'mfa-challenge-otp': 'mfa-challenge-btn',
+                'apikeys-mfa-otp': 'apikeys-mfa-btn',
+                'apikeys-setup-otp': 'apikeys-setup-btn'
             };
             const maybeAutoSubmit = () => {
                 const code = boxes.map(b => b.value).join('');
@@ -6259,6 +6415,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             setupOtpGroup('mfa-enroll-otp', 'mfa-enroll-code');
             setupOtpGroup('mfa-challenge-otp', 'mfa-challenge-code');
+            setupOtpGroup('apikeys-mfa-otp', 'apikeys-mfa-code');
+            setupOtpGroup('apikeys-setup-otp', 'apikeys-setup-code');
         });
 
         function toggleMfaManualKey() {
@@ -6326,12 +6484,15 @@
             setLockoutState(scope, { count: 0, lockUntil: 0 });
             if (lockoutTimers[scope]) { clearInterval(lockoutTimers[scope]); delete lockoutTimers[scope]; }
         }
-        function registerFailedAttempt(scope) {
+        // maxAttempts/baseSeconds/maxSeconds default to the shared login
+        // lockout constants; callers with their own policy (e.g. the flat
+        // 3-attempts/1-hour rule for API Keys 2FA) pass overrides.
+        function registerFailedAttempt(scope, maxAttempts = LOCKOUT_MAX_ATTEMPTS, baseSeconds = LOCKOUT_BASE_SECONDS, maxSeconds = LOCKOUT_MAX_SECONDS) {
             const state = getLockoutState(scope);
             state.count = (state.count || 0) + 1;
-            if (state.count >= LOCKOUT_MAX_ATTEMPTS) {
-                const tier = state.count - LOCKOUT_MAX_ATTEMPTS;
-                const seconds = Math.min(LOCKOUT_BASE_SECONDS * Math.pow(2, tier), LOCKOUT_MAX_SECONDS);
+            if (state.count >= maxAttempts) {
+                const tier = state.count - maxAttempts;
+                const seconds = Math.min(baseSeconds * Math.pow(2, tier), maxSeconds);
                 state.lockUntil = Date.now() + seconds * 1000;
             }
             setLockoutState(scope, state);
@@ -6512,7 +6673,6 @@
                 const usnap = await getDocs(uq);
                 if (!usnap.empty) {
                     currentAdminUsername = usnap.docs[0].id;
-                    currentAdminAvatarUrl = usnap.docs[0].data().avatarUrl || null;
                     currentAdminRole = usnap.docs[0].data().role || 'full';
                     window.currentAdminPermissions = usnap.docs[0].data().permissions || null;
                 }
@@ -6618,7 +6778,6 @@
                 loginScreen.classList.remove('hidden');
                 resetGateLocked();
                 currentAdminUsername = null;
-                currentAdminAvatarUrl = null;
                 currentAdminIP = null;
                 currentAdminRole = 'full';
                 window.currentAdminPermissions = null;
@@ -8869,6 +9028,51 @@
         }
         window.toggleWalletExpireSettings = toggleWalletExpireSettings;
 
+        // Game Accounts store-tab switch (settings/gameAccounts.enabled). The
+        // store shows "Coming Soon" for the tab unless this is explicitly true.
+        let storeAccountsSettingsLoaded = false;
+        async function loadStoreAccountsSettings() {
+            storeAccountsSettingsLoaded = true;
+            let enabled = false;
+            try {
+                const snap = await getDoc(doc(db, "settings", "gameAccounts"));
+                enabled = snap.exists() && snap.data().enabled === true;
+            } catch (error) {
+                console.error("Store accounts switch load error:", error);
+            }
+            const el = document.getElementById('store-accounts-enabled');
+            if (el) el.checked = enabled;
+        }
+        function toggleStoreAccountsSettings() {
+            const body = document.getElementById('store-accounts-body');
+            const chevron = document.getElementById('store-accounts-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            if (!isOpen && !storeAccountsSettingsLoaded) loadStoreAccountsSettings();
+        }
+        window.toggleStoreAccountsSettings = toggleStoreAccountsSettings;
+
+        async function saveStoreAccountsSettings() {
+            const enabled = !!document.getElementById('store-accounts-enabled').checked;
+            const btn = document.getElementById('save-store-accounts-btn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...';
+            btn.disabled = true;
+            try {
+                await setDoc(doc(db, "settings", "gameAccounts"), { enabled }, { merge: true });
+                logAdminActivity(enabled ? 'Opened Game Accounts in store' : 'Closed Game Accounts in store (Coming Soon)');
+                window.showToast(enabled ? 'Game Accounts is now OPEN in the store.' : 'Game Accounts now shows Coming Soon.', 'success');
+            } catch (error) {
+                console.error("Store accounts switch save error:", error);
+                window.showToast(error.message || 'Failed to save.', 'fail');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+        window.saveStoreAccountsSettings = saveStoreAccountsSettings;
+
         function togglePushNotificationSettings() {
             const body = document.getElementById('push-notif-body');
             const chevron = document.getElementById('push-notif-chevron');
@@ -9773,6 +9977,27 @@
         // two separate sidebar entries (Direct / Gift Cards) so the two
         // kinds are never mixed in one list.
         let gameListTab = 'direct';
+
+        // When off (default), the games list collapses every server/region
+        // variant of the same game name down to a single representative
+        // card, so the list reads as one card per game instead of one card
+        // per variant. A small count badge on that card's top corner shows
+        // how many variants exist (hidden when there's only one). Switching
+        // Edit Mode on expands every variant back out into its own card so
+        // they can each be opened/edited individually.
+        let gameListEditMode = false;
+        function toggleGameListEditMode() {
+            gameListEditMode = !gameListEditMode;
+            const btn = document.getElementById('game-edit-mode-btn');
+            if (btn) {
+                btn.innerText = `✏️ Edit Mode: ${gameListEditMode ? 'On' : 'Off'}`;
+                btn.classList.toggle('btn-primary', gameListEditMode);
+                btn.classList.toggle('btn-outline', !gameListEditMode);
+            }
+            renderAdminGamesList();
+        }
+        window.toggleGameListEditMode = toggleGameListEditMode;
+
         function showGameListTab(tab) {
             gameListTab = tab;
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
@@ -9872,24 +10097,41 @@
                     : `<p class="empty-msg">No ${gameListTab === 'voucher' ? 'Gift Card & Voucher' : 'Direct'} games yet. Tap + Add to create one.</p>`;
                 return;
             }
-            // Count how many entries share each game name, so multi-server
-            // groups (e.g. "Free Fire" as both Global and Malaysia) get an
-            // explicit, color-coded server badge on every card — including
-            // the blank/default one, which is now labeled "Global" instead of
-            // showing no badge at all and looking identical to a single,
-            // unsplit game.
+            // Count how many entries share each game name, so multi-server/
+            // region variants (e.g. "Free Fire" as both Global and Malaysia)
+            // can show a "how many variants" count badge on their card.
             const nameCounts = {};
             ids.forEach(id => { const n = GAMES[id].name; nameCounts[n] = (nameCounts[n] || 0) + 1; });
-            container.innerHTML = `<div class="game-image-grid">` + ids.map(id => {
+
+            // Outside Edit Mode, collapse every name-group down to just its
+            // first (alphabetically-first server/region) entry so the list
+            // reads as one card per game — the other variants only reappear
+            // as their own cards once Edit Mode is switched on.
+            const visibleIds = gameListEditMode ? ids : (() => {
+                const seenNames = new Set();
+                return ids.filter(id => {
+                    const n = GAMES[id].name;
+                    if (seenNames.has(n)) return false;
+                    seenNames.add(n);
+                    return true;
+                });
+            })();
+
+            container.innerHTML = `<div class="game-image-grid">` + visibleIds.map(id => {
                 const g = GAMES[id];
+                const variantCount = nameCounts[g.name] || 1;
+                const countBadge = variantCount > 1
+                    ? `<span class="game-variant-count-badge" title="${variantCount} server/region variants">${variantCount}</span>`
+                    : '';
                 return `
                     <div class="game-image-tile" id="game-card-${id}" onclick="openGameActionSheet('${id}')">
+                        ${countBadge}
                         <img src="${g.image}" loading="lazy" decoding="async" alt="${escapeHtml(g.name)}">
                     </div>
                 `;
             }).join('') + `</div>`;
             initScrollReveal(container);
-            ids.forEach(id => { updateGameCostBadge(id); updateGameStockBadge(id); updateGameMarginDot(id); queueGameCostScan(id); });
+            visibleIds.forEach(id => { updateGameCostBadge(id); updateGameStockBadge(id); updateGameMarginDot(id); queueGameCostScan(id); });
         }
 
         // ---------- Game action sheet: Edit / Delete split (opened by tapping
@@ -10742,10 +10984,18 @@
                 if (!id) {
                     // Ownership is fixed at creation time - whichever admin
                     // lists it is who a buyer's "Ask about this account"
-                    // messages get routed to (see the account-chat
-                    // thread-per-admin routing in Store.html). Never
-                    // reassigned on a later edit, even by a different admin.
+                    // Telegram message gets sent to (see contactAccountAdminOnTelegram()
+                    // in store.html). Never reassigned on a later edit, even
+                    // by a different admin.
                     data.postedByAdmin = currentAdminUsername || '';
+                    // Denormalized alongside postedByAdmin so store.html can build
+                    // the buyer's Telegram deep-link without ever reading the
+                    // adminUsernames collection directly (that doc also holds
+                    // totpSecret/email — not safe to expose to store guests).
+                    // Falls back to the store's shared Telegram in store.html if
+                    // this admin hasn't linked their Telegram yet.
+                    const me = (typeof ADMIN_ACCOUNTS !== 'undefined' ? ADMIN_ACCOUNTS.find(a => a.username === currentAdminUsername) : null) || {};
+                    data.postedByAdminTelegram = me.telegramUsername || '';
                 }
                 if (id) {
                     await updateDoc(doc(db, "gameAccounts", id), data);
@@ -10807,7 +11057,7 @@
         // Reviews leads from the store's "Sell Your Account" form (Firestore
         // collection "sellRequests"). These never touch the buyer-facing
         // GAME_ACCOUNTS marketplace directly — a customer sends their info,
-        // admin negotiates the real price with them over Support Chat, then
+        // admin negotiates the real price with them directly, then
         // locks it in here as confirmedPrice/status:'confirmed'. The seller
         // never had an edit control for price in their own submission, so
         // once confirmed there's nothing on their side that can change it;
@@ -10988,7 +11238,7 @@
 
             // Price confirmation section: show the locked, checkmarked view
             // once confirmed; otherwise show the input the admin fills in
-            // after negotiating with the seller over chat.
+            // after negotiating with the seller.
             const confirmedView = document.getElementById('sr-confirmed-view');
             const inputRow = document.getElementById('sr-confirm-input-row');
             const priceInput = document.getElementById('sr-confirm-price-input');
@@ -11109,18 +11359,6 @@
             });
         }
         window.rejectSellRequest = rejectSellRequest;
-
-        // Jumps straight into Support Chat with this seller so the admin can
-        // negotiate the real price — this is the "chat to agree the price"
-        // step the confirmed-price field above is filled in from.
-        function messageSellRequestSeller() {
-            const r = SELL_REQUESTS[currentSellRequestId];
-            if (!r || !r.userId) { window.showToast('No linked chat user for this request.', 'fail'); return; }
-            closeSellRequestDetail();
-            showPage('supportchat-list');
-            openSupportChatThread(r.userId);
-        }
-        window.messageSellRequestSeller = messageSellRequestSeller;
 
         // Keeps the Flash Sale settings card's game dropdown in sync with the
         // live games list, without losing whatever the admin currently has
@@ -12993,537 +13231,6 @@
             });
         }
 
-        // ---------- Support Chat (Store app's Support Widget "Support Chat"
-        // tab). One supportChats/{guestId} summary doc per customer
-        // (lastMessage/lastMessageAt/lastSender/unreadByAdmin) plus a
-        // messages subcollection (sender: 'user' | 'admin'). This is a
-        // second inbox alongside the existing Telegram-reply flow in
-        // telegram-worker.js (handleSupportChatReply) - both write the same
-        // schema, so a reply from either place reaches the customer and
-        // either place stays in sync. ----------
-        let supportChatListenerAttached = false;
-        let SUPPORT_CHATS = []; // cached summary docs for search/re-render (Product thread - supportChats/{guestId})
-        let supportChatAccountListenerAttached = false;
-        let SUPPORT_CHATS_ACCOUNT = []; // same, for the separate Account thread - supportChatsAccount/{guestId}
-        let supportChatMsgUnsub = null; // messages listener for whichever thread is open
-        let currentSupportChatGuestId = null;
-        let currentSupportChatCollection = 'supportChats'; // which collection the currently-open thread belongs to
-
-        // Which collection backs the Chat list a given admin role/view sees.
-        // 'account' role and 'full' role viewing the Account tab both read
-        // supportChatsAccount; everyone else reads the legacy supportChats
-        // collection (kept as-is per the decision to leave old mixed history
-        // there rather than migrate it).
-        let supportChatListView = 'product'; // only meaningful for the 'full' role's tab toggle
-        function activeSupportChatCollection() {
-            if (currentAdminRole === 'account') return 'supportChatsAccount';
-            if (currentAdminRole === 'product') return 'supportChats';
-            return supportChatListView === 'account' ? 'supportChatsAccount' : 'supportChats';
-        }
-        // An account thread is routed to a specific admin (adminKey =
-        // that admin's username) — automatically, to whichever admin posted
-        // that gameAccounts listing (see store.html's openAccountListingChat,
-        // which passes listing.postedByAdmin), or left as the shared
-        // 'general' inbox (opened from the Game Accounts page's own
-        // "Support" button, with no specific listing yet) any admin can pick
-        // up. Every role — Full Access included — sees only threads routed
-        // to their own username plus 'general': a chat addressed to one
-        // admin shouldn't ping every other admin's notifications, the owner
-        // especially while they're heads-down on something else. Threads
-        // from before this split (no adminKey field yet) are treated as
-        // 'general' too, so they don't just disappear from every inbox.
-        function visibleAccountChats() {
-            return SUPPORT_CHATS_ACCOUNT.filter(c => !c.adminKey || c.adminKey === 'general' || c.adminKey === currentAdminUsername);
-        }
-        function activeSupportChatList() {
-            return activeSupportChatCollection() === 'supportChatsAccount' ? visibleAccountChats() : SUPPORT_CHATS;
-        }
-        function switchSupportChatListView(view) {
-            supportChatListView = (view === 'account') ? 'account' : 'product';
-            document.getElementById('supportchat-view-tab-product')?.classList.toggle('active', supportChatListView === 'product');
-            document.getElementById('supportchat-view-tab-account')?.classList.toggle('active', supportChatListView === 'account');
-            renderSupportChatList();
-        }
-        window.switchSupportChatListView = switchSupportChatListView;
-
-        // Notification sounds (received / sent) - generated with WebAudio so
-        // no external audio file needs to be hosted. Browsers block audio
-        // before any user gesture on the page, so this stays silent until
-        // the admin has clicked/tapped anywhere at least once - normal since
-        // they'll have already clicked into the panel before a chat loads.
-        let chatAudioCtx = null;
-        function getChatAudioCtx() {
-            if (!chatAudioCtx) {
-                try { chatAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
-            }
-            return chatAudioCtx;
-        }
-        function playChatSound(kind) {
-            const ctx = getChatAudioCtx();
-            if (!ctx) return;
-            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-            const now = ctx.currentTime;
-            // 'receive': two-note ascending ding. 'send': one short soft blip.
-            const notes = kind === 'receive' ? [880, 1108] : [660];
-            notes.forEach((freq, i) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
-                const start = now + i * 0.09;
-                gain.gain.setValueAtTime(0, start);
-                gain.gain.linearRampToValueAtTime(0.45, start + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
-                osc.connect(gain).connect(ctx.destination);
-                osc.start(start);
-                osc.stop(start + 0.18);
-            });
-        }
-        // One-time unlock: some browsers keep a freshly-created AudioContext
-        // suspended until a user gesture happens *after* it exists, so grab
-        // the very first click/tap on the page to resume it.
-        document.addEventListener('click', function unlockChatAudio() {
-            const ctx = getChatAudioCtx();
-            if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
-            document.removeEventListener('click', unlockChatAudio);
-        }, { once: true });
-
-        let supportChatFirstLoad = true;
-        const supportChatLastKnownMsgAt = {}; // guestId -> millis, used to detect genuinely-new incoming messages
-
-        // Looks up the guest's real account (users/{uid}) if this "guest" is
-        // actually a logged-in customer, so their profile name/photo is
-        // shown instead of the bare Guest-XXXX id. Falls back through
-        // userName (Store.html-supplied display name) to the raw id.
-        // c.id is the Firestore doc id - for supportChatsAccount that's now
-        // a composite `${guestId}__${adminKey}` thread id, not the guest's
-        // real id, so the actual guestId to look up in USERS is c.userId
-        // when present (falls back to c.id for the legacy supportChats
-        // collection, and for any pre-split account doc that predates the
-        // userId field).
-        function resolveChatDisplayName(c) {
-            const gid = (c && c.userId) || (c && c.id);
-            const u = USERS[gid];
-            if (u && u.name && u.name.trim()) return u.name.trim();
-            return (c && c.userName) || gid || 'Guest';
-        }
-        function resolveChatAvatar(c) {
-            const gid = (c && c.userId) || (c && c.id);
-            const u = USERS[gid];
-            return (u && u.photo) ? u.photo : null;
-        }
-
-        // Typing indicator: each supportChats/{guestId} summary doc carries a
-        // userTypingAt (written by Store.html) and adminTypingAt (written
-        // here) timestamp, refreshed at most every TYPING_THROTTLE_MS while
-        // the box has text and cleared the moment it's emptied or sent.
-        // Both sides treat a timestamp as "typing" only while it's fresher
-        // than TYPING_STALE_MS - no explicit "stopped typing" write needed,
-        // it just ages out, re-checked on a plain timer like the admin
-        // presence badge elsewhere in this file.
-        const TYPING_THROTTLE_MS = 1500;
-        const TYPING_STALE_MS = 3000;
-        let adminTypingWriteAt = 0;
-
-        function timeAgoShort(date) {
-            const diffMs = Date.now() - date.getTime();
-            const mins = Math.floor(diffMs / 60000);
-            if (mins < 1) return 'now';
-            if (mins < 60) return `${mins}m`;
-            const hrs = Math.floor(mins / 60);
-            if (hrs < 24) return `${hrs}h`;
-            const days = Math.floor(hrs / 24);
-            if (days < 7) return `${days}d`;
-            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        }
-
-        function updateSupportChatNavDot() {
-            const unreadCount = SUPPORT_CHATS.filter(c => c.unreadByAdmin).length + visibleAccountChats().filter(c => c.unreadByAdmin).length;
-            const dot = document.getElementById('supportchat-nav-dot');
-            if (dot) dot.style.display = unreadCount > 0 ? 'block' : 'none';
-        }
-
-        function listenSupportChats() {
-            if (supportChatListenerAttached) return;
-            supportChatListenerAttached = true;
-            const q = query(collection(db, "supportChats"), orderBy("lastMessageAt", "desc"));
-            onSnapshot(q, (snap) => {
-                SUPPORT_CHATS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                // Play the "received" ding for any chat whose last message is
-                // newer than what we last saw and came from the customer -
-                // skipped on the very first snapshot (page load) so it
-                // doesn't blast through every existing conversation at once.
-                if (!supportChatFirstLoad) {
-                    SUPPORT_CHATS.forEach(c => {
-                        const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
-                        const prev = supportChatLastKnownMsgAt[c.id] || 0;
-                        if (c.lastSender === 'user' && at > prev) playChatSound('receive');
-                    });
-                }
-                SUPPORT_CHATS.forEach(c => {
-                    const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
-                    supportChatLastKnownMsgAt[c.id] = at;
-                });
-                supportChatFirstLoad = false;
-                renderSupportChatList();
-                renderSupportChatThreadTyping();
-                updateSupportChatNavDot();
-            }, (error) => {
-                console.error("Support chats listener error:", error);
-                const container = document.getElementById('supportchat-threads-container');
-                if (container && activeSupportChatCollection() === 'supportChats') container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load conversations.</p>';
-            });
-            // Re-checks staleness even with no new snapshot, so the "Customer is
-            // typing..." row disappears on its own ~3s after they pause, not
-            // just whenever the next Firestore update happens to land.
-            setInterval(renderSupportChatThreadTyping, 1000);
-        }
-
-        // Mirrors listenSupportChats() above for the separate Account thread
-        // (supportChatsAccount/{guestId}) - same shape, own cache/dedupe state
-        // so the two never cross-contaminate each other's "new message" sound
-        // or first-load skip.
-        let supportChatAccountFirstLoad = true;
-        const supportChatAccountLastKnownMsgAt = {};
-        function listenSupportChatsAccount() {
-            if (supportChatAccountListenerAttached) return;
-            supportChatAccountListenerAttached = true;
-            const q = query(collection(db, "supportChatsAccount"), orderBy("lastMessageAt", "desc"));
-            onSnapshot(q, (snap) => {
-                SUPPORT_CHATS_ACCOUNT = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if (!supportChatAccountFirstLoad) {
-                    const mine = new Set(visibleAccountChats().map(c => c.id));
-                    SUPPORT_CHATS_ACCOUNT.forEach(c => {
-                        if (!mine.has(c.id)) return;
-                        const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
-                        const prev = supportChatAccountLastKnownMsgAt[c.id] || 0;
-                        if (c.lastSender === 'user' && at > prev) playChatSound('receive');
-                    });
-                }
-                SUPPORT_CHATS_ACCOUNT.forEach(c => {
-                    const at = (c.lastMessageAt && c.lastMessageAt.toMillis) ? c.lastMessageAt.toMillis() : 0;
-                    supportChatAccountLastKnownMsgAt[c.id] = at;
-                });
-                supportChatAccountFirstLoad = false;
-                renderSupportChatList();
-                renderSupportChatThreadTyping();
-                updateSupportChatNavDot();
-            }, (error) => {
-                console.error("Support chats (account) listener error:", error);
-                const container = document.getElementById('supportchat-threads-container');
-                if (container && activeSupportChatCollection() === 'supportChatsAccount') container.innerHTML = '<p class="empty-msg" style="color:red;">Could not load conversations.</p>';
-            });
-        }
-
-        // Shows/hides the "Customer is typing..." row in whichever thread is
-        // currently open, based on that guest's cached userTypingAt.
-        function renderSupportChatThreadTyping() {
-            const el = document.getElementById('supportchat-thread-typing');
-            if (!el || !currentSupportChatGuestId) { if (el) el.classList.remove('show'); return; }
-            const list = currentSupportChatCollection === 'supportChatsAccount' ? SUPPORT_CHATS_ACCOUNT : SUPPORT_CHATS;
-            const chat = list.find(c => c.id === currentSupportChatGuestId);
-            const typingAt = chat && chat.userTypingAt && chat.userTypingAt.toMillis ? chat.userTypingAt.toMillis() : null;
-            const isTyping = typingAt !== null && (Date.now() - typingAt) < TYPING_STALE_MS;
-            el.classList.toggle('show', isTyping);
-        }
-
-        // Wired to the reply box's oninput. Throttled while there's text,
-        // cleared immediately once the box is emptied (see sendSupportChatReply
-        // for the clear-on-send path).
-        function handleAdminChatTyping() {
-            const guestId = currentSupportChatGuestId;
-            if (!guestId) return;
-            const input = document.getElementById('supportchat-thread-input');
-            const now = Date.now();
-            if (!input.value.trim()) {
-                if (adminTypingWriteAt !== 0) {
-                    adminTypingWriteAt = 0;
-                    setDoc(doc(db, currentSupportChatCollection, guestId), { adminTypingAt: null }, { merge: true }).catch(() => {});
-                }
-                return;
-            }
-            if (now - adminTypingWriteAt < TYPING_THROTTLE_MS) return;
-            adminTypingWriteAt = now;
-            setDoc(doc(db, currentSupportChatCollection, guestId), { adminTypingAt: serverTimestamp() }, { merge: true }).catch(() => {});
-        }
-        window.handleAdminChatTyping = handleAdminChatTyping;
-
-        // Legacy heuristic, kept only for the small "Account" badge shown on
-        // Product-tab rows: customers who share Game-Account context (a sell
-        // request, or an order against a listing) but whose history predates
-        // the Account thread being split into its own collection - so a
-        // full-access admin browsing Product can still tell those old mixed
-        // threads apart. Plays no role in which collection either Chat list
-        // now reads from - that's activeSupportChatCollection() above.
-        function getAccountContextGuestIds() {
-            const ids = new Set();
-            Object.values(SELL_REQUESTS).forEach(r => { if (r.userId) ids.add(r.userId); });
-            Object.values(ORDERS).forEach(o => { if (o.orderType === 'gameAccount' && o.userId) ids.add(o.userId); });
-            return ids;
-        }
-        function hasNonAccountOrderActivity(guestId) {
-            return Object.values(ORDERS).some(o => o.userId === guestId && o.orderType !== 'gameAccount');
-        }
-
-        function renderSupportChatList() {
-            const container = document.getElementById('supportchat-threads-container');
-            if (!container) return;
-            const viewTabs = document.getElementById('supportchat-view-tabs');
-            if (viewTabs) viewTabs.style.display = (currentAdminRole === 'account' || currentAdminRole === 'product') ? 'none' : 'flex';
-            const viewingAccount = activeSupportChatCollection() === 'supportChatsAccount';
-            const term = (document.getElementById('supportchat-search')?.value || '').trim().toLowerCase();
-            let list = activeSupportChatList();
-            if (term) {
-                list = list.filter(c =>
-                    resolveChatDisplayName(c).toLowerCase().includes(term) ||
-                    (c.id || '').toLowerCase().includes(term) ||
-                    (c.userId || '').toLowerCase().includes(term) ||
-                    (c.lastMessage || '').toLowerCase().includes(term)
-                );
-            }
-            if (list.length === 0) {
-                container.innerHTML = `<p class="empty-msg">${term ? 'No matching conversations.' : (viewingAccount ? 'No account-related conversations yet.' : 'No support chats yet.')}</p>`;
-                return;
-            }
-            // Legacy badge only makes sense on the Product list (see
-            // getAccountContextGuestIds above) - the Account list is already
-            // 100% account-context by construction.
-            const acctIdsForBadge = viewingAccount ? new Set() : getAccountContextGuestIds();
-            container.innerHTML = list.map(c => {
-                const unread = !!c.unreadByAdmin;
-                const name = resolveChatDisplayName(c);
-                const avatar = resolveChatAvatar(c);
-                const initial = escapeHtml((name || '?').trim().charAt(0).toUpperCase() || '?');
-                const preview = escapeHtml(c.lastMessage || '');
-                const when = c.lastMessageAt && c.lastMessageAt.toDate ? timeAgoShort(c.lastMessageAt.toDate()) : '';
-                const fromLabel = c.lastSender === 'admin' ? 'You: ' : '';
-                const avatarInner = avatar ? `<img src="${avatar}" loading="lazy" decoding="async" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial;
-                const acctBadge = viewingAccount
-                    ? `<span style="font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent);flex-shrink:0;">${(c.adminKey && c.adminKey !== 'general') ? escapeHtml(c.adminKey) : 'General'}</span>`
-                    : ((currentAdminRole !== 'account' && acctIdsForBadge.has(c.id))
-                        ? '<span style="font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent);flex-shrink:0;">Account</span>' : '');
-                return `
-                    <div class="admin-card" style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;" onclick="openSupportChatThread('${c.id}', '${activeSupportChatCollection()}')">
-                        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden;">${avatarInner}</div>
-                        <div style="flex:1;min-width:0;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                                <span style="display:flex;align-items:center;gap:6px;min-width:0;">
-                                    <span style="font-weight:${unread ? '700' : '500'};font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</span>
-                                    ${acctBadge}
-                                </span>
-                                <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;">${when}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px;">
-                                <span style="font-size:12.5px;color:${unread ? 'var(--text-primary)' : 'var(--text-secondary)'};font-weight:${unread ? '600' : '400'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fromLabel}${preview}</span>
-                                ${unread ? '<span style="width:8px;height:8px;border-radius:50%;background:#FF3B30;flex-shrink:0;"></span>' : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        window.renderSupportChatList = renderSupportChatList;
-
-        // ---------- Chat photo collage + full-screen viewer ----------
-        // Mirrors the same helper in Store.html so a customer's multi-photo
-        // send renders as one grid bubble here too, instead of one
-        // full-size bubble per photo. Tapping a tile opens the viewer at
-        // that photo, with prev/next to flip through the rest of the set.
-        const CHAT_IMG_GROUPS = {};
-        let chatImgGroupCounter = 0;
-        let chatImgViewerUrls = [];
-        let chatImgViewerIndex = 0;
-
-        function chatImageCollageHTML(urls) {
-            if (!urls || !urls.length) return '';
-            const groupId = 'cig' + (chatImgGroupCounter++);
-            CHAT_IMG_GROUPS[groupId] = urls;
-            const n = urls.length;
-            const shown = urls.slice(0, 4);
-            const extra = n - 4;
-            const layoutClass = n === 1 ? 'n1' : n === 2 ? 'n2' : n === 3 ? 'n3' : 'n4up';
-            const tiles = shown.map((url, i) => {
-                const overlay = (i === 3 && extra > 0) ? `<span class="chat-img-more">+${extra}</span>` : '';
-                return `<div class="chat-img-tile" onclick="event.stopPropagation();openChatImageViewer('${groupId}',${i})"><img src="${escapeHtml(url)}" alt="Photo" loading="lazy">${overlay}</div>`;
-            }).join('');
-            return `<div class="chat-img-collage ${layoutClass}">${tiles}</div>`;
-        }
-
-        function openChatImageViewer(groupId, index) {
-            const urls = CHAT_IMG_GROUPS[groupId] || [];
-            if (!urls.length) return;
-            chatImgViewerUrls = urls;
-            chatImgViewerIndex = index;
-            renderChatImageViewer();
-            document.getElementById('chat-img-viewer-overlay').classList.add('show');
-        }
-        window.openChatImageViewer = openChatImageViewer;
-
-        function renderChatImageViewer() {
-            document.getElementById('chat-img-viewer-img').src = chatImgViewerUrls[chatImgViewerIndex];
-            const counter = document.getElementById('chat-img-viewer-counter');
-            const multi = chatImgViewerUrls.length > 1;
-            counter.style.display = multi ? 'block' : 'none';
-            counter.textContent = `${chatImgViewerIndex + 1} / ${chatImgViewerUrls.length}`;
-            document.getElementById('chat-img-viewer-prev').style.visibility = (multi && chatImgViewerIndex > 0) ? 'visible' : 'hidden';
-            document.getElementById('chat-img-viewer-next').style.visibility = (multi && chatImgViewerIndex < chatImgViewerUrls.length - 1) ? 'visible' : 'hidden';
-        }
-
-        function chatImageViewerPrev() { if (chatImgViewerIndex > 0) { chatImgViewerIndex--; renderChatImageViewer(); } }
-        window.chatImageViewerPrev = chatImageViewerPrev;
-        function chatImageViewerNext() { if (chatImgViewerIndex < chatImgViewerUrls.length - 1) { chatImgViewerIndex++; renderChatImageViewer(); } }
-        window.chatImageViewerNext = chatImageViewerNext;
-        function closeChatImageViewer() { document.getElementById('chat-img-viewer-overlay').classList.remove('show'); }
-        window.closeChatImageViewer = closeChatImageViewer;
-
-        function renderSupportChatThreadMessages(msgs) {
-            const box = document.getElementById('supportchat-thread-messages');
-            if (!box) return;
-            if (msgs.length === 0) {
-                box.innerHTML = '<div class="empty-msg">No messages yet.</div>';
-                return;
-            }
-            box.innerHTML = msgs.map(m => {
-                const mine = m.sender === 'admin';
-                const time = (m.timestamp && m.timestamp.toDate) ? m.timestamp.toDate().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
-                // Sent/Seen tick for our own messages - single check once sent,
-                // double (accent-colored) check once seenByUser is set true
-                // (Store.html needs to write that flag when the customer opens
-                // the chat, mirroring the seenByAdmin flag set below for theirs).
-                let tick = '';
-                if (mine) {
-                    const seen = m.seenByUser === true;
-                    tick = `<span class="sc-tick${seen ? ' seen' : ''}" title="${seen ? 'Seen' : 'Sent'}">` +
-                        (seen
-                            ? '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 10l4 4 4-6"/><path d="M8 10l4 4 7-9"/></svg>'
-                            : '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l4 4 9-9"/></svg>') +
-                        `</span>`;
-                }
-                // Small avatar badge on our own bubbles, so with several
-                // admins replying in the same thread it's clear who sent
-                // what (each admin's avatar comes from their own account,
-                // see Settings > Admin Accounts).
-                let avatarBadge = '';
-                if (mine) {
-                    if (m.isBot) {
-                        avatarBadge = `<span class="sc-msg-avatar" title="Auto-reply">🤖</span>`;
-                    } else {
-                        const uname = m.adminUsername || '';
-                        const initial = escapeHtml((uname || 'A').trim().charAt(0).toUpperCase() || 'A');
-                        const inner = m.adminAvatar ? `<img src="${escapeHtml(m.adminAvatar)}" alt="" loading="lazy" decoding="async">` : initial;
-                        avatarBadge = `<span class="sc-msg-avatar" title="${escapeHtml(uname || 'Admin')}">${inner}</span>`;
-                    }
-                }
-                const botLabel = (mine && m.isBot) ? `<span class="sc-bubble-bot-label" style="display:block;font-size:10px;opacity:0.75;margin:-2px 0 3px;">Auto-reply 🤖</span>` : '';
-                // Photo message(s) (Store.html's camera-icon upload, one or
-                // several picked at once): m.imageUrls (array) or the legacy
-                // single m.imageUrl is set instead of text. Multiple photos
-                // render as one collage bubble — see chatImageCollageHTML()
-                // below — instead of one full-size bubble per photo.
-                const imgUrls = Array.isArray(m.imageUrls) ? m.imageUrls.filter(Boolean) : (m.imageUrl ? [m.imageUrl] : []);
-                if (imgUrls.length) {
-                    return `<div class="sc-bubble image-bubble ${mine ? 'mine' : 'theirs'}">${avatarBadge}${chatImageCollageHTML(imgUrls)}<span class="sc-bubble-time">${time}${tick}</span></div>`;
-                }
-                const safe = escapeHtml(m.text || '');
-                return `<div class="sc-bubble ${mine ? 'mine' : 'theirs'}">${avatarBadge}${botLabel}${safe}<span class="sc-bubble-time">${time}${tick}</span></div>`;
-            }).join('');
-            box.scrollTop = box.scrollHeight;
-        }
-
-        // Messages older than 7 days are deleted so threads don't grow
-        // forever. Best-effort client-side cleanup (no backend job here) -
-        // runs once per guest thread whenever an admin opens it, mirroring
-        // the same cleanup Store.html runs on the customer side.
-        const SUPPORT_CHAT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
-        const supportChatCleanupDoneFor = new Set();
-        async function cleanupOldSupportChatMessages(guestId, collectionName) {
-            const cleanupKey = collectionName + ':' + guestId;
-            if (!guestId || supportChatCleanupDoneFor.has(cleanupKey)) return;
-            supportChatCleanupDoneFor.add(cleanupKey);
-            try {
-                const cutoff = new Date(Date.now() - SUPPORT_CHAT_RETENTION_MS);
-                const q = query(collection(db, collectionName, guestId, "messages"), where("timestamp", "<", cutoff));
-                const snap = await getDocs(q);
-                if (snap.empty) return;
-                const batch = writeBatch(db);
-                snap.docs.forEach(d => batch.delete(d.ref));
-                await batch.commit();
-            } catch (error) {
-                console.error("Support chat cleanup error:", error);
-            }
-        }
-
-        function openSupportChatThread(guestId, collectionName) {
-            currentSupportChatGuestId = guestId;
-            currentSupportChatCollection = collectionName || activeSupportChatCollection();
-            adminTypingWriteAt = 0;
-            const chat = activeSupportChatList().find(c => c.id === guestId);
-            document.getElementById('supportchat-thread-title').innerText = chat ? resolveChatDisplayName(chat) : guestId;
-            document.getElementById('supportchat-thread-messages').innerHTML = '<p class="empty-msg">Loading...</p>';
-            document.getElementById('supportchat-thread-overlay').classList.add('show');
-            renderSupportChatThreadTyping();
-
-            if (supportChatMsgUnsub) { supportChatMsgUnsub(); supportChatMsgUnsub = null; }
-            cleanupOldSupportChatMessages(guestId, currentSupportChatCollection);
-            const q = query(collection(db, currentSupportChatCollection, guestId, "messages"), orderBy("timestamp", "asc"));
-            supportChatMsgUnsub = onSnapshot(q, (snap) => {
-                const msgs = snap.docs.map(d => d.data());
-                renderSupportChatThreadMessages(msgs);
-                // Mark any unseen customer messages as seen (drives the "seen"
-                // blue-tick state on Store.html's own sent bubbles) and clear
-                // this thread's unread flag now that the admin has it open.
-                snap.docs.forEach(d => {
-                    const data = d.data();
-                    if (data.sender === 'user' && data.seenByAdmin !== true) {
-                        updateDoc(doc(db, currentSupportChatCollection, guestId, "messages", d.id), { seenByAdmin: true }).catch(() => {});
-                    }
-                });
-            }, (error) => console.error("Support chat thread listener error:", error));
-
-            if (chat && chat.unreadByAdmin) {
-                updateDoc(doc(db, currentSupportChatCollection, guestId), { unreadByAdmin: false }).catch(() => {});
-            }
-        }
-        window.openSupportChatThread = openSupportChatThread;
-
-        function closeSupportChatThread() {
-            document.getElementById('supportchat-thread-overlay').classList.remove('show');
-            document.getElementById('supportchat-thread-typing').classList.remove('show');
-            if (supportChatMsgUnsub) { supportChatMsgUnsub(); supportChatMsgUnsub = null; }
-            if (currentSupportChatGuestId && adminTypingWriteAt !== 0) {
-                setDoc(doc(db, currentSupportChatCollection, currentSupportChatGuestId), { adminTypingAt: null }, { merge: true }).catch(() => {});
-            }
-            adminTypingWriteAt = 0;
-            currentSupportChatGuestId = null;
-        }
-        window.closeSupportChatThread = closeSupportChatThread;
-
-        async function sendSupportChatReply() {
-            const input = document.getElementById('supportchat-thread-input');
-            const text = input.value.trim();
-            const guestId = currentSupportChatGuestId;
-            const collectionName = currentSupportChatCollection;
-            if (!text || !guestId) return;
-            input.value = '';
-            adminTypingWriteAt = 0;
-            try {
-                await addDoc(collection(db, collectionName, guestId, "messages"), {
-                    sender: 'admin', text, timestamp: serverTimestamp(), sentToTelegram: false,
-                    adminUsername: currentAdminUsername || '', adminAvatar: currentAdminAvatarUrl || ''
-                });
-                await setDoc(doc(db, collectionName, guestId), {
-                    lastMessage: text, lastMessageAt: serverTimestamp(), lastSender: 'admin', unreadByAdmin: false, adminTypingAt: null,
-                    lastAdminUsername: currentAdminUsername || '', lastAdminAvatar: currentAdminAvatarUrl || ''
-                }, { merge: true });
-                playChatSound('send');
-            } catch (error) {
-                console.error("Support chat reply send error:", error);
-                window.showToast(error.message || 'Failed to send.', 'fail');
-                input.value = text;
-            }
-        }
-        window.sendSupportChatReply = sendSupportChatReply;
-
         // ---------- Store Ticker (admin-written messages shown in the Store
         // app's scrolling ticker, mixed in with real order activity) ----------
         let tickerListenerAttached = false;
@@ -15240,197 +14947,6 @@
                 box.classList.remove('has-custom-logo');
             }
         }
-
-        // ---------- Support Chat FAQ (settings/supportChatFaq, items: [{q,a,keywords}]) ----------
-        // Store.html reads this same doc live and uses it to render the
-        // quick-reply chips + keyword auto-answer in the customer's Support
-        // Chat, so any edit here shows up for customers without a redeploy.
-        let SUPPORT_FAQ_ITEMS = [];
-        let supportFaqLoaded = false;
-
-        const SUPPORT_FAQ_DEFAULTS = [
-            { q: 'အော်ဒါ ဘယ်လိုတင်ရမလဲ', keywords: 'အော်ဒါ, order, တင်ရ', a: 'Home စာမျက်နှာမှ ဂိမ်းကို ရွေးပါ။ Package/Currency ကို ရွေးပြီး In-Game ID (နှင့် Server ID လိုအပ်ပါက) ရိုက်ထည့်ပါ။ "Confirm ID" ကို နှိပ်ပြီး ID မှန်ကန်ကြောင်း စစ်ဆေးပါ။ နောက်ဆုံးတွင် ငွေပေးချေမှုအမျိုးအစား ရွေးချယ်ပြီး အတည်ပြုလိုက်ရုံပါပဲ။' },
-            { q: 'ငွေပေးချေနည်း ဘယ်လိုလုပ်ရမလဲ', keywords: 'ငွေပေးချေ, payment, ပေးချေ', a: 'Wallet ထဲက လက်ကျန်ငွေဖြင့် တိုက်ရိုက်ပေးချေနိုင်သလို၊ Payment Method တစ်ခုကို ရွေးပြီး ငွေလွှဲပြေစာ (Receipt) တင်၍လည်း ပေးချေနိုင်ပါသည်။ Wallet ထဲသို့ ငွေဖြည့်ရန် Wallet စာမျက်နှာမှ "Top Up" ကို သုံးပါ။' },
-            { q: 'အော်ဒါ Status ဘယ်လိုစစ်ရမလဲ', keywords: 'status, အခြေအနေ, စစ်ဆေး', a: 'History စာမျက်နှာတွင် အော်ဒါတစ်ခုချင်းစီကို Pending → Processing → Success/Fail အဆင့်ဆင့် အချိန်နှင့်တပြေးညီ ကြည့်ရှုနိုင်ပါသည်။ Processing တွင် ကြာမြင့်နေပါက "တိုင်ကြားရန်" tab ကနေ ပြန်လည်အကြောင်းကြားနိုင်ပါသည်။' },
-            { q: 'ID မှားထည့်မိရင် ဘယ်လိုလုပ်ရမလဲ', keywords: 'id မှား, id ပြင်, wrong id', a: 'ID မှားထည့်မိပါက ဖြစ်နိုင်သမျှ မြန်မြန် Support Chat မှတစ်ဆင့် ပြောပြပေးပါ။ အော်ဒါ "Processing" မဖြစ်သေးလျှင် ပြင်ဆင်ပေးနိုင်ပါသည်၊ Processing ပြီးသွားပါက ပြင်ဆင်ရန် ခက်ခဲနိုင်တဲ့အတွက် ID ကို ထပ်စစ်ပြီးမှ Confirm နှိပ်ဖို့ အကြံပြုပါသည်။' },
-            { q: 'Wallet ငွေဖြည့်ထားတာ ဘယ်လောက်ကြာမှ ဝင်မလဲ', keywords: 'wallet, ငွေဖြည့်, top up, topup', a: 'Wallet Top Up Receipt တင်ပြီးပါက ပုံမှန်အားဖြင့် မိနစ်အနည်းငယ်မှ နာရီအနည်းငယ်အတွင်း admin မှ စစ်ဆေးပြီး Wallet ထဲ ငွေဖြည့်ပေးပါမည်။ အလုပ်ချိန်ပြင်ပ ဖြစ်ပါက အနည်းငယ်ပိုကြာနိုင်ပါသည်။' }
-        ];
-
-        function toggleSupportFaqSettings() {
-            const body = document.getElementById('support-faq-body');
-            const chevron = document.getElementById('support-faq-chevron');
-            const isOpen = body.style.display === 'block';
-            body.style.display = isOpen ? 'none' : 'block';
-            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-            if (!isOpen && !supportFaqLoaded) loadSupportFaqSettings();
-        }
-        window.toggleSupportFaqSettings = toggleSupportFaqSettings;
-
-        async function loadSupportFaqSettings() {
-            supportFaqLoaded = true;
-            try {
-                const snap = await getDoc(doc(db, "settings", "supportChatFaq"));
-                const items = (snap.exists() && Array.isArray(snap.data().items) && snap.data().items.length) ? snap.data().items : SUPPORT_FAQ_DEFAULTS;
-                SUPPORT_FAQ_ITEMS = items.map(it => ({
-                    q: it.q || '', a: it.a || '',
-                    keywords: Array.isArray(it.keywords) ? it.keywords.join(', ') : (it.keywords || '')
-                }));
-            } catch (error) {
-                console.error("Support FAQ load error:", error);
-                SUPPORT_FAQ_ITEMS = SUPPORT_FAQ_DEFAULTS.slice();
-            }
-            renderSupportFaqList();
-        }
-
-        function renderSupportFaqList() {
-            const wrap = document.getElementById('support-faq-list');
-            if (!wrap) return;
-            if (!SUPPORT_FAQ_ITEMS.length) {
-                wrap.innerHTML = '<p class="empty-msg" style="padding:10px 0;">No FAQ items yet - tap "+ Add FAQ" below.</p>';
-                return;
-            }
-            wrap.innerHTML = SUPPORT_FAQ_ITEMS.map((item, i) => `
-                <div class="faq-item-row">
-                    <span class="faq-item-del" onclick="removeSupportFaqItem(${i})">Delete</span>
-                    <label>Question (chip text)</label>
-                    <input type="text" id="faq-q-${i}" value="${escapeHtml(item.q)}" placeholder="e.g. Order ဘယ်လိုတင်ရမလဲ">
-                    <label>Answer</label>
-                    <textarea id="faq-a-${i}" rows="3" placeholder="Auto-reply answer text">${escapeHtml(item.a)}</textarea>
-                    <label>Keywords (comma-separated, matched inside a customer's typed message)</label>
-                    <input type="text" id="faq-k-${i}" value="${escapeHtml(item.keywords)}" placeholder="e.g. wallet, ငွေဖြည့်, top up">
-                </div>
-            `).join('');
-        }
-
-        function addSupportFaqItem() {
-            SUPPORT_FAQ_ITEMS.push({ q: '', a: '', keywords: '' });
-            renderSupportFaqList();
-        }
-        window.addSupportFaqItem = addSupportFaqItem;
-
-        function removeSupportFaqItem(i) {
-            collectSupportFaqFromForm();
-            SUPPORT_FAQ_ITEMS.splice(i, 1);
-            renderSupportFaqList();
-        }
-        window.removeSupportFaqItem = removeSupportFaqItem;
-
-        // Re-reads every row's current input values back into
-        // SUPPORT_FAQ_ITEMS, so add/remove/save all act on what's actually
-        // in the form rather than stale data from the last render.
-        function collectSupportFaqFromForm() {
-            SUPPORT_FAQ_ITEMS = SUPPORT_FAQ_ITEMS.map((item, i) => {
-                const qEl = document.getElementById(`faq-q-${i}`);
-                const aEl = document.getElementById(`faq-a-${i}`);
-                const kEl = document.getElementById(`faq-k-${i}`);
-                return {
-                    q: qEl ? qEl.value.trim() : item.q,
-                    a: aEl ? aEl.value.trim() : item.a,
-                    keywords: kEl ? kEl.value.trim() : item.keywords
-                };
-            });
-        }
-
-        async function saveSupportFaqSettings() {
-            collectSupportFaqFromForm();
-            const btn = document.getElementById('save-support-faq-btn');
-            const cleaned = SUPPORT_FAQ_ITEMS
-                .filter(item => item.q && item.a)
-                .map(item => ({
-                    q: item.q, a: item.a,
-                    keywords: item.keywords.split(',').map(k => k.trim()).filter(Boolean)
-                }));
-            const originalText = btn.innerText;
-            btn.innerText = 'Saving...';
-            btn.disabled = true;
-            try {
-                await setDoc(doc(db, "settings", "supportChatFaq"), { items: cleaned }, { merge: true });
-                SUPPORT_FAQ_ITEMS = cleaned.map(it => ({ ...it, keywords: it.keywords.join(', ') }));
-                renderSupportFaqList();
-                window.showToast('FAQ saved!', 'success');
-            } catch (error) {
-                console.error("Support FAQ save error:", error);
-                window.showToast(error.message || 'Failed to save FAQ.', 'fail');
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
-        window.saveSupportFaqSettings = saveSupportFaqSettings;
-
-        // ---------- Support Chat Avatar (settings/supportChat, adminAvatar: url) ----------
-        // Same doc pattern as branding above. Store.html reads this doc and
-        // shows the photo in the Support Chat widget header in place of the
-        // plain "A" letter circle.
-        let editingSupportAvatarFile = null;
-        let supportAvatarListenerAttached = false;
-
-        function toggleSupportAvatarSettings() {
-            const body = document.getElementById('support-avatar-body');
-            const chevron = document.getElementById('support-avatar-chevron');
-            const isOpen = body.style.display === 'block';
-            body.style.display = isOpen ? 'none' : 'block';
-            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-        }
-        window.toggleSupportAvatarSettings = toggleSupportAvatarSettings;
-
-        function previewSupportAvatarImage(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            editingSupportAvatarFile = file;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const img = document.getElementById('edit-support-avatar-preview');
-                img.src = ev.target.result;
-                img.style.display = 'block';
-                document.getElementById('support-avatar-img-update-box').classList.add('has-image');
-                document.getElementById('support-avatar-img-update-change').style.display = 'flex';
-            };
-            reader.readAsDataURL(file);
-        }
-        window.previewSupportAvatarImage = previewSupportAvatarImage;
-
-        function listenSupportAvatar() {
-            if (supportAvatarListenerAttached) return;
-            supportAvatarListenerAttached = true;
-            onSnapshot(doc(db, "settings", "supportChat"), (docSnap) => {
-                const data = docSnap.exists() ? docSnap.data() : {};
-                if (data.adminAvatar) {
-                    const preview = document.getElementById('edit-support-avatar-preview');
-                    preview.src = data.adminAvatar;
-                    preview.style.display = 'block';
-                    document.getElementById('support-avatar-img-update-box').classList.add('has-image');
-                    document.getElementById('support-avatar-img-update-change').style.display = 'flex';
-                }
-            }, (error) => {
-                console.error("Support avatar listener error:", error);
-            });
-        }
-
-        async function saveSupportAvatar() {
-            if (!editingSupportAvatarFile) {
-                window.showToast('Choose a photo first.', 'fail');
-                return;
-            }
-            const btn = document.getElementById('save-support-avatar-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Saving...';
-            try {
-                const adminAvatar = await uploadImageToImgBB(editingSupportAvatarFile, 'support-avatar-upload-status');
-                await setDoc(doc(db, "settings", "supportChat"), { adminAvatar }, { merge: true });
-                logAdminActivity('Updated support chat avatar');
-                window.showToast('Support chat avatar updated!', 'success');
-                editingSupportAvatarFile = null;
-            } catch (error) {
-                console.error("Save support avatar error:", error);
-                window.showToast(error.message || 'Failed to update avatar.', 'fail');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.saveSupportAvatar = saveSupportAvatar;
 
         // ---------- Receipt Style (settings/receipt, style: 'minimal'|'premium'|'dark') ----------
         // Same doc pattern as branding/tiers/social above. store.html reads this
@@ -18202,7 +17718,7 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(c.name, cost, cost, c.name, '', '', 'currency', null, true);
+                        addPackageRow(c.name, cost, autoPriceForCost(cost), c.name, '', '', 'currency', null, true);
                         addedCount++;
                     }
                 });
@@ -18210,7 +17726,7 @@
                 statusEl.style.color = 'var(--accent)';
                 let statusMsg = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
 
                 // Check /v1/games/fields for whether this game needs a
                 // server id, and auto-set "Requires Server ID" from the
@@ -18402,7 +17918,7 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(o.name, cost, cost, '', '', '', 'currency', null, true, '', o.offer_id);
+                        addPackageRow(o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', o.offer_id);
                         addedCount++;
                     }
                 });
@@ -18439,7 +17955,7 @@
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`)
                     + (fazerNeedsServerIdField ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
                     + (pendingFazerCardServerMode === 'select'
                         ? `\n✓ Server dropdown detected (${pendingFazerCardServerOptions.length} options).`
@@ -18507,7 +18023,7 @@
                         updatedCount++;
                     } else {
                         const absImage = p.image ? (/^https?:\/\//.test(p.image) ? p.image : 'https://aluu.in' + p.image) : '';
-                        addPackageRow(p.name, cost, cost, '', '', absImage, 'currency', null, true, '', '', '', 'aluu', denom);
+                        addPackageRow(p.name, cost, autoPriceForCost(cost), '', '', absImage, 'currency', null, true, '', '', '', 'aluu', denom);
                         addedCount++;
                     }
                 });
@@ -18554,7 +18070,7 @@
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`)
                     + (requiresServerId ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
                     + (pendingAluuServerMode === 'select' ? '\n✓ Server ID Options auto-filled from Aluu.in — check the list below.' : '')
                     + (anyRequiresCharName ? '\n✓ "Requires Character Name" auto-enabled for this game.' : '');
@@ -18609,7 +18125,7 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(p.name, cost, cost, '', '', '', 'currency', null, true, '', '', '', 'bay2game', '', p.product_code);
+                        addPackageRow(p.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', '', '', 'bay2game', '', p.product_code);
                         addedCount++;
                     }
                 });
@@ -18627,7 +18143,7 @@
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`)
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`)
                     + (requiresServerId ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.');
                 sortPackageRows();
                 window.showToast('Bay2Game catalogue imported ✓', 'success');
@@ -18835,7 +18351,7 @@
                         updatedCount++;
                     } else {
                         const label = p.face_value ? `${p.title} ($${p.face_value})` : p.title;
-                        addPackageRow(label, cost, cost, '', '', p.image_url || '', 'currency', null, false, idStr);
+                        addPackageRow(label, cost, autoPriceForCost(cost), '', '', p.image_url || '', 'currency', null, false, idStr);
                         addedCount++;
                     }
                 });
@@ -18843,7 +18359,7 @@
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Product အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} products ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                    : `Imported ${addedCount} products ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
                 // Same auto-sort as the direct-games import above, so newly
                 // imported voucher rows land smallest-to-largest right away.
                 sortPackageRows();
@@ -18898,7 +18414,7 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(o.name, cost, cost, '', '', '', 'currency', null, true, '', '', o.card_id);
+                        addPackageRow(o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', '', o.card_id);
                         addedCount++;
                     }
                 });
@@ -18906,7 +18422,7 @@
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Card အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} cards ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                    : `Imported ${addedCount} cards ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
                 sortPackageRows();
                 window.showToast('FazerCards gift card catalogue imported ✓', 'success');
             } catch (error) {
@@ -19626,7 +19142,7 @@
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(r.spu, cost, cost, '', String(r.id), '', 'currency', null, true);
+                        addPackageRow(r.spu, cost, autoPriceForCost(cost), '', String(r.id), '', 'currency', null, true);
                         addedCount++;
                     }
                 });
@@ -19634,7 +19150,7 @@
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost is filled in, set your Price (markup) for each before saving.`;
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
                 // Same auto-sort as G2Bulk/FazerCards/Voucher imports above, so
                 // newly-imported denominations land smallest-to-largest too.
                 sortPackageRows();
@@ -20341,7 +19857,6 @@
             listenCoupons();
             listenSocialLinks();
             listenBranding();
-            listenSupportAvatar();
             listenReferralSettings();
             listenFlashSaleSettings();
             listenReceiptStyle();
@@ -20354,9 +19869,8 @@
             listenUsers();
             listenTierSettings();
             listenActivityLog();
-            listenSupportChats();
-            listenSupportChatsAccount();
             listenAdminAccounts();
+            listenApiKeysMfaSecret();
             listenTabAccessSettings();
             listenAutoUpdatePricesSetting();
             startAdminHeartbeat();
@@ -20430,9 +19944,11 @@
             }
         }
 
-        // Runs once per successful login (called from startAdminApp). Waits
-        // briefly for listenTelegramBot()'s onSnapshot to populate
-        // TELEGRAM_SETTINGS before deciding whether to send an alert.
+        // Runs once per successful login (called from startAdminApp). Still
+        // records/updates lastLoginIp+lastLoginAt (shown on the Admin
+        // Accounts card), just no longer pushes a Telegram message for it —
+        // sendLoginAlertToTelegram is kept below, unused, in case this needs
+        // to be turned back on later.
         async function runLoginSecurityCheck() {
             currentAdminIP = await getPublicIP();
             let lastIp = null;
@@ -20450,9 +19966,6 @@
             }
             const isNewIp = lastIp !== null && lastIp !== currentAdminIP;
             logAdminActivity('Login', `Signed in from IP ${currentAdminIP}${isNewIp ? ' (new IP)' : ''}`);
-            setTimeout(() => {
-                sendLoginAlertToTelegram(currentAdminUsername || 'unknown', currentAdminIP, isNewIp);
-            }, 1500);
         }
 
         // ---------- Admin presence heartbeat ----------
@@ -20491,17 +20004,5 @@
             autoPollG2BulkOrders();
         });
     </script>
-    <!-- Full-screen chat photo viewer (single photo, or a collage tile) —
-         shared by every image bubble in the Support Chat thread; see
-         chatImageCollageHTML() / openChatImageViewer() in the script above. -->
-    <div class="chat-img-viewer-overlay" id="chat-img-viewer-overlay" onclick="if(event.target===this) closeChatImageViewer()">
-        <div class="chat-img-viewer-close" onclick="closeChatImageViewer()">
-            <svg class="ui-icon" style="width:18px;height:18px;stroke:#fff;"><use href="#icon-close"></use></svg>
-        </div>
-        <div class="chat-img-viewer-nav prev" id="chat-img-viewer-prev" onclick="chatImageViewerPrev()">‹</div>
-        <img id="chat-img-viewer-img" src="" alt="Photo">
-        <div class="chat-img-viewer-nav next" id="chat-img-viewer-next" onclick="chatImageViewerNext()">›</div>
-        <div class="chat-img-viewer-counter" id="chat-img-viewer-counter" style="display:none;"></div>
-    </div>
 </body>
 </html>
