@@ -7,8 +7,23 @@
          corner → Console / Network tabs) without needing a computer + USB
          debugging. Loaded as a plain script (not type="module") so it still
          runs even if the main Firebase module script below fails entirely. -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
+    <script>
+        // Debug console (eruda) is now OPT-IN. It used to load unpinned from a CDN on
+        // every visit, which put third-party code (and a full inspector) inside the
+        // page that holds the admin session and the provider API keys.
+        // To use it: open the panel with #debug at the end of the URL (or run
+        // localStorage.setItem('pca_debug','1') once). It stays off for everyone else.
+        (function () {
+            try {
+                if (location.hash === '#debug' || localStorage.getItem('pca_debug') === '1') {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/eruda@3';
+                    s.onload = function () { if (window.eruda) eruda.init(); };
+                    document.head.appendChild(s);
+                }
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PCA Store - Admin</title>
     <style>
@@ -2486,11 +2501,11 @@
                             <span class="switch-label">Require Login</span>
                         </div>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="admin-login-enabled-toggle" onchange="onAdminLoginToggle(this.checked)">
+                            <input type="checkbox" id="admin-login-enabled-toggle" checked disabled>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
-                    <p id="admin-login-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 4px;"></p>
+                    <p id="admin-login-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 4px;">Login is always required — this can no longer be turned off.</p>
                 </div>
             </div>
 
@@ -5187,6 +5202,64 @@
         // server-side (same pattern as store.html) instead of sitting in this file.
         const IMGBB_UPLOAD_URL = 'https://imgbb-functions.pca-game-store.workers.dev';
 
+        // telegram-order Worker: server-side admin auth helpers. Two jobs:
+        //  - /admin-login-lookup  { username } -> { ok, email }  (replaces the
+        //    old browser-side getDoc(adminUsernames/{username}) read, which
+        //    exposed every admin's totpSecret + permissions to anyone typing
+        //    a username into the login box before signing in.)
+        //  - /admin-sync-claims   (Bearer <full admin's ID token>) -> sets
+        //    {admin:true, adminRole} custom claims from each admin's `role`
+        //    field, and mirrors provider enabled/disabled flags into the
+        //    public settings/providerFlags doc. Called after anything that
+        //    changes an admin's role, adds/removes an admin, or changes a
+        //    provider's enabled flag.
+        const ADMIN_SYNC_WORKER_URL = 'https://telegram-order.pca-game-store.workers.dev';
+
+        // POST { username } to the Worker instead of reading adminUsernames
+        // directly from the browser. Returns { ok, email } only - never
+        // totpSecret / permissions / telegram fields. Network or non-200
+        // responses are treated the same as "not found" so callers keep
+        // their existing generic error handling.
+        async function lookupAdminEmailByUsername(username) {
+            try {
+                const res = await fetch(`${ADMIN_SYNC_WORKER_URL}/admin-login-lookup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                const data = await res.json().catch(() => null);
+                return (data && data.ok && data.email) ? data.email : null;
+            } catch (e) {
+                console.error('admin-login-lookup failed:', e);
+                return null;
+            }
+        }
+
+        // Re-syncs Firebase Auth custom claims (admin/adminRole) from
+        // adminUsernames and refreshes settings/providerFlags. Must be called
+        // by a currently signed-in Full Access admin (their ID token is sent
+        // as a Bearer token - the Worker re-checks role=='full' against
+        // Firestore before doing anything). Best-effort: failures are logged
+        // but never block the UI action that triggered them, since the next
+        // successful sync (or the existing cron/manual paths) will catch up.
+        async function callAdminSyncClaims() {
+            try {
+                if (!auth.currentUser) return null;
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${ADMIN_SYNC_WORKER_URL}/admin-sync-claims`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json().catch(() => null);
+                if (!data || !data.ok) console.error('admin-sync-claims returned an error:', data);
+                return data;
+            } catch (e) {
+                console.error('admin-sync-claims call failed:', e);
+                return null;
+            }
+        }
+        window.callAdminSyncClaims = callAdminSyncClaims;
+
         const app = initializeApp(firebaseConfig);
         // Using initializeFirestore (not the plain getFirestore) so we can pass
         // experimentalAutoDetectLongPolling. Some networks/VPNs allow normal
@@ -5331,67 +5404,26 @@
         let currentAdminIP = null;
         let pendingEnrollSecret = null;
 
-        // ---------- Require Login toggle (Dashboard → Settings → Admin Login) ----------
-        // Stored in settings/adminAuth { loginEnabled: boolean }. Missing doc = off,
-        // so the panel opens straight in with no gate until an admin turns this on.
-        let loginGateEnabled = false;
+        // ---------- Admin Login gate ----------
+        // The "Login OFF" mode (settings/adminAuth.loginEnabled, toggleable
+        // from this panel) has been removed. It relied only on Firestore
+        // rules requiring request.auth != null, which an anonymous sign-in
+        // also satisfies - not real protection. Login is now ALWAYS
+        // required; the toggle in Settings is display-only (see the
+        // disabled checkbox in the HTML above).
         function renderAdminLoginStatus() {
             const status = document.getElementById('admin-login-status');
-            const toggle = document.getElementById('admin-login-enabled-toggle');
-            if (toggle) toggle.checked = loginGateEnabled;
-            if (status) status.textContent = loginGateEnabled
-                ? 'Login is required to open this panel.'
-                : 'Login is currently OFF — the panel opens with no password.';
+            if (status) status.textContent = 'Login is always required to open this panel.';
         }
         window.renderAdminLoginStatus = renderAdminLoginStatus;
 
-        async function initLoginGate() {
-            try {
-                const snap = await getDoc(doc(db, "settings", "adminAuth"));
-                // FAIL-CLOSED: a missing settings/adminAuth doc (first run, doc
-                // deleted, typo'd path, etc.) now means login IS required.
-                // Only an explicit { loginEnabled: false } written by the toggle
-                // turns the gate off — absence/silence never implies "open".
-                loginGateEnabled = !snap.exists() || snap.data().loginEnabled !== false;
-            } catch (e) {
-                // FAIL-CLOSED: a read error (offline, permission issue, rules
-                // misconfigured, etc.) also defaults to requiring login rather
-                // than opening the panel.
-                console.error('Could not read admin login setting, defaulting to locked:', e);
-                loginGateEnabled = true;
-            }
+        function initLoginGate() {
             renderAdminLoginStatus();
-            if (!loginGateEnabled) {
-                // Admin has explicitly turned login off via the toggle. Still sign
-                // in anonymously in the background so Firestore rules requiring
-                // request.auth != null keep working.
-                // NOTE: this alone is only real protection once Firestore rules
-                // distinguish a verified admin from an anonymous user — checking
-                // request.auth != null is not enough on its own (see Firestore
-                // rules audit item).
-                document.getElementById('login-screen').classList.add('hidden');
-                try { await signInAnonymously(auth); } catch (e) { console.error('Anonymous sign-in failed:', e); }
-                if (!adminAppStarted) { adminAppStarted = true; startAdminApp(); }
-            }
-            // If enabled, do nothing — the default-visible login-screen and the
-            // onAuthStateChanged listener below handle the normal sign-in flow.
+            // Nothing else to do - the default-visible login-screen and the
+            // onAuthStateChanged listener below handle the normal sign-in
+            // flow. There is no bypass path anymore.
         }
         initLoginGate();
-
-        async function onAdminLoginToggle(checked) {
-            try {
-                await setDoc(doc(db, "settings", "adminAuth"), { loginEnabled: checked }, { merge: true });
-                logAdminActivity('Changed login gate', checked ? 'Enabled' : 'Disabled');
-                loginGateEnabled = checked;
-                renderAdminLoginStatus();
-                window.showToast(checked ? 'Login required — takes effect next time the panel is opened.' : 'Login turned off — takes effect next time the panel is opened.', 'success');
-            } catch (e) {
-                console.error('Failed to save login toggle:', e);
-                document.getElementById('admin-login-enabled-toggle').checked = !checked;
-                window.showToast('Failed to save. Check your connection.', 'fail');
-            }
-        }
-        window.onAdminLoginToggle = onAdminLoginToggle;
 
         // ---------- Admin Accounts: list + add (Dashboard → Settings → Admin Accounts) ----------
         // A second, independent Firebase App instance used ONLY for creating a
@@ -5682,6 +5714,10 @@
                     currentAdminRole = role;
                     applyRoleRestrictions();
                 }
+                // Re-sync Firebase Auth custom claims so the role change is
+                // actually enforced server-side (Firestore rules), not just
+                // in this browser's UI.
+                callAdminSyncClaims();
                 window.showToast('Access updated ✓', 'success');
             } catch (e) {
                 console.error('Update admin role error:', e);
@@ -5715,6 +5751,10 @@
                     try {
                         await deleteDoc(doc(db, "adminUsernames", username));
                         await logAdminActivity('Revoked admin', username);
+                        // Re-sync claims so the revoked admin's Auth account
+                        // actually loses its admin/adminRole claims, instead
+                        // of staying valid until the next scheduled sync.
+                        callAdminSyncClaims();
                         window.showToast('Admin access revoked ✓', 'success');
                     } catch (e) {
                         console.error('Revoke admin error:', e);
@@ -5988,6 +6028,10 @@
                     createdAt: serverTimestamp()
                 });
                 await logAdminActivity('Added admin', username);
+                // Give the new admin's Auth account its {admin:true, adminRole}
+                // claims right away, instead of waiting for the next
+                // scheduled sync.
+                callAdminSyncClaims();
                 // Step 2: show the QR right away so it can be scanned on the spot.
                 document.getElementById('new-admin-secret-key').textContent = totpSecret;
                 document.getElementById('new-admin-final-username').textContent = username;
@@ -6552,12 +6596,12 @@
                 return;
             }
             try {
-                const usernameSnap = await getDoc(doc(db, "adminUsernames", username));
-                if (!usernameSnap.exists() || !usernameSnap.data().email) {
+                const email = await lookupAdminEmailByUsername(username);
+                if (!email) {
                     window.showToast('No account found for that username.', 'fail');
                     return;
                 }
-                await sendPasswordResetEmail(auth, usernameSnap.data().email);
+                await sendPasswordResetEmail(auth, email);
                 window.showToast('Password reset link sent to your email.', 'success');
             } catch (error) {
                 console.error('Forgot password error:', error);
@@ -6591,9 +6635,12 @@
             try {
                 // Firebase Auth itself only accepts email/password, so each
                 // admin's username is mapped to their real sign-in email via
-                // an "adminUsernames/{username}" doc ({ email: "...", totpSecret: "..." }).
-                const usernameSnap = await getDoc(doc(db, "adminUsernames", username));
-                if (!usernameSnap.exists() || !usernameSnap.data().email) {
+                // the Worker's /admin-login-lookup endpoint (backed by the
+                // "adminUsernames/{username}" doc, but only ever returning
+                // the email - never totpSecret/permissions/telegram fields
+                // to the browser).
+                const email = await lookupAdminEmailByUsername(username);
+                if (!email) {
                     // Same generic message and same lockout path as a wrong
                     // password below, so a caller can't tell "unknown
                     // username" apart from "wrong password" (no account
@@ -6608,7 +6655,6 @@
                     return;
                 }
                 pendingUsername = username;
-                const email = usernameSnap.data().email;
                 await signInWithEmailAndPassword(auth, email, password);
                 // Correct credentials — clear this device's lockout counter.
                 clearLockout('login');
@@ -15191,6 +15237,9 @@
             try {
                 await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret, lowBalanceAlert, enabled }, { merge: true });
                 logAdminActivity('Saved G2Bulk settings', enabled ? 'Enabled' : 'Disabled');
+                // Refresh the public settings/providerFlags mirror so the
+                // Storefront sees the new enabled/disabled state right away.
+                callAdminSyncClaims();
                 window.showToast('G2Bulk key saved!', 'success');
                 closeG2BulkModal();
             } catch (error) {
@@ -15276,6 +15325,7 @@
             try {
                 await setDoc(doc(db, "settings", "fazercard"), { apiKey, proxyUrl, lowBalanceAlert, usdRate, enabled }, { merge: true });
                 logAdminActivity('Saved FazerCards settings', enabled ? 'Enabled' : 'Disabled');
+                callAdminSyncClaims();
                 window.showToast('FazerCards key saved!', 'success');
                 closeFazerCardModal();
             } catch (error) {
@@ -15610,6 +15660,7 @@
             try {
                 await setDoc(doc(db, "settings", "aluu"), { apiKey, proxyUrl, lowBalanceAlert, usdRate, webhookUrl, webhookSecret, enabled }, { merge: true });
                 logAdminActivity('Saved Aluu.in settings', enabled ? 'Enabled' : 'Disabled');
+                callAdminSyncClaims();
                 window.showToast('Aluu.in key saved!', 'success');
                 closeAluuModal();
             } catch (error) {
@@ -15798,6 +15849,7 @@
             try {
                 await setDoc(doc(db, "settings", "bay2game"), { apiKey, proxyUrl, lowBalanceAlert, usdRate, enabled }, { merge: true });
                 logAdminActivity('Saved Bay2Game settings', enabled ? 'Enabled' : 'Disabled');
+                callAdminSyncClaims();
                 window.showToast('Bay2Game key saved!', 'success');
                 closeBay2gameModal();
             } catch (error) {
@@ -18969,6 +19021,7 @@
             try {
                 await setDoc(doc(db, "settings", "jcplays"), { baseUrl, proxyUrl, uid, email, mKey, lowBalanceAlert, enabled }, { merge: true });
                 logAdminActivity('Saved JCPlays settings', enabled ? 'Enabled' : 'Disabled');
+                callAdminSyncClaims();
                 window.showToast('JCPlays credentials saved!', 'success');
                 closeJCPlaysModal();
             } catch (error) {
