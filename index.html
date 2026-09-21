@@ -24,6 +24,215 @@
             } catch (e) { /* ignore */ }
         })();
     </script>
+    <script>
+        // ============================================================
+        // Request usage meter (Dashboard → "Request Usage")
+        // Counts what THIS admin panel sends, on THIS device:
+        //   - Firestore reads / writes / deletes / live listeners
+        //     (fed by the wrappers around the Firestore SDK calls in the
+        //      module script below)
+        //   - Cloudflare Worker requests, errors and latency
+        //     (every fetch() to *.workers.dev / *.pages.dev is timed here)
+        // Totals for "today" survive reloads via localStorage; storefront
+        // (customer) traffic is NOT included - use the Firebase Console
+        // Usage tab / Cloudflare Workers analytics for the full picture.
+        // Loaded as a plain script first so the fetch wrapper is in place
+        // before any other code runs.
+        // ============================================================
+        (function () {
+            'use strict';
+            var KEY = 'pca_usage_v1';
+            // Free-tier daily limits used for the progress bars (edit if you're on a paid plan)
+            var QUOTA = { reads: 50000, writes: 20000, cf: 100000 };
+            // Add any custom domain that is routed through Cloudflare, e.g. ['api.mystore.com']
+            var CF_EXTRA_HOSTS = [];
+            var MAX_SOURCES = 60;
+
+            function blank() { return { fs: { r: 0, w: 0, d: 0, src: {} }, cf: { n: 0, f: 0, ms: 0, src: {} } }; }
+            var session = blank(), pending = blank();
+            var listeners = { opened: 0, active: 0 };
+            var cfMax = 0, dirty = false;
+
+            function zeroFs() { return { r: 0, w: 0, d: 0 }; }
+            function zeroCf() { return { n: 0, f: 0, ms: 0 }; }
+            function entry(map, label, zero) {
+                if (!map[label]) {
+                    if (Object.keys(map).length >= MAX_SOURCES) label = 'other';
+                    if (!map[label]) map[label] = zero();
+                }
+                return map[label];
+            }
+
+            function fsBump(kind, count, label) {
+                try {
+                    if (!count) return;
+                    label = label || '?';
+                    [session, pending].forEach(function (st) {
+                        st.fs[kind] += count;
+                        entry(st.fs.src, label, zeroFs)[kind] += count;
+                    });
+                    dirty = true;
+                } catch (e) { /* never break the app for a counter */ }
+            }
+            function cfBump(label, ms, failed) {
+                try {
+                    [session, pending].forEach(function (st) {
+                        st.cf.n++; st.cf.ms += ms; if (failed) st.cf.f++;
+                        var e = entry(st.cf.src, label, zeroCf);
+                        e.n++; e.ms += ms; if (failed) e.f++;
+                    });
+                    if (ms > cfMax) cfMax = ms;
+                    dirty = true;
+                } catch (e) { /* ignore */ }
+            }
+
+            // ---- Cloudflare: time every fetch() that goes to a Worker ----
+            function isCf(u) {
+                try {
+                    var h = new URL(u, location.href).hostname;
+                    return /\.(workers|pages)\.dev$/.test(h) || CF_EXTRA_HOSTS.indexOf(h) !== -1;
+                } catch (e) { return false; }
+            }
+            function cfLabel(u) {
+                var x = new URL(u, location.href);
+                var seg = x.pathname.split('/')[1];
+                return x.hostname.split('.')[0] + (seg ? '/' + seg : '');
+            }
+            var nativeFetch = window.fetch;
+            if (typeof nativeFetch === 'function') {
+                window.fetch = function (input) {
+                    var url = (typeof input === 'string') ? input : ((input && input.url) || String(input));
+                    if (!isCf(url)) return nativeFetch.apply(window, arguments);
+                    var t0 = performance.now(), label = cfLabel(url);
+                    return nativeFetch.apply(window, arguments).then(function (res) {
+                        cfBump(label, performance.now() - t0, !res.ok);
+                        return res;
+                    }, function (err) {
+                        cfBump(label, performance.now() - t0, true);
+                        throw err;
+                    });
+                };
+            }
+
+            // ---- Persistence (today's totals, per device) ----
+            function dayKey() {
+                var d = new Date();
+                return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+            }
+            function load() {
+                try {
+                    var o = JSON.parse(localStorage.getItem(KEY) || 'null');
+                    if (o && o.day === dayKey() && o.data && o.data.fs && o.data.cf) return o.data;
+                } catch (e) { /* ignore */ }
+                return blank();
+            }
+            function addMap(x, y, keys) {
+                var out = {};
+                [x || {}, y || {}].forEach(function (m) {
+                    Object.keys(m).forEach(function (k) {
+                        var e = out[k] || (out[k] = {});
+                        keys.forEach(function (f) { e[f] = (e[f] || 0) + (m[k][f] || 0); });
+                    });
+                });
+                return out;
+            }
+            function merge(a, b) {
+                function add(x, y) { return (x || 0) + (y || 0); }
+                return {
+                    fs: { r: add(a.fs.r, b.fs.r), w: add(a.fs.w, b.fs.w), d: add(a.fs.d, b.fs.d), src: addMap(a.fs.src, b.fs.src, ['r', 'w', 'd']) },
+                    cf: { n: add(a.cf.n, b.cf.n), f: add(a.cf.f, b.cf.f), ms: add(a.cf.ms, b.cf.ms), src: addMap(a.cf.src, b.cf.src, ['n', 'f', 'ms']) }
+                };
+            }
+            function flush() {
+                if (!dirty) return;
+                try {
+                    localStorage.setItem(KEY, JSON.stringify({ day: dayKey(), data: merge(load(), pending) }));
+                    pending = blank();
+                    dirty = false;
+                } catch (e) { /* storage blocked: keep counting in memory */ }
+            }
+
+            // ---- Rendering ----
+            function num(v) { return Number(v || 0).toLocaleString('en-US'); }
+            function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+            function setText(id, t) { var el = document.getElementById(id); if (el && el.textContent !== t) el.textContent = t; }
+            function setBar(id, used, quota) {
+                var el = document.getElementById(id); if (!el) return;
+                var pct = Math.min(100, used / quota * 100);
+                el.style.width = pct + '%';
+                el.classList.toggle('hot', pct >= 80);
+            }
+            function setRows(id, rows, emptyText) {
+                var el = document.getElementById(id); if (!el) return;
+                el.innerHTML = rows.length ? rows.map(function (r) {
+                    return '<div class="usage-top-row"><span class="name">' + esc(r[0]) + '</span><b>' + r[1] + '</b></div>';
+                }).join('') : '<span class="stat-card-sub-text">' + emptyText + '</span>';
+            }
+            function render() {
+                var dash = document.getElementById('dashboard');
+                if (!dash || !dash.classList.contains('active') || !document.getElementById('usage-grid')) return;
+                var v = merge(load(), pending);
+                var writes = v.fs.w + v.fs.d;
+
+                setText('usage-fs-reads', num(v.fs.r));
+                setText('usage-fs-reads-sub', 'session ' + num(session.fs.r));
+                setBar('usage-fs-reads-bar', v.fs.r, QUOTA.reads);
+
+                setText('usage-fs-writes', num(writes));
+                setText('usage-fs-writes-sub', 'session ' + num(session.fs.w + session.fs.d) + (v.fs.d ? ' · ' + num(v.fs.d) + ' deletes' : ''));
+                setBar('usage-fs-writes-bar', writes, QUOTA.writes);
+
+                setText('usage-listeners', num(listeners.active));
+                setText('usage-listeners-sub', num(listeners.opened) + ' opened this session');
+
+                setText('usage-cf-reqs', num(v.cf.n));
+                setText('usage-cf-reqs-sub', 'session ' + num(session.cf.n));
+                setBar('usage-cf-reqs-bar', v.cf.n, QUOTA.cf);
+
+                setText('usage-cf-fail', num(v.cf.f));
+                setText('usage-cf-fail-sub', (v.cf.n ? (v.cf.f / v.cf.n * 100).toFixed(1) : '0') + '% error rate');
+
+                setText('usage-cf-latency', (v.cf.n ? Math.round(v.cf.ms / v.cf.n) : 0) + ' ms');
+                setText('usage-cf-latency-sub', 'slowest ' + Math.round(cfMax) + ' ms (session)');
+
+                var fsRows = Object.keys(v.fs.src).map(function (k) { return [k, v.fs.src[k]]; })
+                    .sort(function (a, b) { return (b[1].r + b[1].w + b[1].d) - (a[1].r + a[1].w + a[1].d); })
+                    .slice(0, 6)
+                    .map(function (r) { return [r[0], 'R ' + num(r[1].r) + ' · W ' + num(r[1].w + r[1].d)]; });
+                setRows('usage-fs-top', fsRows, 'No Firestore activity yet.');
+
+                var cfRows = Object.keys(v.cf.src).map(function (k) { return [k, v.cf.src[k]]; })
+                    .sort(function (a, b) { return b[1].n - a[1].n; })
+                    .slice(0, 6)
+                    .map(function (r) {
+                        var e = r[1];
+                        return [r[0], num(e.n) + ' req · ' + Math.round(e.ms / e.n) + ' ms' + (e.f ? ' · <em>' + num(e.f) + ' failed</em>' : '')];
+                    });
+                setRows('usage-cf-top', cfRows, 'No Worker requests yet.');
+            }
+
+            function reset() {
+                try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+                session = blank(); pending = blank(); cfMax = 0; dirty = false;
+                render();
+            }
+
+            window.PCAUsage = {
+                fsRead: function (count, label) { fsBump('r', count, label); },
+                fsWrite: function (count, label) { fsBump('w', count, label); },
+                fsDelete: function (count, label) { fsBump('d', count, label); },
+                listenerOpen: function () { listeners.opened++; listeners.active++; },
+                listenerClose: function () { if (listeners.active > 0) listeners.active--; },
+                render: render,
+                reset: reset,
+                snapshot: function () { return merge(load(), pending); }   // handy from the debug console
+            };
+
+            setInterval(function () { flush(); render(); }, 3000);
+            document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); });
+            window.addEventListener('pagehide', flush);
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PCA Store - Admin</title>
     <style>
@@ -506,6 +715,18 @@
 
         .dash-section-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 16px 0 8px; }
 
+        /* Request usage meter (Dashboard → Request Usage) */
+        .usage-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+        @media (min-width: 640px) { .usage-grid { grid-template-columns: repeat(3, 1fr); } }
+        .usage-bar { height: 4px; border-radius: 4px; background: var(--fill-soft); margin-top: 8px; overflow: hidden; }
+        .usage-bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--accent); transition: width 0.4s ease; }
+        .usage-bar i.hot { background: var(--danger); }
+        .usage-top-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary); padding: 7px 0; border-bottom: 1px solid var(--fill-soft); }
+        .usage-top-row:last-child { border-bottom: 0; }
+        .usage-top-row .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .usage-top-row b { color: var(--text-primary); font-weight: 600; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+        .usage-top-row b em { font-style: normal; color: var(--danger); }
+
         /* ============================================================
            REDESIGNED OVERVIEW WIDGETS — image-style stat cards, revenue
            bar chart and category donut for the Dashboard page, plus the
@@ -607,6 +828,16 @@
         .quick-topup-grid input:focus { outline: none; border-color: var(--accent); }
         .quick-topup-grid input::placeholder { color: var(--text-muted); }
         .quick-topup-grid .btn { grid-column: 1 / -1; }
+        .topup-user-chip { grid-column: 1 / -1; border-radius: 12px; padding: 9px 11px; font-size: 12.5px; line-height: 1.4; }
+        .topup-user-chip .tuc-title { font-weight: 700; font-size: 13px; }
+        .topup-user-chip .tuc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+        .topup-user-chip .tuc-grid > div { background: var(--surface); border: 1px solid var(--border-glass); border-radius: 8px; padding: 6px 8px; min-width: 0; }
+        .topup-user-chip .tuc-grid span { display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+        .topup-user-chip .tuc-grid b { display: block; color: var(--text-primary); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .topup-user-chip .tuc-sub { margin-top: 6px; color: var(--text-secondary); word-break: break-all; }
+        .topup-user-chip.checking { background: var(--fill-soft); color: var(--text-muted); }
+        .topup-user-chip.ok { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.4); color: #0F9D6E; }
+        .topup-user-chip.bad { background: var(--danger-soft); border: 1px solid var(--danger); color: var(--danger); }
 
         /* Order History (Orders admin page) — same compact-row + tap-to-expand
            idea as the package rows: a tight one-line summary by default, full
@@ -2170,6 +2401,107 @@
                     <b id="dash-bay2game-balance-display" style="color:var(--accent);">—</b>
                 </div>
             </div>
+
+            <!-- REQUEST USAGE — how many Firestore operations and Cloudflare Worker
+                 requests this admin panel is making (today, this device). Fed by
+                 window.PCAUsage (head script + Firestore wrappers in the module script). -->
+            <div class="dash-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Request Usage · Today</span>
+                <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.PCAUsage && window.PCAUsage.reset()">Reset</button>
+            </div>
+            <div class="usage-grid" id="usage-grid">
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Firestore Reads</span>
+                        <div class="stat-card-icon" style="background:#F59E0B;"><svg class="ui-icon"><use href="#icon-download"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="usage-fs-reads">0</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-fs-reads-sub">session 0</span></div>
+                    <div class="usage-bar"><i id="usage-fs-reads-bar"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Firestore Writes</span>
+                        <div class="stat-card-icon" style="background:#8B5CF6;"><svg class="ui-icon"><use href="#icon-send"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="usage-fs-writes">0</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-fs-writes-sub">session 0</span></div>
+                    <div class="usage-bar"><i id="usage-fs-writes-bar"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Live Listeners</span>
+                        <div class="stat-card-icon" style="background:#0EA5E9;"><svg class="ui-icon"><use href="#icon-zap"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="usage-listeners">0</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-listeners-sub">0 opened this session</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Worker Requests</span>
+                        <div class="stat-card-icon" style="background:#F6821F;"><svg class="ui-icon"><use href="#icon-trending-up"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="usage-cf-reqs">0</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-cf-reqs-sub">session 0</span></div>
+                    <div class="usage-bar"><i id="usage-cf-reqs-bar"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Worker Failed</span>
+                        <div class="stat-card-icon" style="background:#EF4444;"><svg class="ui-icon"><use href="#icon-warning"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="usage-cf-fail">0</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-cf-fail-sub">0% error rate</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-top">
+                        <span class="stat-card-label">Worker Latency</span>
+                        <div class="stat-card-icon" style="background:#10B981;"><svg class="ui-icon"><use href="#icon-clock"></use></svg></div>
+                    </div>
+                    <div class="stat-card-value" id="usage-cf-latency">0 ms</div>
+                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-cf-latency-sub">slowest 0 ms (session)</span></div>
+                </div>
+            </div>
+            <div class="dashboard-charts-row">
+                <div class="chart-card">
+                    <div class="chart-card-head"><div><h4>Firestore by collection</h4></div><span class="chart-card-tag">R = reads · W = writes</span></div>
+                    <div id="usage-fs-top"><span class="stat-card-sub-text">No Firestore activity yet.</span></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-head"><div><h4>Cloudflare by route</h4></div><span class="chart-card-tag">Workers</span></div>
+                    <div id="usage-cf-top"><span class="stat-card-sub-text">No Worker requests yet.</span></div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-head">
+                    <div>
+                        <h4>Cloudflare · all traffic today</h4>
+                        <div class="chart-card-total" id="cf-real-sub">Loading…</div>
+                    </div>
+                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.loadCloudflareUsage && window.loadCloudflareUsage(true)">Refresh</button>
+                </div>
+                <div class="stat-card-value" id="cf-real-total">—</div>
+                <div class="usage-bar"><i id="cf-real-bar"></i></div>
+                <div id="cf-real-scripts" style="margin-top:8px;"></div>
+            </div>
+            <!-- Firestore, whole project (storefront + Worker + every admin device) from
+                 Google Cloud Monitoring via the Worker's /firestore-usage route. -->
+            <div class="chart-card">
+                <div class="chart-card-head">
+                    <div>
+                        <h4>Firestore · all traffic today</h4>
+                        <div class="chart-card-total" id="fs-real-sub">Loading…</div>
+                    </div>
+                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.loadFirestoreUsage && window.loadFirestoreUsage(true)">Refresh</button>
+                </div>
+                <div class="usage-top-row"><span class="name">Reads</span><b id="fs-real-reads">—</b></div>
+                <div class="usage-bar"><i id="fs-real-reads-bar"></i></div>
+                <div class="usage-top-row"><span class="name">Writes</span><b id="fs-real-writes">—</b></div>
+                <div class="usage-bar"><i id="fs-real-writes-bar"></i></div>
+                <div class="usage-top-row"><span class="name">Deletes</span><b id="fs-real-deletes">—</b></div>
+                <div class="usage-bar"><i id="fs-real-deletes-bar"></i></div>
+            </div>
+            <p class="stat-card-sub-text" style="line-height:1.5;">The cards and lists above count only what this admin panel sends from this device today (local time), and Firestore reads are estimated from what the SDK delivers. The "Cloudflare · all traffic" card is the real account-wide total from Cloudflare Analytics (UTC day, storefront included; bar = 100K free-plan limit). For exact Firestore totals see Firebase Console → Usage.</p>
         </div>
 
         <!-- ANALYTICS PAGE — repeat-purchase rate, retention, churn, top spenders.
@@ -2317,27 +2649,6 @@
 
                     <p id="social-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;margin:0 0 10px;"></p>
                     <button class="btn btn-primary" id="save-social-btn" onclick="saveSocialLinks()">Save Social Links</button>
-                </div>
-            </div>
-
-            <div class="admin-card" id="settings-card-referral" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleReferralSettings()">
-                    <span style="font-size:15px;font-weight: 600;">Referral Program</span>
-                    <svg class="ui-icon" id="referral-settings-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
-                </div>
-                <div id="referral-settings-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Wallet credit given to both sides when a customer redeems a friend's referral code on the store.</p>
-                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">New Customer Reward (MMK)</label>
-                    <input type="number" id="referral-new-user-reward" placeholder="1000" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Referrer Reward (MMK)</label>
-                    <input type="number" id="referral-referrer-reward" placeholder="1000" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 14px;">
-
-                    <div style="border-top:1px solid var(--border);margin:4px 0 12px;padding-top:12px;">
-                        <p style="font-size:13px;font-weight:600;margin:0 0 4px;">Tier-Based Commission</p>
-                        <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px;">% of every successful order placed by a referred friend, credited to the referrer's wallet — based on the referrer's own VIP tier at the time of that order.</p>
-                        <div id="referral-tier-commission-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;"></div>
-                    </div>
-                    <button class="btn btn-primary" id="save-referral-settings-btn" onclick="saveReferralSettings()">Save Referral Settings</button>
                 </div>
             </div>
 
@@ -3228,9 +3539,11 @@
             </h2>
 
             <div class="quick-topup-grid">
-                <input type="text" id="manual-topup-uid" placeholder="Customer UID" autocomplete="off">
+                <input type="text" id="manual-topup-uid" placeholder="Customer UID or email" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="window.onManualTopupUidInput && window.onManualTopupUidInput()">
                 <input type="number" id="manual-topup-amount" placeholder="Amount (MMK)" inputmode="numeric">
-                <button type="button" class="btn btn-primary" id="manual-topup-submit-btn" onclick="submitManualTopup(this)">Confirm</button>
+                <!-- Live "is this user registered?" result for whatever is typed in the UID/email box -->
+                <div id="manual-topup-user-status" class="topup-user-chip" style="display:none;"></div>
+                <button type="button" class="btn btn-primary" id="manual-topup-submit-btn" onclick="submitManualTopup(this)">Top Up</button>
             </div>
 
             <div class="pkg-type-tabs" id="topup-status-tabs" style="margin-bottom:14px;">
@@ -3450,7 +3763,7 @@
                     <div class="details-grid-item"><span>Guest ID</span><b id="ud-reg-guestid">N/A</b></div>
                     <div class="details-grid-item"><span>User ID (doc)</span><b id="ud-reg-docid" style="font-size:11.5px;word-break:break-all;">N/A</b></div>
                     <div class="details-grid-item"><span>Phone</span><b id="ud-reg-phone">N/A</b></div>
-                    <div class="details-grid-item" style="grid-column:1/-1;"><span>Google Account</span><b id="ud-reg-google">Not linked</b></div>
+                    <div class="details-grid-item" style="grid-column:1/-1;"><span>Google Account</span><b id="ud-reg-google">Not linked</b> <button type="button" id="ud-reg-google-link-btn" onclick="adminLinkGoogleEmail()" style="display:none;margin-left:8px;font-size:11.5px;padding:2px 8px;border-radius:6px;border:1px solid var(--border,#ccc);background:var(--bg-subtle,#f2f2f2);cursor:pointer;">Link</button></div>
                     <div class="details-grid-item" style="grid-column:1/-1;"><span>Account Status</span><b id="ud-reg-status">Active</b></div>
                 </div>
             </div>
@@ -4597,8 +4910,34 @@
             window.scrollTo(0,0);
             if ((pageId === 'dashboard' || pageId === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
             if (pageId === 'analytics' && window.renderAnalytics) window.renderAnalytics();
+            if (pageId === 'dashboard' && window.PCAUsage) window.PCAUsage.render();
+            if (pageId === 'dashboard' && window.loadCloudflareUsage) window.loadCloudflareUsage(false);
+            if (pageId === 'dashboard' && window.loadFirestoreUsage) window.loadFirestoreUsage(false);
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
+            subscribeTabListeners(pageId);
         }
+
+        // ---------- Lazy tab listeners ----------
+        // Full-collection onSnapshot listeners (Users, Game Accounts, Sell
+        // Requests, Notifications, Ticker, Payment Methods, Coupons) used to
+        // all attach at login inside startAdminApp(), so every one of them
+        // stayed open - and billing on every doc change - for the whole
+        // session even on tabs an admin never opened. Each listener already
+        // guards itself with a *ListenerAttached flag (so calling it again
+        // is a harmless no-op), so this just moves the FIRST call from
+        // startAdminApp() to here, keyed off the page actually being opened.
+        function subscribeTabListeners(pageId) {
+            if (pageId === 'user-list') listenUsers();
+            if (pageId === 'account-dashboard' || pageId === 'account-list') {
+                listenGameAccounts();
+                listenSellRequests();
+            }
+            if (pageId === 'notify-list') listenNotifications();
+            if (pageId === 'ticker-list') listenAnnouncementsAdmin();
+            if (pageId === 'payment-list') listenPaymentMethods();
+            if (pageId === 'coupon-list') listenCoupons();
+        }
+        window.subscribeTabListeners = subscribeTabListeners;
 
         // ---------- Grouped Side-Nav Picker Sheet ----------
         // Each group icon in .side-nav bundles several pages that used to be
@@ -4828,7 +5167,7 @@
         // Everything else — store branding, payments-adjacent settings,
         // and admin/tab management itself — is owner (Full Access) only.
         const SETTINGS_CARDS_OWNER_ONLY = [
-            'settings-card-sociallinks', 'settings-card-referral', 'settings-card-flashsale',
+            'settings-card-sociallinks', 'settings-card-flashsale',
             'settings-card-branding', 'settings-card-walletexpire', 'settings-card-receiptstyle',
             'settings-card-autoprice', 'settings-card-storeaccounts', 'settings-card-adminlogin', 'roles-overview-card', 'admin-accounts-card', 'tab-access-card', 'apikeys-mfa-card'
         ];
@@ -5159,15 +5498,6 @@
         }
         window.toggleSocialLinks = toggleSocialLinks;
 
-        function toggleReferralSettings() {
-            const body = document.getElementById('referral-settings-body');
-            const chevron = document.getElementById('referral-settings-chevron');
-            const isOpen = body.style.display !== 'none';
-            body.style.display = isOpen ? 'none' : 'block';
-            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-        }
-        window.toggleReferralSettings = toggleReferralSettings;
-
         function toggleFlashSaleSettings() {
             const body = document.getElementById('flashsale-settings-body');
             const chevron = document.getElementById('flashsale-settings-chevron');
@@ -5183,9 +5513,144 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { initializeFirestore, collection, getDocs, getDoc, addDoc, doc, setDoc, updateDoc, deleteDoc, deleteField, query, where, orderBy, onSnapshot, serverTimestamp, increment, runTransaction, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeFirestore, collection, getDocs as _fsGetDocs, getDoc as _fsGetDoc, getCountFromServer as _fsGetCount, addDoc as _fsAddDoc, doc, setDoc as _fsSetDoc, updateDoc as _fsUpdateDoc, deleteDoc as _fsDeleteDoc, deleteField, query, where, orderBy, onSnapshot as _fsOnSnapshot, serverTimestamp, increment, runTransaction as _fsRunTransaction, writeBatch as _fsWriteBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getMessaging, getToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+
+        // ---------- Request usage meter: Firestore instrumentation ----------
+        // The SDK functions above are imported under _fs* aliases; the wrappers
+        // below keep the ORIGINAL names (getDoc, setDoc, onSnapshot, ...) so every
+        // existing call site - here and in the earlier script via window.* - is
+        // counted without any other code changing. Behaviour is identical; each
+        // wrapper just reports to window.PCAUsage (defined in <head>) afterwards.
+        const _usage = window.PCAUsage || { fsRead() {}, fsWrite() {}, fsDelete() {}, listenerOpen() {}, listenerClose() {} };
+
+        // "orders", "settings/presence", "users/notifications" - top-level collection
+        // (plus the doc id for the singleton `settings` docs) so the breakdown stays short.
+        function _fsLabel(ref) {
+            try {
+                if (ref && typeof ref.path === 'string') {
+                    const segs = ref.path.split('/');
+                    if (segs.length % 2 === 0) {
+                        const cols = segs.slice(0, -1).filter((_, i) => i % 2 === 0).join('/');
+                        return cols === 'settings' ? 'settings/' + segs[segs.length - 1] : cols;
+                    }
+                    return segs.filter((_, i) => i % 2 === 0).join('/');
+                }
+                const qp = ref && ref._query && ref._query.path && ref._query.path.canonicalString && ref._query.path.canonicalString();
+                if (qp) return qp.split('/').filter((_, i) => i % 2 === 0).join('/');
+                return '(group query)';
+            } catch (e) { return '?'; }
+        }
+
+        async function getDoc(ref) {
+            const snap = await _fsGetDoc(ref);
+            if (!snap.metadata.fromCache) _usage.fsRead(1, _fsLabel(ref));
+            return snap;
+        }
+        async function getDocs(q) {
+            const snap = await _fsGetDocs(q);
+            if (!snap.metadata.fromCache) _usage.fsRead(Math.max(1, snap.size), _fsLabel(q));
+            return snap;
+        }
+        async function getCountFromServer(q) {
+            const snap = await _fsGetCount(q);
+            _usage.fsRead(Math.max(1, Math.ceil((snap.data().count || 0) / 1000)), _fsLabel(q));
+            return snap;
+        }
+        async function addDoc(colRef, data) {
+            const res = await _fsAddDoc(colRef, data);
+            _usage.fsWrite(1, _fsLabel(colRef));
+            return res;
+        }
+        async function setDoc(ref, ...args) {
+            const res = await _fsSetDoc(ref, ...args);
+            _usage.fsWrite(1, _fsLabel(ref));
+            return res;
+        }
+        async function updateDoc(ref, ...args) {
+            const res = await _fsUpdateDoc(ref, ...args);
+            _usage.fsWrite(1, _fsLabel(ref));
+            return res;
+        }
+        async function deleteDoc(ref) {
+            const res = await _fsDeleteDoc(ref);
+            _usage.fsDelete(1, _fsLabel(ref));
+            return res;
+        }
+
+        // Live listeners: a query snapshot bills 1 read per doc added/modified
+        // (the first snapshot = every matching doc, min 1); a doc snapshot bills 1.
+        // Cache-only snapshots cost nothing. Also tracks how many are open right now.
+        function onSnapshot(ref, ...rest) {
+            const label = _fsLabel(ref);
+            let first = true;
+            const track = (snap) => {
+                try {
+                    if (snap.metadata && snap.metadata.fromCache) return;
+                    if (typeof snap.docChanges === 'function') {
+                        let count = 0;
+                        snap.docChanges().forEach((c) => { if (c.type !== 'removed') count++; });
+                        if (first && count === 0) count = 1;
+                        _usage.fsRead(count, label);
+                    } else {
+                        _usage.fsRead(1, label);
+                    }
+                    first = false;
+                } catch (e) { /* never break a listener for a counter */ }
+            };
+            const i = rest.findIndex((a) => typeof a === 'function' || (a && typeof a.next === 'function'));
+            if (i !== -1) {
+                const cb = rest[i];
+                rest[i] = (typeof cb === 'function')
+                    ? (snap, ...more) => { track(snap); return cb(snap, ...more); }
+                    : { ...cb, next: (snap) => { track(snap); return cb.next(snap); } };
+            }
+            const unsub = _fsOnSnapshot(ref, ...rest);
+            _usage.listenerOpen();
+            let closed = false;
+            return function () {
+                if (!closed) { closed = true; _usage.listenerClose(); }
+                return unsub();
+            };
+        }
+
+        // Transactions: every tx.get is a read (counted as it happens, retries included);
+        // writes are counted once, from the attempt that actually committed.
+        function runTransaction(database, updateFn, options) {
+            let w = [], d = [];
+            return _fsRunTransaction(database, (tx) => {
+                w = []; d = [];
+                const t = {
+                    get: async (ref) => { const snap = await tx.get(ref); _usage.fsRead(1, _fsLabel(ref)); return snap; },
+                    set: (ref, ...a) => { tx.set(ref, ...a); w.push(_fsLabel(ref)); return t; },
+                    update: (ref, ...a) => { tx.update(ref, ...a); w.push(_fsLabel(ref)); return t; },
+                    delete: (ref) => { tx.delete(ref); d.push(_fsLabel(ref)); return t; }
+                };
+                return updateFn(t);
+            }, options).then((res) => {
+                w.forEach((l) => _usage.fsWrite(1, l));
+                d.forEach((l) => _usage.fsDelete(1, l));
+                return res;
+            });
+        }
+
+        // Batches: counted when commit() succeeds.
+        function writeBatch(database) {
+            const b = _fsWriteBatch(database);
+            const w = [], d = [];
+            const wb = {
+                set: (ref, ...a) => { b.set(ref, ...a); w.push(_fsLabel(ref)); return wb; },
+                update: (ref, ...a) => { b.update(ref, ...a); w.push(_fsLabel(ref)); return wb; },
+                delete: (ref) => { b.delete(ref); d.push(_fsLabel(ref)); return wb; },
+                commit: () => b.commit().then((res) => {
+                    w.forEach((l) => _usage.fsWrite(1, l));
+                    d.forEach((l) => _usage.fsDelete(1, l));
+                    return res;
+                })
+            };
+            return wb;
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyA2mwdZ2tAoZ3_6HNl43fUSi9t_ZkRita4",
@@ -5264,6 +5729,98 @@
             }
         }
         window.callAdminSyncClaims = callAdminSyncClaims;
+
+        // ---------- Cloudflare account-wide usage (Dashboard → Request Usage) ----------
+        // Asks the telegram-order Worker's /cf-usage route (see cf-usage-route.js) for today's
+        // real request/error totals from Cloudflare Analytics - every Worker, storefront
+        // traffic included. Sent with the admin's Firebase ID token; the Cloudflare API token
+        // stays inside the Worker. Cached 5 min client-side (+60 s at the Worker's edge), so
+        // opening the Dashboard repeatedly doesn't spam it; Refresh forces a fetch.
+        let cfRealFetchedAt = 0, cfRealInFlight = false;
+        async function loadCloudflareUsage(force) {
+            const totalEl = document.getElementById('cf-real-total');
+            const subEl = document.getElementById('cf-real-sub');
+            const barEl = document.getElementById('cf-real-bar');
+            const listEl = document.getElementById('cf-real-scripts');
+            if (!totalEl || !subEl || cfRealInFlight || !auth.currentUser) return;
+            if (!force && cfRealFetchedAt && Date.now() - cfRealFetchedAt < 5 * 60 * 1000) return;
+            cfRealInFlight = true;
+            subEl.textContent = 'Loading…';
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${ADMIN_SYNC_WORKER_URL}/cf-usage`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json().catch(() => null);
+                if (res.status === 404) { subEl.textContent = 'The /cf-usage route isn\'t deployed on the Worker yet.'; return; }
+                if (res.status === 401) { subEl.textContent = 'Not authorised - sign in again, or run Sync Claims so your account has the admin claim.'; return; }
+                if (!data || !data.ok) { subEl.textContent = (data && data.error) || ('Worker returned HTTP ' + res.status); return; }
+
+                const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+                const limit = data.dailyLimit || 100000;
+                const used = data.total.requests || 0;
+                totalEl.textContent = fmt(used) + ' requests';
+                const pct = Math.min(100, used / limit * 100);
+                if (barEl) { barEl.style.width = pct + '%'; barEl.classList.toggle('hot', pct >= 80); }
+                const errRate = used ? (data.total.errors / used * 100).toFixed(1) : '0';
+                subEl.textContent = `${fmt(data.total.errors)} errors (${errRate}%) · ${pct.toFixed(1)}% of ${fmt(limit)}/day · updated ${new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                if (listEl) {
+                    listEl.innerHTML = (data.scripts || []).slice(0, 8).map(sc =>
+                        `<div class="usage-top-row"><span class="name">${escapeHtml(sc.name)}</span><b>${fmt(sc.requests)} req${sc.errors ? ` · <em>${fmt(sc.errors)} err</em>` : ''}</b></div>`
+                    ).join('') || '<span class="stat-card-sub-text">No Worker requests recorded yet today.</span>';
+                }
+                cfRealFetchedAt = Date.now();
+            } catch (e) {
+                console.error('loadCloudflareUsage error:', e);
+                subEl.textContent = 'Could not reach the Worker.';
+            } finally {
+                cfRealInFlight = false;
+            }
+        }
+        window.loadCloudflareUsage = loadCloudflareUsage;
+
+        // ---------- Firestore project-wide usage (Dashboard → Firestore · all traffic) ----------
+        // Asks the Worker's /firestore-usage route (Google Cloud Monitoring) for today's real
+        // reads / writes / deletes across the whole project - storefront, the Worker's cron and
+        // every admin device - which the per-device counter above can't see. "Today" runs from
+        // 00:00 Pacific time, the moment Firestore's free-tier quota resets. Cloud Monitoring
+        // lags a few minutes behind real time. Cached 5 min client-side (+60 s at the Worker).
+        let fsRealFetchedAt = 0, fsRealInFlight = false;
+        async function loadFirestoreUsage(force) {
+            const subEl = document.getElementById('fs-real-sub');
+            if (!subEl || fsRealInFlight || !auth.currentUser) return;
+            if (!force && fsRealFetchedAt && Date.now() - fsRealFetchedAt < 5 * 60 * 1000) return;
+            fsRealInFlight = true;
+            subEl.textContent = 'Loading…';
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${ADMIN_SYNC_WORKER_URL}/firestore-usage`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json().catch(() => null);
+                if (res.status === 404) { subEl.textContent = 'The /firestore-usage route isn\'t deployed on the Worker yet.'; return; }
+                if (res.status === 401) { subEl.textContent = 'Not authorised - sign in again, or run Sync Claims so your account has the admin claim.'; return; }
+                if (!data || !data.ok) { subEl.textContent = (data && (data.hint || data.error)) || ('Worker returned HTTP ' + res.status); return; }
+
+                const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+                const rows = [
+                    ['reads', data.reads, data.limits.reads],
+                    ['writes', data.writes, data.limits.writes],
+                    ['deletes', data.deletes, data.limits.deletes]
+                ];
+                rows.forEach(([key, used, limit]) => {
+                    const valEl = document.getElementById('fs-real-' + key);
+                    const barEl = document.getElementById('fs-real-' + key + '-bar');
+                    const pct = Math.min(100, (used || 0) / limit * 100);
+                    if (valEl) valEl.textContent = `${fmt(used)} · ${pct.toFixed(1)}% of ${fmt(limit)}`;
+                    if (barEl) { barEl.style.width = pct + '%'; barEl.classList.toggle('hot', pct >= 80); }
+                });
+                subEl.textContent = `whole project since 00:00 Pacific · updated ${new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                fsRealFetchedAt = Date.now();
+            } catch (e) {
+                console.error('loadFirestoreUsage error:', e);
+                subEl.textContent = 'Could not reach the Worker.';
+            } finally {
+                fsRealInFlight = false;
+            }
+        }
+        window.loadFirestoreUsage = loadFirestoreUsage;
 
         const app = initializeApp(firebaseConfig);
         // Using initializeFirestore (not the plain getFirestore) so we can pass
@@ -6931,27 +7488,21 @@
         }
         window.toggleUserOrderCard = toggleUserOrderCard;
 
-        // ---------- Orders: 7-day auto-delete (Success/Fail only) ----------
-        // Mirrors the same policy on Store.html's own History page: completed
-        // orders (Success or Fail) older than 3 days are moved into the
-        // "ordersArchive" collection (full data preserved, just out of the
-        // live/listened "orders" collection) instead of being permanently
-        // deleted - keeps accounting/refund-dispute history intact per the
-        // admin audit report's recommendation, while still keeping the live
-        // Orders listener/dashboard small and fast. Pending/Processing
-        // orders are never touched. Runs client-side whenever this admin
-        // panel's Orders listener is active - move into the pca-telegram-bot
-        // Worker's cron for guaranteed enforcement with the panel closed.
-        // ---------- Orders: 2-month flat auto-delete (Success/Fail only) ----------
-        // Completed orders (Success or Fail) older than 2 months are moved
+        // ---------- Orders: 21-day flat auto-delete (Success/Fail only) ----------
+        // Completed orders (Success or Fail) older than 21 days are moved
         // into "ordersArchive" (full data preserved, just out of the live
         // "orders" collection) instead of being permanently deleted. Same
         // window for every user regardless of VIP tier. Pending/Processing
         // orders are never touched.
         // NOTE: VIP tier and the Leaderboard are computed from userStats
         // (totalSpent), not from this collection, so archiving here never
-        // changes lifetime totals/tier — only how far back Order History shows.
-        const ORDER_RETENTION_MS = 60 * 24 * 60 * 60 * 1000;
+        // changes lifetime totals/tier — only how far back Order History shows,
+        // and how far back the admin Order Search box can find a match (older
+        // orders are safely in "ordersArchive" but not yet browsable from the
+        // UI). Kept short specifically to bound the live "orders" listener's
+        // read cost — see checkOrderDay20Notice() just below for the PDF
+        // warning admin gets one day before each batch is swept out.
+        const ORDER_RETENTION_MS = 21 * 24 * 60 * 60 * 1000;
         function checkOrdersAutoDelete(items) {
             const cutoffMs = Date.now() - ORDER_RETENTION_MS;
             const stale = Object.values(items).filter(o => {
@@ -6975,6 +7526,99 @@
             }
         }
 
+        // ---------- Day-20 archive notice (PDF, admin-only via Telegram) ----------
+        // One day before an order crosses ORDER_RETENTION_MS above and gets
+        // swept into ordersArchive by checkOrdersAutoDelete(), batch up every
+        // order that just turned 20 days old (same Success/Fail-only scope)
+        // and send admin a single PDF listing them, over the existing
+        // Telegram bot - a last look at the full details before that batch
+        // leaves the live "orders" collection. Runs inside the same onSnapshot
+        // callback as checkOrdersAutoDelete (not a once-a-day cron) so it
+        // can't miss the 1-day window between an admin.html reload and the
+        // next one. `day20NoticeSent` on each order doc is the dedupe flag,
+        // written right after a successful send so a later snapshot never
+        // re-notifies the same order.
+        const DAY20_NOTICE_WINDOW_MS = 24 * 60 * 60 * 1000; // 20-21 days old = 1-day-wide window
+        let day20NoticeInFlight = false;
+        async function checkOrderDay20Notice(items) {
+            if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
+            if (day20NoticeInFlight) return;
+            const windowStart = Date.now() - ORDER_RETENTION_MS; // age 21d - already handled by the archive sweep above
+            const windowEnd = Date.now() - (ORDER_RETENTION_MS - DAY20_NOTICE_WINDOW_MS); // age 20d - just entered the notice window
+            const targets = Object.values(items).filter(o => {
+                if (o.status !== 'Success' && o.status !== 'Fail') return false;
+                if (o.day20NoticeSent) return false;
+                const ms = o.timestamp && o.timestamp.toMillis ? o.timestamp.toMillis() : null;
+                return ms && ms >= windowStart && ms < windowEnd;
+            });
+            if (!targets.length) return;
+            day20NoticeInFlight = true;
+            try {
+                const pdfBlob = buildOrdersArchivePdfBlob(targets);
+                const form = new FormData();
+                form.append('chat_id', TELEGRAM_SETTINGS.chatId);
+                form.append('caption', `📄 ${targets.length} order(s) will move to Archive tomorrow (21-day retention). Full list attached.`);
+                form.append('document', pdfBlob, `orders-archiving-soon-${new Date().toISOString().slice(0, 10)}.pdf`);
+                const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/sendDocument`, { method: 'POST', body: form });
+                const data = await res.json();
+                if (data.ok) {
+                    await Promise.all(targets.map(o => updateDoc(doc(db, "orders", o.id), { day20NoticeSent: true })));
+                } else {
+                    console.error('Day-20 notice Telegram send failed:', data);
+                }
+            } catch (error) {
+                console.error('checkOrderDay20Notice error:', error);
+            } finally {
+                day20NoticeInFlight = false;
+            }
+        }
+
+        // Builds a simple multi-row PDF table of orders about to be archived
+        // (jsPDF, loaded via CDN in <head> - same library downloadOrderInvoicePDF
+        // already uses for single-order invoices). Returns a Blob for FormData
+        // upload, not a saved file.
+        function buildOrdersArchivePdfBlob(orders) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const marginX = 40;
+            let y = 50;
+
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16);
+            pdf.text('Orders Archiving Tomorrow', marginX, y);
+            pdf.setFontSize(10); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(90);
+            pdf.text(new Date().toLocaleDateString(), pageWidth - marginX, y, { align: 'right' });
+            pdf.setTextColor(0);
+            y += 24;
+
+            const headers = ['Order ID', 'Date', 'Game', 'Customer', 'Amount', 'Status'];
+            const colX = [marginX, marginX + 95, marginX + 195, marginX + 290, marginX + 400, marginX + 470];
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9);
+            headers.forEach((h, i) => pdf.text(h, colX[i], y));
+            y += 6;
+            pdf.setDrawColor(200); pdf.line(marginX, y, pageWidth - marginX, y);
+            y += 14;
+
+            pdf.setFont('helvetica', 'normal');
+            orders.forEach(o => {
+                if (y > pageHeight - 50) { pdf.addPage(); y = 50; }
+                const dateStr = o.timestamp && o.timestamp.toDate ? o.timestamp.toDate().toLocaleDateString() : '—';
+                const cells = [
+                    String(o.id || '').slice(0, 12),
+                    dateStr,
+                    String(o.game || '').slice(0, 18),
+                    String(o.userName || o.userPhone || o.userId || '').slice(0, 18),
+                    Number(o.price || 0).toLocaleString() + ' MMK',
+                    o.status || ''
+                ];
+                cells.forEach((c, i) => pdf.text(c, colX[i], y));
+                y += 16;
+            });
+
+            return pdf.output('blob');
+        }
+
         function fetchOrders() {
             if (ordersListenerAttached) {
                 window.showToast('Orders update automatically ✓');
@@ -6987,11 +7631,11 @@
                 const newOrders = {};
                 querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                 ORDERS = newOrders;
-                processReferralCommissions(newOrders);
                 if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
                 if (Object.keys(USERS).length) renderAdminUsersList();
                 renderOrdersList();
                 checkOrdersAutoDelete(newOrders);
+                checkOrderDay20Notice(newOrders);
                 if (window.renderAccountDashboard) window.renderAccountDashboard();
                 // loadDashboardStats() now reads straight from this ORDERS cache
                 // instead of re-fetching the collection itself (see its own
@@ -7745,9 +8389,16 @@
                 return;
             }
             try {
-                const snap = await getDoc(doc(db, "orders", orderId));
-                if (!snap.exists()) return;
-                const order = snap.data();
+                // The background auto-poll (silent=true) runs every 25s for EVERY Processing
+                // order, and used to do a fresh getDoc() each time = 1 billed read per order
+                // per poll. ORDERS is already kept live by the orders onSnapshot listener, so
+                // read from that instead; a manual "Check Status" tap still fetches fresh.
+                let order = silent ? ORDERS[orderId] : null;
+                if (!order) {
+                    const snap = await getDoc(doc(db, "orders", orderId));
+                    if (!snap.exists()) return;
+                    order = snap.data();
+                }
                 if (order.status === 'Success' || order.status === 'Fail') return order.status.toUpperCase();
 
                 const total = Number(order.g2bulkSubOrdersTotal) || 1;
@@ -7771,7 +8422,16 @@
 
                 const doneCount = subOrders.filter(s => s.result).length;
                 if (doneCount < total) {
-                    await updateDoc(doc(db, "orders", orderId), { g2bulkSubOrders: subOrders, g2bulkSubOrdersDone: doneCount });
+                    // Only write when a unit's result actually changed - this used to write the
+                    // same progress back on every poll, which is a billed write (and a listener
+                    // re-read on the admin + the customer's screen) each time.
+                    const prevSubs = Array.isArray(order.g2bulkSubOrders) ? order.g2bulkSubOrders : null;
+                    const progressChanged = !prevSubs
+                        || doneCount !== (Number(order.g2bulkSubOrdersDone) || 0)
+                        || subOrders.some((sub, i) => ((prevSubs[i] && prevSubs[i].result) || null) !== (sub.result || null));
+                    if (progressChanged) {
+                        await updateDoc(doc(db, "orders", orderId), { g2bulkSubOrders: subOrders, g2bulkSubOrdersDone: doneCount });
+                    }
                     if (!silent) window.showToast(total > 1 ? `Still processing (${doneCount}/${total} units done)...` : 'Still processing on G2Bulk...');
                     return 'PROCESSING';
                 }
@@ -8019,7 +8679,13 @@
                     if (!silent) window.showToast('FazerCards order failed/refunded.', 'fail');
                     editTelegramOrderMessage(orderId, 'Fail');
                 } else {
-                    await updateDoc(doc(db, "orders", orderId), { fazercardStatus: status || 'processing' });
+                    // Skip the write when the status hasn't changed (this runs every 25s per
+                    // Processing order; an identical write is still billed).
+                    const nextFazerStatus = status || 'processing';
+                    const cachedFazer = ORDERS[orderId];
+                    if (!cachedFazer || cachedFazer.fazercardStatus !== nextFazerStatus) {
+                        await updateDoc(doc(db, "orders", orderId), { fazercardStatus: nextFazerStatus });
+                    }
                     if (!silent) window.showToast('Still processing on FazerCards (' + (status || 'processing') + ')...');
                 }
                 return status;
@@ -8342,7 +9008,12 @@
                     if (!silent) window.showToast('Aluu.in order failed/refunded.', 'fail');
                     editTelegramOrderMessage(orderId, 'Fail');
                 } else {
-                    await updateDoc(doc(db, "orders", orderId), { aluuStatus: status || 'pending' });
+                    // Skip the write when the status hasn't changed (billed even if identical).
+                    const nextAluuStatus = status || 'pending';
+                    const cachedAluu = ORDERS[orderId];
+                    if (!cachedAluu || cachedAluu.aluuStatus !== nextAluuStatus) {
+                        await updateDoc(doc(db, "orders", orderId), { aluuStatus: nextAluuStatus });
+                    }
                     if (!silent) window.showToast('Still processing on Aluu.in (' + (status || 'pending') + ')...');
                 }
                 return status;
@@ -8380,7 +9051,10 @@
                 await markOrderFailedWithRefund(orderId, { aluuStatus: status });
                 editTelegramOrderMessage(orderId, 'Fail');
             } else if (status) {
-                await updateDoc(doc(db, "orders", orderId), { aluuStatus: status });
+                const cachedAluuBatch = ORDERS[orderId];
+                if (!cachedAluuBatch || cachedAluuBatch.aluuStatus !== status) {
+                    await updateDoc(doc(db, "orders", orderId), { aluuStatus: status });
+                }
             }
             return status;
         }
@@ -9512,51 +10186,209 @@
             }
         }
 
-        // ---------- Top Up by UID (manual, admin-initiated) ----------
-        // Lives as an inline UID + Amount + Confirm grid right above the status
-        // tabs on the Wallet Top Ups page (no modal) — see .quick-topup-grid.
+        // ---------- Top Up by UID / email (manual, admin-initiated) ----------
+        // Lives as an inline UID-or-email + Amount + Top Up grid right above the status
+        // tabs on the Wallet Top Ups page (no modal) - see .quick-topup-grid.
+        //
+        // Safety flow: (1) as soon as something is typed, the box checks whether that
+        // user is REGISTERED (users/{uid}, or users where googleEmail == email) and shows
+        // a green "User Registered" card or a red "No Register" box; (2) pressing Top Up
+        // re-checks, then shows a confirmation with the user ID, amount and the balance
+        // before/after - nothing is credited until "Confirm & Credit" is pressed; (3) the
+        // credit itself runs in ONE transaction that refuses to run if the user doc
+        // doesn't exist. The old code used setDoc(merge) blindly, so a mistyped UID
+        // silently created a phantom user holding the money.
+        let manualTopupLookupSeq = 0;
+        let manualTopupLookupTimer = null;
+
+        // Resolves what the admin typed to a registered user.
+        // -> { status: 'ok', id, data } | { status: 'none' } | { status: 'multiple', ids } | { status: 'empty' }
+        async function findRegisteredUser(rawInput) {
+            const q = String(rawInput || '').trim();
+            if (!q) return { status: 'empty' };
+
+            if (q.includes('@')) {
+                const variants = [...new Set([q, q.toLowerCase()])];
+                const found = new Map();
+                for (const email of variants) {
+                    const snap = await getDocs(query(collection(db, "users"), where("googleEmail", "==", email)));
+                    snap.docs.forEach(d => found.set(d.id, d.data()));
+                }
+                // Fallback: the Google-account link doc (googleAccounts/{firebaseUid}) also stores the email.
+                if (!found.size) {
+                    try {
+                        for (const email of variants) {
+                            const snap = await getDocs(query(collection(db, "googleAccounts"), where("email", "==", email)));
+                            for (const d of snap.docs) {
+                                const gid = d.data().guestId;
+                                if (!gid || found.has(gid)) continue;
+                                const uSnap = await getDoc(doc(db, "users", gid));
+                                if (uSnap.exists()) found.set(gid, uSnap.data());
+                            }
+                        }
+                    } catch (e) { /* rules may not allow this collection - the users lookup above is the main path */ }
+                }
+                if (found.size === 0) return { status: 'none' };
+                if (found.size > 1) return { status: 'multiple', ids: [...found.keys()] };
+                const [id, data] = [...found.entries()][0];
+                return { status: 'ok', id, data };
+            }
+
+            if (q.includes('/')) return { status: 'none' }; // not a valid document id
+            for (const candidate of [...new Set([q, q.toUpperCase()])]) {
+                const snap = await getDoc(doc(db, "users", candidate));
+                if (snap.exists()) return { status: 'ok', id: snap.id, data: snap.data() };
+            }
+            return { status: 'none' };
+        }
+
+        function renderManualTopupChip(result, typed) {
+            const el = document.getElementById('manual-topup-user-status');
+            if (!el) return;
+            if (!result || result.status === 'empty') { el.style.display = 'none'; el.className = 'topup-user-chip'; el.innerHTML = ''; return; }
+            el.style.display = 'block';
+            if (result.status === 'checking') {
+                el.className = 'topup-user-chip checking';
+                el.textContent = 'Checking user…';
+            } else if (result.status === 'ok') {
+                const u = result.data || {};
+                el.className = 'topup-user-chip ok';
+                el.innerHTML = `<div class="tuc-title">✓ User Registered</div>
+                    <div class="tuc-grid">
+                        <div><span>Name</span><b>${escapeHtml(u.name || '—')}</b></div>
+                        <div><span>User ID</span><b>${escapeHtml(result.id)}</b></div>
+                        <div><span>Wallet</span><b>${Number(u.walletBalance || 0).toLocaleString()}</b></div>
+                    </div>
+                    ${u.googleEmail ? `<div class="tuc-sub">${escapeHtml(u.googleEmail)}</div>` : ''}`;
+            } else if (result.status === 'multiple') {
+                el.className = 'topup-user-chip bad';
+                el.innerHTML = `<div class="tuc-title">✕ More than one account uses this email</div>
+                    <div class="tuc-sub">Enter the exact UID instead: ${result.ids.map(escapeHtml).join(', ')}</div>`;
+            } else {
+                el.className = 'topup-user-chip bad';
+                el.innerHTML = `<div class="tuc-title">✕ No Register</div>
+                    <div class="tuc-sub">${escapeHtml(typed || '')} is not a registered user - nothing can be credited to it.</div>`;
+            }
+        }
+
+        // Debounced live check while the admin types.
+        function onManualTopupUidInput() {
+            const typed = document.getElementById('manual-topup-uid').value.trim();
+            const seq = ++manualTopupLookupSeq;
+            clearTimeout(manualTopupLookupTimer);
+            if (!typed) { renderManualTopupChip({ status: 'empty' }); return; }
+            renderManualTopupChip({ status: 'checking' });
+            manualTopupLookupTimer = setTimeout(async () => {
+                try {
+                    const result = await findRegisteredUser(typed);
+                    if (seq !== manualTopupLookupSeq) return; // a newer keystroke superseded this lookup
+                    renderManualTopupChip(result, typed);
+                } catch (e) {
+                    if (seq !== manualTopupLookupSeq) return;
+                    console.error('manual top-up user lookup error:', e);
+                    const el = document.getElementById('manual-topup-user-status');
+                    if (el) { el.style.display = 'block'; el.className = 'topup-user-chip bad'; el.textContent = 'Could not check the user - check your connection / permissions.'; }
+                }
+            }, 350);
+        }
+        window.onManualTopupUidInput = onManualTopupUidInput;
+
         async function submitManualTopup(btnElement) {
             const uidInput = document.getElementById('manual-topup-uid');
             const amountInput = document.getElementById('manual-topup-amount');
-            const uid = uidInput.value.trim();
+            const typed = uidInput.value.trim();
             const amount = Number(amountInput.value);
 
-            if (!uid) { window.showToast('Enter the customer UID.', 'fail'); return; }
-            if (!amount || amount <= 0) { window.showToast('Enter a valid amount.', 'fail'); return; }
+            if (!typed) { window.showToast('Enter the customer UID or email.', 'fail'); return; }
+            if (!Number.isInteger(amount) || amount <= 0) { window.showToast('Enter a valid amount (whole MMK).', 'fail'); return; }
 
             const originalText = btnElement.innerText;
             btnElement.disabled = true;
-            btnElement.innerText = 'Crediting...';
+            btnElement.innerText = 'Checking...';
+            let result;
+            try {
+                result = await findRegisteredUser(typed);
+            } catch (error) {
+                console.error('submitManualTopup lookup error:', error);
+                window.showToast('Could not check the user. Nothing was credited.', 'fail');
+                return;
+            } finally {
+                btnElement.disabled = false;
+                btnElement.innerText = originalText;
+            }
 
+            manualTopupLookupSeq++; // drop any in-flight live lookup; this fresh one wins
+            renderManualTopupChip(result, typed);
+            if (result.status !== 'ok') {
+                window.showToast(result.status === 'multiple'
+                    ? 'That email matches more than one account - enter the exact UID.'
+                    : 'No Register - this user is not registered. Nothing was credited.', 'fail');
+                return;
+            }
+
+            const u = result.data || {};
+            const balance = Number(u.walletBalance || 0);
+            const lines = [
+                `User ID:  ${result.id}`,
+                `Name:  ${u.name || '—'}`,
+                ...(u.googleEmail ? [`Email:  ${u.googleEmail}`] : []),
+                `Amount:  ${amount.toLocaleString()} MMK`,
+                `Wallet:  ${balance.toLocaleString()} → ${(balance + amount).toLocaleString()} MMK`,
+                ...(amount >= 500000 ? ['', '⚠️ ပမာဏ အလွန်များပါသည် - ဂဏန်းကို ထပ်စစ်ပါ။'] : []),
+                '',
+                'User ID နဲ့ ပမာဏ မှန်ကန်မှ Confirm နှိပ်ပါ။ နှိပ်လိုက်ရင် wallet ထဲ ချက်ချင်း ထည့်ပေးပါမယ်။'
+            ];
+            window.showActionDialog({
+                type: 'warning',
+                title: 'Confirm wallet top up',
+                message: lines.join('\n'),
+                confirmText: 'Confirm & Credit',
+                onConfirm: () => doManualTopup(result.id, amount, btnElement)
+            });
+        }
+        window.submitManualTopup = submitManualTopup;
+
+        // Actually credits the wallet. Runs in a single transaction that re-reads the user
+        // doc and refuses to proceed if it doesn't exist, so the wallet credit and the
+        // walletTopups history row are written together or not at all.
+        async function doManualTopup(uid, amount, btnElement) {
+            const originalText = btnElement.innerText;
+            btnElement.disabled = true;
+            btnElement.innerText = 'Crediting...';
             try {
                 const userRef = doc(db, "users", uid);
-                const userSnap = await getDoc(userRef);
-                const userName = userSnap.exists() ? (userSnap.data().name || uid) : uid;
-
-                await setDoc(userRef, { walletBalance: increment(amount) }, { merge: true });
-                await addDoc(collection(db, "walletTopups"), {
-                    amount,
-                    paymentMethod: 'Admin Top Up',
-                    status: 'Completed',
-                    source: 'admin',
-                    userId: uid,
-                    userName,
-                    timestamp: serverTimestamp(),
-                    confirmedAt: serverTimestamp()
+                let userName = uid;
+                await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(userRef);
+                    if (!snap.exists()) throw new Error('NOT_REGISTERED');
+                    userName = snap.data().name || snap.data().googleEmail || uid;
+                    tx.set(userRef, { walletBalance: increment(amount) }, { merge: true });
+                    tx.set(doc(collection(db, "walletTopups")), {
+                        amount,
+                        paymentMethod: 'Admin Top Up',
+                        status: 'Completed',
+                        source: 'admin',
+                        userId: uid,
+                        userName,
+                        timestamp: serverTimestamp(),
+                        confirmedAt: serverTimestamp()
+                    });
                 });
                 logAdminActivity('Manual top-up', `${amount.toLocaleString()} MMK to ${userName} (${uid})`);
                 window.showToast(`Credited ${amount.toLocaleString()} MMK to ${uid} ✓`, 'success');
-                uidInput.value = '';
-                amountInput.value = '';
+                document.getElementById('manual-topup-uid').value = '';
+                document.getElementById('manual-topup-amount').value = '';
+                renderManualTopupChip({ status: 'empty' });
             } catch (error) {
-                console.error('submitManualTopup error:', error);
-                window.showToast(error.message || 'Failed to top up.', 'fail');
+                console.error('doManualTopup error:', error);
+                window.showToast(error.message === 'NOT_REGISTERED'
+                    ? 'No Register - this user does not exist. Nothing was credited.'
+                    : (error.message || 'Failed to top up.'), 'fail');
             } finally {
                 btnElement.disabled = false;
                 btnElement.innerText = originalText;
             }
         }
-        window.submitManualTopup = submitManualTopup;
 
         // ---------- Telegram (Wallet Top Ups) — mirrors the Order bot pattern ----------
         function buildTelegramWalletTopupText(topupId, t) {
@@ -9839,10 +10671,51 @@
             }
 
             // Wallet balances load independently so a G2Bulk/JCPlays hiccup
-            // never blocks the order stats above from showing.
-            if (window.refreshG2BulkBalance) refreshG2BulkBalance();
-            if (window.refreshJCPlaysBalance) refreshJCPlaysBalance();
+            // never blocks the order stats above from showing. Passed
+            // forceRefresh=false here because loadDashboardStats() itself
+            // runs every single time the Dashboard or Orders tab is opened
+            // (showPage()) - switching back and forth between those two was
+            // hitting the live G2Bulk/JCPlays balance APIs on every switch.
+            // The manual "Refresh" buttons still force a real fetch.
+            if (window.refreshG2BulkBalance) refreshG2BulkBalance(false);
+            if (window.refreshJCPlaysBalance) refreshJCPlaysBalance(false);
+            refreshTotalUsersStat();
         }
+
+        // "Registered users" stat used to only ever get set inside
+        // listenUsers()'s onSnapshot callback, so it required that full
+        // Users listener (every user doc, kept live all session) to be
+        // running just to show one number on the Dashboard. listenUsers()
+        // is now lazy (see subscribeTabListeners), so this does a single
+        // cheap aggregation read instead - no live listener, no per-doc
+        // download. If the Userlist tab has already been opened this
+        // session (usersListenerAttached), the live USERS cache is already
+        // more current than any count read could be, so just use that.
+        let totalUsersStatAt = 0, totalUsersStatValue = null;
+        const TOTAL_USERS_STAT_TTL_MS = 5 * 60 * 1000;
+        async function refreshTotalUsersStat() {
+            const el = document.getElementById('stat-total-users');
+            if (!el) return;
+            // loadDashboardStats() runs on every orders snapshot while Dashboard/Orders is open;
+            // don't pay for a count read each time - reuse the last value for 5 minutes.
+            if (totalUsersStatValue !== null && Date.now() - totalUsersStatAt < TOTAL_USERS_STAT_TTL_MS) {
+                el.innerText = totalUsersStatValue;
+                return;
+            }
+            if (typeof usersListenerAttached !== 'undefined' && usersListenerAttached) {
+                el.innerText = Object.keys(USERS).length.toLocaleString();
+                return;
+            }
+            try {
+                const snap = await getCountFromServer(collection(db, "users"));
+                totalUsersStatValue = snap.data().count.toLocaleString();
+                totalUsersStatAt = Date.now();
+                el.innerText = totalUsersStatValue;
+            } catch (error) {
+                console.error('Total users count error:', error);
+            }
+        }
+        window.refreshTotalUsersStat = refreshTotalUsersStat;
 
         // ---------- Analytics page ----------
         // Everything here is computed client-side from the ORDERS/USERS caches
@@ -14186,6 +15059,15 @@
             document.getElementById('ud-reg-docid').innerText = userId;
             document.getElementById('ud-reg-phone').innerText = u.phone || 'N/A';
             document.getElementById('ud-reg-google').innerHTML = u.googleEmail ? `${escapeHtml(u.googleEmail)} ${googleVerifiedBadgeHTML(u)}` : 'Not linked';
+            // "Link" only shows for accounts with no Google account yet. Once a
+            // guest holds real wallet money, firestore.rules blocks them from
+            // self-service linking (see isSafeProfileUpdate) specifically to stop
+            // a hijack-by-guessed-guestId race — linking then has to come through
+            // here, an admin who has actually verified the customer (e.g. against
+            // the phone/receipt used on their last top-up) before typing in the
+            // Gmail address that now becomes their wallet's permanent owner.
+            const linkBtn = document.getElementById('ud-reg-google-link-btn');
+            if (linkBtn) linkBtn.style.display = u.googleEmail ? 'none' : 'inline-block';
             document.getElementById('ud-reg-status').innerHTML = u.banned ? `<span class="badge badge-danger">${statusBadgeHtml('badge-danger', 'Banned')}</span>` : `<span class="badge badge-success">${statusBadgeHtml('badge-success', 'Active')}</span>`;
 
             // Login Time tab
@@ -14352,6 +15234,45 @@
             currentUserDetailsId = null;
             window.scrollTo(0, 0);
         }
+
+        // Manually link a customer's Gmail to their guest account (users/{uid}.
+        // googleEmail). This is the ONLY way to link an account that already
+        // holds wallet money — firestore.rules blocks the customer's own
+        // self-service link once walletBalance > 0, specifically so an
+        // attacker who merely knows/guesses the guestId can't race to claim
+        // someone else's wallet. So before confirming here, actually verify
+        // this is the right customer — e.g. match the Gmail they give you
+        // against the phone number/payment name on their last approved
+        // top-up or order, the same way you'd verify identity for any other
+        // account-recovery request.
+        function adminLinkGoogleEmail() {
+            if (!currentUserDetailsId) return;
+            const userId = currentUserDetailsId;
+            const u = USERS[userId];
+            if (!u) return;
+            if (u.googleEmail) { window.showToast('This account is already linked.', 'fail'); return; }
+            const email = (prompt('Gmail address to link to this account (verify it against their top-up/order details first):') || '').trim().toLowerCase();
+            if (!email) return;
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { window.showToast('That doesn\'t look like a valid email address.', 'fail'); return; }
+            window.showActionDialog({
+                type: 'warning',
+                title: 'Link Google account?',
+                message: `This makes ${email} the permanent, wallet-owning sign-in for ${u.name || u.guestId || userId}. Only confirm once you've verified it's really their Gmail.`,
+                confirmText: 'Link',
+                onConfirm: async () => {
+                    try {
+                        await updateDoc(doc(db, "users", userId), { googleEmail: email });
+                        logAdminActivity('Linked Google account', `${u.name || u.guestId || userId} \u2192 ${email}`);
+                        window.showToast('Google account linked.');
+                        openUserDetails(userId);
+                    } catch (error) {
+                        console.error("Google link error:", error);
+                        window.showToast('Failed to link account.', 'fail');
+                    }
+                }
+            });
+        }
+        window.adminLinkGoogleEmail = adminLinkGoogleEmail;
 
         // Banning blocks the customer from placing new orders (checked in the
         // Store app before it submits an order) — it doesn't touch their past
@@ -14644,7 +15565,6 @@
 
         // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
         let socialListenerAttached = false;
-        let referralSettingsListenerAttached = false;
         // Per-platform icon image the admin is about to upload (null = keep
         // whatever's already saved), and a separate flag for "explicitly
         // removed" so Save knows to clear that field instead of leaving it
@@ -14711,176 +15631,6 @@
             }
         }
         window.saveFlashSaleSettings = saveFlashSaleSettings;
-
-        // Default commission % per VIP tier (of the referred friend's order price),
-        // paid to the referrer. Escalates with the referrer's own tier so it
-        // doubles as a VIP perk. Admin-editable at runtime via TIER_COMMISSION,
-        // which listenReferralSettings() below keeps in sync with Firestore.
-        const DEFAULT_TIER_COMMISSION = {
-            Bronze: 0, Gold: 1, Platinum: 2, Diamond: 3,
-            Legend: 4, Conqueror: 5, Mythical: 7, Immortal: 10
-        };
-        let TIER_COMMISSION = { ...DEFAULT_TIER_COMMISSION };
-
-        // Renders one % input per tier into the settings grid. Built once per
-        // Firestore update (not once ever) so it stays correct even if TIER_META
-        // itself is edited later; relies on TIER_META (defined further below in
-        // the VIP Tier Limits section, but already initialized by the time this
-        // page's settings panel can be opened).
-        function renderTierCommissionInputs(values) {
-            const grid = document.getElementById('referral-tier-commission-grid');
-            if (!grid || typeof TIER_META === 'undefined') return;
-            const orderedLowToHigh = [...TIER_META].reverse();
-            grid.innerHTML = orderedLowToHigh.map(t => `
-                <div>
-                    <label style="font-size:11.5px;color:var(--text-secondary);">${t.name}</label>
-                    <div style="display:flex;align-items:center;gap:4px;">
-                        <input type="number" min="0" max="100" step="0.5" class="tier-commission-input" data-tier="${t.name}" value="${Number.isFinite(values[t.name]) ? values[t.name] : DEFAULT_TIER_COMMISSION[t.name]}" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:8px;font-size:13px;">
-                        <span style="font-size:12px;color:var(--text-secondary);">%</span>
-                    </div>
-                </div>`).join('');
-        }
-
-        function listenReferralSettings() {
-            if (referralSettingsListenerAttached) return;
-            referralSettingsListenerAttached = true;
-            onSnapshot(doc(db, "settings", "referral"), (docSnap) => {
-                const data = docSnap.exists() ? docSnap.data() : {};
-                document.getElementById('referral-new-user-reward').value = data.newUserReward || 1000;
-                document.getElementById('referral-referrer-reward').value = data.referrerReward || 1000;
-                TIER_COMMISSION = { ...DEFAULT_TIER_COMMISSION, ...(data.tierCommission || {}) };
-                renderTierCommissionInputs(TIER_COMMISSION);
-            }, (error) => {
-                console.error("Referral settings listener error:", error);
-            });
-        }
-
-        async function saveReferralSettings() {
-            const newUserReward = Number(document.getElementById('referral-new-user-reward').value) || 0;
-            const referrerReward = Number(document.getElementById('referral-referrer-reward').value) || 0;
-            const tierCommission = {};
-            document.querySelectorAll('.tier-commission-input').forEach(input => {
-                tierCommission[input.dataset.tier] = Math.max(0, Math.min(100, Number(input.value) || 0));
-            });
-
-            const btn = document.getElementById('save-referral-settings-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Saving...';
-
-            try {
-                await setDoc(doc(db, "settings", "referral"), { newUserReward, referrerReward, tierCommission }, { merge: true });
-                logAdminActivity('Saved referral program settings');
-                window.showToast('Referral settings saved!', 'success');
-            } catch (error) {
-                console.error("Save referral settings error:", error);
-                window.showToast(error.message || 'Failed to save referral settings.', 'fail');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-
-        // ---------- Referral Commission engine (tier-based, on order Success) ----------
-        // Fires off the same real-time "orders" listener that already powers the
-        // Orders tab (see fetchOrders below), so it runs automatically no matter
-        // which code path flipped an order to Success (manual Mark Success,
-        // Telegram approval, the auto-poller, or a provider webhook) — no need to
-        // touch each of those call sites individually. Idempotent: guarded by
-        // referralCommissionApplied on the order doc, re-checked inside the
-        // transaction to survive the listener re-firing mid-flight.
-        let referralCommissionInFlight = new Set();
-
-        function processReferralCommissions(ordersMap) {
-            Object.values(ordersMap).forEach(order => {
-                if (order.status !== 'Success') return;
-                if (order.referralCommissionApplied) return;
-                if (referralCommissionInFlight.has(order.id)) return;
-                referralCommissionInFlight.add(order.id);
-                creditReferralCommission(order).finally(() => referralCommissionInFlight.delete(order.id));
-            });
-        }
-
-        async function markCommissionSkipped(orderId) {
-            try {
-                await setDoc(doc(db, "orders", orderId), { referralCommissionApplied: true }, { merge: true });
-            } catch (error) {
-                console.error('markCommissionSkipped error:', error);
-            }
-        }
-
-        // Best-effort provider-cost lookup for older orders placed before the
-        // order doc itself started carrying a `cost` snapshot. Matches by game
-        // name + the package's amount string (itemAmount can be "86 × 2" for
-        // multi-qty orders — the multiplier is parsed back out and applied to
-        // the per-unit cost). Returns null if no confident match is found.
-        function lookupLegacyOrderCost(order) {
-            if (!order.game || !order.itemAmount) return null;
-            const [amountPart, qtyPart] = String(order.itemAmount).split('×').map(s => s.trim());
-            const qty = qtyPart ? (Number(qtyPart) || 1) : 1;
-            const game = Object.values(GAMES).find(g => g.name === order.game);
-            if (!game || !Array.isArray(game.packages)) return null;
-            const pkg = game.packages.find(p => String(p.amount) === amountPart);
-            if (!pkg || !Number.isFinite(Number(pkg.cost))) return null;
-            return Number(pkg.cost) * qty;
-        }
-
-        async function creditReferralCommission(order) {
-            try {
-                const buyerId = order.userId;
-                if (!buyerId) { await markCommissionSkipped(order.id); return; }
-
-                const buyerSnap = await getDoc(doc(db, "users", buyerId));
-                const referrerCode = buyerSnap.exists() ? buyerSnap.data().referredBy : null;
-                if (!referrerCode) { await markCommissionSkipped(order.id); return; }
-
-                // Referrer's own tier, from their lifetime successful spend — same
-                // in-memory ORDERS cache and tierForSpendAdmin() the Users tab uses,
-                // so this always matches what the admin sees on that referrer's profile.
-                const referrerSpend = Object.values(ORDERS)
-                    .filter(o => o.userId === referrerCode && o.status === 'Success')
-                    .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
-                const referrerTier = tierForSpendAdmin(referrerSpend).name;
-                const rate = Number(TIER_COMMISSION[referrerTier]) || 0;
-                let commission = Math.round((Number(order.price) || 0) * rate / 100);
-                if (commission <= 0) { await markCommissionSkipped(order.id); return; }
-
-                // Cap the payout so it can never push this order below the
-                // provider cost (i.e. commission is capped at the order's
-                // profit margin, never dipping into or below cost). New orders
-                // carry `cost` directly; older ones fall back to a catalogue
-                // lookup, and if even that fails, the cap is skipped (order too
-                // old / package since deleted) rather than blocking payout.
-                const cost = Number.isFinite(Number(order.cost)) ? Number(order.cost) : lookupLegacyOrderCost(order);
-                if (cost !== null) {
-                    const profit = Math.max(0, (Number(order.price) || 0) - cost);
-                    commission = Math.round(Math.min(commission, profit));
-                }
-                if (commission <= 0) { await markCommissionSkipped(order.id); return; }
-
-                await runTransaction(db, async (tx) => {
-                    const orderRef = doc(db, "orders", order.id);
-                    const orderSnap = await tx.get(orderRef);
-                    if (!orderSnap.exists() || orderSnap.data().referralCommissionApplied) return;
-                    const referrerRef = doc(db, "users", referrerCode);
-                    tx.set(referrerRef, { walletBalance: increment(commission) }, { merge: true });
-                    tx.set(orderRef, {
-                        referralCommissionApplied: true,
-                        referralCommissionAmount: commission,
-                        referralCommissionTier: referrerTier
-                    }, { merge: true });
-                    tx.set(doc(collection(db, "walletTopups")), {
-                        amount: commission,
-                        paymentMethod: `Referral Commission (${referrerTier} tier)`,
-                        status: 'Completed', timestamp: serverTimestamp(),
-                        userId: referrerCode, userName: referrerCode, userPhone: ''
-                    });
-                });
-            } catch (error) {
-                console.error('Referral commission error for order', order.id, error);
-            }
-        }
-        window.saveReferralSettings = saveReferralSettings;
 
         function listenSocialLinks() {
             if (socialListenerAttached) return;
@@ -16364,7 +17114,15 @@
         // ---------- G2Bulk wallet balance (SMM panel style: key in body, action=balance) ----------
         // Deliberately uses the SMM panel endpoint (POST /api/v2, key+action in body)
         // rather than the main API's /v1/getMe, per how this was set up.
-        async function refreshG2BulkBalance() {
+        // Throttled: loadDashboardStats() calls this with forceRefresh=false
+        // on every single Dashboard/Orders tab open, which used to hit the
+        // live G2Bulk API every time too - now a cached balance less than
+        // BALANCE_REFRESH_THROTTLE_MS old is reused instead. The manual
+        // "Refresh" button (and settings-save, low-balance-check callers)
+        // still pass forceRefresh=true (the default) so those always fetch live.
+        const BALANCE_REFRESH_THROTTLE_MS = 3 * 60 * 1000;
+        let g2bulkBalanceLastFetchedAt = 0;
+        async function refreshG2BulkBalance(forceRefresh = true) {
             // Mirrors the balance onto every display el that exists on the page
             // right now (the G2Bulk tab's own display, plus the Dashboard's
             // wallet card) - either one may be absent depending on which page
@@ -16372,6 +17130,7 @@
             const displayEls = [document.getElementById('g2bulk-balance-display'), document.getElementById('dash-g2bulk-balance-display'), document.getElementById('an-g2bulk-balance-display')].filter(Boolean);
             const btn = document.getElementById('g2bulk-balance-refresh-btn');
             if (displayEls.length === 0) return;
+            if (!forceRefresh && (Date.now() - g2bulkBalanceLastFetchedAt) < BALANCE_REFRESH_THROTTLE_MS) return;
             if (!G2BULK_SETTINGS.apiKey) {
                 displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = 'var(--text-muted)'; });
                 return;
@@ -16379,6 +17138,7 @@
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
             displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+            g2bulkBalanceLastFetchedAt = Date.now();
 
             try {
                 const res = await fetch('https://api.g2bulk.com/api/v2', {
@@ -19092,12 +19852,16 @@
         window.verifyJCPlaysKey = verifyJCPlaysKey;
 
         // ---------- JCPlays balance ----------
-        async function refreshJCPlaysBalance() {
+        // Same throttle pattern as refreshG2BulkBalance() above - see its
+        // comment for why.
+        let jcplaysBalanceLastFetchedAt = 0;
+        async function refreshJCPlaysBalance(forceRefresh = true) {
             // Mirrors the balance onto every display el that exists right now
             // (the JCPlays tab's own display, plus the Dashboard's wallet card).
             const displayEls = [document.getElementById('jcplays-balance-display'), document.getElementById('dash-jcplays-balance-display'), document.getElementById('an-jcplays-balance-display')].filter(Boolean);
             const btn = document.getElementById('jcplays-balance-refresh-btn');
             if (displayEls.length === 0) return;
+            if (!forceRefresh && (Date.now() - jcplaysBalanceLastFetchedAt) < BALANCE_REFRESH_THROTTLE_MS) return;
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
                 displayEls.forEach(el => { el.innerText = 'No credentials set'; el.style.color = 'var(--text-muted)'; });
                 return;
@@ -19105,6 +19869,7 @@
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
             displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+            jcplaysBalanceLastFetchedAt = Date.now();
 
             try {
                 const data = await jcplaysRequest('querypoints', {});
@@ -19697,11 +20462,13 @@
         function pad2(n) { return String(n).padStart(2, '0'); }
         function localDateStr(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
 
+        let archiveRanDate = null; // remembered in memory so the 2-min re-check doesn't re-read Firestore once today's run is confirmed
         async function checkOrderArchiveSchedule() {
             if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
             const now = new Date();
             if (now.getHours() !== 0) return; // only act during the 00:00–00:59 window
             const todayStr = localDateStr(now);
+            if (archiveRanDate === todayStr) return;
 
             let alreadyRanToday = false;
             try {
@@ -19711,7 +20478,7 @@
                 console.error('Archive schedule check error:', error);
                 return;
             }
-            if (alreadyRanToday) return;
+            if (alreadyRanToday) { archiveRanDate = todayStr; return; }
 
             const cutoffMs = now.getTime() - 7 * 24 * 60 * 60 * 1000;
             const targets = Object.values(ORDERS)
@@ -19750,6 +20517,7 @@
 
             try {
                 await setDoc(doc(db, "settings", "orderArchive"), { lastRunDate: todayStr }, { merge: true });
+                archiveRanDate = todayStr;
             } catch (error) {
                 console.error('Archive schedule save error:', error);
             }
@@ -19831,11 +20599,13 @@
             }
         }
 
+        let dailySummaryRanDate = null; // same idea as archiveRanDate above
         async function checkDailySummarySchedule() {
             if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
             const now = new Date();
             if (now.getHours() !== 0) return; // only act during the 00:00–00:59 window
             const todayStr = localDateStr(now);
+            if (dailySummaryRanDate === todayStr) return;
 
             let alreadyRanToday = false;
             try {
@@ -19845,7 +20615,7 @@
                 console.error('Daily summary schedule check error:', error);
                 return;
             }
-            if (alreadyRanToday) return;
+            if (alreadyRanToday) { dailySummaryRanDate = todayStr; return; }
 
             const yesterdayStr = localDateStr(addDaysLocal(now, -1));
             const dayOrders = Object.values(ORDERS).filter(o => o.timestamp && localDateStr(o.timestamp.toDate()) === yesterdayStr);
@@ -19853,6 +20623,7 @@
 
             try {
                 await setDoc(doc(db, "settings", "dailySummary"), { lastRunDate: todayStr }, { merge: true });
+                dailySummaryRanDate = todayStr;
             } catch (error) {
                 console.error('Daily summary schedule save error:', error);
             }
@@ -19904,18 +20675,25 @@
             // refreshed) token, same pattern as Store.html's customer push.
             if (adminPushEnabled()) registerAdminFcmToken();
             loadDashboardStats();
+            if (window.loadCloudflareUsage) window.loadCloudflareUsage(false);
+            if (window.loadFirestoreUsage) window.loadFirestoreUsage(false);
             fetchOrders();
             fetchWalletTopups();
             listenGames();
-            listenGameAccounts();
-            listenSellRequests();
-            listenNotifications();
-            listenAnnouncementsAdmin();
-            listenPaymentMethods();
-            listenCoupons();
+            // listenGameAccounts/listenSellRequests/listenNotifications/
+            // listenAnnouncementsAdmin/listenPaymentMethods/listenCoupons/
+            // listenUsers used to all fire here unconditionally - each is a
+            // full-collection onSnapshot with no query bound, so every one
+            // stayed open and billing for the whole session even on tabs
+            // never opened. They're now lazy: subscribeTabListeners(pageId),
+            // called from showPage(), starts each one (still guarded by its
+            // own *ListenerAttached flag, so re-opening a tab never
+            // resubscribes) the first time its page is actually opened. The
+            // Dashboard's "Registered users" stat no longer waits on
+            // listenUsers() either - loadDashboardStats() now gets that
+            // count with a single cheap getCountFromServer() read instead.
             listenSocialLinks();
             listenBranding();
-            listenReferralSettings();
             listenFlashSaleSettings();
             listenReceiptStyle();
             listenG2Bulk();
@@ -19924,7 +20702,6 @@
             listenAluu();
             listenBay2game();
             listenTelegramBot();
-            listenUsers();
             listenTierSettings();
             listenActivityLog();
             listenAdminAccounts();
