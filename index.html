@@ -5252,6 +5252,11 @@
                 });
                 const data = await res.json().catch(() => null);
                 if (!data || !data.ok) console.error('admin-sync-claims returned an error:', data);
+                // Firestore Rules now check request.auth.token.admin / adminRole.
+                // Those only land in a NEW ID token, so force a refresh here -
+                // otherwise this same tab keeps using its old (claim-less) token
+                // until it naturally expires (~1hr) and admin writes fail.
+                try { await auth.currentUser.getIdToken(true); } catch (e) { /* ignore */ }
                 return data;
             } catch (e) {
                 console.error('admin-sync-claims call failed:', e);
