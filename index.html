@@ -2476,7 +2476,7 @@
                 <div class="chart-card-head">
                     <div>
                         <h4>Cloudflare · all traffic today</h4>
-                        <div class="chart-card-total" id="cf-real-sub">Loading…</div>
+                        <div class="chart-card-total" id="cf-real-sub">Tap Refresh to load</div>
                     </div>
                     <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.loadCloudflareUsage && window.loadCloudflareUsage(true)">Refresh</button>
                 </div>
@@ -2490,7 +2490,7 @@
                 <div class="chart-card-head">
                     <div>
                         <h4>Firestore · all traffic today</h4>
-                        <div class="chart-card-total" id="fs-real-sub">Loading…</div>
+                        <div class="chart-card-total" id="fs-real-sub">Tap Refresh to load</div>
                     </div>
                     <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.loadFirestoreUsage && window.loadFirestoreUsage(true)">Refresh</button>
                 </div>
@@ -3139,6 +3139,7 @@
                 <button type="button" class="game-list-tab-btn" id="game-list-tab-voucher" onclick="showGameListTab('voucher')">Gift Card & Vouchers</button>
             </div>
             <div class="pkg-actions-row" style="margin:-8px 0 14px;">
+                <button class="btn btn-outline" onclick="window.refreshGames && window.refreshGames()">↻ Refresh</button>
                 <button class="btn btn-outline" onclick="openGameReorder()">↕ Reorder</button>
                 <button class="btn btn-outline" onclick="openAddServerPicker()">+ Add Server</button>
                 <button class="btn btn-outline" onclick="copyAllGameNames()">📋 Copy Names</button>
@@ -4911,9 +4912,10 @@
             if ((pageId === 'dashboard' || pageId === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
             if (pageId === 'analytics' && window.renderAnalytics) window.renderAnalytics();
             if (pageId === 'dashboard' && window.PCAUsage) window.PCAUsage.render();
-            if (pageId === 'dashboard' && window.loadCloudflareUsage) window.loadCloudflareUsage(false);
-            if (pageId === 'dashboard' && window.loadFirestoreUsage) window.loadFirestoreUsage(false);
+            // Cloudflare/Firestore usage no longer auto-loads (saves Worker requests); use the Refresh buttons.
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
+            if (['order-list', 'analytics', 'user-list', 'account-dashboard', 'account-list'].includes(pageId) && window.ensureOrdersLoaded) window.ensureOrdersLoaded();
+            if (pageId === 'dashboard' && window.ordersAreLoaded && !window.ordersAreLoaded() && window.showToast) window.showToast('Order stats load when you open Orders');
             subscribeTabListeners(pageId);
         }
 
@@ -4936,6 +4938,24 @@
             if (pageId === 'ticker-list') listenAnnouncementsAdmin();
             if (pageId === 'payment-list') listenPaymentMethods();
             if (pageId === 'coupon-list') listenCoupons();
+            // Settings page: three single-doc onSnapshot listeners that only
+            // ever fill in fields living inside #settings (Social Links,
+            // Flash Sale banner, Receipt style). Nothing outside that page
+            // reads their data, so - unlike Branding/Telegram/provider keys
+            // below, which stay eager because other pages depend on them -
+            // these are safe to defer until Settings is actually opened.
+            if (pageId === 'settings') {
+                listenSocialLinks();
+                listenFlashSaleSettings();
+                listenReceiptStyle();
+            }
+            // Tier minimums: only used to compute/display the tier badge on
+            // the User List (cards + CSV export) and the User Detail page
+            // (reached from within an already-open User List), so gating on
+            // 'user-list' covers both. tierForSpendAdmin() also has a
+            // DEFAULT_TIER_MINS fallback, so even the brief window before
+            // this fires on a fresh page-open shows sane values, not blanks.
+            if (pageId === 'tier-list' || pageId === 'user-list') listenTierSettings();
         }
         window.subscribeTabListeners = subscribeTabListeners;
 
@@ -5561,21 +5581,47 @@
         async function addDoc(colRef, data) {
             const res = await _fsAddDoc(colRef, data);
             _usage.fsWrite(1, _fsLabel(colRef));
+            _noteGamesWrite(colRef);
             return res;
         }
         async function setDoc(ref, ...args) {
             const res = await _fsSetDoc(ref, ...args);
             _usage.fsWrite(1, _fsLabel(ref));
+            _noteGamesWrite(ref);
             return res;
+        }
+        // With no live orders listener, mirror our own writes to orders/{id} into the
+        // ORDERS cache so status pollers and lists don't act on stale data.
+        function _mirrorOrderWrite(ref, args) {
+            try {
+                if (!ref || typeof ref.path !== 'string' || !ref.path.startsWith('orders/')) return;
+                const id = ref.path.slice(7);
+                const data = args[0];
+                if (!ORDERS[id] || !data || typeof data !== 'object' || args.length !== 1) return;
+                const cur = { ...ORDERS[id] };
+                for (const [k, v] of Object.entries(data)) {
+                    if (k.includes('.')) continue;
+                    if (v && typeof v === 'object' && typeof v._methodName === 'string') {
+                        if (v._methodName === 'deleteField') delete cur[k];
+                        continue; // serverTimestamp()/increment(): picked up on next Refresh
+                    }
+                    cur[k] = v;
+                }
+                ORDERS[id] = cur;
+                scheduleOrdersRender();
+            } catch (e) { /* cache mirror must never break a write */ }
         }
         async function updateDoc(ref, ...args) {
             const res = await _fsUpdateDoc(ref, ...args);
             _usage.fsWrite(1, _fsLabel(ref));
+            _mirrorOrderWrite(ref, args);
+            _noteGamesWrite(ref);
             return res;
         }
         async function deleteDoc(ref) {
             const res = await _fsDeleteDoc(ref);
             _usage.fsDelete(1, _fsLabel(ref));
+            _noteGamesWrite(ref);
             return res;
         }
 
@@ -5639,13 +5685,16 @@
         function writeBatch(database) {
             const b = _fsWriteBatch(database);
             const w = [], d = [];
+            let touchedGames = false;
+            const _tg = (ref) => { if (ref && typeof ref.path === 'string' && ref.path.startsWith('games/')) touchedGames = true; };
             const wb = {
-                set: (ref, ...a) => { b.set(ref, ...a); w.push(_fsLabel(ref)); return wb; },
-                update: (ref, ...a) => { b.update(ref, ...a); w.push(_fsLabel(ref)); return wb; },
-                delete: (ref) => { b.delete(ref); d.push(_fsLabel(ref)); return wb; },
+                set: (ref, ...a) => { b.set(ref, ...a); _tg(ref); w.push(_fsLabel(ref)); return wb; },
+                update: (ref, ...a) => { b.update(ref, ...a); _tg(ref); w.push(_fsLabel(ref)); return wb; },
+                delete: (ref) => { b.delete(ref); _tg(ref); d.push(_fsLabel(ref)); return wb; },
                 commit: () => b.commit().then((res) => {
                     w.forEach((l) => _usage.fsWrite(1, l));
                     d.forEach((l) => _usage.fsDelete(1, l));
+                    if (touchedGames) scheduleGamesRefetch();
                     return res;
                 })
             };
@@ -7396,7 +7445,8 @@
         // Once attached, this listens live - new orders and status changes made here
         // (or from elsewhere) appear automatically with no refresh needed. All orders
         // stay visible regardless of status, newest first.
-        let ordersListenerAttached = false;
+        let ordersLoadedAt = 0;      // 0 = ORDERS not loaded yet (no live listener any more)
+        let ordersLoadPromise = null; // in-flight load, shared by concurrent callers
         const expandedOrders = new Set();
         // Separate expand/collapse tracking for the mini order-history cards shown
         // inside the User Details modal (Users tab), so opening one there doesn't
@@ -7522,7 +7572,7 @@
                     batch.set(doc(db, "ordersArchive", o.id), { ...orderData, archivedAt: serverTimestamp() });
                     batch.delete(doc(db, "orders", o.id));
                 });
-                batch.commit().catch(err => console.error("Order archive error:", err));
+                batch.commit().then(() => { chunk.forEach(o => { delete ORDERS[o.id]; }); scheduleOrdersRender(); }).catch(err => console.error("Order archive error:", err));
             }
         }
 
@@ -7619,50 +7669,58 @@
             return pdf.output('blob');
         }
 
-        function fetchOrders() {
-            if (ordersListenerAttached) {
-                window.showToast('Orders update automatically ✓');
-                return;
-            }
-            ordersListenerAttached = true;
-
-            const q = query(collection(db, "orders"));
-            onSnapshot(q, (querySnapshot) => {
-                const newOrders = {};
-                querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
-                ORDERS = newOrders;
-                if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
-                if (Object.keys(USERS).length) renderAdminUsersList();
-                renderOrdersList();
-                checkOrdersAutoDelete(newOrders);
-                checkOrderDay20Notice(newOrders);
-                if (window.renderAccountDashboard) window.renderAccountDashboard();
-                // loadDashboardStats() now reads straight from this ORDERS cache
-                // instead of re-fetching the collection itself (see its own
-                // comment) - so if Dashboard/Orders is the page currently open,
-                // refresh its stats here now that the cache has new data.
-                const activePageNow = document.querySelector('.page-section.active')?.id;
-                if ((activePageNow === 'dashboard' || activePageNow === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
-
-                // NOTE: Sending new Pending orders to Telegram used to happen here
-                // in the browser. That's now handled server-side by the standalone
-                // pca-telegram-bot Cloudflare Worker (cron check every minute), so
-                // orders get sent to Telegram even with this admin panel closed.
-                // Left disabled here to avoid the same order being sent twice.
-
-                // NOTE: Wallet-paid order auto-fulfillment (skipping "Start
-                // Processing") also moved server-side, into the same Telegram
-                // approval Worker's cron sweep - it now does this even with this
-                // admin panel fully closed. Intentionally NOT duplicated here:
-                // running it both here and in the Worker at the same moment
-                // could fire two G2Bulk/JCPlays placement calls for the same
-                // order before either saves its idempotency key, risking a
-                // double charge.
-            }, (error) => {
-                console.error("Data Fetch Error: ", error);
-                ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
-            });
+        // ORDERS used to be kept live by a full-collection onSnapshot listener (every
+        // login/reload re-read every order, and every change re-billed). It is now a
+        // ONE-SHOT getDocs(): loaded the first time the Orders page (or another page that
+        // needs the cache) is opened, and re-read only when the Refresh button is tapped.
+        // Local order writes are mirrored into the cache by the updateDoc wrapper.
+        function renderOrdersDependents() {
+            if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
+            if (Object.keys(USERS).length) renderAdminUsersList();
+            renderOrdersList();
+            if (window.renderAccountDashboard) window.renderAccountDashboard();
+            const activePageNow = document.querySelector('.page-section.active')?.id;
+            if ((activePageNow === 'dashboard' || activePageNow === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
         }
+        let _ordersRenderTimer = null;
+        function scheduleOrdersRender() {
+            clearTimeout(_ordersRenderTimer);
+            _ordersRenderTimer = setTimeout(() => { try { renderOrdersDependents(); } catch (e) { console.error(e); } }, 80);
+        }
+        function fetchOrders(silent) {
+            if (ordersLoadPromise) return ordersLoadPromise;
+            ordersLoadPromise = (async () => {
+                try {
+                    const querySnapshot = await getDocs(query(collection(db, "orders")));
+                    const newOrders = {};
+                    querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
+                    ORDERS = newOrders;
+                    ordersLoadedAt = Date.now();
+                    renderOrdersDependents();
+                    checkOrdersAutoDelete(newOrders);
+                    checkOrderDay20Notice(newOrders);
+                    if (silent !== true) window.showToast('Orders refreshed ✓');
+                    // NOTE: Telegram push for new Pending orders and wallet-order auto-fulfillment
+                    // are handled server-side by the Cloudflare Worker (see git history) - not here.
+                } catch (error) {
+                    console.error("Data Fetch Error: ", error);
+                    if (!ordersLoadedAt) ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
+                    else window.showToast('Could not refresh orders.', 'fail');
+                } finally {
+                    ordersLoadPromise = null;
+                }
+            })();
+            return ordersLoadPromise;
+        }
+        function ensureOrdersLoaded() { if (!ordersLoadedAt) fetchOrders(true); }
+        // For scheduled jobs (midnight summary, archive send) that must never run on an empty cache.
+        async function loadOrdersIfStale(maxAgeMs) {
+            if (ordersLoadedAt && Date.now() - ordersLoadedAt < maxAgeMs) return true;
+            await fetchOrders(true);
+            return !!ordersLoadedAt && Date.now() - ordersLoadedAt < maxAgeMs;
+        }
+        window.ensureOrdersLoaded = ensureOrdersLoaded;
+        window.ordersAreLoaded = () => !!ordersLoadedAt;
 
         // Firestore onSnapshot can fire several times in quick succession (initial
         // load, then a burst of individual doc changes). Rebuilding the entire
@@ -8391,7 +8449,7 @@
             try {
                 // The background auto-poll (silent=true) runs every 25s for EVERY Processing
                 // order, and used to do a fresh getDoc() each time = 1 billed read per order
-                // per poll. ORDERS is already kept live by the orders onSnapshot listener, so
+                // per poll. ORDERS is kept in sync by the one-shot orders load + local write mirroring, so
                 // read from that instead; a manual "Check Status" tap still fetches fresh.
                 let order = silent ? ORDERS[orderId] : null;
                 if (!order) {
@@ -11430,7 +11488,7 @@
         // the new Cost onto every changed package. Price is left untouched —
         // the MIN_PROFIT_MARGIN_PCT (4%) floor is a readout only (profit
         // badge / summary grid), never an auto-adjustment to Price. Writes
-        // straight to Firestore; listenGames' onSnapshot picks up the change
+        // straight to Firestore; the games re-read that follows every games write picks up the change
         // and re-renders the list/badges — nothing here touches the editor
         // DOM at all.
         async function applyGameCostUpdatesFromList(gameId, badgeEl) {
@@ -11650,21 +11708,47 @@
         // (function didn't exist) and silently skipped every listener after
         // it in that list. Wrapping it here fixes that without changing what
         // it does.
-        function listenGames() {
-            onSnapshot(collection(db, "games"), (snap) => {
-                const newGames = {};
-                snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
-                GAMES = newGames;
-                renderAdminGamesList();
-                if (ordersListenerAttached) renderOrdersList();
-                if (lossFixSchedulerStarted) autoFixLossMakingPackages();
-                maybeRunAutoPriceUpdateOnLoad();
-                populateFlashSaleGameSelect();
-            }, (error) => {
-                console.error("Games listener error:", error);
-                document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
-            });
+        // GAMES used to be kept live by a full-collection onSnapshot listener, which
+        // re-billed every game doc on each change (and auto price/loss-fix writes
+        // re-triggered it). It's now a one-shot getDocs(): read once at startup, re-read
+        // by the Refresh button on the Games page, and re-read ~1.5s after any write this
+        // panel makes to games/* (see _noteGamesWrite in the write wrappers), so the
+        // list still updates after your own edits. Changes made elsewhere need Refresh.
+        let gamesLoadPromise = null, gamesLoadedAt = 0, _gamesRefetchTimer = null;
+        function loadGames(silent) {
+            if (gamesLoadPromise) return gamesLoadPromise;
+            gamesLoadPromise = (async () => {
+                try {
+                    const snap = await getDocs(collection(db, "games"));
+                    const newGames = {};
+                    snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
+                    GAMES = newGames;
+                    gamesLoadedAt = Date.now();
+                    renderAdminGamesList();
+                    if (ordersLoadedAt) renderOrdersList();
+                    if (lossFixSchedulerStarted) autoFixLossMakingPackages();
+                    maybeRunAutoPriceUpdateOnLoad();
+                    populateFlashSaleGameSelect();
+                    if (silent !== true) window.showToast('Games refreshed ✓');
+                } catch (error) {
+                    console.error("Games load error:", error);
+                    if (!gamesLoadedAt) document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
+                    else window.showToast('Could not refresh games.', 'fail');
+                } finally {
+                    gamesLoadPromise = null;
+                }
+            })();
+            return gamesLoadPromise;
         }
+        function scheduleGamesRefetch() {
+            clearTimeout(_gamesRefetchTimer);
+            _gamesRefetchTimer = setTimeout(() => loadGames(true), 1500);
+        }
+        function _noteGamesWrite(ref) {
+            try { if (ref && typeof ref.path === 'string' && (ref.path === 'games' || ref.path.startsWith('games/'))) scheduleGamesRefetch(); } catch (e) { /* never break a write */ }
+        }
+        window.refreshGames = () => loadGames();
+        function listenGames() { return loadGames(true); } // kept so the startup call site is unchanged
 
         // ---------- Game Accounts (marketplace) admin management ----------
         // Manages the "gameAccounts" collection the store's Account tab reads
@@ -20480,6 +20564,7 @@
             }
             if (alreadyRanToday) { archiveRanDate = todayStr; return; }
 
+            if (!(await loadOrdersIfStale(10 * 60 * 1000))) return; // never run on an empty cache
             const cutoffMs = now.getTime() - 7 * 24 * 60 * 60 * 1000;
             const targets = Object.values(ORDERS)
                 .filter(o => o.timestamp && o.timestamp.toMillis() <= cutoffMs && !o.archiveSentAt)
@@ -20617,6 +20702,7 @@
             }
             if (alreadyRanToday) { dailySummaryRanDate = todayStr; return; }
 
+            if (!(await loadOrdersIfStale(10 * 60 * 1000))) return; // never send an empty summary
             const yesterdayStr = localDateStr(addDaysLocal(now, -1));
             const dayOrders = Object.values(ORDERS).filter(o => o.timestamp && localDateStr(o.timestamp.toDate()) === yesterdayStr);
             await sendDailySummaryToTelegram(yesterdayStr, dayOrders);
@@ -20650,6 +20736,7 @@
             btn.disabled = true;
             btn.innerText = 'Sending...';
             try {
+                await loadOrdersIfStale(2 * 60 * 1000);
                 const todayStr = localDateStr(new Date());
                 const dayOrders = Object.values(ORDERS).filter(o => o.timestamp && localDateStr(o.timestamp.toDate()) === todayStr);
                 await sendDailySummaryToTelegram(todayStr + ' (so far)', dayOrders);
@@ -20675,9 +20762,8 @@
             // refreshed) token, same pattern as Store.html's customer push.
             if (adminPushEnabled()) registerAdminFcmToken();
             loadDashboardStats();
-            if (window.loadCloudflareUsage) window.loadCloudflareUsage(false);
-            if (window.loadFirestoreUsage) window.loadFirestoreUsage(false);
-            fetchOrders();
+            // Cloudflare/Firestore usage: manual Refresh only.
+            // Orders are no longer auto-loaded here: they load when the Orders page is opened.
             fetchWalletTopups();
             listenGames();
             // listenGameAccounts/listenSellRequests/listenNotifications/
@@ -20692,17 +20778,40 @@
             // Dashboard's "Registered users" stat no longer waits on
             // listenUsers() either - loadDashboardStats() now gets that
             // count with a single cheap getCountFromServer() read instead.
-            listenSocialLinks();
+            //
+            // listenSocialLinks/listenFlashSaleSettings/listenReceiptStyle/
+            // listenTierSettings moved the same way - see subscribeTabListeners
+            // above (gated on 'settings' / 'tier-list' / 'user-list').
+            //
+            // Everything still called eagerly below is data something OTHER
+            // than its own settings page depends on, so it can't wait for a
+            // page-open the way the ones above can:
+            //   - listenBranding    -> header logo, rendered on every page
+            //   - listenG2Bulk/listenJCPlays/listenFazerCard/listenAluu/
+            //     listenBay2game    -> auto-fulfillment reads these caches
+            //                          from Order List/Game Editor, not just
+            //                          from each provider's own settings page
+            //   - listenTelegramBot -> read by login alerts + the daily
+            //                          summary scheduler, independent of page
+            //   - listenAdminAccounts -> live permission revocation; an owner
+            //                          disabling another admin must take
+            //                          effect immediately, on whatever page
+            //                          that admin currently has open
+            //   - listenApiKeysMfaSecret -> the MFA gate checks this secret
+            //                          the moment 'api-docs' is opened, in
+            //                          showPage(), before subscribeTabListeners
+            //                          ever runs - it has to already be loaded
+            //   - listenTabAccessSettings -> same live-security case as
+            //                          listenAdminAccounts, for nav access
+            //   - listenAutoUpdatePricesSetting -> explicitly meant to run
+            //                          once on load (maybeRunAutoPriceUpdateOnLoad)
             listenBranding();
-            listenFlashSaleSettings();
-            listenReceiptStyle();
             listenG2Bulk();
             listenJCPlays();
             listenFazerCard();
             listenAluu();
             listenBay2game();
             listenTelegramBot();
-            listenTierSettings();
             listenActivityLog();
             listenAdminAccounts();
             listenApiKeysMfaSecret();
@@ -20804,7 +20913,7 @@
         }
 
         // ---------- Admin presence heartbeat ----------
-        // Writes a server timestamp to settings/presence every 60s while an admin
+        // Writes a server timestamp to settings/presence every 3 min while an admin
         // is signed in and this tab is open, plus immediately whenever the tab
         // regains focus (covers the case where the device was asleep/backgrounded
         // and setInterval was throttled or paused). The storefront (index.html)
@@ -20813,7 +20922,15 @@
         // tab or losing connection naturally ages into Offline within a few
         // minutes once heartbeats stop arriving.
         let adminHeartbeatInterval = null;
+        // COST: every write to settings/presence is pushed as a billed READ to every
+        // storefront visitor currently listening to it. So: 10-min interval (was 3),
+        // never while the tab is hidden, and at most one write per 2 minutes even if
+        // the tab is focused/unfocused repeatedly.
+        let _lastHeartbeatMs = 0;
         async function sendAdminHeartbeat() {
+            if (document.hidden) return;
+            if (Date.now() - _lastHeartbeatMs < 120000) return;
+            _lastHeartbeatMs = Date.now();
             try {
                 await setDoc(doc(db, "settings", "presence"), { lastActive: serverTimestamp() }, { merge: true });
             } catch (error) {
@@ -20823,7 +20940,7 @@
         function startAdminHeartbeat() {
             if (adminHeartbeatInterval) return;
             sendAdminHeartbeat();
-            adminHeartbeatInterval = setInterval(sendAdminHeartbeat, 60000);
+            adminHeartbeatInterval = setInterval(sendAdminHeartbeat, 600000);
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) sendAdminHeartbeat();
             });
