@@ -5578,16 +5578,35 @@
             _usage.fsRead(Math.max(1, Math.ceil((snap.data().count || 0) / 1000)), _fsLabel(q));
             return snap;
         }
+        // Shared by addDoc/updateDoc/writeBatch below: merges a write's own data
+        // into GAMES[gameId], skipping any FieldValue sentinel (serverTimestamp/
+        // increment/arrayUnion/deleteField) since its real value only exists
+        // server-side. Games writes in this panel don't currently use any of
+        // these, so in practice this never trims anything - it's just a guard
+        // against silently caching a sentinel object if that ever changes.
+        function _mergeGameData(gameId, data) {
+            if (!gameId || !data || typeof data !== 'object') return;
+            const cur = { ...(GAMES[gameId] || {}) };
+            for (const [k, v] of Object.entries(data)) {
+                if (k.includes('.')) continue; // dotted field path: not safe to shallow-merge
+                if (v && typeof v === 'object' && typeof v._methodName === 'string') continue; // FieldValue sentinel
+                cur[k] = v;
+            }
+            GAMES[gameId] = cur;
+        }
         async function addDoc(colRef, data) {
             const res = await _fsAddDoc(colRef, data);
             _usage.fsWrite(1, _fsLabel(colRef));
-            _noteGamesWrite(colRef);
+            if (colRef && typeof colRef.path === 'string' && colRef.path === 'games' && res && res.id) {
+                _mergeGameData(res.id, data);
+                scheduleGamesRefetch();
+            }
             return res;
         }
         async function setDoc(ref, ...args) {
             const res = await _fsSetDoc(ref, ...args);
             _usage.fsWrite(1, _fsLabel(ref));
-            _noteGamesWrite(ref);
+            _noteGamesWrite(ref, args[0]);
             return res;
         }
         // With no live orders listener, mirror our own writes to orders/{id} into the
@@ -5615,13 +5634,17 @@
             const res = await _fsUpdateDoc(ref, ...args);
             _usage.fsWrite(1, _fsLabel(ref));
             _mirrorOrderWrite(ref, args);
-            _noteGamesWrite(ref);
+            _noteGamesWrite(ref, args[0]);
             return res;
         }
         async function deleteDoc(ref) {
             const res = await _fsDeleteDoc(ref);
             _usage.fsDelete(1, _fsLabel(ref));
-            _noteGamesWrite(ref);
+            if (ref && typeof ref.path === 'string' && ref.path.startsWith('games/')) {
+                const gameId = ref.path.slice(6);
+                delete GAMES[gameId];
+                scheduleGamesRefetch();
+            }
             return res;
         }
 
@@ -5685,16 +5708,29 @@
         function writeBatch(database) {
             const b = _fsWriteBatch(database);
             const w = [], d = [];
-            let touchedGames = false;
-            const _tg = (ref) => { if (ref && typeof ref.path === 'string' && ref.path.startsWith('games/')) touchedGames = true; };
+            const gameWrites = []; // {id, data} for set/update, {id, deleted:true} for delete
+            const _tg = (ref, data, isDelete) => {
+                if (!ref || typeof ref.path !== 'string' || !ref.path.startsWith('games/')) return;
+                const gameId = ref.path.slice(6);
+                if (gameId) gameWrites.push(isDelete ? { id: gameId, deleted: true } : { id: gameId, data });
+            };
             const wb = {
-                set: (ref, ...a) => { b.set(ref, ...a); _tg(ref); w.push(_fsLabel(ref)); return wb; },
-                update: (ref, ...a) => { b.update(ref, ...a); _tg(ref); w.push(_fsLabel(ref)); return wb; },
-                delete: (ref) => { b.delete(ref); _tg(ref); d.push(_fsLabel(ref)); return wb; },
+                set: (ref, ...a) => { b.set(ref, ...a); _tg(ref, a[0]); w.push(_fsLabel(ref)); return wb; },
+                update: (ref, ...a) => { b.update(ref, ...a); _tg(ref, a[0]); w.push(_fsLabel(ref)); return wb; },
+                delete: (ref) => { b.delete(ref); _tg(ref, null, true); d.push(_fsLabel(ref)); return wb; },
                 commit: () => b.commit().then((res) => {
                     w.forEach((l) => _usage.fsWrite(1, l));
                     d.forEach((l) => _usage.fsDelete(1, l));
-                    if (touchedGames) scheduleGamesRefetch();
+                    if (gameWrites.length) {
+                        // Same reasoning as _noteGamesWrite: merge what we already
+                        // sent to Firestore straight into GAMES instead of paying
+                        // for a full collection re-read to learn back our own write.
+                        gameWrites.forEach((gw) => {
+                            if (gw.deleted) delete GAMES[gw.id];
+                            else _mergeGameData(gw.id, gw.data);
+                        });
+                        scheduleGamesRefetch();
+                    }
                     return res;
                 })
             };
@@ -11632,11 +11668,18 @@
         }
 
         // Loops every linked game once and applies pending Cost updates -
-        // Price is never touched, same as the manual "Pass" badge. Runs once
-        // per admin session when the "Auto-apply price updates" toggle
-        // (Dashboard → Auto Price Update) is on, right after games finish
-        // loading. The toggle only controls whether this runs automatically;
-        // the manual "Pass" badge in the games list still works either way.
+        // Price is never touched, same as the manual "Pass" badge. Used to also
+        // run itself automatically once per admin session (via
+        // maybeRunAutoPriceUpdateOnLoad, right after games finished loading) -
+        // removed because telegram-worker.js's runAutoPriceUpdateSweep() already
+        // does this exact sweep server-side, once a day at 07:00 Yangon time,
+        // independent of whether the admin panel is even open. Running it again
+        // here on every admin page load was pure duplicate work: an extra full
+        // pass over every linked game (cost-provider fetches + games/* writes)
+        // each time someone opened or refreshed the panel. Kept here only as a
+        // function you can call by hand (window.runAutoPriceUpdateForAllGames)
+        // if you ever want to force a check outside the 7am window; the manual
+        // "Pass" badge in the games list is unaffected either way.
         async function runAutoPriceUpdateForAllGames() {
             let updatedGames = 0, updatedPackages = 0;
             for (const [gameId, g] of Object.entries(GAMES || {})) {
@@ -11653,15 +11696,10 @@
         }
         window.runAutoPriceUpdateForAllGames = runAutoPriceUpdateForAllGames;
 
+        // Still tracked/shown (drives the Dashboard toggle's checked state and
+        // whatever else reads it), just no longer used to trigger a run here -
+        // the toggle's real effect now lives entirely in the Worker's sweep.
         let AUTO_UPDATE_PRICES_ENABLED = false;
-        let autoUpdatePricesRanThisSession = false;
-
-        function maybeRunAutoPriceUpdateOnLoad() {
-            if (!AUTO_UPDATE_PRICES_ENABLED || autoUpdatePricesRanThisSession) return;
-            if (!GAMES || !Object.keys(GAMES).length) return; // wait until games have actually loaded
-            autoUpdatePricesRanThisSession = true;
-            runAutoPriceUpdateForAllGames();
-        }
 
         function listenAutoUpdatePricesSetting() {
             onSnapshot(doc(db, "settings", "pricing"), (docSnap) => {
@@ -11669,10 +11707,10 @@
                 AUTO_UPDATE_PRICES_ENABLED = !!data.autoApplyOnLoad;
                 const toggle = document.getElementById('autoupdate-prices-toggle');
                 if (toggle) toggle.checked = AUTO_UPDATE_PRICES_ENABLED;
-                maybeRunAutoPriceUpdateOnLoad();
             }, (error) => console.error('Auto Price Update setting listener error:', error));
         }
         window.listenAutoUpdatePricesSetting = listenAutoUpdatePricesSetting;
+
 
         async function onAutoUpdatePricesToggle(checked) {
             const statusEl = document.getElementById('autoupdate-prices-status');
@@ -11710,10 +11748,11 @@
         // it does.
         // GAMES used to be kept live by a full-collection onSnapshot listener, which
         // re-billed every game doc on each change (and auto price/loss-fix writes
-        // re-triggered it). It's now a one-shot getDocs(): read once at startup, re-read
-        // by the Refresh button on the Games page, and re-read ~1.5s after any write this
-        // panel makes to games/* (see _noteGamesWrite in the write wrappers), so the
-        // list still updates after your own edits. Changes made elsewhere need Refresh.
+        // re-triggered it). It's now a one-shot getDocs(): read once at startup, and
+        // re-read only by the Refresh button on the Games page. Your own edits no
+        // longer trigger any read at all - addDoc/updateDoc/deleteDoc/writeBatch
+        // above merge each write straight into GAMES and just repaint the list (see
+        // scheduleGamesRefetch/_noteGamesWrite). Changes made elsewhere still need Refresh.
         let gamesLoadPromise = null, gamesLoadedAt = 0, _gamesRefetchTimer = null;
         function loadGames(silent) {
             if (gamesLoadPromise) return gamesLoadPromise;
@@ -11727,7 +11766,6 @@
                     renderAdminGamesList();
                     if (ordersLoadedAt) renderOrdersList();
                     if (lossFixSchedulerStarted) autoFixLossMakingPackages();
-                    maybeRunAutoPriceUpdateOnLoad();
                     populateFlashSaleGameSelect();
                     if (silent !== true) window.showToast('Games refreshed ✓');
                 } catch (error) {
@@ -11740,12 +11778,26 @@
             })();
             return gamesLoadPromise;
         }
+        // Used to call loadGames(true) here - a full getDocs() over the whole
+        // "games" collection - 1.5s after every write to games/*. That meant
+        // one admin editing/reordering/deleting a single game re-billed a read
+        // for EVERY game in the collection, every time (addDoc/updateDoc/
+        // deleteDoc/writeBatch above now merge the write's own data into GAMES
+        // directly, so by the time this runs the cache is already correct).
+        // All that's left to do is repaint the list - no network call at all.
         function scheduleGamesRefetch() {
             clearTimeout(_gamesRefetchTimer);
-            _gamesRefetchTimer = setTimeout(() => loadGames(true), 1500);
+            _gamesRefetchTimer = setTimeout(() => {
+                renderAdminGamesList();
+                if (ordersLoadedAt) renderOrdersList();
+            }, 150);
         }
-        function _noteGamesWrite(ref) {
-            try { if (ref && typeof ref.path === 'string' && (ref.path === 'games' || ref.path.startsWith('games/'))) scheduleGamesRefetch(); } catch (e) { /* never break a write */ }
+        function _noteGamesWrite(ref, data) {
+            try {
+                if (!ref || typeof ref.path !== 'string' || !ref.path.startsWith('games/')) return;
+                _mergeGameData(ref.path.slice(6), data);
+                scheduleGamesRefetch();
+            } catch (e) { /* never break a write */ }
         }
         window.refreshGames = () => loadGames();
         function listenGames() { return loadGames(true); } // kept so the startup call site is unchanged
@@ -20803,8 +20855,10 @@
             //                          ever runs - it has to already be loaded
             //   - listenTabAccessSettings -> same live-security case as
             //                          listenAdminAccounts, for nav access
-            //   - listenAutoUpdatePricesSetting -> explicitly meant to run
-            //                          once on load (maybeRunAutoPriceUpdateOnLoad)
+            //   - listenAutoUpdatePricesSetting -> just drives the toggle's
+            //                          checked state now; the actual sweep
+            //                          moved to telegram-worker.js's daily
+            //                          07:00 Yangon-time cron (see there)
             listenBranding();
             listenG2Bulk();
             listenJCPlays();
