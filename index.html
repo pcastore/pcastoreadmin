@@ -3689,6 +3689,7 @@
         <div id="user-list" class="page-section">
             <h2 class="title-header">
                 <span>Manage Users <span id="user-list-count-badge" class="badge badge-success" style="margin-left:6px;vertical-align:middle;" title="Total registered users">0</span></span>
+                <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchUsers()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Refresh</button>
                 <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportUsersCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
             </h2>
             <div class="admin-search-wrap">
@@ -4949,7 +4950,7 @@
         // is a harmless no-op), so this just moves the FIRST call from
         // startAdminApp() to here, keyed off the page actually being opened.
         function subscribeTabListeners(pageId) {
-            if (pageId === 'user-list') listenUsers();
+            if (pageId === 'user-list') ensureUsersLoaded();
             if (pageId === 'account-dashboard' || pageId === 'account-list') {
                 listenGameAccounts();
                 listenSellRequests();
@@ -10913,15 +10914,14 @@
             refreshTotalUsersStat();
         }
 
-        // "Registered users" stat used to only ever get set inside
-        // listenUsers()'s onSnapshot callback, so it required that full
-        // Users listener (every user doc, kept live all session) to be
-        // running just to show one number on the Dashboard. listenUsers()
-        // is now lazy (see subscribeTabListeners), so this does a single
-        // cheap aggregation read instead - no live listener, no per-doc
-        // download. If the Userlist tab has already been opened this
-        // session (usersListenerAttached), the live USERS cache is already
-        // more current than any count read could be, so just use that.
+        // "Registered users" stat used to only ever get set inside a full
+        // Users onSnapshot listener (every user doc, kept live all
+        // session). Users is now a lazy one-shot getDocs() cache (see
+        // fetchUsers/ensureUsersLoaded), so this does a single cheap
+        // aggregation read instead - no live listener, no per-doc
+        // download. If the User List tab has already been opened this
+        // session (usersLoadedAt), the cached USERS is already at least
+        // as current as any count read could be, so just use that.
         let totalUsersStatAt = 0, totalUsersStatValue = null;
         const TOTAL_USERS_STAT_TTL_MS = 5 * 60 * 1000;
         async function refreshTotalUsersStat() {
@@ -10933,7 +10933,7 @@
                 el.innerText = totalUsersStatValue;
                 return;
             }
-            if (typeof usersListenerAttached !== 'undefined' && usersListenerAttached) {
+            if (typeof usersLoadedAt !== 'undefined' && usersLoadedAt) {
                 el.innerText = Object.keys(USERS).length.toLocaleString();
                 return;
             }
@@ -10950,8 +10950,8 @@
 
         // ---------- Analytics page ----------
         // Everything here is computed client-side from the ORDERS/USERS caches
-        // (both are full-collection onSnapshot listeners, already kept live for
-        // the Orders/Users pages) — no extra Firestore reads needed.
+        // (both one-shot getDocs() caches, loaded lazily when their own tab is
+        // first opened) — no extra Firestore reads needed here.
         function renderAnalytics() {
             if (window.refreshAllApiBalances) window.refreshAllApiBalances();
             const successOrders = Object.values(ORDERS).filter(o => o.status === 'Success' && o.userId && matchesCurrentStore(o));
@@ -11983,7 +11983,19 @@
         // idea as packages' custom tabs (customPkgTabs), just simpler since
         // these don't need to be a tab bar, just a growable list of rows.
         let editingAccountCustomFields = [];
+        // BUGFIX: this listener was missing the attached-flag guard every
+        // other lazy tab listener uses (see subscribeTabListeners()'s
+        // comment, which wrongly assumed this one already had it). Without
+        // the guard, re-opening the Account tab attached a brand new
+        // onSnapshot on top of the old one every time instead of a no-op —
+        // each stacked listener re-fires (and re-bills reads) on every doc
+        // change, so a session with repeated tab switches multiplied reads
+        // on this collection. The old listener was also never unsubscribed,
+        // so it kept running invisibly in the background.
+        let gameAccountsListenerAttached = false;
         function listenGameAccounts() {
+            if (gameAccountsListenerAttached) return;
+            gameAccountsListenerAttached = true;
             onSnapshot(collection(db, "gameAccounts"), (snap) => {
                 const map = {};
                 snap.forEach(docSnap => { map[docSnap.id] = docSnap.data(); });
@@ -12293,7 +12305,13 @@
         let SELL_REQUESTS = {};
         let currentSellRequestId = null;
 
+        // BUGFIX: same missing-guard issue as listenGameAccounts() above —
+        // this attached a fresh onSnapshot every time the Account tab was
+        // opened instead of no-op'ing on repeat calls.
+        let sellRequestsListenerAttached = false;
         function listenSellRequests() {
+            if (sellRequestsListenerAttached) return;
+            sellRequestsListenerAttached = true;
             onSnapshot(collection(db, "sellRequests"), (snap) => {
                 const map = {};
                 snap.forEach(docSnap => { map[docSnap.id] = docSnap.data(); });
@@ -14878,7 +14896,18 @@
 
         // ---------- Users (real customers, synced from the Store app's local profile) ----------
         let USERS = {};
-        let usersListenerAttached = false;
+        // Was a full-collection onSnapshot (every user doc, kept live all
+        // session, re-billed on every write to any user anywhere - wallet
+        // top-ups, VIP tier changes, lastSeen pings, etc). Same read-cost
+        // problem the Orders/Games listeners had, and on top of that a slow
+        // or flaky connection could leave the initial snapshot never
+        // resolving, with no error and no timeout - "Loading users..."
+        // forever. Switched to the same one-shot getDocs() cache pattern as
+        // fetchOrders()/loadGames(): read once when the User List tab is
+        // opened, re-read only on the Refresh button, and a real error
+        // state (with retry) if the read fails instead of a silent hang.
+        let usersLoadedAt = 0;      // 0 = USERS not loaded yet
+        let usersLoadPromise = null;
         let currentUserDetailsId = null;
 
         function fmtMoney(n) { return Number(n || 0).toLocaleString() + ' MMK'; }
@@ -15225,26 +15254,39 @@
         }
         window.copyUserId = copyUserId;
 
-        function listenUsers() {
-            if (usersListenerAttached) return;
-            usersListenerAttached = true;
-            onSnapshot(collection(db, "users"), (snap) => {
-                const newUsers = {};
-                snap.forEach(docSnap => { newUsers[docSnap.id] = docSnap.data(); });
-                USERS = newUsers;
-                renderAdminUsersList();
-                const totalUsersEl = document.getElementById('stat-total-users');
-                if (totalUsersEl) totalUsersEl.innerText = Object.keys(USERS).length.toLocaleString();
-                const userListCountBadge = document.getElementById('user-list-count-badge');
-                if (userListCountBadge) userListCountBadge.innerText = Object.keys(USERS).length.toLocaleString();
-                if (currentUserDetailsId && USERS[currentUserDetailsId]) {
-                    document.getElementById('ud-wallet-balance-h').innerText = fmtMoney(USERS[currentUserDetailsId].walletBalance || 0);
+        function fetchUsers(silent) {
+            if (usersLoadPromise) return usersLoadPromise;
+            usersLoadPromise = (async () => {
+                try {
+                    const snap = await getDocs(collection(db, "users"));
+                    const newUsers = {};
+                    snap.forEach(docSnap => { newUsers[docSnap.id] = docSnap.data(); });
+                    USERS = newUsers;
+                    usersLoadedAt = Date.now();
+                    renderAdminUsersList();
+                    const totalUsersEl = document.getElementById('stat-total-users');
+                    if (totalUsersEl) totalUsersEl.innerText = Object.keys(USERS).length.toLocaleString();
+                    const userListCountBadge = document.getElementById('user-list-count-badge');
+                    if (userListCountBadge) userListCountBadge.innerText = Object.keys(USERS).length.toLocaleString();
+                    if (currentUserDetailsId && USERS[currentUserDetailsId]) {
+                        document.getElementById('ud-wallet-balance-h').innerText = fmtMoney(USERS[currentUserDetailsId].walletBalance || 0);
+                    }
+                    if (silent !== true && window.showToast) window.showToast('Users refreshed ✓');
+                } catch (error) {
+                    console.error("Users fetch error:", error);
+                    if (!usersLoadedAt) {
+                        document.getElementById('admin-users-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load users. <a href="#" onclick="fetchUsers();return false;" style="color:inherit;text-decoration:underline;">Retry</a></p>';
+                    } else if (window.showToast) window.showToast('Could not refresh users.', 'fail');
+                } finally {
+                    usersLoadPromise = null;
                 }
-            }, (error) => {
-                console.error("Users listener error:", error);
-                document.getElementById('admin-users-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load users.</p>';
-            });
+            })();
+            return usersLoadPromise;
         }
+        window.fetchUsers = fetchUsers;
+        function ensureUsersLoaded() { if (!usersLoadedAt) fetchUsers(true); }
+        window.ensureUsersLoaded = ensureUsersLoaded;
+        window.usersAreLoaded = () => !!usersLoadedAt;
 
         // Renders the order-history list inside the currently open User Details page (Order List tab).
         function renderUserOrders(userId) {
@@ -20988,17 +21030,20 @@
             fetchWalletTopups();
             listenGames();
             // listenGameAccounts/listenSellRequests/listenNotifications/
-            // listenAnnouncementsAdmin/listenPaymentMethods/listenCoupons/
-            // listenUsers used to all fire here unconditionally - each is a
+            // listenAnnouncementsAdmin/listenPaymentMethods/listenCoupons
+            // used to all fire here unconditionally - each is a
             // full-collection onSnapshot with no query bound, so every one
             // stayed open and billing for the whole session even on tabs
             // never opened. They're now lazy: subscribeTabListeners(pageId),
             // called from showPage(), starts each one (still guarded by its
             // own *ListenerAttached flag, so re-opening a tab never
-            // resubscribes) the first time its page is actually opened. The
-            // Dashboard's "Registered users" stat no longer waits on
-            // listenUsers() either - loadDashboardStats() now gets that
-            // count with a single cheap getCountFromServer() read instead.
+            // resubscribes) the first time its page is actually opened.
+            // Users went further still: it's not a live listener at all any
+            // more, just a one-shot getDocs() cache (see fetchUsers/
+            // ensureUsersLoaded) loaded the first time User List opens and
+            // re-read only via its Refresh button. The Dashboard's
+            // "Registered users" stat gets its count with a single cheap
+            // getCountFromServer() read instead of waiting on either.
             //
             // listenSocialLinks/listenFlashSaleSettings/listenReceiptStyle/
             // listenTierSettings moved the same way - see subscribeTabListeners
