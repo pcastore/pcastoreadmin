@@ -2729,6 +2729,18 @@
                 </div>
             </div>
 
+            <div class="admin-card" id="settings-card-adminbroadcastsecret" style="margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAdminBroadcastSecretSettings()">
+                    <span style="font-size:15px;font-weight: 600;">Admin Broadcast Secret</span>
+                    <svg class="ui-icon" id="admin-broadcast-secret-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="admin-broadcast-secret-body" style="display:none;margin-top:12px;">
+                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Shared secret between this panel and the pcastore Worker (pcagamestore_bot) — used to authorize customer Telegram DMs (order status updates) and the /admin/broadcast announcement. Pick any long random string; changing it here takes effect immediately, no redeploy needed.</p>
+                    <input type="text" id="admin-broadcast-secret" placeholder="Long random string" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:0 0 14px;font-family:monospace;">
+                    <button class="btn btn-primary" id="save-admin-broadcast-secret-btn" style="width:100%;" onclick="saveAdminBroadcastSecret()">Save</button>
+                </div>
+            </div>
+
             <div class="admin-card" id="settings-card-receiptstyle" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleReceiptStyleSettings()">
                     <span style="font-size:15px;font-weight: 600;">Receipt Style</span>
@@ -5611,12 +5623,19 @@
         }
         // With no live orders listener, mirror our own writes to orders/{id} into the
         // ORDERS cache so status pollers and lists don't act on stale data.
+        // Also the single choke point every non-transactional order status
+        // write passes through, so it doubles as where the customer's
+        // Telegram status-change push (notifyOrderStatusChange, defined
+        // further down) gets triggered — see that function's comment for
+        // why transaction-based writes (markOrderFailedWithRefund) call it
+        // separately instead of relying on this hook.
         function _mirrorOrderWrite(ref, args) {
             try {
                 if (!ref || typeof ref.path !== 'string' || !ref.path.startsWith('orders/')) return;
                 const id = ref.path.slice(7);
                 const data = args[0];
                 if (!ORDERS[id] || !data || typeof data !== 'object' || args.length !== 1) return;
+                const prevStatus = ORDERS[id].status;
                 const cur = { ...ORDERS[id] };
                 for (const [k, v] of Object.entries(data)) {
                     if (k.includes('.')) continue;
@@ -5628,6 +5647,9 @@
                 }
                 ORDERS[id] = cur;
                 scheduleOrdersRender();
+                if (typeof data.status === 'string' && data.status !== prevStatus) {
+                    notifyOrderStatusChange(id, cur, data.status);
+                }
             } catch (e) { /* cache mirror must never break a write */ }
         }
         async function updateDoc(ref, ...args) {
@@ -5751,6 +5773,99 @@
         // instead of calling api.imgbb.com directly, so the ImgBB API key stays
         // server-side (same pattern as store.html) instead of sitting in this file.
         const IMGBB_UPLOAD_URL = 'https://imgbb-functions.pca-game-store.workers.dev';
+
+        // gamestore-auth-worker: the customer-facing pcagamestore_bot Worker
+        // (separate from ADMIN_SYNC_WORKER_URL below, which is the admin/order
+        // bot). Used for admin-triggered pushes to customers over Telegram:
+        // POST /admin/broadcast (message everyone who's opened the bot) and
+        // POST /notify-order-status (DM one customer when their order's
+        // status changes — see notifyOrderStatusChange() further down).
+        // `secret` must match settings/adminBroadcast.secret in Firestore —
+        // set/rotate it from Settings → Admin Broadcast Secret (no CLI or
+        // Cloudflare dashboard step needed). ADMIN_BROADCAST_SECRET here is
+        // just a live in-memory cache of that Firestore value, kept in sync
+        // by listenAdminBroadcastSecret()'s onSnapshot below.
+        const AUTH_WORKER_URL = 'https://pcastore.pca-game-store.workers.dev';
+        let ADMIN_BROADCAST_SECRET = '';
+
+        let adminBroadcastSecretListenerAttached = false;
+        function listenAdminBroadcastSecret() {
+            if (adminBroadcastSecretListenerAttached) return;
+            adminBroadcastSecretListenerAttached = true;
+            onSnapshot(doc(db, "settings", "adminBroadcast"), (snap) => {
+                ADMIN_BROADCAST_SECRET = (snap.exists() && snap.data().secret) || '';
+                const input = document.getElementById('admin-broadcast-secret');
+                if (input && document.activeElement !== input) input.value = ADMIN_BROADCAST_SECRET;
+            }, (error) => {
+                console.error('Admin broadcast secret listener error:', error);
+            });
+        }
+
+        async function saveAdminBroadcastSecret() {
+            const secret = document.getElementById('admin-broadcast-secret').value.trim();
+            const btn = document.getElementById('save-admin-broadcast-secret-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                await setDoc(doc(db, "settings", "adminBroadcast"), { secret }, { merge: true });
+                logAdminActivity('Saved Admin Broadcast Secret');
+                window.showToast('Admin Broadcast Secret saved!', 'success');
+            } catch (error) {
+                console.error('Save admin broadcast secret error:', error);
+                window.showToast('Failed to save Admin Broadcast Secret.', 'fail');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        window.saveAdminBroadcastSecret = saveAdminBroadcastSecret;
+
+        function toggleAdminBroadcastSecretSettings() {
+            const body = document.getElementById('admin-broadcast-secret-body');
+            const chevron = document.getElementById('admin-broadcast-secret-chevron');
+            const isOpen = body.style.display === 'block';
+            body.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        window.toggleAdminBroadcastSecretSettings = toggleAdminBroadcastSecretSettings;
+
+        // Fires a DM through pcagamestore_bot whenever an order's status
+        // actually changes. Called from the centralized _mirrorOrderWrite
+        // hook above for every plain updateDoc(orders/{id}, {status: ...}),
+        // and separately from markOrderFailedWithRefund() below, since that
+        // one writes through a Firestore transaction (tx.update) which
+        // bypasses the wrapped updateDoc() entirely.
+        //
+        // Looks up the customer's linked telegramId from users/{userId}
+        // (written when they connect Telegram from the Store app or bot) -
+        // silently does nothing if they never linked Telegram. Never
+        // throws: a failed push must never block or fail the order-status
+        // write it's reporting on.
+        async function notifyOrderStatusChange(orderId, order, status, note) {
+            try {
+                if (!order || !order.userId || !status) return;
+                if (!ADMIN_BROADCAST_SECRET) return; // secret not loaded/set yet - nothing to authorize with
+                const userSnap = await getDoc(doc(db, "users", order.userId));
+                const telegramId = userSnap.exists() ? userSnap.data().telegramId : null;
+                if (!telegramId) return; // never linked Telegram - nothing to push to
+                await fetch(`${AUTH_WORKER_URL}/notify-order-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        secret: ADMIN_BROADCAST_SECRET,
+                        telegramId: String(telegramId),
+                        orderId,
+                        game: order.game || '',
+                        status,
+                        price: Number(order.price || 0),
+                        note: note || ''
+                    })
+                });
+            } catch (error) {
+                console.error('notifyOrderStatusChange error:', error);
+            }
+        }
 
         // telegram-order Worker: server-side admin auth helpers. Two jobs:
         //  - /admin-login-lookup  { username } -> { ok, email }  (replaces the
@@ -8446,6 +8561,7 @@
         // gone. Idempotent via the walletRefunded flag on the order doc.
         async function markOrderFailedWithRefund(orderId, extraFields = {}) {
             const orderRef = doc(db, "orders", orderId);
+            let notifyInfo = null; // set inside the transaction only if this call actually changes something
             try {
                 await runTransaction(db, async (tx) => {
                     const snap = await tx.get(orderRef);
@@ -8465,8 +8581,15 @@
                     } else {
                         tx.update(orderRef, { ...extraFields, status: 'Fail' });
                     }
+                    notifyInfo = { ...order, ...extraFields, refunded: eligibleForRefund };
                 });
                 logAdminActivity('Marked order Failed', `order: ${orderId}`);
+                // Transaction writes (tx.update) skip the wrapped updateDoc() above,
+                // so _mirrorOrderWrite never sees this one - push the notification
+                // from here instead, using the order data just read in the transaction.
+                if (notifyInfo) {
+                    notifyOrderStatusChange(orderId, notifyInfo, 'Fail', notifyInfo.refunded ? 'ငွေကို Wallet ထဲ ပြန်အမ်းပေးပြီးပါပြီ။' : '');
+                }
             } catch (error) {
                 console.error("markOrderFailedWithRefund error:", error);
             }
@@ -8555,6 +8678,7 @@
                     const refundTotal = perUnitRefund * failedCount;
                     const statusNote = `Delivered ${total - failedCount}/${total} units - ${failedCount} failed`
                         + (order.paidFromWallet ? ` (${refundTotal.toLocaleString()} MMK refunded to wallet).` : ' - refund needs manual review (not a wallet payment).');
+                    let didUpdate = false;
                     await runTransaction(db, async (tx) => {
                         const orderRef = doc(db, "orders", orderId);
                         const freshSnap = await tx.get(orderRef);
@@ -8568,7 +8692,12 @@
                             status: 'Success', confirmedAt: serverTimestamp(), g2bulkStatus: 'PARTIAL', statusNote,
                             g2bulkSubOrders: subOrders, g2bulkSubOrdersDone: doneCount
                         });
+                        didUpdate = true;
                     });
+                    // tx.update above bypasses the wrapped updateDoc(), so push the
+                    // notification from here (same reasoning as markOrderFailedWithRefund) -
+                    // but only if this call actually applied the change.
+                    if (didUpdate) notifyOrderStatusChange(orderId, order, 'Success', statusNote);
                     if (!silent) window.showToast(`Partially delivered — ${statusNote}`, 'fail');
                     editTelegramOrderMessage(orderId, 'Success');
                     return 'PARTIAL';
@@ -20845,6 +20974,10 @@
             //                          from each provider's own settings page
             //   - listenTelegramBot -> read by login alerts + the daily
             //                          summary scheduler, independent of page
+            //   - listenAdminBroadcastSecret -> notifyOrderStatusChange()
+            //                          needs the live secret from any page
+            //                          an order status changes on, not just
+            //                          the Settings page
             //   - listenAdminAccounts -> live permission revocation; an owner
             //                          disabling another admin must take
             //                          effect immediately, on whatever page
@@ -20866,6 +20999,7 @@
             listenAluu();
             listenBay2game();
             listenTelegramBot();
+            listenAdminBroadcastSecret();
             listenActivityLog();
             listenAdminAccounts();
             listenApiKeysMfaSecret();
