@@ -225,6 +225,11 @@
                 listenerClose: function () { if (listeners.active > 0) listeners.active--; },
                 render: render,
                 reset: reset,
+                // Manual poke for the ↻ Update button - render() already re-runs every
+                // 3s on its own, but flush()+render() here gives an instant repaint on
+                // tap instead of waiting for the next tick, so a manual check feels
+                // immediate rather than "did anything happen?".
+                update: function () { flush(); render(); },
                 snapshot: function () { return merge(load(), pending); }   // handy from the debug console
             };
 
@@ -2407,7 +2412,10 @@
                  window.PCAUsage (head script + Firestore wrappers in the module script). -->
             <div class="dash-section-label" style="display:flex;align-items:center;justify-content:space-between;">
                 <span>Request Usage · Today</span>
-                <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.PCAUsage && window.PCAUsage.reset()">Reset</button>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.PCAUsage && window.PCAUsage.update && window.PCAUsage.update(); var b=this; var t=b.textContent; b.textContent='✓ Updated'; setTimeout(function(){ b.textContent=t; }, 900);">↻ Update</button>
+                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.PCAUsage && window.PCAUsage.reset()">Reset</button>
+                </div>
             </div>
             <div class="usage-grid" id="usage-grid">
                 <div class="stat-card">
@@ -11882,9 +11890,34 @@
         // longer trigger any read at all - addDoc/updateDoc/deleteDoc/writeBatch
         // above merge each write straight into GAMES and just repaint the list (see
         // scheduleGamesRefetch/_noteGamesWrite). Changes made elsewhere still need Refresh.
+        //
+        // admin.html gets reloaded 20+ times/day (phone browser killing the tab on
+        // app-switch, not one long-lived tab), and each reload used to re-run the
+        // full getDocs() above - full games collection re-billed every single
+        // reload. A short localStorage cache (same pattern as store.html's
+        // gz_stats_cache) absorbs reloads that happen within a few minutes of each
+        // other: last-known games render instantly with zero reads, and only a
+        // reload past the TTL (or the explicit Refresh button, which always forces
+        // a real fetch) touches Firestore.
+        const GAMES_CACHE_KEY = 'pca_admin_games_cache_v1';
+        const GAMES_CACHE_TTL_MS = 3 * 60 * 1000; // long enough to absorb quick reloads, short enough that stale prices never linger
         let gamesLoadPromise = null, gamesLoadedAt = 0, _gamesRefetchTimer = null;
-        function loadGames(silent) {
+        function loadGames(silent, forceFresh) {
             if (gamesLoadPromise) return gamesLoadPromise;
+            if (!forceFresh) {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(GAMES_CACHE_KEY) || 'null');
+                    if (cached && cached.games && Date.now() - cached.ts < GAMES_CACHE_TTL_MS) {
+                        GAMES = cached.games;
+                        gamesLoadedAt = cached.ts;
+                        renderAdminGamesList();
+                        if (ordersLoadedAt) renderOrdersList();
+                        if (lossFixSchedulerStarted) autoFixLossMakingPackages();
+                        populateFlashSaleGameSelect();
+                        return Promise.resolve();
+                    }
+                } catch (e) { /* corrupt/missing cache - fall through to a real fetch */ }
+            }
             gamesLoadPromise = (async () => {
                 try {
                     const snap = await getDocs(collection(db, "games"));
@@ -11892,6 +11925,7 @@
                     snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
                     GAMES = newGames;
                     gamesLoadedAt = Date.now();
+                    try { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ ts: gamesLoadedAt, games: newGames })); } catch (e) { /* storage full/unavailable - cache is best-effort */ }
                     renderAdminGamesList();
                     if (ordersLoadedAt) renderOrdersList();
                     if (lossFixSchedulerStarted) autoFixLossMakingPackages();
@@ -11919,6 +11953,11 @@
             _gamesRefetchTimer = setTimeout(() => {
                 renderAdminGamesList();
                 if (ordersLoadedAt) renderOrdersList();
+                // Keep the localStorage cache (see loadGames above) in sync with our
+                // own edits too - otherwise a save right before closing the tab could
+                // get shadowed by the still-fresh pre-edit cache on the next reload.
+                gamesLoadedAt = Date.now();
+                try { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ ts: gamesLoadedAt, games: GAMES })); } catch (e) { /* best-effort */ }
             }, 150);
         }
         function _noteGamesWrite(ref, data) {
@@ -11928,7 +11967,7 @@
                 scheduleGamesRefetch();
             } catch (e) { /* never break a write */ }
         }
-        window.refreshGames = () => loadGames();
+        window.refreshGames = () => loadGames(false, true); // explicit tap on ↻ Refresh always forces a real fetch, bypassing the cache
         function listenGames() { return loadGames(true); } // kept so the startup call site is unchanged
 
         // ---------- Game Accounts (marketplace) admin management ----------
@@ -19537,7 +19576,7 @@
         // hit the same category endpoint independently - this collapses
         // those into one shared request/response.
         const g2bulkCategoryCache = new Map(); // categoryId -> { data, ts, promise }
-        const G2BULK_CATEGORY_CACHE_TTL_MS = 8000;
+        const G2BULK_CATEGORY_CACHE_TTL_MS = 16000; // kept just above the 15s poll interval
 
         // Second layer, shared across sessions via Firestore: the store front
         // polls this same endpoint every 15s, so if a customer and the admin
@@ -19588,6 +19627,7 @@
         }
 
         async function refreshVoucherGameStock() {
+            if (document.hidden) return; // tab backgrounded - skip poll, no point burning a read nobody sees
             const categoryId = document.getElementById('edit-game-voucher-category').value;
             if (!categoryId || currentFulfillProvider !== 'g2bulk_voucher') return;
             try {
