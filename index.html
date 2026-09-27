@@ -1891,6 +1891,38 @@
                         </div>
                         <button type="submit" id="login-btn">Sign In</button>
                     </form>
+                    <p class="login-msg-hint" style="text-align:center;">No account? <button type="button" onclick="showRegisterForm()" style="background:none;border:none;color:var(--lg-brass);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Register</button></p>
+                </div>
+
+                <!-- Step 1b: self-register a new admin account. TESTING-ONLY
+                     feature - anyone who reaches this form can create a full
+                     admin account with no invite/approval step. Remove or
+                     gate this behind an invite code before going to
+                     production; see handleAdminRegister() below. -->
+                <div id="step-register" style="display:none;">
+                    <h2>Create Account</h2>
+                    <p class="sub">Register a new admin account</p>
+                    <p id="register-error" class="login-msg-error"></p>
+                    <form id="register-form" onsubmit="handleAdminRegister(); return false;">
+                        <label for="register-username">Username</label>
+                        <input type="text" id="register-username" autocomplete="username" placeholder="Choose a username" autocapitalize="none" autocorrect="off" style="margin-bottom:18px;">
+                        <label for="register-password">Password</label>
+                        <div class="field-wrap has-toggle" style="margin-bottom:18px;">
+                            <input type="password" id="register-password" autocomplete="new-password" placeholder="At least 6 characters">
+                            <button type="button" class="pw-toggle-btn" onclick="toggleLoginPasswordVisibility('register-password', this)" tabindex="-1" aria-label="Show password">
+                                <svg class="ui-icon"><use href="#icon-eye"></use></svg>
+                            </button>
+                        </div>
+                        <label for="register-confirm-password">Confirm password</label>
+                        <div class="field-wrap has-toggle">
+                            <input type="password" id="register-confirm-password" autocomplete="new-password" placeholder="Re-enter password">
+                            <button type="button" class="pw-toggle-btn" onclick="toggleLoginPasswordVisibility('register-confirm-password', this)" tabindex="-1" aria-label="Show password">
+                                <svg class="ui-icon"><use href="#icon-eye"></use></svg>
+                            </button>
+                        </div>
+                        <button type="submit" id="register-btn" style="margin-top:18px;">Register</button>
+                    </form>
+                    <p class="login-msg-hint" style="text-align:center;">Already have an account? <button type="button" onclick="backToLoginFromRegister()" style="background:none;border:none;color:var(--lg-brass);font-size:12px;font-weight:600;cursor:pointer;padding:0;">Sign in</button></p>
                 </div>
 
                 <!-- Step 3a: first-time TOTP enrollment -->
@@ -7446,6 +7478,104 @@
             }
         }
         window.handleAdminLogin = handleAdminLogin;
+
+        // ---------- Self-registration (TESTING ONLY, see markup comment above) ----------
+        function showRegisterForm() {
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('step-login').style.display = 'none';
+            document.getElementById('step-register').style.display = '';
+        }
+        window.showRegisterForm = showRegisterForm;
+
+        function backToLoginFromRegister() {
+            document.getElementById('register-error').style.display = 'none';
+            document.getElementById('step-register').style.display = 'none';
+            document.getElementById('step-login').style.display = '';
+        }
+        window.backToLoginFromRegister = backToLoginFromRegister;
+
+        // Creates a brand-new admin account directly from the login screen,
+        // no existing admin session required. Mirrors createNewAdmin() (the
+        // logged-in "Add Admin" flow) but runs on the primary `auth`
+        // instance since there's no session to protect here - signing up
+        // signs the new user straight in, and the existing
+        // onAuthStateChanged -> routeAfterAuth() pipeline takes it from
+        // there into "Set Up Authenticator" (no totpSecret yet), exactly
+        // like a brand-new admin created via the modal.
+        //
+        // Ordering matters: the adminUsernames/{username} doc is written
+        // BEFORE createUserWithEmailAndPassword() so it already exists (and
+        // is findable by its email field) the instant routeAfterAuth() runs
+        // - otherwise that lookup can race the doc write and land the new
+        // user in a broken state with no matched username.
+        //
+        // IMPORTANT: this write happens with NO ONE signed in yet (unlike
+        // createNewAdmin, which writes it while the *current* full admin is
+        // authenticated). If Firestore rules only allow writes to
+        // adminUsernames from requests that already carry the
+        // admin/adminRole custom claim, this create will fail with
+        // permission-denied - the rules (or a Cloud Function in front of
+        // this write) need an explicit allowance for self-registration.
+        async function handleAdminRegister() {
+            const username = document.getElementById('register-username').value.trim().toLowerCase();
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            const errEl = document.getElementById('register-error');
+            const btn = document.getElementById('register-btn');
+            errEl.style.display = 'none';
+
+            if (!username || !/^[a-z0-9_.]{3,}$/.test(username)) {
+                errEl.textContent = 'Username: at least 3 characters, letters/numbers/._ only.';
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!password || password.length < 6) {
+                errEl.textContent = 'Password must be at least 6 characters.';
+                errEl.style.display = 'block';
+                return;
+            }
+            if (password !== confirmPassword) {
+                errEl.textContent = 'Passwords do not match.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Creating account...';
+            try {
+                const existingSnap = await getDoc(doc(db, "adminUsernames", username));
+                if (existingSnap.exists()) {
+                    errEl.textContent = 'That username is already taken.';
+                    errEl.style.display = 'block';
+                    btn.disabled = false; btn.innerText = 'Register';
+                    return;
+                }
+
+                const email = `${username}.${Date.now()}@admin.pcastore.local`;
+
+                // Write the mapping doc first (see ordering note above).
+                await setDoc(doc(db, "adminUsernames", username), {
+                    email,
+                    role: 'full',
+                    createdBy: 'self-register',
+                    createdAt: serverTimestamp()
+                });
+
+                await createUserWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged -> routeAfterAuth() takes it from here
+                // (TOTP enrollment step), same as a normal login.
+            } catch (e) {
+                console.error('Admin registration error:', e);
+                let msg = 'Something went wrong. Try again.';
+                if (e.code === 'auth/email-already-in-use') msg = 'That username is already taken.';
+                else if (e.code === 'auth/weak-password') msg = 'Password must be at least 6 characters.';
+                else if (e.code === 'permission-denied') msg = 'Registration is blocked by Firestore rules - see handleAdminRegister() comment.';
+                errEl.textContent = msg;
+                errEl.style.display = 'block';
+                btn.disabled = false; btn.innerText = 'Register';
+            }
+        }
+        window.handleAdminRegister = handleAdminRegister;
 
         function handleAdminLogout() {
             window.showActionDialog({
