@@ -7562,6 +7562,14 @@
                 });
 
                 await createUserWithEmailAndPassword(auth, email, password);
+                // Sync this account's {admin:true, adminRole:'full'} custom
+                // claim right away (the Worker authorizes this call by
+                // checking the CALLER's OWN role=='full' in Firestore, which
+                // we just set above, so a brand-new self-registered account
+                // can request its own sync). Everything past the TOTP step
+                // needs isAdmin() to read/write, so this has to land before
+                // startAdminApp() begins firing its own queries.
+                await callAdminSyncClaims();
                 // onAuthStateChanged -> routeAfterAuth() takes it from here
                 // (TOTP enrollment step), same as a normal login.
             } catch (e) {
