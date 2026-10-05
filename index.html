@@ -253,38 +253,44 @@
            look = translucent surfaces + backdrop-filter blur + a soft
            gradient "mesh" behind everything for the glass to refract.
            ============================================================ */
-                :root, html[data-theme="light"] {
-            --bg-app: #F5F5F7;
-            --mesh-1: rgba(220,38,38,0.12);
-            --mesh-2: rgba(15,23,42,0.06);
-            --mesh-3: rgba(220,38,38,0.07);
-            --surface: rgba(255,255,255,0.7);
-            --surface-strong: rgba(255,255,255,0.9);
+        :root, html[data-theme="light-purple"] {
+            --bg-app: #F5F5F8;
+            --mesh-1: rgba(124,58,237,0.11);
+            --mesh-2: rgba(15,23,42,0.05);
+            --mesh-3: rgba(124,58,237,0.07);
             --bg-subtle: rgba(255,255,255,0.45);
             --bg-subtle-2: rgba(255,255,255,0.58);
+            --surface: rgba(255,255,255,0.7);
+            --surface-strong: rgba(255,255,255,0.9);
             --fill-soft: rgba(30,30,40,0.07);
             --border-glass: rgba(255,255,255,0.7);
             --text-primary: #1C1E21;
             --text-strong: #09090B;
             --text-secondary: #55585E;
             --text-muted: #8A8D93;
-            --accent: #DC2626;
-            --accent-rgb: 220,38,38;
-            --accent-soft: rgba(220,38,38,0.1);
-            --danger: #B91C1C;
-            --danger-strong: #991B1B;
-            --danger-soft: rgba(185,28,28,0.12);
+            --danger: #B83A4B;
+            --danger-strong: #8F2B3A;
+            --danger-soft: rgba(184,58,75,0.12);
             --border-dashed: rgba(30,30,40,0.25);
             --shadow-soft: 0 8px 30px -8px rgba(30,30,40,0.18);
             --glass-blur: 14px;
             --icon-fg: #ffffff;
             --scheme: light;
+            --accent: #7C3AED;
+            --accent-rgb: 124,58,237;
+            --accent-soft: rgba(124,58,237,0.14);
+            --accent-1: #8B5CF6;
+            --accent-2: #7C3AED;
+            --accent-3: #6D28D9;
+            --header-1: #6A57A3;
+            --header-2: #584790;
+            --header-3: #433572;
         }
-        html[data-theme="dark-red"] {
-            --bg-app: #0B0B0D;
-            --mesh-1: rgba(220,38,38,0.34);
-            --mesh-2: rgba(255,255,255,0.05);
-            --mesh-3: rgba(153,27,27,0.28);
+        html[data-theme="dark-purple"] {
+            --bg-app: #0C0B11;
+            --mesh-1: rgba(139,92,246,0.20);
+            --mesh-2: rgba(255,255,255,0.04);
+            --mesh-3: rgba(94,70,168,0.20);
             --surface: rgba(32,32,37,0.62);
             --surface-strong: rgba(38,38,44,0.8);
             --bg-subtle: rgba(255,255,255,0.05);
@@ -295,17 +301,23 @@
             --text-strong: #FFFFFF;
             --text-secondary: rgba(242,242,244,0.62);
             --text-muted: rgba(242,242,244,0.4);
-            --accent: #EF4444;
-            --accent-rgb: 239,68,68;
-            --accent-soft: rgba(239,68,68,0.18);
-            --danger: #F87171;
-            --danger-strong: #FECACA;
-            --danger-soft: rgba(248,113,113,0.16);
+            --danger: #E8788A;
+            --danger-strong: #F6C4CC;
+            --danger-soft: rgba(232,120,138,0.16);
             --border-dashed: rgba(255,255,255,0.26);
             --shadow-soft: 0 14px 40px -10px rgba(0,0,0,0.65);
             --glass-blur: 16px;
             --icon-fg: #ffffff;
             --scheme: dark;
+            --accent: #A78BFA;
+            --accent-rgb: 139,92,246;
+            --accent-soft: rgba(139,92,246,0.2);
+            --accent-1: #A78BFA;
+            --accent-2: #8B5CF6;
+            --accent-3: #7C3AED;
+            --header-1: #4B3F7A;
+            --header-2: #3E3366;
+            --header-3: #2E2650;
         }
 
         html, body { min-height: 100%; }
@@ -402,10 +414,10 @@
             --lg-ink-0: #F5F5F7;
             --lg-ink-1: rgba(255,255,255,0.5);
             --lg-ink-2: rgba(255,255,255,0.62);
-            --lg-line: rgba(220,38,38,0.2);
-            --lg-brass: #DC2626;
-            --lg-brass-deep: #B91C1C;
-            --lg-jade: #DC2626;
+            --lg-line: rgba(var(--accent-rgb),0.2);
+            --lg-brass: var(--accent-2);
+            --lg-brass-deep: var(--accent-3);
+            --lg-jade: var(--accent-2);
             --lg-text: #1C1E21;
             --lg-muted: #80848C;
         }
@@ -418,9 +430,9 @@
         .login-mesh {
             position: absolute; inset: 0; z-index: 0; pointer-events: none;
             background:
-                radial-gradient(40% 34% at 14% 12%, rgba(220,38,38,0.16) 0%, transparent 70%),
+                radial-gradient(40% 34% at 14% 12%, rgba(var(--accent-rgb),0.16) 0%, transparent 70%),
                 radial-gradient(42% 36% at 90% 20%, rgba(15,23,42,0.07) 0%, transparent 72%),
-                radial-gradient(44% 36% at 18% 92%, rgba(220,38,38,0.1) 0%, transparent 70%),
+                radial-gradient(44% 36% at 18% 92%, rgba(var(--accent-rgb),0.1) 0%, transparent 70%),
                 radial-gradient(40% 34% at 92% 90%, rgba(15,23,42,0.06) 0%, transparent 70%);
         }
         @keyframes lgRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -430,15 +442,15 @@
             background: linear-gradient(145deg, rgba(255,255,255,0.7), rgba(255,255,255,0.32));
             border: 1px solid rgba(255,255,255,0.85);
             -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
-            box-shadow: 0 30px 70px -22px rgba(185,28,28,0.35), inset 0 1px 0 rgba(255,255,255,0.95);
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.95);
             animation: lgRise 0.5s cubic-bezier(0.16,1,0.3,1);
         }
         .login-card-left { padding: 36px 26px 28px; display: flex; flex-direction: column; min-width: 0; }
         .login-box .logo-icon {
             width: 76px; height: 76px; border-radius: 24px; margin: 0 auto 26px; padding: 0; overflow: hidden;
             display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(145deg, #EF4444 0%, #DC2626 60%, #B91C1C 100%);
-            box-shadow: 0 14px 30px -10px rgba(185,28,28,0.55), inset 0 1px 0 rgba(255,255,255,0.5);
+            background: linear-gradient(145deg, var(--accent-1) 0%, var(--accent-2) 60%, var(--accent-3) 100%);
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.5);
         }
         .login-box .logo-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .login-box .logo-icon svg { width: 34px; height: 34px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -449,11 +461,11 @@
         .login-box input.lg-input {
             width: 100%; height: 52px; padding: 0 16px 0 46px; border-radius: 16px; font-size: 15px;
             border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.62); color: var(--lg-text);
-            box-shadow: 0 6px 16px -10px rgba(185,28,28,0.35), inset 0 1px 0 rgba(255,255,255,0.8);
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.8);
             transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
         }
         .login-box .lg-field.has-toggle input.lg-input { padding-right: 48px; }
-        .login-box input.lg-input:focus { outline: none; border-color: var(--lg-brass); background: rgba(255,255,255,0.9); box-shadow: 0 0 0 3px rgba(220,38,38,0.18); }
+        .login-box input.lg-input:focus { outline: none; border-color: var(--lg-brass); background: rgba(255,255,255,0.9); box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.18); }
         .lg-eye {
             position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px;
             border: none; background: transparent; color: var(--lg-muted); border-radius: 12px; cursor: pointer;
@@ -467,8 +479,8 @@
             width: 100%; height: 52px; margin-top: 6px; border: none; border-radius: 16px; cursor: pointer;
             font-size: 0; line-height: 0; color: transparent;
             display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #EF4444 0%, #DC2626 55%, #B91C1C 100%);
-            box-shadow: 0 14px 26px -10px rgba(185,28,28,0.6), inset 0 1px 0 rgba(255,255,255,0.45);
+            background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 55%, var(--accent-3) 100%);
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.45);
             transition: transform 0.12s ease, opacity 0.15s ease;
         }
         .lg-btn::after {
@@ -495,7 +507,7 @@
             background: rgba(255,255,255,0.7); color: var(--lg-brass-deep); display: flex; align-items: center; justify-content: center;
         }
         .lg-chip svg { width: 17px; height: 17px; }
-        .lg-qr { display: flex; justify-content: center; padding: 12px; background: #fff; border-radius: 18px; margin-bottom: 10px; box-shadow: 0 8px 20px -12px rgba(185,28,28,0.4); }
+        .lg-qr { display: flex; justify-content: center; padding: 12px; background: #fff; border-radius: 18px; margin-bottom: 10px; box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35); }
         .lg-row-center { display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; }
 
         /* Segmented 6-digit OTP input (also reused by the API Keys 2FA gate) */
@@ -507,15 +519,15 @@
             color: var(--lg-text); border-radius: 12px; transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
         }
         .login-box input.otp-box { width: 15%; max-width: 46px; height: auto; padding: 0; border-radius: 12px; border: 1.5px solid var(--lg-line); background: var(--lg-ink-2); box-shadow: none; }
-        .otp-box:focus, .login-box input.otp-box:focus { outline: none; border-color: var(--lg-brass); background: #ffffff; box-shadow: 0 0 0 3px rgba(220,38,38,0.18); }
-        .otp-box.otp-filled, .login-box input.otp-box.otp-filled { border-color: rgba(220,38,38,0.55); }
+        .otp-box:focus, .login-box input.otp-box:focus { outline: none; border-color: var(--lg-brass); background: #ffffff; box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.18); }
+        .otp-box.otp-filled, .login-box input.otp-box.otp-filled { border-color: rgba(var(--accent-rgb),0.55); }
         .otp-paste-btn {
             width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
             padding: 10px; margin-bottom: 16px; border-radius: 10px; font-weight: 600; font-size: 13px;
-            border: 1px solid rgba(220,38,38,0.3); background: rgba(220,38,38,0.08); color: var(--lg-brass); cursor: pointer;
+            border: 1px solid rgba(var(--accent-rgb),0.3); background: rgba(var(--accent-rgb),0.08); color: var(--lg-brass); cursor: pointer;
             transition: background 0.15s ease;
         }
-        .otp-paste-btn:hover { background: rgba(220,38,38,0.15); }
+        .otp-paste-btn:hover { background: rgba(var(--accent-rgb),0.15); }
         .otp-paste-btn svg { width: 15px; height: 15px; }
         .login-box .otp-paste-btn { width: 44px; height: 44px; padding: 0; margin: 0 auto 14px; border-radius: 14px; background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); }
         .login-box .otp-paste-btn svg { width: 19px; height: 19px; }
@@ -933,7 +945,7 @@
         .pkg-actions-row { display: flex; flex-wrap: wrap; gap: 8px; }
         .pkg-actions-row .btn { flex: 0 1 auto; display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 8px 6px; font-size: 12.5px; }
         .btn:active { transform: scale(0.97); }
-        .btn-primary { background-color: var(--accent); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(var(--accent-rgb),0.65), inset 0 1px 0 rgba(255,255,255,0.35); }
+        .btn-primary { background-color: var(--accent-2); background-image: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 55%, var(--accent-3) 100%); color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.4); }
         .btn-primary:active { filter: brightness(0.94); }
         .btn-danger { background-color: var(--danger); background-image: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0)); color: white; box-shadow: 0 6px 16px -6px rgba(250,62,62,0.55), inset 0 1px 0 rgba(255,255,255,0.35); }
         .btn-outline { background-color: var(--fill-soft); color: var(--text-primary); border-color: var(--border-glass); box-shadow: inset 0 1px 0 var(--border-glass); }
@@ -1448,9 +1460,9 @@
 
         /* ===== Gradient-glass header, glass nav, grid tabs ===================== */
         .header {
-            background: linear-gradient(135deg, rgba(239,68,68,0.92) 0%, rgba(220,38,38,0.9) 45%, rgba(127,29,29,0.92) 100%) !important;
+            background: linear-gradient(135deg, var(--header-1) 0%, var(--header-2) 50%, var(--header-3) 100%) !important;
             border-bottom: 1px solid rgba(255,255,255,0.35) !important;
-            box-shadow: 0 10px 30px -14px rgba(185,28,28,0.6), inset 0 1px 0 rgba(255,255,255,0.45) !important;
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.45) !important;
             -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
         }
         .header .logo { color: #fff; font-size: 16px; white-space: nowrap; }
@@ -1464,16 +1476,16 @@
 
         .top-nav {
             background-color: var(--surface) !important;
-            background-image: linear-gradient(135deg, rgba(220,38,38,0.09), rgba(15,23,42,0.03)) !important;
+            background-image: linear-gradient(135deg, rgba(var(--accent-rgb),0.09), rgba(15,23,42,0.03)) !important;
             -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
             border-bottom: 1px solid rgba(255,255,255,0.5) !important;
-            box-shadow: 0 8px 22px -16px rgba(185,28,28,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.5);
             gap: 4px; padding: 6px 8px;
         }
         .top-nav .nav-item { border-bottom: none !important; border-radius: 14px; min-width: 62px; padding: 8px 8px; }
         .top-nav .nav-item.active {
-            background: linear-gradient(135deg, #EF4444 0%, #DC2626 60%, #B91C1C 100%) !important;
-            color: #fff; box-shadow: 0 10px 18px -10px rgba(185,28,28,0.8), inset 0 1px 0 rgba(255,255,255,0.4);
+            background: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 60%, var(--accent-3) 100%) !important;
+            color: #fff; box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.4);
         }
         .top-nav .nav-item.active .ui-icon { stroke: #fff; }
 
@@ -1491,13 +1503,13 @@
             border: 1px solid var(--border-glass); font-size: 12.5px; font-weight: 600; color: var(--text-primary);
             background-color: var(--surface);
             background-image: linear-gradient(145deg, rgba(255,255,255,0.55), rgba(15,23,42,0.03));
-            box-shadow: 0 10px 22px -16px rgba(185,28,28,0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.25);
         }
         .ng-tile:active { transform: scale(0.97); }
         .ng-ico {
-            width: 52px; height: 52px; border-radius: 17px; display: flex; align-items: center; justify-content: center; color: #B91C1C;
+            width: 52px; height: 52px; border-radius: 17px; display: flex; align-items: center; justify-content: center; color: var(--accent-3);
             background: linear-gradient(145deg, #fff, #F1F1F4); border: 1px solid rgba(255,255,255,0.95);
-            box-shadow: 0 8px 16px -10px rgba(185,28,28,0.6);
+            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35);
         }
         .ng-ico .ui-icon { width: 24px; height: 24px; }
         .ng-tile .nav-item-low-balance-dot { top: 8px; right: 10px; }
@@ -1509,7 +1521,7 @@
         .udp-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; overflow: visible; padding: 8px; }
         .udp-tab { display: flex; flex-direction: column; align-items: center; gap: 6px; white-space: normal; text-align: center; padding: 11px 6px; border-radius: 14px; font-size: 11.5px; line-height: 1.25; background: var(--surface); }
         .udp-tab .ui-icon { width: 21px; height: 21px; }
-        .udp-tab.active { background: linear-gradient(135deg, #EF4444, #DC2626); color: #fff; }
+        .udp-tab.active { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); color: #fff; }
         .udp-tab.active .ui-icon { stroke: #fff; }
 
 
@@ -1652,6 +1664,19 @@
         .game-reorder-img-wrap { width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: var(--fill-soft); }
         .game-reorder-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
         .game-reorder-name { width: 100%; font-size: 10.5px; font-weight: 600; color: var(--text-primary); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* ===== Games page: compact type tabs, big toolbar buttons, skeleton ===== */
+        .game-list-tabs { gap: 8px; margin-bottom: 12px; }
+        .game-list-tab-btn { flex-direction: row !important; justify-content: center; gap: 6px !important; padding: 7px 10px !important; border-radius: 12px !important; font-size: 12px !important; min-height: 0; }
+        .game-list-tab-btn .ui-icon { width: 15px !important; height: 15px !important; }
+        .game-list-tab-btn:not(.active) .ui-icon { stroke: currentColor; }
+        .game-list-tab-btn.active .ui-icon { stroke: #fff; }
+        .game-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
+        .game-toolbar .btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 12px 10px; font-size: 15px; font-weight: 600; border-radius: 14px; white-space: nowrap; }
+        .game-toolbar .btn .ui-icon { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; }
+        .game-toolbar .btn-primary .ui-icon { stroke: #fff; }
+        @keyframes pcaShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .game-skel-tile { aspect-ratio: 1 / 1; border-radius: 16px; background: linear-gradient(90deg, var(--fill-soft) 25%, rgba(127,127,127,0.18) 50%, var(--fill-soft) 75%); background-size: 200% 100%; animation: pcaShimmer 1.3s linear infinite; }
     </style>
     <script>
         // Applied synchronously (before first paint) to avoid a flash of the
@@ -1659,19 +1684,24 @@
         // main <script> block, but the attribute itself must be set here.
         // "auto" (the default) resolves to Light 7AM-7PM and Dark Blue the
         // rest of the time, based on the device's local clock.
+        // Theme = White + Purple. "auto" = light by day (7AM-7PM), dark at night.
+        // Older saved choices (red themes etc.) map to their purple equivalent.
+        window.pcaNormalizeTheme = function (t) {
+            if (t === 'light' || t === 'light-red') return 'light-purple';
+            if (t === 'dark-red' || t === 'dark-blue' || t === 'midnight-purple' || t === 'ocean') return 'dark-purple';
+            return t;
+        };
+        window.pcaAutoTheme = function () {
+            var hr = new Date().getHours();
+            return (hr >= 7 && hr < 19) ? 'light-purple' : 'dark-purple';
+        };
         (function () {
             try {
-                var saved = localStorage.getItem('pca-admin-theme');
-                if (saved === 'dark-blue' || saved === 'midnight-purple' || saved === 'ocean') saved = 'dark-red';
-                var pref = saved || 'auto';
-                var resolved = pref;
-                if (pref === 'auto') {
-                    var hr = new Date().getHours();
-                    resolved = (hr >= 7 && hr < 19) ? 'light' : 'dark-red';
-                }
+                var pref = window.pcaNormalizeTheme(localStorage.getItem('pca-admin-theme')) || 'auto';
+                var resolved = (pref === 'auto') ? window.pcaAutoTheme() : pref;
                 document.documentElement.setAttribute('data-theme', resolved);
             } catch (e) {
-                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-theme', 'light-purple');
             }
         })();
     </script>
@@ -1696,7 +1726,10 @@
                 </div>
 
                 <!-- Step 1: username + password -->
-                <div id="step-login">
+                <!-- Shown while Firebase restores a saved session, so the username/password
+                     form never flashes for an already-signed-in admin. -->
+                <div id="step-auth-checking" style="text-align:center;padding:36px 0;color:var(--text-muted);font-size:14px;">Loading…</div>
+                <div id="step-login" style="display:none;">
                     <p id="login-error" class="login-msg-error"></p>
                     <form id="login-form" onsubmit="handleAdminLogin(); return false;">
                         <label class="lg-label" for="login-username">Username</label>
@@ -1787,7 +1820,7 @@
         <symbol id="icon-eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a20.4 20.4 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></symbol>
         <symbol id="icon-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></symbol>
         <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
-        <symbol id="icon-gamepad" viewBox="0 0 24 24"><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z" fill="#DC2626" stroke="none"></path><path d="M6.7 10.7v3.2M5.1 12.3h3.2" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="15.9" cy="11.1" r="1.05" fill="#ffffff" stroke="none"></circle><circle cx="18.3" cy="13.5" r="1.05" fill="#ffffff" stroke="none"></circle></symbol>
+        <symbol id="icon-gamepad" viewBox="0 0 24 24"><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z"></path><path d="M6.7 10.7v3.2M5.1 12.3h3.2"></path><circle cx="15.9" cy="11.1" r="0.6" fill="currentColor"></circle><circle cx="18.3" cy="13.5" r="0.6" fill="currentColor"></circle></symbol>
         <symbol id="icon-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></symbol>
         <symbol id="icon-tag" viewBox="0 0 24 24"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></symbol>
         <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
@@ -1807,6 +1840,7 @@
         <symbol id="icon-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></symbol>
         <symbol id="icon-g2bulk" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2"></circle><text x="12" y="16.3" text-anchor="middle" font-size="11.5" font-weight="800" fill="currentColor" stroke="none" font-family="'Poppins', Arial, sans-serif">G</text></symbol>
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></symbol>
         <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
         <symbol id="icon-grip" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.6"></circle><circle cx="15" cy="5" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="19" r="1.6"></circle><circle cx="15" cy="19" r="1.6"></circle></symbol>
         <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></symbol>
@@ -2027,7 +2061,7 @@
                 <div class="stat-card">
                     <div class="stat-card-top">
                         <span class="stat-card-label">Today's Revenue</span>
-                        <div class="stat-card-icon" style="background:#DC2626;"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
+                        <div class="stat-card-icon" style="background:var(--accent-2);"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
                     </div>
                     <div class="stat-card-value" id="stat-total-sales">...</div>
                     <div class="stat-card-sub" id="stat-revenue-delta-wrap"><span class="stat-card-sub-text">vs. yesterday</span></div>
@@ -2185,7 +2219,7 @@
                 <div class="stat-card">
                     <div class="stat-card-top">
                         <span class="stat-card-label">Worker Failed</span>
-                        <div class="stat-card-icon" style="background:#EF4444;"><svg class="ui-icon"><use href="#icon-warning"></use></svg></div>
+                        <div class="stat-card-icon" style="background:var(--danger);"><svg class="ui-icon"><use href="#icon-warning"></use></svg></div>
                     </div>
                     <div class="stat-card-value" id="usage-cf-fail">0</div>
                     <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-cf-fail-sub">0% error rate</span></div>
@@ -2278,7 +2312,7 @@
                 <div class="stat-card">
                     <div class="stat-card-top">
                         <span class="stat-card-label">Avg. Order Value</span>
-                        <div class="stat-card-icon" style="background:#DC2626;"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
+                        <div class="stat-card-icon" style="background:var(--accent-2);"><svg class="ui-icon"><use href="#icon-dollar"></use></svg></div>
                     </div>
                     <div class="stat-card-value" id="an-aov">...</div>
                     <div class="stat-card-sub"><span class="stat-card-sub-text">Successful orders only</span></div>
@@ -2321,7 +2355,7 @@
                 <div class="stat-card">
                     <div class="stat-card-top">
                         <span class="stat-card-label">Bay2Game</span>
-                        <div class="stat-card-icon" style="background:#DC2626;"><svg class="ui-icon"><use href="#icon-key"></use></svg></div>
+                        <div class="stat-card-icon" style="background:var(--accent-2);"><svg class="ui-icon"><use href="#icon-key"></use></svg></div>
                     </div>
                     <div class="stat-card-value" id="an-bay2game-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
@@ -2639,7 +2673,7 @@
             </div>
 
             <div class="api-doc-card">
-                <div class="api-doc-icon" style="background:#DC2626;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-key"></use></svg></div>
+                <div class="api-doc-icon" style="background:var(--accent-2);"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-key"></use></svg></div>
                 <div class="api-doc-info">
                     <span class="api-doc-title">Bay2Game API Key</span>
                 </div>
@@ -2662,13 +2696,13 @@
                 <button type="button" class="game-list-tab-btn active" id="game-list-tab-direct" onclick="showGameListTab('direct')"><svg class="ui-icon"><use href="#icon-gamepad"></use></svg><span>Direct Games</span></button>
                 <button type="button" class="game-list-tab-btn" id="game-list-tab-voucher" onclick="showGameListTab('voucher')"><svg class="ui-icon"><use href="#icon-gift"></use></svg><span>Gift Card & Vouchers</span></button>
             </div>
-            <div class="pkg-actions-row" style="margin:-8px 0 14px;">
-                <button class="btn btn-outline" onclick="window.refreshGames && window.refreshGames()">↻ Refresh</button>
-                <button class="btn btn-outline" onclick="openGameReorder()">↕ Reorder</button>
-                <button class="btn btn-outline" onclick="openAddServerPicker()">+ Add Server</button>
-                <button class="btn btn-outline" onclick="copyAllGameNames()">📋 Copy Names</button>
-                <button type="button" class="btn btn-outline" id="game-edit-mode-btn" onclick="toggleGameListEditMode()">✏️ Edit Mode: Off</button>
-                <button class="btn btn-primary" onclick="openGameEditor()">+ Add</button>
+            <div class="game-toolbar">
+                <button class="btn btn-primary" style="flex:unset; padding: 10px 20px; font-size:15px; font-weight:600;" onclick="window.refreshGames && window.refreshGames()"><svg class="ui-icon"><use href="#icon-refresh"></use></svg><span>Update</span></button>
+                <button class="btn btn-outline" onclick="openGameReorder()"><svg class="ui-icon"><use href="#icon-sort"></use></svg><span>Reorder</span></button>
+                <button class="btn btn-outline" onclick="openAddServerPicker()"><svg class="ui-icon"><use href="#icon-plus"></use></svg><span>Add Server</span></button>
+                <button class="btn btn-outline" onclick="copyAllGameNames()"><svg class="ui-icon"><use href="#icon-copy"></use></svg><span>Copy Names</span></button>
+                <button type="button" class="btn btn-outline" id="game-edit-mode-btn" onclick="toggleGameListEditMode()"><svg class="ui-icon"><use href="#icon-edit"></use></svg><span>Edit Mode: Off</span></button>
+                <button class="btn btn-primary" onclick="openGameEditor()"><svg class="ui-icon"><use href="#icon-plus"></use></svg><span>Add</span></button>
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
                 <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
@@ -2744,12 +2778,12 @@
                     <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportOrdersCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
                     <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="cleanAllCompletedOrders()" title="Hide all Success/Fail orders from this list">Clean Completed</button>
                     <button class="btn btn-outline" id="toggle-cleaned-btn" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="toggleShowCleanedOrders(); this.innerText = showCleanedOrders ? 'Show Active' : 'Show Cleaned';">Show Cleaned</button>
-                    <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchOrders()">Refresh</button>
+                    <button class="btn btn-primary" style="flex:unset; padding: 10px 20px; font-size:15px; font-weight:600;" onclick="fetchOrders(false, true)">↻ Update</button>
                 </span>
             </h2>
 
             <div class="order-stat-grid">
-                <div class="order-stat-card" style="background:linear-gradient(135deg,#EF4444,#B91C1C);">
+                <div class="order-stat-card" style="background:linear-gradient(135deg,var(--accent-1),var(--accent-3));">
                     <h5>New orders</h5>
                     <div class="val js-stat-pending">...</div>
                     <div class="sub"><span class="sub-label">Awaiting acceptance</span></div>
@@ -2937,7 +2971,7 @@
         <div id="user-list" class="page-section">
             <h2 class="title-header">
                 <span>Manage Users <span id="user-list-count-badge" class="badge badge-success" style="margin-left:6px;vertical-align:middle;" title="Total registered users">0</span></span>
-                <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="fetchUsers()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Refresh</button>
+                <button class="btn btn-primary" style="flex:unset; padding: 10px 20px; font-size:15px; font-weight:600;" onclick="fetchUsers(false, true)"><svg class="ui-icon" style="width:16px;height:16px;"><use href="#icon-refresh"></use></svg> Update</button>
                 <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportUsersCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
             </h2>
             <div class="admin-search-wrap">
@@ -3931,23 +3965,20 @@
     <script>
         // ---------- Theme switcher (Liquid Glass) ----------
         const ADMIN_THEMES = [
-            { id: 'auto',     label: 'Auto (7AM–7PM)', sub: 'White by day, Dark Red by night', icon: 'icon-clock', swatch: ['#F5F5F7', '#EF4444', '#0B0B0D'] },
-            { id: 'light',    label: 'White Red',      sub: 'Bright red-white glass',          icon: 'icon-moon', swatch: ['#F5F5F7', '#DC2626', '#ffffff'] },
-            { id: 'dark-red', label: 'Dark Red',       sub: 'Charcoal & red glass',            icon: 'icon-moon', swatch: ['#0B0B0D', '#EF4444', '#202025'] },
+            { id: 'auto',         label: 'Auto',         sub: 'White by day, Dark Purple by night', icon: 'icon-clock', swatch: ['#F5F5F8', '#7C3AED', '#0C0B11'] },
+            { id: 'light-purple', label: 'White Purple', sub: 'Soft white & muted purple',          icon: 'icon-moon', swatch: ['#F5F5F8', '#7C3AED', '#ffffff'] },
+            { id: 'dark-purple',  label: 'Dark Purple',  sub: 'Charcoal & violet accent',           icon: 'icon-moon', swatch: ['#0C0B11', '#8B5CF6', '#202025'] },
         ];
 
-        // "auto" resolves to Light between 7AM-7PM local time and Dark Blue
-        // the rest of the day (7PM-7AM).
+        // "auto": Light 7AM-7PM / Dark otherwise (see window.pcaAutoTheme in <head>).
         function resolveAutoTheme() {
-            const hr = new Date().getHours();
-            return (hr >= 7 && hr < 19) ? 'light' : 'dark-red';
+            return window.pcaAutoTheme();
         }
 
         // The saved preference (what the user picked - may be 'auto').
         function getThemePreference() {
             try {
-                const v = localStorage.getItem('pca-admin-theme') || 'auto';
-                return (v === 'dark-blue' || v === 'midnight-purple' || v === 'ocean') ? 'dark-red' : v;
+                return window.pcaNormalizeTheme(localStorage.getItem('pca-admin-theme')) || 'auto';
             } catch (e) { return 'auto'; }
         }
 
@@ -3969,7 +4000,7 @@
         // Re-checks every minute so an open tab flips from Light to Dark Blue
         // (or back) right at 7AM/7PM without needing a refresh.
         setInterval(() => {
-            if (getThemePreference() === 'auto') applyTheme('auto', false);
+            if (getThemePreference() === 'auto' && document.documentElement.getAttribute('data-theme') !== resolveAutoTheme()) applyTheme('auto', false);
         }, 60 * 1000);
 
         function renderThemeSwatches() {
@@ -4369,7 +4400,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { initializeFirestore, collection, getDocs as _fsGetDocs, getDoc as _fsGetDoc, getCountFromServer as _fsGetCount, addDoc as _fsAddDoc, doc, setDoc as _fsSetDoc, updateDoc as _fsUpdateDoc, deleteDoc as _fsDeleteDoc, deleteField, query, where, orderBy, onSnapshot as _fsOnSnapshot, serverTimestamp, increment, runTransaction as _fsRunTransaction, writeBatch as _fsWriteBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, Timestamp, collection, getDocs as _fsGetDocs, getDocsFromServer as _fsGetDocsFromServer, getDoc as _fsGetDoc, getCountFromServer as _fsGetCount, addDoc as _fsAddDoc, doc, setDoc as _fsSetDoc, updateDoc as _fsUpdateDoc, deleteDoc as _fsDeleteDoc, deleteField, query, where, orderBy, onSnapshot as _fsOnSnapshot, serverTimestamp, increment, runTransaction as _fsRunTransaction, writeBatch as _fsWriteBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // ---------- Request usage meter: Firestore instrumentation ----------
@@ -4382,6 +4413,86 @@
 
         // "orders", "settings/presence", "users/notifications" - top-level collection
         // (plus the doc id for the singleton `settings` docs) so the breakdown stays short.
+
+        // ---------- On-device cache (IndexedDB) for Orders / Users ----------
+        // Same database + store as the Games cache below ('pca-admin-cache' / 'kv').
+        // Firestore Timestamps are stored as {__ts:[sec,nanos]} and revived on read,
+        // because IndexedDB's structured clone would strip their methods (toMillis/toDate).
+        // Entries carry the admin uid and are wiped on sign-out.
+        const PC_CACHE_DB = 'pca-admin-cache', PC_CACHE_STORE = 'kv';
+        const PC_CACHE_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
+        const ORDERS_REVALIDATE_ON_OPEN = false;     // true = every panel open refreshes orders (cache only paints first); false = use the TTL below
+        const ORDERS_CACHE_TTL_MS = 10 * 60 * 1000;  // reloads within 10 min: zero Firestore reads
+        const USERS_CACHE_TTL_MS = 10 * 60 * 1000;
+        function _pcOpen() {
+            return new Promise((resolve, reject) => {
+                try {
+                    const req = indexedDB.open(PC_CACHE_DB, 1);
+                    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(PC_CACHE_STORE)) req.result.createObjectStore(PC_CACHE_STORE); };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                } catch (e) { reject(e); }
+            });
+        }
+        function _pcEncode(v) {
+            if (v instanceof Timestamp) return { __ts: [v.seconds, v.nanoseconds] };
+            if (Array.isArray(v)) return v.map(_pcEncode);
+            if (v && typeof v === 'object') { const o = {}; for (const k in v) o[k] = _pcEncode(v[k]); return o; }
+            return v;
+        }
+        function _pcDecode(v) {
+            if (Array.isArray(v)) return v.map(_pcDecode);
+            if (v && typeof v === 'object') {
+                if (Array.isArray(v.__ts) && v.__ts.length === 2 && Object.keys(v).length === 1) return new Timestamp(v.__ts[0], v.__ts[1]);
+                const o = {}; for (const k in v) o[k] = _pcDecode(v[k]); return o;
+            }
+            return v;
+        }
+        async function pcCacheGet(key) {
+            try {
+                const dbh = await _pcOpen();
+                const val = await new Promise((resolve, reject) => {
+                    const r = dbh.transaction(PC_CACHE_STORE).objectStore(PC_CACHE_STORE).get(key);
+                    r.onsuccess = () => resolve(r.result || null);
+                    r.onerror = () => reject(r.error);
+                });
+                dbh.close();
+                if (!val || !val.data || val.uid !== (auth.currentUser && auth.currentUser.uid)) return null;
+                if (Date.now() - val.ts > PC_CACHE_MAX_AGE_MS) return null;
+                return { ts: val.ts, data: _pcDecode(val.data) };
+            } catch (e) { return null; }
+        }
+        async function pcCachePut(key, ts, data) {
+            try {
+                const uid = auth.currentUser && auth.currentUser.uid;
+                if (!uid) return;
+                const dbh = await _pcOpen();
+                await new Promise((resolve, reject) => {
+                    const tx = dbh.transaction(PC_CACHE_STORE, 'readwrite');
+                    tx.objectStore(PC_CACHE_STORE).put({ ts, uid, data: _pcEncode(data) }, key);
+                    tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
+                });
+                dbh.close();
+            } catch (e) { console.warn('Cache save failed (' + key + '):', e); }
+        }
+        async function pcCacheClearAll() {
+            try {
+                const dbh = await _pcOpen();
+                await new Promise((resolve, reject) => {
+                    const tx = dbh.transaction(PC_CACHE_STORE, 'readwrite');
+                    tx.objectStore(PC_CACHE_STORE).clear();
+                    tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
+                });
+                dbh.close();
+            } catch (e) { /* nothing to clear */ }
+            try { localStorage.removeItem('pca_admin_games_cache_v1'); } catch (e) {}
+        }
+        let _ordersSaveTimer = null;
+        function saveOrdersCacheSoon() {
+            clearTimeout(_ordersSaveTimer);
+            _ordersSaveTimer = setTimeout(() => { if (ordersLoadedAt) pcCachePut('orders', ordersLoadedAt, ORDERS); }, 1500);
+        }
+
         function _fsLabel(ref) {
             try {
                 if (ref && typeof ref.path === 'string') {
@@ -4406,6 +4517,14 @@
         async function getDocs(q) {
             const snap = await _fsGetDocs(q);
             if (!snap.metadata.fromCache) _usage.fsRead(Math.max(1, snap.size), _fsLabel(q));
+            return snap;
+        }
+        // Server-only read: rejects when the network fails instead of silently
+        // returning an EMPTY result from the local cache (which made the Games
+        // list look empty on a bad connection).
+        async function getDocsFromServer(q) {
+            const snap = await _fsGetDocsFromServer(q);
+            _usage.fsRead(Math.max(1, snap.size), _fsLabel(q));
             return snap;
         }
         async function getCountFromServer(q) {
@@ -4469,6 +4588,7 @@
                     cur[k] = v;
                 }
                 ORDERS[id] = cur;
+                saveOrdersCacheSoon();
                 scheduleOrdersRender();
                 if (typeof data.status === 'string' && data.status !== prevStatus) {
                     notifyOrderStatusChange(id, cur, data.status);
@@ -4852,7 +4972,21 @@
         // exactly the "stuck on ..." symptom this was causing. This setting
         // makes the SDK detect that case and transparently fall back to
         // long-polling instead of hanging indefinitely.
-        const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+        // Persistent (IndexedDB) local cache: live listeners (payment methods, sell requests,
+        // game accounts, settings ...) resume from the on-device copy after a reload and
+        // the server only sends what changed, instead of re-billing every doc. Falls back
+        // to the plain in-memory cache if IndexedDB is unavailable (e.g. private mode).
+        let db;
+        try {
+            if (typeof indexedDB === 'undefined') throw new Error('no indexedDB');
+            db = initializeFirestore(app, {
+                experimentalAutoDetectLongPolling: true,
+                localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+            });
+        } catch (e) {
+            console.warn('Persistent Firestore cache unavailable, using memory cache:', e);
+            db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+        }
         // Exposed on window so the earlier, non-module <script> block (which
         // calls
         // these as bare identifiers) can resolve them - module top-level
@@ -5318,6 +5452,7 @@
         window.createNewAdmin = createNewAdmin;
 
         function resetLoginForm() {
+            const _chk = document.getElementById('step-auth-checking'); if (_chk) _chk.style.display = 'none';
             document.getElementById('step-login').style.display = '';
             document.getElementById('step-mfa-enroll').style.display = 'none';
             document.getElementById('step-mfa-challenge').style.display = 'none';
@@ -5764,45 +5899,76 @@
         }
         window.backToLogin = backToLogin;
 
-        function unlockAdminApp() {
+        // One successful login (password + 6-digit code) is good for 8 hours, even if
+        // the browser is closed. After that the admin is signed out and must log in
+        // again from the username/password screen. Quit also ends it immediately.
+        const LOGIN_SESSION_MS = 8 * 3600 * 1000; // 8 hours
+        function readLoginSession() {
+            try { return JSON.parse(localStorage.getItem('pca_mfa_trust') || 'null'); } catch (e) { return null; }
+        }
+        // 'ok' = valid session, 'expired' = had one but the 8h ran out, 'none' = never verified on this device
+        function loginSessionState(user) {
+            const t = readLoginSession();
+            if (t && user && t.uid === user.uid) return Date.now() < t.until ? 'ok' : 'expired';
+            return 'none';
+        }
+        function isMfaTrusted(user) { return loginSessionState(user) === 'ok'; }
+        function startLoginSession() {   // called only after a fresh, verified login
+            try {
+                if (auth.currentUser) localStorage.setItem('pca_mfa_trust', JSON.stringify({ uid: auth.currentUser.uid, at: Date.now(), until: Date.now() + LOGIN_SESSION_MS }));
+            } catch (e) { /* storage unavailable */ }
+        }
+        function unlockAdminApp(fresh) {
+            if (fresh) startLoginSession();
             sessionStorage.setItem('pca_mfa_ok', '1');
             document.getElementById('login-screen').classList.add('hidden');
             if (!adminAppStarted) { adminAppStarted = true; startAdminApp(); }
         }
+        // While the panel is open, end the session exactly when the 8 hours are up.
+        setInterval(() => {
+            const u = auth.currentUser;
+            if (u && adminAppStarted && loginSessionState(u) === 'expired') signOut(auth).catch(() => {});
+        }, 30 * 1000);
+        document.addEventListener('visibilitychange', () => {
+            const u = auth.currentUser;
+            if (!document.hidden && u && loginSessionState(u) === 'expired') signOut(auth).catch(() => {});
+        });
 
         // ---------- Step 2/3: TOTP enroll (first time) or challenge (returning) ----------
         async function routeAfterAuth(user) {
-            // Resolve the admin's username from their email up front, before the
-            // early-return below, so it's always available for the login-alert
-            // feature - including on a page refresh where the
-            // TOTP step is skipped entirely.
-            try {
-                const uq = query(collection(db, "adminUsernames"), where("email", "==", user.email));
-                const usnap = await getDocs(uq);
-                if (!usnap.empty) {
-                    currentAdminUsername = usnap.docs[0].id;
-                }
-            } catch (e) { console.error('Admin username lookup error:', e); }
+            // One lookup of this admin's doc (username + TOTP secret), shared by
+            // everything below. It must NOT block the UI: on a slow connection it
+            // used to leave the username/password form on screen for seconds.
+            const lookup = (async () => {
+                try {
+                    const snap = await getDocs(query(collection(db, "adminUsernames"), where("email", "==", user.email)));
+                    if (!snap.empty) currentAdminUsername = snap.docs[0].id;
+                    return snap;
+                } catch (e) { console.error('Admin username lookup error:', e); return null; }
+            })();
 
-            if (sessionStorage.getItem('pca_mfa_ok') === '1') { unlockAdminApp(); return; }
+            // Device already verified recently -> straight into the app, no waiting.
+            const sess = loginSessionState(user);
+            if (sess === 'expired') { signOut(auth).catch(() => {}); return; } // 8h over -> full login again
+            if (sess === 'ok') { unlockAdminApp(false); return; }
 
-            let totpSecret = null;
-            try {
-                const q = query(collection(db, "adminUsernames"), where("email", "==", user.email));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    const d = snap.docs[0];
-                    pendingUsername = d.id;
-                    totpSecret = d.data().totpSecret || null;
-                }
-            } catch (e) { console.error('MFA lookup error:', e); }
-
+            // Otherwise go straight to the 6-digit code screen right away (the normal
+            // case for an enrolled admin) instead of waiting for the lookup first.
+            document.getElementById('step-auth-checking').style.display = 'none';
             document.getElementById('step-login').style.display = 'none';
-            if (totpSecret) {
-                document.getElementById('step-mfa-enroll').style.display = 'none';
-                document.getElementById('step-mfa-challenge').style.display = '';
-                applyLockoutUI('mfa', 'mfa-challenge-btn', 'mfa-challenge-error', 'Verify & Sign In');
-            } else {
+            document.getElementById('step-mfa-enroll').style.display = 'none';
+            document.getElementById('step-mfa-challenge').style.display = '';
+            applyLockoutUI('mfa', 'mfa-challenge-btn', 'mfa-challenge-error', 'Verify & Sign In');
+
+            const snap = await lookup;
+            let totpSecret = null;
+            if (snap && !snap.empty) {
+                pendingUsername = snap.docs[0].id;
+                totpSecret = snap.docs[0].data().totpSecret || null;
+            }
+            // Only switch screens if the lookup actually succeeded and shows the
+            // admin has no authenticator yet (first-time enrollment).
+            if (snap && !totpSecret) {
                 pendingEnrollSecret = randomBase32Secret();
                 document.getElementById('mfa-secret-key').textContent = pendingEnrollSecret;
                 document.getElementById('mfa-account-name').textContent = pendingUsername || user.email || '—';
@@ -5829,7 +5995,7 @@
                     return;
                 }
                 await setDoc(doc(db, "adminUsernames", pendingUsername), { totpSecret: pendingEnrollSecret }, { merge: true });
-                unlockAdminApp();
+                unlockAdminApp(true);
             } catch (e) {
                 console.error('MFA enroll error:', e);
                 errEl.textContent = 'Something went wrong. Try again.';
@@ -5862,7 +6028,7 @@
                     return;
                 }
                 clearLockout('mfa');
-                unlockAdminApp();
+                unlockAdminApp(true);
             } catch (e) {
                 console.error('MFA challenge error:', e);
                 errEl.textContent = 'Something went wrong. Try again.';
@@ -5872,6 +6038,17 @@
         }
         window.confirmMfaChallenge = confirmMfaChallenge;
 
+        // If Firebase can't report the saved session within 6s (very bad network),
+        // fall back to showing the normal sign-in form instead of "Loading…" forever.
+        setTimeout(() => {
+            const chk = document.getElementById('step-auth-checking');
+            if (chk && chk.style.display !== 'none' && !document.getElementById('login-screen').classList.contains('hidden')
+                && document.getElementById('step-mfa-challenge').style.display === 'none'
+                && document.getElementById('step-mfa-enroll').style.display === 'none') {
+                chk.style.display = 'none';
+                document.getElementById('step-login').style.display = '';
+            }
+        }, 6000);
         onAuthStateChanged(auth, (user) => {
             const loginScreen = document.getElementById('login-screen');
             const loginBtn = document.getElementById('login-btn');
@@ -5880,7 +6057,9 @@
                 routeAfterAuth(user);
             } else {
                 adminAppStarted = false;
+                pcCacheClearAll();   // customer data must not outlive the session on this device
                 sessionStorage.removeItem('pca_mfa_ok');
+                try { localStorage.removeItem('pca_mfa_trust'); } catch (e) {}
                 loginScreen.classList.remove('hidden');
                 resetLoginForm();
                 currentAdminUsername = null;
@@ -6133,19 +6312,35 @@
             clearTimeout(_ordersRenderTimer);
             _ordersRenderTimer = setTimeout(() => { try { renderOrdersDependents(); } catch (e) { console.error(e); } }, 80);
         }
-        function fetchOrders(silent) {
+        function fetchOrders(silent, forceFresh) {
             if (ordersLoadPromise) return ordersLoadPromise;
             ordersLoadPromise = (async () => {
                 try {
+                    // First load of the session: paint the on-device copy instantly. If it is
+                    // younger than the TTL no Firestore read happens at all; otherwise a real
+                    // read still runs right after and repaints. Refresh always forces a read.
+                    if (forceFresh !== true && !ordersLoadedAt) {
+                        const cached = await pcCacheGet('orders');
+                        if (cached && Object.keys(cached.data).length > 0) {
+                            ORDERS = cached.data;
+                            ordersLoadedAt = cached.ts;
+                            renderOrdersDependents();
+                            // ORDERS_REVALIDATE_ON_OPEN: always re-read in the background right
+                            // after painting the cache, so opening the panel shows fresh orders.
+                            if (!ORDERS_REVALIDATE_ON_OPEN && Date.now() - cached.ts < ORDERS_CACHE_TTL_MS) return;
+                            silent = true;
+                        }
+                    }
                     const querySnapshot = await getDocs(query(collection(db, "orders")));
                     const newOrders = {};
                     querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                     ORDERS = newOrders;
                     ordersLoadedAt = Date.now();
+                    pcCachePut('orders', ordersLoadedAt, ORDERS);
                     renderOrdersDependents();
                     checkOrdersAutoDelete(newOrders);
                     checkOrderDay20Notice(newOrders);
-                    if (silent !== true) window.showToast('Orders refreshed ✓');
+                    if (silent !== true) window.showToast('Orders updated ✓');
                     // NOTE: Telegram push for new Pending orders and wallet-order auto-fulfillment
                     // are handled server-side by the Cloudflare Worker (see git history) - not here.
                 } catch (error) {
@@ -6892,14 +7087,14 @@
         // Checks G2Bulk's status for every not-yet-terminal unit of this order
         // (a plain single-quantity order has just one) and applies the result.
         // silent=true is used by the background auto-poller below, so it doesn't
-        // pop a toast every ~25s for orders that are still just "processing".
+        // pop a toast every minute for orders that are still just "processing".
         async function checkG2BulkOrderStatus(orderId, silent = false) {
             if (!G2BULK_SETTINGS.apiKey) {
                 if (!silent) window.showToast('Add your G2Bulk API key first.', 'fail');
                 return;
             }
             try {
-                // The background auto-poll (silent=true) runs every 25s for EVERY Processing
+                // The background auto-poll (silent=true) runs every 60s for EVERY Processing
                 // order, and used to do a fresh getDoc() each time = 1 billed read per order
                 // per poll. ORDERS is kept in sync by the one-shot orders load + local write mirroring, so
                 // read from that instead; a manual "Check Status" tap still fetches fresh.
@@ -7373,9 +7568,12 @@
 
         // Background auto-sync, same fallback role as autoPollG2BulkOrders -
         // quietly re-checks every "Processing" order with a fazercardOrderId
-        // roughly every ~25s (see the shared interval below) in case a tab
+        // every AUTO_POLL_INTERVAL_MS (60 s, see below) in case a tab
         // was closed mid-poll or a webhook (not yet wired for FazerCards) was
         // missed.
+        // Background status auto-polls (G2Bulk / FazerCard / Aluu). Webhooks are the primary path;
+        // these are only a safety net, so 60 s is plenty (was 25 s).
+        const AUTO_POLL_INTERVAL_MS = 60 * 1000;
         let fazercardAutoPollRunning = false;
         async function autoPollFazerCardOrders() {
             if (document.hidden || fazercardAutoPollRunning || !FAZERCARD_SETTINGS.apiKey) return;
@@ -7391,7 +7589,7 @@
                 fazercardAutoPollRunning = false;
             }
         }
-        setInterval(autoPollFazerCardOrders, 25000);
+        setInterval(autoPollFazerCardOrders, AUTO_POLL_INTERVAL_MS);
 
         // ---------- Aluu.in auto-fulfillment ----------
         // POST /api/v.1/create places the order; POST /api/v.1/:partner_orderid/track
@@ -7631,7 +7829,7 @@
                 aluuAutoPollRunning = false;
             }
         }
-        setInterval(autoPollAluuOrders, 25000);
+        setInterval(autoPollAluuOrders, AUTO_POLL_INTERVAL_MS);
 
         // Calls FazerCards' /topups/validate-id to confirm the Player/Server ID
         // resolves to a real in-game account and shows the admin the actual
@@ -7872,7 +8070,7 @@
                 g2bulkAutoPollRunning = false;
             }
         }
-        setInterval(autoPollG2BulkOrders, 25000);
+        setInterval(autoPollG2BulkOrders, AUTO_POLL_INTERVAL_MS);
 
         async function pollG2BulkOrder(orderId, triesLeft) {
             if (triesLeft <= 0) return;
@@ -9253,7 +9451,7 @@
             gameListEditMode = !gameListEditMode;
             const btn = document.getElementById('game-edit-mode-btn');
             if (btn) {
-                btn.innerText = `✏️ Edit Mode: ${gameListEditMode ? 'On' : 'Off'}`;
+                btn.innerHTML = `<svg class="ui-icon"><use href="#icon-edit"></use></svg><span>Edit Mode: ${gameListEditMode ? 'On' : 'Off'}</span>`;
                 btn.classList.toggle('btn-primary', gameListEditMode);
                 btn.classList.toggle('btn-outline', !gameListEditMode);
             }
@@ -9293,19 +9491,25 @@
         // the same game (e.g. "Free Fire" as both Global and Malaysia) each
         // keep their own line since they're separate entries in the list.
         function copyAllGameNames() {
-            const ids = Object.keys(GAMES).filter(id => {
-                const g = GAMES[id];
+            // Main game names only: servers/regions are ignored and a name that appears
+            // several times (one entry per server) is listed once.
+            const seen = new Set();
+            const names = [];
+            Object.values(GAMES).forEach(g => {
                 const isVoucher = g.fulfillProvider === 'g2bulk_voucher' || g.fulfillProvider === 'fazercard_giftcard';
-                return gameListTab === 'voucher' ? isVoucher : !isVoucher;
-            }).sort((a, b) => {
-                const ga = GAMES[a], gb = GAMES[b];
-                return ga.name.localeCompare(gb.name) || (ga.serverName || '').localeCompare(gb.serverName || '');
+                if (gameListTab === 'voucher' ? !isVoucher : isVoucher) return;
+                const n = (g.name || '').trim();
+                const key = n.toLowerCase();
+                if (!n || seen.has(key)) return;
+                seen.add(key);
+                names.push(n);
             });
+            names.sort((x, y) => x.localeCompare(y));
 
-            if (ids.length === 0) { window.showToast('No games to copy', 'fail'); return; }
-            const text = ids.map(id => GAMES[id].name || '').join('\n');
+            if (names.length === 0) { window.showToast('No games to copy', 'fail'); return; }
+            const text = names.join('\n');
 
-            const doCopy = () => window.showToast(`Copied ${ids.length} game name${ids.length === 1 ? '' : 's'} ✓`, 'success');
+            const doCopy = () => window.showToast(`Copied ${names.length} game name${names.length === 1 ? '' : 's'} \u2713`, 'success');
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(doCopy).catch(() => fallbackCopyText(text, doCopy));
             } else {
@@ -9313,6 +9517,12 @@
             }
         }
         window.copyAllGameNames = copyAllGameNames;
+        // Placeholder tiles shown while games are still loading (so it never looks empty).
+        function showGamesSkeleton(container) {
+            container = container || document.getElementById('admin-games-container');
+            if (!container) return;
+            container.innerHTML = '<div class="game-image-grid">' + '<div class="game-skel-tile"></div>'.repeat(12) + '</div>';
+        }
         function renderAdminGamesListImpl() {
             const container = document.getElementById('admin-games-container');
             const searchTerm = (document.getElementById('game-search')?.value || '').trim().toLowerCase();
@@ -9329,6 +9539,7 @@
                 const ga = GAMES[a], gb = GAMES[b];
                 return ga.name.localeCompare(gb.name) || (ga.serverName || '').localeCompare(gb.serverName || '');
             });
+            if (ids.length === 0 && !gamesLoadedAt) { showGamesSkeleton(container); return; }
             if (ids.length === 0) {
                 container.innerHTML = searchTerm
                     ? '<p class="empty-msg">No games match your search.</p>'
@@ -9544,45 +9755,104 @@
                 el.style.color = source.startsWith('ERROR') ? 'red' : '';
             } catch (e) { /* debug only */ }
         }
+        // ---- On-device cache for the games list (IndexedDB) ----
+        // localStorage is capped at ~5 MB and 245 games with all their packages can
+        // exceed that, in which case the old cache write failed silently and EVERY open
+        // had to download everything again. IndexedDB has no such limit.
+        const _GCACHE_DB = 'pca-admin-cache', _GCACHE_STORE = 'kv', _GCACHE_KEY = 'games';
+        function _gcacheOpen() {
+            return new Promise((resolve, reject) => {
+                try {
+                    const req = indexedDB.open(_GCACHE_DB, 1);
+                    req.onupgradeneeded = () => req.result.createObjectStore(_GCACHE_STORE);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                } catch (e) { reject(e); }
+            });
+        }
+        async function readGamesCache() {
+            try {
+                const dbh = await _gcacheOpen();
+                const val = await new Promise((resolve, reject) => {
+                    const r = dbh.transaction(_GCACHE_STORE).objectStore(_GCACHE_STORE).get(_GCACHE_KEY);
+                    r.onsuccess = () => resolve(r.result || null);
+                    r.onerror = () => reject(r.error);
+                });
+                dbh.close();
+                if (val && val.games) return val;
+            } catch (e) { /* fall through to the legacy localStorage copy */ }
+            try { return JSON.parse(localStorage.getItem(GAMES_CACHE_KEY) || 'null'); } catch (e) { return null; }
+        }
+        async function saveGamesCache(ts, games) {
+            try {
+                const dbh = await _gcacheOpen();
+                await new Promise((resolve, reject) => {
+                    const tx = dbh.transaction(_GCACHE_STORE, 'readwrite');
+                    tx.objectStore(_GCACHE_STORE).put({ ts, games }, _GCACHE_KEY);
+                    tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
+                });
+                dbh.close();
+                try { localStorage.removeItem(GAMES_CACHE_KEY); } catch (e) {}   // free the old, size-limited copy
+                return Math.round(JSON.stringify(games).length / 1024);
+            } catch (e) { console.warn('Games cache save failed:', e); return -1; }
+        }
+
         function loadGames(silent, forceFresh) {
             if (gamesLoadPromise) return gamesLoadPromise;
-            if (!forceFresh) {
-                try {
-                    const cached = JSON.parse(localStorage.getItem(GAMES_CACHE_KEY) || 'null');
-                    // Stale-while-revalidate: ANY non-empty cache (up to 7 days old) is
-                    // painted instantly so the list never waits on the network. If it is
-                    // older than the TTL, a real Firestore read still runs right after
-                    // in the background and repaints with fresh data.
-                    if (cached && cached.games && Object.keys(cached.games).length > 0 && Date.now() - cached.ts < 7 * 24 * 3600 * 1000) {
-                        const fresh = Date.now() - cached.ts < GAMES_CACHE_TTL_MS;
-                        GAMES = cached.games;
-                        gamesLoadedAt = cached.ts;
-                        setGamesDebug('CACHE', 'age ' + Math.round((Date.now() - cached.ts) / 1000) + 's' + (fresh ? '' : ' - refreshing in background'));
-                        renderAdminGamesList();
-                        if (ordersLoadedAt) renderOrdersList();
-                        if (fresh) {
-                            if (lossFixSchedulerStarted) autoFixLossMakingPackages();
-                            return Promise.resolve();
-                        }
-                        // stale: do NOT run the price auto-fix on old data; the real
-                        // read below calls it once fresh data has arrived.
-                        silent = true;
-                    }
-                } catch (e) { /* corrupt/missing cache - fall through to a real fetch */ }
-            }
+            if (!Object.keys(GAMES).length) showGamesSkeleton();
             gamesLoadPromise = (async () => {
                 try {
-                    const snap = await getDocs(collection(db, "games"));
+                    if (!forceFresh) {
+                        // Stale-while-revalidate: ANY non-empty cache (up to 30 days old) is
+                        // painted instantly, so the list never waits on the network. If it is
+                        // older than the TTL, a real Firestore read still runs right after,
+                        // in the background, and repaints with fresh data.
+                        const cached = await readGamesCache();
+                        if (cached && cached.games && Object.keys(cached.games).length > 0 && Date.now() - cached.ts < 30 * 24 * 3600 * 1000) {
+                            const fresh = Date.now() - cached.ts < GAMES_CACHE_TTL_MS;
+                            GAMES = cached.games;
+                            gamesLoadedAt = cached.ts;
+                            setGamesDebug('CACHE', 'age ' + Math.round((Date.now() - cached.ts) / 1000) + 's' + (fresh ? '' : ' - refreshing in background'));
+                            renderAdminGamesList();
+                            if (ordersLoadedAt) renderOrdersList();
+                            if (fresh) {
+                                if (lossFixSchedulerStarted) autoFixLossMakingPackages();
+                                return;
+                            }
+                            // stale: do NOT run the price auto-fix on old data; the real
+                            // read below calls it once fresh data has arrived.
+                            silent = true;
+                        }
+                    }
+                    // Server read with up to 3 attempts. getDocsFromServer never falls
+                    // back to an empty offline cache, so a flaky network now means
+                    // "retry / keep the cached list", not "show an empty list".
+                    let snap = null, lastErr = null;
+                    for (let attempt = 1; attempt <= 3 && !snap; attempt++) {
+                        try {
+                            if (attempt > 1) setGamesDebug('RETRY', 'attempt ' + attempt + '/3');
+                            const _t0 = performance.now();
+                            snap = await getDocsFromServer(collection(db, "games"));
+                            window._gamesFetchMs = Math.round(performance.now() - _t0);
+                        } catch (e) {
+                            lastErr = e;
+                            await new Promise(r => setTimeout(r, 700 * attempt));
+                        }
+                    }
+                    if (!snap) throw lastErr || new Error('games read failed');
                     const newGames = {};
                     snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
                     GAMES = newGames;
                     gamesLoadedAt = Date.now();
-                    setGamesDebug('FIRESTORE', 'docs read: ' + snap.size + (snap.metadata && snap.metadata.fromCache ? ' (offline cache!)' : ''));
-                    if (Object.keys(newGames).length > 0) try { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ ts: gamesLoadedAt, games: newGames })); } catch (e) { /* storage full/unavailable - cache is best-effort */ }
+                    const info = 'docs read: ' + snap.size + ' in ' + ((window._gamesFetchMs || 0) / 1000).toFixed(1) + 's';
+                    setGamesDebug('FIRESTORE', info);
+                    if (Object.keys(newGames).length > 0) {
+                        saveGamesCache(gamesLoadedAt, newGames).then(kb => setGamesDebug('FIRESTORE', info + (kb >= 0 ? ' | cached ' + kb + 'KB' : ' | cache save FAILED')));
+                    }
                     renderAdminGamesList();
                     if (ordersLoadedAt) renderOrdersList();
                     if (lossFixSchedulerStarted) autoFixLossMakingPackages();
-                    if (silent !== true) window.showToast('Games refreshed ✓');
+                    if (silent !== true) window.showToast('Games updated \u2713');
                 } catch (error) {
                     console.error("Games load error:", error);
                     setGamesDebug('ERROR', (error && (error.code || error.message)) || String(error));
@@ -9610,7 +9880,7 @@
                 // own edits too - otherwise a save right before closing the tab could
                 // get shadowed by the still-fresh pre-edit cache on the next reload.
                 gamesLoadedAt = Date.now();
-                try { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ ts: gamesLoadedAt, games: GAMES })); } catch (e) { /* best-effort */ }
+                saveGamesCache(gamesLoadedAt, GAMES);
             }, 150);
         }
         function _noteGamesWrite(ref, data) {
@@ -12779,15 +13049,29 @@
         }
         window.copyUserId = copyUserId;
 
-        function fetchUsers(silent) {
+        function fetchUsers(silent, forceFresh) {
             if (usersLoadPromise) return usersLoadPromise;
             usersLoadPromise = (async () => {
                 try {
+                    if (forceFresh !== true && !usersLoadedAt) {
+                        const cached = await pcCacheGet('users');
+                        if (cached && Object.keys(cached.data).length > 0) {
+                            USERS = cached.data;
+                            usersLoadedAt = cached.ts;
+                            renderAdminUsersList();
+                            const n = Object.keys(USERS).length.toLocaleString();
+                            const a = document.getElementById('stat-total-users'); if (a) a.innerText = n;
+                            const b = document.getElementById('user-list-count-badge'); if (b) b.innerText = n;
+                            if (Date.now() - cached.ts < USERS_CACHE_TTL_MS) return;
+                            silent = true;
+                        }
+                    }
                     const snap = await getDocs(collection(db, "users"));
                     const newUsers = {};
                     snap.forEach(docSnap => { newUsers[docSnap.id] = docSnap.data(); });
                     USERS = newUsers;
                     usersLoadedAt = Date.now();
+                    pcCachePut('users', usersLoadedAt, USERS);
                     renderAdminUsersList();
                     const totalUsersEl = document.getElementById('stat-total-users');
                     if (totalUsersEl) totalUsersEl.innerText = Object.keys(USERS).length.toLocaleString();
@@ -12796,7 +13080,7 @@
                     if (currentUserDetailsId && USERS[currentUserDetailsId]) {
                         document.getElementById('ud-wallet-balance-h').innerText = fmtMoney(USERS[currentUserDetailsId].walletBalance || 0);
                     }
-                    if (silent !== true && window.showToast) window.showToast('Users refreshed ✓');
+                    if (silent !== true && window.showToast) window.showToast('Users updated ✓');
                 } catch (error) {
                     console.error("Users fetch error:", error);
                     if (!usersLoadedAt) {
