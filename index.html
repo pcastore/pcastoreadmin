@@ -1589,6 +1589,69 @@
         #pkg-select-bar .psb-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
         #pkg-select-bar .psb-actions .btn { flex: unset; padding: 9px 4px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
         #pkg-select-bar .btn:disabled { opacity: 0.45; }
+
+        /* ===== Restored: package card / summary / image preview / reorder grid =====
+           These rules were missing from the stylesheet (images rendered at full
+           natural size, the edit card was not an overlay). Re-created from the
+           markup + JS that uses them. ===== */
+        .pkg-row-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .pkg-order-num { font-size: 9px; font-weight: 700; color: var(--text-muted); line-height: 1; }
+        .pkg-summary { flex: 1; min-width: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+        .pkg-summary-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+        .pkg-summary-label { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+        .pkg-summary-thumb { width: 36px; height: 36px; border-radius: 8px; overflow: hidden; background: var(--fill-soft); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .pkg-summary-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pkg-summary-thumb-placeholder { font-size: 16px; color: var(--text-muted); }
+        .pkg-summary-name { font-size: 13.5px; font-weight: 600; color: var(--text-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pkg-summary-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; }
+        .pkg-summary-dot.pkg-dot-package { background: var(--accent); }
+        .pkg-summary-body { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .pkg-summary-value { display: flex; align-items: baseline; gap: 4px; font-weight: 700; font-size: 14px; color: var(--text-primary); }
+        .pkg-summary-price-unit { font-size: 10.5px; font-weight: 600; color: var(--text-muted); }
+        .pkg-summary-warn-dot { width: 8px; height: 8px; border-radius: 50%; background: #FF9500; align-self: center; }
+        .pkg-summary-actions { display: flex; align-items: center; gap: 8px; }
+        .pkg-summary-profit { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 8px; background: var(--fill-soft); color: var(--text-muted); }
+        .pkg-summary-profit.positive { background: rgba(21,162,74,0.12); color: #15A24A; }
+        .pkg-summary-profit.negative { background: var(--danger-soft); color: var(--danger-strong); }
+        .pkg-x-icon { width: 24px; height: 24px; border-radius: 50%; background: var(--fill-soft); color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .pkg-x-icon svg { width: 12px; height: 12px; display: block; }
+        .pkg-profit-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: var(--fill-soft); color: var(--text-muted); align-self: flex-end; text-align: center; white-space: nowrap; }
+        .pkg-profit-badge.positive { background: rgba(21,162,74,0.12); color: #15A24A; }
+
+        /* Edit card: a centered overlay. Ancestors that have transform/contain
+           would trap a position:fixed child, so those are cancelled while open. */
+        .package-row.editing { contain: none; transform: none; overflow: visible; z-index: 300; }
+        #edit-packages-list.pkg-editing-open { transform: none; overflow: visible; scroll-snap-type: none; }
+        .modal-box.pkg-editing-open { transform: none; transition: none; }
+        .pkg-card-overlay { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
+        .package-row.editing .pkg-card-overlay { display: flex; }
+        .pkg-card { background: var(--surface-strong); width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+        .pkg-card-header { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+        .pkg-row-top { display: flex; gap: 8px; }
+        .pkg-row-pricing { display: flex; gap: 8px; align-items: flex-end; }
+        .pkg-row-pricing .pkg-price-field { flex: 1; min-width: 0; }
+        .pkg-price-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .pkg-price-field label { font-size: 11px; color: var(--text-muted); margin: 0; }
+        .pkg-row-media { display: flex; gap: 10px; align-items: center; }
+        .pkg-media-right { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; align-items: flex-start; }
+        .pkg-type-toggle { display: flex; gap: 4px; background: var(--fill-soft); border-radius: 10px; padding: 3px; }
+        .pkg-type-opt { display: flex; align-items: center; gap: 4px; border: none; background: transparent; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+        .pkg-type-opt.active { background: var(--surface-strong); color: var(--accent); box-shadow: var(--shadow-soft); }
+        .pkg-card-footer { display: flex; justify-content: flex-end; }
+        .pkg-card-save-btn { border: none; border-radius: 10px; padding: 10px 22px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+        /* Image preview boxes (package image + Settings social icons) */
+        .pkg-img-preview { width: 64px; height: 64px; border-radius: 10px; overflow: hidden; background: var(--fill-soft); border: 1px dashed var(--border-dashed, #cbd5e1); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-sizing: border-box; position: relative; }
+        .pkg-img-tag { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pkg-img-placeholder { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: center; }
+
+        /* Game reorder grid */
+        .game-reorder-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 4px 0; }
+        .game-reorder-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 12px; background: var(--surface-strong); border: 1px solid var(--fill-soft); touch-action: none; user-select: none; -webkit-user-select: none; min-width: 0; }
+        .game-reorder-num { position: absolute; top: 4px; left: 4px; z-index: 1; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .game-reorder-img-wrap { width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: var(--fill-soft); }
+        .game-reorder-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+        .game-reorder-name { width: 100%; font-size: 10.5px; font-weight: 600; color: var(--text-primary); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     </style>
     <script>
         // Applied synchronously (before first paint) to avoid a flash of the
@@ -9486,14 +9549,24 @@
             if (!forceFresh) {
                 try {
                     const cached = JSON.parse(localStorage.getItem(GAMES_CACHE_KEY) || 'null');
-                    if (cached && cached.games && Date.now() - cached.ts < GAMES_CACHE_TTL_MS) {
+                    // Stale-while-revalidate: ANY non-empty cache (up to 7 days old) is
+                    // painted instantly so the list never waits on the network. If it is
+                    // older than the TTL, a real Firestore read still runs right after
+                    // in the background and repaints with fresh data.
+                    if (cached && cached.games && Object.keys(cached.games).length > 0 && Date.now() - cached.ts < 7 * 24 * 3600 * 1000) {
+                        const fresh = Date.now() - cached.ts < GAMES_CACHE_TTL_MS;
                         GAMES = cached.games;
                         gamesLoadedAt = cached.ts;
-                        setGamesDebug('CACHE', 'age ' + Math.round((Date.now() - cached.ts) / 1000) + 's - tap Refresh for a fresh read');
+                        setGamesDebug('CACHE', 'age ' + Math.round((Date.now() - cached.ts) / 1000) + 's' + (fresh ? '' : ' - refreshing in background'));
                         renderAdminGamesList();
                         if (ordersLoadedAt) renderOrdersList();
-                        if (lossFixSchedulerStarted) autoFixLossMakingPackages();
-                        return Promise.resolve();
+                        if (fresh) {
+                            if (lossFixSchedulerStarted) autoFixLossMakingPackages();
+                            return Promise.resolve();
+                        }
+                        // stale: do NOT run the price auto-fix on old data; the real
+                        // read below calls it once fresh data has arrived.
+                        silent = true;
                     }
                 } catch (e) { /* corrupt/missing cache - fall through to a real fetch */ }
             }
@@ -9505,7 +9578,7 @@
                     GAMES = newGames;
                     gamesLoadedAt = Date.now();
                     setGamesDebug('FIRESTORE', 'docs read: ' + snap.size + (snap.metadata && snap.metadata.fromCache ? ' (offline cache!)' : ''));
-                    try { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ ts: gamesLoadedAt, games: newGames })); } catch (e) { /* storage full/unavailable - cache is best-effort */ }
+                    if (Object.keys(newGames).length > 0) try { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ ts: gamesLoadedAt, games: newGames })); } catch (e) { /* storage full/unavailable - cache is best-effort */ }
                     renderAdminGamesList();
                     if (ordersLoadedAt) renderOrdersList();
                     if (lossFixSchedulerStarted) autoFixLossMakingPackages();
@@ -18076,11 +18149,11 @@
         // once an authenticated admin has actually signed in (see the auth
         // gate above) — nothing here runs against Firestore before that.
         function startAdminApp() {
+            listenGames(); // first, so the Games list isn't queued behind other startup reads
             loadDashboardStats();
             // Cloudflare/Firestore usage: manual Refresh only.
             // Orders are no longer auto-loaded here: they load when the Orders page is opened.
             fetchWalletTopups();
-            listenGames();
             // listenGameAccounts/listenSellRequests/listenNotifications/
             // listenAnnouncementsAdmin/listenPaymentMethods
             // used to all fire here unconditionally - each is a
