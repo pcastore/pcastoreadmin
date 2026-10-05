@@ -2616,6 +2616,7 @@
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </button>
             </div>
+            <p id="games-debug-line" style="font-size:11px;color:var(--text-muted);margin:0 0 8px;word-break:break-all;"></p>
             <div id="admin-games-container">
                 <p class="empty-msg">Loading games...</p>
             </div>
@@ -9463,6 +9464,23 @@
         const GAMES_CACHE_KEY = 'pca_admin_games_cache_v1';
         const GAMES_CACHE_TTL_MS = 3 * 60 * 1000; // long enough to absorb quick reloads, short enough that stale prices never linger
         let gamesLoadPromise = null, gamesLoadedAt = 0, _gamesRefetchTimer = null;
+        // Debug line under the Games search box: shows which Firebase project
+        // is connected, how many game docs were loaded, and whether they came
+        // from the localStorage cache or a real Firestore read.
+        function setGamesDebug(source, extra) {
+            try {
+                const el = document.getElementById('games-debug-line');
+                if (!el) return;
+                const total = Object.keys(GAMES || {}).length;
+                let direct = 0, voucher = 0;
+                Object.values(GAMES || {}).forEach(g => {
+                    if (g && (g.fulfillProvider === 'g2bulk_voucher' || g.fulfillProvider === 'fazercard_giftcard')) voucher++; else direct++;
+                });
+                const t = new Date().toLocaleTimeString();
+                el.textContent = `🔧 project: ${firebaseConfig.projectId} | source: ${source} | total: ${total} (Direct ${direct} / Voucher ${voucher}) | ${t}` + (extra ? ` | ${extra}` : '');
+                el.style.color = source.startsWith('ERROR') ? 'red' : '';
+            } catch (e) { /* debug only */ }
+        }
         function loadGames(silent, forceFresh) {
             if (gamesLoadPromise) return gamesLoadPromise;
             if (!forceFresh) {
@@ -9471,6 +9489,7 @@
                     if (cached && cached.games && Date.now() - cached.ts < GAMES_CACHE_TTL_MS) {
                         GAMES = cached.games;
                         gamesLoadedAt = cached.ts;
+                        setGamesDebug('CACHE', 'age ' + Math.round((Date.now() - cached.ts) / 1000) + 's - tap Refresh for a fresh read');
                         renderAdminGamesList();
                         if (ordersLoadedAt) renderOrdersList();
                         if (lossFixSchedulerStarted) autoFixLossMakingPackages();
@@ -9485,6 +9504,7 @@
                     snap.forEach(docSnap => { newGames[docSnap.id] = docSnap.data(); });
                     GAMES = newGames;
                     gamesLoadedAt = Date.now();
+                    setGamesDebug('FIRESTORE', 'docs read: ' + snap.size + (snap.metadata && snap.metadata.fromCache ? ' (offline cache!)' : ''));
                     try { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ ts: gamesLoadedAt, games: newGames })); } catch (e) { /* storage full/unavailable - cache is best-effort */ }
                     renderAdminGamesList();
                     if (ordersLoadedAt) renderOrdersList();
@@ -9492,6 +9512,7 @@
                     if (silent !== true) window.showToast('Games refreshed ✓');
                 } catch (error) {
                     console.error("Games load error:", error);
+                    setGamesDebug('ERROR', (error && (error.code || error.message)) || String(error));
                     if (!gamesLoadedAt) document.getElementById('admin-games-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load games. Check connection.</p>';
                     else window.showToast('Could not refresh games.', 'fail');
                 } finally {
