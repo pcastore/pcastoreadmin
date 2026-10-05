@@ -386,10 +386,9 @@
             -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
             backdrop-filter: blur(var(--glass-blur)) saturate(160%);
         }
-        .admin-card, .api-doc-card, .tier-row, .btn, .badge, .tx-row,
+        .admin-card, .api-doc-card, .btn, .badge, .tx-row,
         .details-grid-item, .stat-chip, .picker-btn, .package-row, .img-update-box,
-        .modal-body input, .login-box input, .game-picker-search-wrap input,
-        .tier-row-input-wrap input {
+        .modal-body input, .login-box input, .game-picker-search-wrap input {
             background: var(--surface);
         }
         .ui-icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -992,16 +991,6 @@
         .od-card-footer { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
         .od-card-footer .btn { flex: 1; min-width: 0; }
 
-        /* Tier Limits page */
-        .tier-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border-glass); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); }
-        .tier-row-badge { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; flex-shrink: 0; width: 118px; justify-content: center; }
-        .tier-row-badge svg { width: 14px; height: 14px; }
-        .tier-row-input-wrap { flex: 1; min-width: 0; position: relative; }
-        .tier-row-input-wrap input { width: 100%; padding: 9px 52px 9px 12px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); border-radius: 12px; font-size: 14px; font-weight: 500; color: var(--text-strong); }
-        .tier-row-input-wrap input:disabled { background: var(--bg-subtle-2); color: var(--text-muted); }
-        .tier-row-input-wrap input:focus { outline: none; border-color: var(--accent); }
-        .tier-row-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); font-weight: 500; pointer-events: none; }
-
         /* Users list & details */
 
         /* ---- User List: Grid card layout ---- */
@@ -1029,17 +1018,6 @@
         .game-list-tab-btn { flex: 1; text-align: center; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--fill-soft); background: var(--surface); font-size: 12.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
         .game-list-tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
         .user-grid-card { background: var(--surface); border-radius: 18px; padding: 16px; border: 1px solid var(--border-glass); box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); display: flex; flex-direction: column; }
-        .ugc-top { display: flex; justify-content: flex-end; margin-bottom: -6px; }
-        .ugc-identity { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .ugc-identity h5 { font-size: 15px; font-weight: 600; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ugc-identity .ugc-id { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-        .ugc-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .ugc-meta-cell { background: var(--bg-subtle-2); border: 1px solid var(--fill-soft); border-radius: 10px; padding: 8px 10px; }
-        .ugc-meta-cell span { display: block; font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
-        .ugc-meta-cell b { font-size: 13px; color: var(--text-strong); font-weight: 600; }
-        .ugc-contact { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; }
-        .ugc-actions { display: flex; gap: 8px; margin-top: auto; }
-        .ugc-actions .btn { padding: 9px 8px; font-size: 13px; }
         .btn-danger-outline { background: var(--danger-soft); color: var(--danger-strong); border-color: transparent; }
         .btn-danger-outline:active { filter: brightness(0.95); }
 
@@ -1067,8 +1045,6 @@
         .user-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        .tier-mini-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 10px; margin-top: 4px; }
-        .tier-mini-badge svg { width: 10px; height: 10px; }
 
         .detail-section-title { font-size: 14px; font-weight: 600; color: var(--text-strong); margin-bottom: 8px; }
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
@@ -1095,18 +1071,6 @@
         .modal-body > * { flex-shrink: 0; }
         .modal-body label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
         .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; }
-        /* Native datetime-local pickers (Flash Sale
-           End Time) previously fell back to the browser's completely
-           unstyled default box — no radius, no theme background, harsh
-           black border on most Android browsers. Brought in line with the
-           text/number/password inputs above; color-scheme + a filter on
-           the calendar icon keep the native picker legible in dark themes
-           too, since the icon glyph itself can't be recolored directly. */
-        .modal-body input[type="datetime-local"] { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 13.5px; color-scheme: light; font-family: inherit; }
-        html[data-theme="dark-red"] .modal-body input[type="datetime-local"] { color-scheme: dark; }
-        .modal-body input[type="datetime-local"]::-webkit-calendar-picker-indicator { padding: 4px; border-radius: 8px; cursor: pointer; opacity: 0.75; }
-        .modal-body input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover { opacity: 1; background: var(--accent-soft); }
-        .modal-body input[type="datetime-local"]:focus { outline: none; border-color: var(--accent); }
         /* Soft-lock style for the Game Name field once FazerCards' region
            split ("Free Fire (BD)" -> Name "Free Fire" + Server "BD") has
            filled it in — greyed out + readonly so a stray edit can't break
@@ -1464,7 +1428,7 @@
             }
 
             /* Settings / detail cards that are meant to stay full-width */
-            #dashboard .admin-card, #tier-list .admin-card, #api-docs .admin-card {
+            #dashboard .admin-card, #api-docs .admin-card {
                 max-width: none;
             }
 
@@ -1548,25 +1512,83 @@
         .udp-tab.active { background: linear-gradient(135deg, #EF4444, #DC2626); color: #fff; }
         .udp-tab.active .ui-icon { stroke: #fff; }
 
-        /* Coupon / Ticket pages */
-        .cp-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .cp-form .full { grid-column: 1 / -1; }
-        .cp-form input, .cp-form select, .cp-form textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--fill-soft); border-radius: 12px; font-size: 14px; background: var(--surface); color: var(--text-primary); }
-        .cp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-        .cp-card { position: relative; }
-        .cp-code { font-family: 'Courier New', monospace; font-weight: 800; font-size: 17px; letter-spacing: 1px; color: var(--accent); }
-        .cp-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
-        .cp-pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-        .cp-pill.on { background: rgba(16,185,129,0.15); color: #059669; }
-        .cp-pill.off { background: rgba(148,163,184,0.2); color: #64748B; }
-        .cp-pill.open { background: rgba(245,158,11,0.18); color: #B45309; }
-        .cp-actions { display: flex; gap: 8px; margin-top: 12px; }
-        .cp-actions .btn { flex: 1; }
-        .tk-filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-        .tk-filter { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 11px 6px; border-radius: 14px; border: 1px solid var(--fill-soft); background: var(--surface); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; }
-        .tk-filter.active { background: linear-gradient(135deg, #EF4444, #DC2626); color: #fff; border-color: transparent; }
-        .tk-filter .ui-icon { width: 20px; height: 20px; }
-        .tk-filter.active .ui-icon { stroke: #fff; }
+
+        /* ---- Nav group sheet drops down from the TOP instead of rising from the bottom ---- */
+        #nav-group-sheet-overlay { align-items: flex-start; }
+        #nav-group-sheet-overlay .modal-box {
+            border-radius: 0 0 24px 24px;
+            border: 1px solid var(--border-glass); border-top: none;
+            padding-top: calc(20px + env(safe-area-inset-top, 0px));
+            transform: translateY(-100%);
+        }
+        #nav-group-sheet-overlay.show .modal-box { transform: translateY(0); }
+
+        /* ---- Store Logo: small 1:1 preview ---- */
+        .img-update-box.logo-mini { aspect-ratio: 1 / 1; width: 100px; max-width: 100px; margin: 0; padding: 8px; gap: 3px; }
+        .img-update-box.logo-mini.has-image { padding: 0; }
+        .img-update-box.logo-mini .img-update-icon { width: 30px; height: 30px; }
+        .img-update-box.logo-mini .img-update-icon svg { width: 16px; height: 16px; }
+        .img-update-box.logo-mini .img-update-label { font-size: 11px; }
+        .img-update-box.logo-mini img { width: 100%; height: 100%; max-height: none; object-fit: contain; background: var(--bg-subtle); }
+        .img-update-box.logo-mini .img-update-change { font-size: 10px; padding: 3px 8px; bottom: 5px; right: 5px; }
+        .img-update-box.logo-mini .img-update-change svg { width: 10px; height: 10px; }
+
+        /* ---- Dangerous Zone (Settings) ---- */
+        .dz-card { border: 1px solid var(--danger-soft, rgba(239,68,68,0.35)); }
+        .dz-title { font-size: 15px; font-weight: 600; color: var(--danger-strong, #B91C1C); margin-bottom: 12px; }
+        .dz-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .dz-tile {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+            padding: 14px 6px 12px; border-radius: 18px; cursor: pointer;
+            border: 1px solid var(--danger-soft, rgba(239,68,68,0.35)); background: var(--surface);
+            font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--danger-strong, #B91C1C);
+        }
+        .dz-tile:active { transform: scale(0.97); }
+        .dz-ico { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--danger-soft, rgba(239,68,68,0.12)); }
+        .dz-ico .ui-icon { width: 22px; height: 22px; }
+
+        /* ---- Quit confirmation ---- */
+        .quit-word-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px dashed var(--border-dashed); border-radius: 12px; background: var(--bg-subtle-2); }
+        .quit-word { font-family: 'Courier New', monospace; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-strong); }
+        .quit-copy-btn { flex: unset; padding: 6px 12px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+        #quit-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        /* ---- User cards: compact (about half the old height) ---- */
+        .users-grid { gap: 8px; }
+        .user-grid-card { padding: 10px 12px; border-radius: 14px; cursor: pointer; gap: 6px; }
+        .user-grid-card:active { transform: scale(0.99); }
+        .ugc-row { display: flex; align-items: center; gap: 10px; }
+        .ugc-main { min-width: 0; flex: 1; }
+        .ugc-main h5 { font-size: 13.5px; font-weight: 600; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ugc-main .ugc-id { font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 1px; }
+        .user-grid-card .badge { font-size: 10.5px; padding: 2px 8px; flex-shrink: 0; }
+        .ugc-stats { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11.5px; color: var(--text-secondary); padding-left: 48px; }
+        .ugc-stats b { color: var(--text-strong); font-weight: 600; margin-left: 2px; }
+
+        /* ---- Package multi-select (bulk image / % / resync on ticked cards) ---- */
+        .pkg-sel-box { display: none; width: 21px; height: 21px; border-radius: 7px; border: 2px solid var(--border-dashed, #cbd5e1); background: var(--surface); flex-shrink: 0; align-items: center; justify-content: center; margin-right: 8px; box-sizing: border-box; }
+        #edit-packages-list.pkg-select-mode .pkg-sel-box { display: inline-flex; }
+        .package-row.pkg-selected .pkg-sel-box { background: var(--accent); border-color: var(--accent); }
+        .package-row.pkg-selected .pkg-sel-box::after { content: ''; width: 5px; height: 10px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+        .package-row.pkg-selected { border-color: var(--accent); background: var(--accent-soft); }
+        #edit-packages-list.pkg-select-mode .pkg-summary-remove { display: none; }
+        #edit-packages-list.pkg-select-mode .pkg-summary { cursor: pointer; }
+        #game-editor-page.pkg-select-active { padding-bottom: 150px; }
+        #pkg-select-bar {
+            position: fixed; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 140%);
+            width: calc(100% - 20px); max-width: 480px; z-index: 150; padding: 10px; border-radius: 18px;
+            background: var(--surface-strong); border: 1px solid var(--border-glass);
+            box-shadow: 0 14px 34px -10px rgba(0,0,0,0.35), inset 0 1px 0 var(--border-glass);
+            display: flex; flex-direction: column; gap: 8px; transition: transform 0.22s ease; pointer-events: none;
+        }
+        #pkg-select-bar.show { transform: translate(-50%, 0); pointer-events: auto; }
+        #pkg-select-bar .psb-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        #pkg-select-bar .psb-count { font-size: 13px; font-weight: 700; color: var(--text-strong); }
+        #pkg-select-bar .psb-mini { display: flex; gap: 6px; }
+        #pkg-select-bar .psb-mini .btn { flex: unset; padding: 5px 10px; font-size: 12px; }
+        #pkg-select-bar .psb-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        #pkg-select-bar .psb-actions .btn { flex: unset; padding: 9px 4px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+        #pkg-select-bar .btn:disabled { opacity: 0.45; }
     </style>
     <script>
         // Applied synchronously (before first paint) to avoid a flash of the
@@ -1695,8 +1717,6 @@
     </script>
 
     <svg style="display: none;">
-        <symbol id="icon-coupon" viewBox="0 0 24 24"><path d="M2 9a3 3 0 1 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M9 9h.01"></path><path d="m15 9-6 6"></path><path d="M15 15h.01"></path></symbol>
-        <symbol id="icon-ticket" viewBox="0 0 24 24"><path d="M3 5h18v4a3 3 0 0 0 0 6v4H3v-4a3 3 0 0 0 0-6Z"></path><path d="M14 5v3"></path><path d="M14 11v2"></path><path d="M14 16v3"></path></symbol>
         <symbol id="icon-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></symbol>
         <symbol id="icon-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></symbol>
         <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
@@ -1726,7 +1746,6 @@
         <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
         <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
         <symbol id="icon-grip" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.6"></circle><circle cx="15" cy="5" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="19" r="1.6"></circle><circle cx="15" cy="19" r="1.6"></circle></symbol>
-        <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></symbol>
         <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></symbol>
         <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></symbol>
         <symbol id="icon-bar-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></symbol>
@@ -1806,9 +1825,27 @@
             <div class="header-icon" id="my-account-btn" title="My Account" onclick="openMyAccountModal()"><svg class="ui-icon" style="width:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
             <div class="header-icon" id="theme-toggle-btn" title="Theme" onclick="openThemeSheet()"><svg class="ui-icon" id="theme-toggle-icon" style="width:20px;"><use href="#icon-palette"></use></svg></div>
             <div class="header-flame-wrap" title="Live"><img class="header-flame" src="data:image/webp;base64,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" alt=""></div>
-            <div class="header-icon" id="logout-btn" title="Sign out" onclick="handleAdminLogout()"><svg class="ui-icon" style="width:20px;"><use href="#icon-log-out"></use></svg></div>
         </div>
     </header>
+
+    <!-- Quit confirmation: type the word "Quit" to sign out -->
+    <div class="modal-overlay" id="quit-modal-overlay" onclick="if(event.target===this) closeQuitModal()">
+        <div class="modal-box" style="max-width:380px;">
+            <div class="modal-header">
+                <h3>Log out</h3>
+                <div class="modal-close" onclick="closeQuitModal()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:var(--text-secondary);margin:0;">You will need to sign back in to manage the store. Type the word below to confirm.</p>
+                <div class="quit-word-row">
+                    <code class="quit-word" id="quit-word">Quit</code>
+                    <button type="button" class="btn btn-outline quit-copy-btn" onclick="copyQuitWord()"><svg class="ui-icon" style="width:14px;height:14px;"><use href="#icon-copy"></use></svg> Copy</button>
+                </div>
+                <input type="text" id="quit-input" placeholder="Type Quit" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" oninput="onQuitInput()" onkeydown="if(event.key==='Enter'&&!document.getElementById('quit-confirm-btn').disabled) confirmQuit()">
+                <button type="button" class="btn btn-danger" id="quit-confirm-btn" style="width:100%;justify-content:center;" disabled onclick="confirmQuit()">Log out</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Theme picker sheet -->
     <div class="modal-overlay" id="theme-sheet-overlay" onclick="if(event.target===this) closeThemeSheet()">
@@ -1886,76 +1923,6 @@
         </div>
     </div>
 
-    <!-- API Keys re-auth gate: a fresh Authenticator code is required every
-         time the API Keys page is opened (see showPage's api-docs branch /
-         openApiKeysMfaGate), even within an already-signed-in session —
-         these keys can spend real money, so a login-time code alone isn't
-         enough. Uses the same OTP box widget as the login flow's MFA step. -->
-    <div class="modal-overlay" id="apikeys-mfa-modal-overlay" onclick="if(event.target===this) closeApiKeysMfaGate()">
-        <div class="modal-box" style="max-width:380px;">
-            <div class="modal-header">
-                <h3>Verify to Continue</h3>
-                <div class="modal-close" onclick="closeApiKeysMfaGate()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
-            </div>
-            <div class="modal-body">
-                <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Opening API Keys needs a fresh Authenticator code every time — these keys can spend real money.</p>
-                <p id="apikeys-mfa-error" class="login-msg-error" style="display:none;"></p>
-                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">6-digit code</label>
-                <div class="otp-group" id="apikeys-mfa-otp">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                </div>
-                <input type="hidden" id="apikeys-mfa-code">
-                <button type="button" class="otp-paste-btn" onclick="pasteOtpCode('apikeys-mfa-otp','apikeys-mfa-code')">
-                    <svg class="ui-icon"><use href="#icon-copy"></use></svg> Paste code
-                </button>
-                <button type="button" class="btn btn-primary" style="width:100%;margin-top:12px;" id="apikeys-mfa-btn" onclick="confirmApiKeysMfa()">Verify</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- API Keys 2FA setup/regenerate: generates a NEW shared secret (separate
-         from any admin's personal login 2FA), shows its QR so it can be
-         scanned into an Authenticator app, and only saves it once a code
-         from that new secret is confirmed — so an owner can never lock
-         everyone out with a secret nobody actually captured. -->
-    <div class="modal-overlay" id="apikeys-setup-modal-overlay" onclick="if(event.target===this) closeApiKeysMfaSetup()">
-        <div class="modal-box" style="max-width:380px;">
-            <div class="modal-header">
-                <h3>API Keys 2FA</h3>
-                <div class="modal-close" onclick="closeApiKeysMfaSetup()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
-            </div>
-            <div class="modal-body">
-                <p id="apikeys-setup-warning" style="font-size:12px;color:var(--warning, #d97706);margin:0 0 12px;display:none;">Regenerating replaces the current code — every admin will need to re-scan the new QR before they can open API Keys again.</p>
-                <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 12px;">Scan this into an Authenticator app (Google Authenticator, etc.), then confirm with the code it shows.</p>
-                <div id="apikeys-setup-qr-box" style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:12px;margin:0 0 10px;">
-                    <div id="apikeys-setup-qr-code"></div>
-                </div>
-                <button type="button" class="login-secondary-btn" style="margin-bottom:10px;" onclick="toggleApiKeysSetupManualKey()">Can't scan? Enter key manually</button>
-                <div class="mfa-secret-box" id="apikeys-setup-secret-box" style="display:none;"><span id="apikeys-setup-secret-text"></span></div>
-                <p id="apikeys-setup-error" class="login-msg-error" style="display:none;"></p>
-                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">Confirm with the 6-digit code</label>
-                <div class="otp-group" id="apikeys-setup-otp">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                    <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
-                </div>
-                <input type="hidden" id="apikeys-setup-code">
-                <button type="button" class="otp-paste-btn" onclick="pasteOtpCode('apikeys-setup-otp','apikeys-setup-code')">
-                    <svg class="ui-icon"><use href="#icon-copy"></use></svg> Paste code
-                </button>
-                <button type="button" class="btn btn-primary" style="width:100%;margin-top:12px;" id="apikeys-setup-btn" onclick="confirmApiKeysMfaSetup()">Confirm &amp; Save</button>
-            </div>
-        </div>
-    </div>
-
     <div class="app-layout">
     <!-- Top Navigation (sits under the header) -->
     <nav class="top-nav" id="admin-top-nav">
@@ -1968,12 +1935,6 @@
         <div class="nav-item" id="group-game" onclick="openNavGroupSheet('game')">
             <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> <span class="nav-label">Game</span>
         </div>
-        <div class="nav-item" id="group-coupon" onclick="showPage('coupon-list')">
-            <svg class="ui-icon"><use href="#icon-coupon"></use></svg> <span class="nav-label">Coupon</span>
-        </div>
-        <div class="nav-item" id="group-ticket" onclick="showPage('ticket-list')">
-            <svg class="ui-icon"><use href="#icon-ticket"></use></svg> <span class="nav-label">Ticket</span>
-        </div>
         <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
             <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Wallet</span>
         </div>
@@ -1981,7 +1942,7 @@
             <svg class="ui-icon"><use href="#icon-plug"></use></svg> <span class="nav-label">API</span>
             <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
-        <div class="nav-item" id="group-userlist" onclick="openNavGroupSheet('userlist')">
+        <div class="nav-item" id="group-userlist" onclick="showPage('user-list')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Userlist</span>
         </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
@@ -2365,38 +2326,13 @@
                 </div>
             </div>
 
-            <div class="admin-card" id="settings-card-flashsale" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleFlashSaleSettings()">
-                    <span style="font-size:15px;font-weight: 600;">Flash Sale Banner</span>
-                    <svg class="ui-icon" id="flashsale-settings-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
-                </div>
-                <div id="flashsale-settings-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">A countdown banner shown at the top of the store's Home page while it's enabled and hasn't expired.</p>
-                    <label style="display:flex;align-items:center;gap:8px;">
-                        <input type="checkbox" id="flashsale-enabled" style="width:auto;">
-                        <span>Show banner on Home</span>
-                    </label>
-                    <label style="margin-top:12px;font-size:13px;font-weight: 500;color:var(--text-secondary);">Title</label>
-                    <input type="text" id="flashsale-title" placeholder="Flash Sale" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Description</label>
-                    <input type="text" id="flashsale-desc" placeholder="20% off Mobile Legends diamonds" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Linked Game <span style="font-weight:400;">(optional — tapping the banner opens this game)</span></label>
-                    <select id="flashsale-game-select" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
-                        <option value="">None</option>
-                    </select>
-                    <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Ends At</label>
-                    <input type="datetime-local" id="flashsale-endtime" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 14px;">
-                    <button class="btn btn-primary" id="save-flashsale-btn" onclick="saveFlashSaleSettings()">Save Flash Sale</button>
-                </div>
-            </div>
-
             <div class="admin-card" id="settings-card-branding" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBrandingSettings()">
                     <span style="font-size:15px;font-weight: 600;">Store Logo</span>
                     <svg class="ui-icon" id="branding-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="branding-body" style="display:none;margin-top:12px;">
-                    <label class="img-update-box" id="logo-img-update-box" for="edit-logo-file">
+                    <label class="img-update-box logo-mini" id="logo-img-update-box" for="edit-logo-file">
                         <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                         <span class="img-update-label">Image Update</span>
                         <img id="edit-logo-preview" src="" alt="Preview" loading="lazy" decoding="async" style="display:none;">
@@ -2464,19 +2400,19 @@
                 </div>
             </div>
 
-            <!-- API Keys 2FA: the shared Authenticator code every admin must
-                 enter (fresh, every time) to open the API Keys page — a
-                 separate secret from anyone's personal login 2FA. Full
-                 -->
-            <div class="admin-card" style="margin-top:14px;" id="apikeys-mfa-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-key"></use></svg>
-                        <span style="font-size:15px;font-weight: 600;">API Keys 2FA</span>
-                    </div>
-                    <button class="btn btn-outline" id="apikeys-mfa-setup-btn" style="flex:unset;padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="openApiKeysMfaSetup()">Set Up</button>
+            <!-- Dangerous Zone: sign-out lives here now (not in the header). -->
+            <div class="admin-card dz-card" id="settings-card-danger" style="margin-top:14px;">
+                <div class="dz-title">Dangerous Zone</div>
+                <div class="dz-grid">
+                    <button type="button" class="dz-tile" onclick="openQuitModal()">
+                        <span class="dz-ico"><svg class="ui-icon"><use href="#icon-log-out"></use></svg></span>
+                        <span>Log out</span>
+                    </button>
+                    <button type="button" class="dz-tile" id="dz-cleanup-tile" onclick="runLegacyCleanup()">
+                        <span class="dz-ico"><svg class="ui-icon"><use href="#icon-trash"></use></svg></span>
+                        <span>Clean old data</span>
+                    </button>
                 </div>
-                <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;">A separate Authenticator code — not anyone's personal login code — required every time the API Keys page is opened, by whichever admin opens it. <span id="apikeys-mfa-status" style="font-weight:600;color:var(--text-primary);"></span></p>
             </div>
         </div>
 
@@ -2736,40 +2672,6 @@
             </div>
         </div>
 
-        <!-- COUPONS PAGE (Firestore: coupons) -->
-        <div id="coupon-list" class="page-section">
-            <h2 class="title-header">
-                <span>Coupons</span>
-                <button class="btn btn-primary" style="flex:unset;padding:6px 12px;display:flex;align-items:center;gap:6px;" onclick="toggleCouponForm()" aria-label="Add coupon"><svg class="ui-icon" style="width:16px;height:16px;"><use href="#icon-plus"></use></svg></button>
-            </h2>
-            <div class="admin-card" id="coupon-form-card" style="display:none;">
-                <div class="cp-form">
-                    <input type="text" id="cp-code" placeholder="CODE" maxlength="24" autocapitalize="characters" class="full">
-                    <select id="cp-type"><option value="percent">%</option><option value="fixed">Fixed</option></select>
-                    <input type="number" id="cp-value" placeholder="Value" min="0" step="any">
-                    <input type="number" id="cp-limit" placeholder="Limit (0 = ∞)" min="0" step="1">
-                    <input type="date" id="cp-expiry">
-                </div>
-                <button class="btn btn-primary" id="cp-save-btn" style="width:100%;margin-top:12px;" onclick="saveCoupon()">Save</button>
-            </div>
-            <div id="coupon-list-container" class="cp-grid">
-                <p class="empty-msg">Loading...</p>
-            </div>
-        </div>
-
-        <!-- TICKETS PAGE (Firestore: tickets) -->
-        <div id="ticket-list" class="page-section">
-            <h2 class="title-header"><span>Tickets</span></h2>
-            <div class="tk-filters" id="ticket-filters">
-                <button type="button" class="tk-filter active" data-f="all" onclick="setTicketFilter('all')"><svg class="ui-icon"><use href="#icon-inbox"></use></svg><span>All</span></button>
-                <button type="button" class="tk-filter" data-f="open" onclick="setTicketFilter('open')"><svg class="ui-icon"><use href="#icon-bell"></use></svg><span>Open</span></button>
-                <button type="button" class="tk-filter" data-f="closed" onclick="setTicketFilter('closed')"><svg class="ui-icon"><use href="#icon-check"></use></svg><span>Closed</span></button>
-            </div>
-            <div id="ticket-list-container" class="cp-grid">
-                <p class="empty-msg">Loading...</p>
-            </div>
-        </div>
-
         <!-- ORDERS PAGE (Firebase Connected) -->
         <div id="order-list" class="page-section">
             <h2 class="title-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -2983,7 +2885,7 @@
             </div>
         </div>
 
-        <!-- USER DETAILS PAGE (Grid layout, full page — opened via "Visit" on a
+        <!-- USER DETAILS PAGE (Grid layout, full page — opened by tapping a
              user's card in the grid above. Tabs split the customer's data into
              User Info / User Registered / Login List / Order List / Top Up List
              / Login Time so each type of record gets its own dedicated view. -->
@@ -3003,7 +2905,6 @@
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             <div id="ud-name" style="font-size:17px;font-weight: 600;color:var(--text-strong);">Guest</div>
                             <span id="ud-google-badge"></span>
-                            <span id="ud-tier-badge"></span>
                         </div>
                         <div id="ud-guestid" style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px;margin-top:2px;">-</div>
                     </div>
@@ -3100,16 +3001,6 @@
                     <div class="details-grid-item"><span>Joined</span><b id="ud-lt-joined">N/A</b></div>
                 </div>
             </div>
-        </div>
-
-        <!-- TIER LIMITS PAGE (Firebase Connected) — sets the lifetime-spend
-             threshold (MMK) each VIP rank requires. Read live by Store.html. -->
-        <div id="tier-list" class="page-section">
-            <h2 class="title-header">VIP Tier Limits</h2>
-            <div id="tier-limits-container">
-                <p class="empty-msg">Loading tier settings...</p>
-            </div>
-            <button class="btn btn-primary" id="save-tiers-btn" style="margin-top:6px;" onclick="saveTierSettings()">Save Tier Limits</button>
         </div>
 
     <div class="page-section" id="game-editor-page">
@@ -3444,6 +3335,7 @@
                 <p class="pkg-tab-empty-msg" id="pkg-tab-empty-msg" style="display:none;">No packages in this tab yet — tap "+ Add Package" to add one.</p>
                 <div class="pkg-actions-row">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
+                    <button class="btn btn-outline" id="pkg-select-toggle-btn" onclick="togglePkgSelectMode()" title="Card တွေကို ရွေးပြီး Image / % / Resync ကို ရွေးထားတာတွေပေါ်ပဲ သုံးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-check"></use></svg> Select</button>
                     <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                     <!-- Pricing tools grouped together: Bulk % / Resync 5% / Check Prices all touch Cost-and-Price, so they read as one group instead of being scattered between row tools and provider imports. -->
@@ -3472,6 +3364,25 @@
     <!-- GAME EDITOR PAGE: opened as a full page (not a modal) from the game
          action sheet's Edit button, or from "+ Add" on the game list. -->
 
+    <!-- Package multi-select action bar (see togglePkgSelectMode) -->
+    <div id="pkg-select-bar">
+        <div class="psb-top">
+            <span class="psb-count" id="psb-count">0 selected</span>
+            <div class="psb-mini">
+                <button type="button" class="btn btn-outline" onclick="pkgSelectAllInTab()">All</button>
+                <button type="button" class="btn btn-outline" onclick="pkgClearSelection()">Clear</button>
+                <button type="button" class="btn btn-primary" onclick="exitPkgSelectMode()">Done</button>
+            </div>
+        </div>
+        <div class="psb-actions">
+            <button type="button" class="btn btn-outline" id="psb-pct-btn" onclick="openBulkPkgModal()">% Adjust</button>
+            <button type="button" class="btn btn-outline" id="psb-resync-btn" onclick="resyncAllPricesToMargin(true)">Resync</button>
+            <button type="button" class="btn btn-outline" id="psb-img-btn" onclick="document.getElementById('pkg-bulk-img-file').click()">Set Image</button>
+            <button type="button" class="btn btn-outline" id="psb-noimg-btn" onclick="bulkRemovePkgImage()">No Image</button>
+        </div>
+        <input type="file" id="pkg-bulk-img-file" accept="image/*" style="display:none;" onchange="handleBulkPkgImage(this)">
+    </div>
+
     <!-- Bulk Price/Cost Adjust Modal: shift every package's Price or Cost by a
          percentage in one tap (e.g. "+5% all prices" after a supplier hike).
          Scoped to the currently-open tab by default so it matches Sort's
@@ -3495,6 +3406,7 @@
                 <div class="pkg-type-toggle" id="bulk-pkg-scope-toggle" style="padding:4px;">
                     <button type="button" class="pkg-type-opt active" data-value="tab" onclick="setBulkPkgScope(this,'tab')">This tab (<span id="bulk-pkg-tab-name"></span>)</button>
                     <button type="button" class="pkg-type-opt" data-value="all" onclick="setBulkPkgScope(this,'all')">All tabs</button>
+                    <button type="button" class="pkg-type-opt" id="bulk-pkg-scope-selected" data-value="selected" style="display:none;" onclick="setBulkPkgScope(this,'selected')">Selected (<span id="bulk-pkg-sel-count">0</span>)</button>
                 </div>
 
                 <label>Change (%)</label>
@@ -4062,21 +3974,13 @@
         const PAGE_TO_NAV_GROUP = {
             'dashboard': 'group-dashboard', 'analytics': 'group-dashboard',
             'order-list': 'group-orders',
-            'coupon-list': 'group-coupon', 'ticket-list': 'group-ticket',
             'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
             'payment-list': 'group-wallet', 'topup-list': 'group-wallet',
-            'user-list': 'group-userlist', 'tier-list': 'group-userlist',
+            'user-list': 'group-userlist',
             'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
         };
-        function showPage(pageId, skipApiKeysGate) {
-            // API Keys holds every third-party credential the store spends
-            // real money through (G2Bulk/FazerCards/Aluu.in/etc.) — even for
-            // an already-signed-in Full Access admin, require a fresh
-            // Authenticator code every single time this page is opened
-            // (see openApiKeysMfaGate/confirmApiKeysMfa), not just once at
-            // login. skipApiKeysGate=true is only ever passed by
-            // confirmApiKeysMfa() itself, right after a code just verified.
-            if (pageId === 'api-docs' && !skipApiKeysGate) { openApiKeysMfaGate(); return; }
+        function showPage(pageId) {
+            if (window.exitPkgSelectMode) window.exitPkgSelectMode();
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -4105,28 +4009,15 @@
         // startAdminApp() to here, keyed off the page actually being opened.
         function subscribeTabListeners(pageId) {
             if (pageId === 'user-list') ensureUsersLoaded();
-            if (pageId === 'coupon-list') listenCoupons();
-            if (pageId === 'ticket-list') listenTickets();
             if (pageId === 'notify-list') listenNotifications();
             if (pageId === 'ticker-list') listenAnnouncementsAdmin();
             if (pageId === 'payment-list') listenPaymentMethods();
-            // Settings page: three single-doc onSnapshot listeners that only
-            // ever fill in fields living inside #settings (Social Links,
-            // Flash Sale banner). Nothing outside that page
-            // reads their data, so - unlike Branding/Telegram/provider keys
-            // below, which stay eager because other pages depend on them -
-            // these are safe to defer until Settings is actually opened.
+            // Settings page: single-doc onSnapshot listener that only ever
+            // fills in fields living inside #settings (Social Links). Safe to
+            // defer until Settings is actually opened.
             if (pageId === 'settings') {
                 listenSocialLinks();
-                listenFlashSaleSettings();
             }
-            // Tier minimums: only used to compute/display the tier badge on
-            // the User List (cards + CSV export) and the User Detail page
-            // (reached from within an already-open User List), so gating on
-            // 'user-list' covers both. tierForSpendAdmin() also has a
-            // DEFAULT_TIER_MINS fallback, so even the brief window before
-            // this fires on a fresh page-open shows sane values, not blanks.
-            if (pageId === 'tier-list' || pageId === 'user-list') listenTierSettings();
         }
         window.subscribeTabListeners = subscribeTabListeners;
 
@@ -4152,10 +4043,6 @@
                 { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
                 { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
                 { label: 'API Keys', icon: '#icon-plug', run: () => showPage('api-docs') }
-            ]},
-            userlist: { title: 'Userlist', items: [
-                { label: 'Userlist', icon: '#icon-users', run: () => showPage('user-list') },
-                { label: 'Tiers', icon: '#icon-trophy', run: () => showPage('tier-list') }
             ]},
             setting: { title: 'Setting', items: [
                 { label: 'General', icon: '#icon-gear', run: () => showPage('settings') },
@@ -4411,15 +4298,6 @@
             chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
         }
         window.toggleSocialLinks = toggleSocialLinks;
-
-        function toggleFlashSaleSettings() {
-            const body = document.getElementById('flashsale-settings-body');
-            const chevron = document.getElementById('flashsale-settings-chevron');
-            const isOpen = body.style.display !== 'none';
-            body.style.display = isOpen ? 'none' : 'block';
-            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-        }
-        window.toggleFlashSaleSettings = toggleFlashSaleSettings;
 
         window.showInfoDialog = showInfoDialog;
     </script>
@@ -5469,175 +5347,6 @@
             }
         }
 
-        // ---------- API Keys 2FA (shared secret, separate from login MFA) ----------
-        // A single Firestore-stored secret that gates the API Keys page,
-        // independent of any admin's personal login TOTP secret. Whoever
-        // opens the page — any Full Access admin, on any device, on a brand
-        // new session — must produce a current code from THIS secret, fresh,
-        // every time (see showPage's api-docs branch). Any Full Access admin
-        // can view its status, but only the admin who originally set it up
-        // (apiKeysMfaSetBy) may regenerate it — see openApiKeysMfaSetup.
-        let apiKeysMfaSecret = null;
-        let apiKeysMfaSetBy = null;
-        let pendingApiKeysMfaSecret = null;
-
-        function listenApiKeysMfaSecret() {
-            onSnapshot(doc(db, "settings", "apiKeysMfa"), (snap) => {
-                const data = snap.exists() ? snap.data() : null;
-                apiKeysMfaSecret = data ? data.secret : null;
-                apiKeysMfaSetBy = data ? data.setBy : null;
-                renderApiKeysMfaCard();
-            }, (error) => { console.error('API Keys MFA listener error:', error); });
-        }
-
-        function renderApiKeysMfaCard() {
-            const statusEl = document.getElementById('apikeys-mfa-status');
-            const btn = document.getElementById('apikeys-mfa-setup-btn');
-            if (!statusEl || !btn) return;
-            // Before anything's set up, any Full Access admin who gets there
-            // first may do the initial setup (they become the setter). Once
-            // set, only that admin may regenerate — everyone else just sees
-            // status, with the button hidden.
-            const canRegen = !apiKeysMfaSecret || apiKeysMfaSetBy === currentAdminUsername;
-            if (!apiKeysMfaSecret) {
-                statusEl.textContent = 'Not set up yet — nobody can open API Keys until this is set up.';
-            } else if (apiKeysMfaSetBy === currentAdminUsername) {
-                statusEl.textContent = 'Currently set up by you.';
-            } else {
-                statusEl.textContent = `Currently set up by ${apiKeysMfaSetBy || 'another admin'} — only they can regenerate it.`;
-            }
-            btn.innerText = apiKeysMfaSecret ? 'Regenerate' : 'Set Up';
-            btn.style.display = canRegen ? '' : 'none';
-        }
-
-        // ----- Verify-to-open gate (shown every time showPage('api-docs') runs) -----
-        function openApiKeysMfaGate() {
-            if (!apiKeysMfaSecret) {
-                window.showToast('Set up API Keys 2FA in Settings first.', 'fail');
-                return;
-            }
-            const errEl = document.getElementById('apikeys-mfa-error');
-            if (errEl) errEl.style.display = 'none';
-            const otpGroup = document.getElementById('apikeys-mfa-otp');
-            if (otpGroup) otpGroup.querySelectorAll('.otp-box').forEach(b => { b.value = ''; b.classList.remove('otp-filled'); });
-            document.getElementById('apikeys-mfa-code').value = '';
-            if (applyLockoutUI('apikeys-mfa', 'apikeys-mfa-btn', 'apikeys-mfa-error', 'Verify')) {
-                document.getElementById('apikeys-mfa-modal-overlay').classList.add('show');
-                return;
-            }
-            document.getElementById('apikeys-mfa-modal-overlay').classList.add('show');
-            setTimeout(() => document.querySelector('#apikeys-mfa-otp .otp-box')?.focus(), 50);
-        }
-        window.openApiKeysMfaGate = openApiKeysMfaGate;
-
-        function closeApiKeysMfaGate() {
-            document.getElementById('apikeys-mfa-modal-overlay').classList.remove('show');
-        }
-        window.closeApiKeysMfaGate = closeApiKeysMfaGate;
-
-        // 3 wrong codes locks this out for a flat 1 hour (not the 5-attempt
-        // exponential backoff used for login) — see registerFailedAttempt's
-        // optional overrides.
-        async function confirmApiKeysMfa() {
-            const code = document.getElementById('apikeys-mfa-code').value.trim();
-            const errEl = document.getElementById('apikeys-mfa-error');
-            const btn = document.getElementById('apikeys-mfa-btn');
-            errEl.style.display = 'none';
-            if (applyLockoutUI('apikeys-mfa', 'apikeys-mfa-btn', 'apikeys-mfa-error', 'Verify')) return;
-            if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
-            btn.disabled = true; btn.innerText = 'Verifying...';
-            try {
-                const ok = apiKeysMfaSecret && await verifyTotpCode(apiKeysMfaSecret, code);
-                if (!ok) {
-                    registerFailedAttempt('apikeys-mfa', 3, 3600, 3600);
-                    if (!applyLockoutUI('apikeys-mfa', 'apikeys-mfa-btn', 'apikeys-mfa-error', 'Verify')) {
-                        errEl.textContent = 'Wrong code.';
-                        errEl.style.display = 'block';
-                        btn.disabled = false; btn.innerText = 'Verify';
-                    }
-                    return;
-                }
-                clearLockout('apikeys-mfa');
-                btn.disabled = false; btn.innerText = 'Verify';
-                closeApiKeysMfaGate();
-                showPage('api-docs', true);
-            } catch (e) {
-                console.error('API Keys MFA verify error:', e);
-                errEl.textContent = 'Something went wrong. Try again.';
-                errEl.style.display = 'block';
-                btn.disabled = false; btn.innerText = 'Verify';
-            }
-        }
-        window.confirmApiKeysMfa = confirmApiKeysMfa;
-
-        // ----- Set up / regenerate (Full Access only, from Settings) -----
-        // Anyone Full Access can do the FIRST setup (no owner yet); after
-        // that, only apiKeysMfaSetBy may regenerate — everyone else is
-        // blocked here even if they reach this call directly, not just by
-        // the hidden button in renderApiKeysMfaCard.
-        function openApiKeysMfaSetup() {
-            if (apiKeysMfaSecret && apiKeysMfaSetBy && apiKeysMfaSetBy !== currentAdminUsername) {
-                window.showToast(`Only ${apiKeysMfaSetBy} can regenerate this.`, 'fail');
-                return;
-            }
-            pendingApiKeysMfaSecret = randomBase32Secret();
-            document.getElementById('apikeys-setup-warning').style.display = apiKeysMfaSecret ? 'block' : 'none';
-            document.getElementById('apikeys-setup-secret-box').style.display = 'none';
-            document.getElementById('apikeys-setup-secret-text').innerText = pendingApiKeysMfaSecret;
-            document.getElementById('apikeys-setup-error').style.display = 'none';
-            const otpGroup = document.getElementById('apikeys-setup-otp');
-            otpGroup.querySelectorAll('.otp-box').forEach(b => { b.value = ''; b.classList.remove('otp-filled'); });
-            document.getElementById('apikeys-setup-code').value = '';
-            renderMfaQrCode(pendingApiKeysMfaSecret, 'API Keys', 'apikeys-setup-qr-code');
-            document.getElementById('apikeys-setup-modal-overlay').classList.add('show');
-        }
-        window.openApiKeysMfaSetup = openApiKeysMfaSetup;
-
-        function closeApiKeysMfaSetup() {
-            document.getElementById('apikeys-setup-modal-overlay').classList.remove('show');
-            pendingApiKeysMfaSecret = null;
-        }
-        window.closeApiKeysMfaSetup = closeApiKeysMfaSetup;
-
-        function toggleApiKeysSetupManualKey() {
-            const box = document.getElementById('apikeys-setup-secret-box');
-            if (box) box.style.display = box.style.display === 'none' ? '' : 'none';
-        }
-        window.toggleApiKeysSetupManualKey = toggleApiKeysSetupManualKey;
-
-        // Only persists the new secret once a code generated FROM it is
-        // confirmed — otherwise a mistyped/unscanned QR could lock every
-        // admin, owner included, out of API Keys.
-        async function confirmApiKeysMfaSetup() {
-            const code = document.getElementById('apikeys-setup-code').value.trim();
-            const errEl = document.getElementById('apikeys-setup-error');
-            const btn = document.getElementById('apikeys-setup-btn');
-            errEl.style.display = 'none';
-            if (!pendingApiKeysMfaSecret) { closeApiKeysMfaSetup(); return; }
-            if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Enter the 6-digit code.'; errEl.style.display = 'block'; return; }
-            btn.disabled = true; btn.innerText = 'Verifying...';
-            try {
-                const ok = await verifyTotpCode(pendingApiKeysMfaSecret, code);
-                if (!ok) {
-                    errEl.textContent = 'Wrong code — make sure you scanned the QR above.';
-                    errEl.style.display = 'block';
-                    btn.disabled = false; btn.innerText = 'Confirm & Save';
-                    return;
-                }
-                await setDoc(doc(db, "settings", "apiKeysMfa"), { secret: pendingApiKeysMfaSecret, updatedAt: Date.now(), setBy: currentAdminUsername }, { merge: true });
-                window.showToast('API Keys 2FA saved.', 'success');
-                closeApiKeysMfaSetup();
-            } catch (e) {
-                console.error('API Keys MFA setup error:', e);
-                errEl.textContent = 'Something went wrong. Try again.';
-                errEl.style.display = 'block';
-                btn.disabled = false; btn.innerText = 'Confirm & Save';
-                return;
-            }
-            btn.disabled = false; btn.innerText = 'Confirm & Save';
-        }
-        window.confirmApiKeysMfaSetup = confirmApiKeysMfaSetup;
-
         // Copies the exact secret text so it can be pasted into an authenticator
         // app instead of hand-typed — hand-typing a 16-char Base32 string is
         // where dropped/duplicated characters (and "key too short" errors) come from.
@@ -5679,9 +5388,7 @@
             // Maps each OTP group id to the id of the button that should fire.
             const AUTO_SUBMIT_BTN = {
                 'mfa-enroll-otp': 'mfa-enroll-btn',
-                'mfa-challenge-otp': 'mfa-challenge-btn',
-                'apikeys-mfa-otp': 'apikeys-mfa-btn',
-                'apikeys-setup-otp': 'apikeys-setup-btn'
+                'mfa-challenge-otp': 'mfa-challenge-btn'
             };
             const maybeAutoSubmit = () => {
                 const code = boxes.map(b => b.value).join('');
@@ -5736,8 +5443,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             setupOtpGroup('mfa-enroll-otp', 'mfa-enroll-code');
             setupOtpGroup('mfa-challenge-otp', 'mfa-challenge-code');
-            setupOtpGroup('apikeys-mfa-otp', 'apikeys-mfa-code');
-            setupOtpGroup('apikeys-setup-otp', 'apikeys-setup-code');
         });
 
         function toggleMfaManualKey() {
@@ -5940,17 +5645,51 @@
         }
         window.handleAdminLogin = handleAdminLogin;
 
-        function handleAdminLogout() {
-            window.showActionDialog({
-                type: 'delete',
-                title: 'Sign out?',
-                message: 'You will need to sign back in to manage the store.',
-                confirmText: 'Sign Out',
-                onConfirm: async () => {
-                    await signOut(auth);
-                }
-            });
+        // Sign-out now lives in Settings > Dangerous Zone and requires typing
+        // the word "Quit" (with a Copy button for it) before it goes through.
+        const QUIT_WORD = 'Quit';
+        function openQuitModal() {
+            const input = document.getElementById('quit-input');
+            const btn = document.getElementById('quit-confirm-btn');
+            if (input) input.value = '';
+            if (btn) btn.disabled = true;
+            document.getElementById('quit-modal-overlay').classList.add('show');
+            setTimeout(() => input && input.focus(), 250);
         }
+        function closeQuitModal() {
+            document.getElementById('quit-modal-overlay').classList.remove('show');
+        }
+        function onQuitInput() {
+            const input = document.getElementById('quit-input');
+            const btn = document.getElementById('quit-confirm-btn');
+            btn.disabled = input.value.trim() !== QUIT_WORD;
+        }
+        async function copyQuitWord() {
+            try {
+                await navigator.clipboard.writeText(QUIT_WORD);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = QUIT_WORD;
+                ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); } catch (e2) {}
+                ta.remove();
+            }
+            window.showToast('Copied "' + QUIT_WORD + '" ✓');
+        }
+        async function confirmQuit() {
+            const input = document.getElementById('quit-input');
+            if (!input || input.value.trim() !== QUIT_WORD) return;
+            closeQuitModal();
+            await signOut(auth);
+        }
+        function handleAdminLogout() { openQuitModal(); }
+        window.openQuitModal = openQuitModal;
+        window.closeQuitModal = closeQuitModal;
+        window.onQuitInput = onQuitInput;
+        window.copyQuitWord = copyQuitWord;
+        window.confirmQuit = confirmQuit;
         window.handleAdminLogout = handleAdminLogout;
 
         function backToLogin() {
@@ -9735,7 +9474,6 @@
                         renderAdminGamesList();
                         if (ordersLoadedAt) renderOrdersList();
                         if (lossFixSchedulerStarted) autoFixLossMakingPackages();
-                        populateFlashSaleGameSelect();
                         return Promise.resolve();
                     }
                 } catch (e) { /* corrupt/missing cache - fall through to a real fetch */ }
@@ -9751,7 +9489,6 @@
                     renderAdminGamesList();
                     if (ordersLoadedAt) renderOrdersList();
                     if (lossFixSchedulerStarted) autoFixLossMakingPackages();
-                    populateFlashSaleGameSelect();
                     if (silent !== true) window.showToast('Games refreshed ✓');
                 } catch (error) {
                     console.error("Games load error:", error);
@@ -10414,23 +10151,6 @@
         }
         window.rejectSellRequest = rejectSellRequest;
 
-        // Keeps the Flash Sale settings card's game dropdown in sync with the
-        // live games list, without losing whatever the admin currently has
-        // selected (including a selection not yet saved to Firestore).
-        function populateFlashSaleGameSelect() {
-            const select = document.getElementById('flashsale-game-select');
-            if (!select) return;
-            // Preserve an edit the admin is actively making (selected a game
-            // that differs from the saved value) over the saved value itself.
-            const desired = (select.value && select.value !== flashSaleSelectedGameId) ? select.value : flashSaleSelectedGameId;
-            const options = ['<option value="">None</option>'];
-            Object.keys(GAMES).forEach(id => {
-                options.push(`<option value="${id}">${GAMES[id].name || id}</option>`);
-            });
-            select.innerHTML = options.join('');
-            if (desired && GAMES[desired]) select.value = desired;
-        }
-
         function previewGameImage(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -10488,6 +10208,7 @@
 
         // ---------- Package tab bar: render, switch, filter, add/remove ----------
         function resetPackageTabs() {
+            exitPkgSelectMode();
             customPkgTabs = [];
             currentPkgTab = 'package';
             builtinPkgTabLabels = { package: 'Package', currency: 'Currency' };
@@ -10654,6 +10375,7 @@
                     <div class="pkg-summary" onclick="expandPackageRow(this)">
                         <div class="pkg-summary-head">
                             <div class="pkg-summary-label">
+                                <span class="pkg-sel-box"></span>
                                 <div class="pkg-summary-thumb">
                                     <img class="pkg-summary-thumb-img" src="${image}" loading="lazy" decoding="async" style="${image ? '' : 'display:none;'}">
                                     <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
@@ -10980,6 +10702,7 @@
         // editable without the list itself growing tall on a small screen.
         function expandPackageRow(el) {
             const row = el.closest('.package-row');
+            if (pkgSelectMode) { togglePkgRowSelected(row); return; }
             populatePkgTabSelect(row);
             row.classList.add('editing');
             const hostModal = row.closest('.modal-box');
@@ -11258,6 +10981,108 @@
         }
         window.sortPackageRows = sortPackageRows;
 
+        // ---------- Package multi-select (Select button) ----------
+        // Tick package cards, then use the bottom bar (or the normal % / Resync
+        // buttons) to change ONLY the ticked ones: set/remove one image for all,
+        // % adjust Price/Cost, or resync Price to the ~5% margin. Nothing is
+        // saved until "Save Game" is tapped, same as editing a single card.
+        let pkgSelectMode = false;
+        function pkgSelectedRows() {
+            return Array.from(document.querySelectorAll('#edit-packages-list .package-row.pkg-selected'));
+        }
+        function updatePkgSelectBar() {
+            const n = pkgSelectedRows().length;
+            const c = document.getElementById('psb-count');
+            if (c) c.innerText = n + ' selected';
+            ['psb-pct-btn', 'psb-resync-btn', 'psb-img-btn', 'psb-noimg-btn'].forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.disabled = n === 0;
+            });
+        }
+        function togglePkgRowSelected(row) {
+            if (!row) return;
+            row.classList.toggle('pkg-selected');
+            updatePkgSelectBar();
+        }
+        function togglePkgSelectMode() {
+            if (pkgSelectMode) { exitPkgSelectMode(); return; }
+            pkgSelectMode = true;
+            document.getElementById('edit-packages-list').classList.add('pkg-select-mode');
+            document.getElementById('game-editor-page').classList.add('pkg-select-active');
+            document.getElementById('pkg-select-bar').classList.add('show');
+            const t = document.getElementById('pkg-select-toggle-btn');
+            if (t) t.classList.add('btn-primary');
+            updatePkgSelectBar();
+        }
+        function exitPkgSelectMode() {
+            pkgSelectMode = false;
+            const list = document.getElementById('edit-packages-list');
+            if (list) {
+                list.classList.remove('pkg-select-mode');
+                list.querySelectorAll('.package-row.pkg-selected').forEach(r => r.classList.remove('pkg-selected'));
+            }
+            const page = document.getElementById('game-editor-page');
+            if (page) page.classList.remove('pkg-select-active');
+            const bar = document.getElementById('pkg-select-bar');
+            if (bar) bar.classList.remove('show');
+            const t = document.getElementById('pkg-select-toggle-btn');
+            if (t) t.classList.remove('btn-primary');
+            updatePkgSelectBar();
+        }
+        function pkgSelectAllInTab() {
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).filter(r => r.dataset.tab === currentPkgTab);
+            const allOn = rows.length > 0 && rows.every(r => r.classList.contains('pkg-selected'));
+            rows.forEach(r => r.classList.toggle('pkg-selected', !allOn));
+            updatePkgSelectBar();
+        }
+        function pkgClearSelection() {
+            document.querySelectorAll('#edit-packages-list .package-row.pkg-selected').forEach(r => r.classList.remove('pkg-selected'));
+            updatePkgSelectBar();
+        }
+        // One image, uploaded once, applied to every ticked package.
+        async function handleBulkPkgImage(inputEl) {
+            const file = inputEl.files[0];
+            if (!file) return;
+            const rows = pkgSelectedRows();
+            if (rows.length === 0) { window.showToast('Select at least one package first', 'fail'); inputEl.value = ''; return; }
+            const btn = document.getElementById('psb-img-btn');
+            const oldText = btn.innerText;
+            btn.disabled = true; btn.innerText = 'Uploading...';
+            try {
+                const url = await uploadPackageImageToImgBB(file);
+                rows.forEach(row => {
+                    const wrap = row.querySelector('.pkg-img-preview');
+                    wrap.dataset.url = url;
+                    const imgTag = wrap.querySelector('.pkg-img-tag');
+                    imgTag.src = url; imgTag.style.display = 'block';
+                    wrap.querySelector('.pkg-img-placeholder').style.display = 'none';
+                    const rm = row.querySelector('.pkg-img-remove');
+                    if (rm) rm.style.display = 'block';
+                    syncPkgSummary(row);
+                });
+                window.showToast(`Image applied to ${rows.length} package(s) ✓ — tap Save Game to keep`, 'success');
+            } catch (error) {
+                console.error('Bulk package image upload failed:', error);
+                window.showToast(error.message || 'Image upload failed', 'fail');
+            } finally {
+                inputEl.value = '';
+                btn.innerText = oldText;
+                updatePkgSelectBar();
+            }
+        }
+        function bulkRemovePkgImage() {
+            const rows = pkgSelectedRows();
+            if (rows.length === 0) { window.showToast('Select at least one package first', 'fail'); return; }
+            if (!confirm(`Remove the image from ${rows.length} selected package(s)?`)) return;
+            rows.forEach(row => {
+                const rm = row.querySelector('.pkg-img-remove');
+                if (rm) removePackageImage(rm);
+                syncPkgSummary(row);
+            });
+            window.showToast(`Image removed from ${rows.length} package(s) ✓`, 'success');
+        }
+        Object.assign(window, { togglePkgSelectMode, exitPkgSelectMode, pkgSelectAllInTab, pkgClearSelection, handleBulkPkgImage, bulkRemovePkgImage, resyncAllPricesToMargin });
+
         // ---------- Bulk % adjust for Price/Cost ----------
         let bulkPkgField = 'price';
         let bulkPkgScope = 'tab';
@@ -11265,6 +11090,15 @@
         function openBulkPkgModal() {
             document.getElementById('bulk-pkg-percent').value = '';
             document.getElementById('bulk-pkg-tab-name').innerText = pkgTabLabel(currentPkgTab);
+            // "Selected (N)" scope: only offered while ticked cards exist, and
+            // becomes the default so ticked cards are what actually change.
+            const selCount = pkgSelectedRows().length;
+            const selBtn = document.getElementById('bulk-pkg-scope-selected');
+            document.getElementById('bulk-pkg-sel-count').innerText = String(selCount);
+            selBtn.style.display = selCount > 0 ? '' : 'none';
+            if (selCount > 0) bulkPkgScope = 'selected';
+            else if (bulkPkgScope === 'selected') bulkPkgScope = 'tab';
+            document.querySelectorAll('#bulk-pkg-scope-toggle .pkg-type-opt').forEach(b => b.classList.toggle('active', b.dataset.value === bulkPkgScope));
             document.getElementById('bulk-pkg-modal-overlay').classList.add('show');
         }
         window.openBulkPkgModal = openBulkPkgModal;
@@ -11340,7 +11174,8 @@
                 return;
             }
             const allRows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
-            const rows = bulkPkgScope === 'tab' ? allRows.filter(r => r.dataset.tab === currentPkgTab) : allRows;
+            const rows = bulkPkgScope === 'selected' ? pkgSelectedRows()
+                : bulkPkgScope === 'tab' ? allRows.filter(r => r.dataset.tab === currentPkgTab) : allRows;
             if (rows.length === 0) {
                 window.showToast('No packages to update', 'fail');
                 return;
@@ -11382,13 +11217,17 @@
         // no Cost set are skipped (nothing to compute a target from), and a
         // row already sitting exactly on the target is left untouched so
         // the toast count only reflects rows that actually moved.
-        function resyncAllPricesToMargin() {
-            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
+        function resyncAllPricesToMargin(onlySelected) {
+            // Resyncs just the ticked cards when asked to (Select bar) or when
+            // select mode is on with something ticked; otherwise every package.
+            const useSelected = onlySelected === true || (pkgSelectMode && pkgSelectedRows().length > 0);
+            const rows = useSelected ? pkgSelectedRows() : Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
             if (rows.length === 0) {
-                window.showToast('No packages to resync', 'fail');
+                window.showToast(useSelected ? 'Select at least one package first' : 'No packages to resync', 'fail');
                 return;
             }
-            if (!confirm(`This overwrites Price on every package (all tabs) to hold a ~${AUTO_PRICE_MARGIN_PCT}% margin above its current Cost. Continue?`)) return;
+            const scopeText = useSelected ? `${rows.length} selected package(s)` : 'every package (all tabs)';
+            if (!confirm(`This overwrites Price on ${scopeText} to hold a ~${AUTO_PRICE_MARGIN_PCT}% margin above its current Cost. Continue?`)) return;
             let changed = 0, skipped = 0;
             rows.forEach(row => {
                 const costInput = row.querySelector('.pkg-cost');
@@ -11721,6 +11560,7 @@
         }
 
         function closeGameEditor() {
+            exitPkgSelectMode();
             showGameListTab(gameListTab);
             stopVoucherEditorStockRefresh();
         }
@@ -12352,207 +12192,60 @@
             });
         }
 
-        // ---------- Coupons (Firestore: coupons) ----------
-        let COUPONS = {};
-        let couponsListenerAttached = false;
-        const cpEsc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-        function toggleCouponForm() {
-            const card = document.getElementById('coupon-form-card');
-            card.style.display = card.style.display === 'none' ? 'block' : 'none';
-        }
-        window.toggleCouponForm = toggleCouponForm;
-
-        function renderCouponList() {
-            const box = document.getElementById('coupon-list-container');
-            const ids = Object.keys(COUPONS).sort((a, b) => (COUPONS[b].createdAtMs || 0) - (COUPONS[a].createdAtMs || 0));
-            if (!ids.length) { box.innerHTML = '<p class="empty-msg">No coupons yet.</p>'; return; }
-            const today = new Date().toISOString().slice(0, 10);
-            box.innerHTML = ids.map(id => {
-                const c = COUPONS[id];
-                const expired = c.expiry && c.expiry < today;
-                const used = c.used || 0;
-                const limitTxt = c.limit ? `${used}/${c.limit}` : `${used}/∞`;
-                const valueTxt = c.type === 'fixed' ? `${cpEsc(c.value)}` : `${cpEsc(c.value)}%`;
-                const on = c.active !== false && !expired;
-                return `
-                    <div class="admin-card cp-card">
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                            <span class="cp-code">${cpEsc(c.code || id)}</span>
-                            <span class="cp-pill ${on ? 'on' : 'off'}">${expired ? 'Expired' : (c.active === false ? 'Off' : 'On')}</span>
-                        </div>
-                        <div class="cp-meta">-${valueTxt} &nbsp;·&nbsp; ${limitTxt}${c.expiry ? ' &nbsp;·&nbsp; ' + cpEsc(c.expiry) : ''}</div>
-                        <div class="cp-actions">
-                            <button class="btn btn-outline" onclick="toggleCouponActive('${cpEsc(id)}')">${c.active === false ? 'On' : 'Off'}</button>
-                            <button class="btn btn-danger" onclick="deleteCoupon('${cpEsc(id)}')">Delete</button>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
-
-        function listenCoupons() {
-            if (couponsListenerAttached) return;
-            couponsListenerAttached = true;
-            onSnapshot(query(collection(db, 'coupons'), orderBy('createdAt', 'desc')), (snap) => {
-                const map = {};
-                snap.forEach(d => {
-                    const data = d.data();
-                    map[d.id] = { ...data, createdAtMs: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0 };
-                });
-                COUPONS = map;
-                renderCouponList();
-            }, (error) => {
-                console.error('Coupons listener error:', error);
-                couponsListenerAttached = false;
-                document.getElementById('coupon-list-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load coupons.</p>';
-            });
-        }
-
-        async function saveCoupon() {
-            const code = document.getElementById('cp-code').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
-            const type = document.getElementById('cp-type').value;
-            const value = parseFloat(document.getElementById('cp-value').value);
-            const limit = parseInt(document.getElementById('cp-limit').value, 10) || 0;
-            const expiry = document.getElementById('cp-expiry').value || '';
-            if (!code) { window.showToast('Enter a coupon code.', 'fail'); return; }
-            if (!(value > 0)) { window.showToast('Enter a discount value.', 'fail'); return; }
-            if (type === 'percent' && value > 100) { window.showToast('Percent cannot exceed 100.', 'fail'); return; }
-            if (COUPONS[code]) { window.showToast('That code already exists.', 'fail'); return; }
-            const btn = document.getElementById('cp-save-btn');
-            btn.disabled = true;
-            try {
-                await setDoc(doc(db, 'coupons', code), { code, type, value, limit, used: 0, expiry, active: true, createdAt: serverTimestamp() });
-                ['cp-code', 'cp-value', 'cp-limit', 'cp-expiry'].forEach(id => { document.getElementById(id).value = ''; });
-                document.getElementById('coupon-form-card').style.display = 'none';
-                window.showToast('Coupon saved', 'success');
-            } catch (error) {
-                console.error('Save coupon error:', error);
-                window.showToast('Failed to save coupon.', 'fail');
-            } finally {
-                btn.disabled = false;
-            }
-        }
-        window.saveCoupon = saveCoupon;
-
-        async function toggleCouponActive(id) {
-            const c = COUPONS[id];
-            if (!c) return;
-            try { await updateDoc(doc(db, 'coupons', id), { active: c.active === false }); }
-            catch (error) { console.error('Toggle coupon error:', error); window.showToast('Failed to update coupon.', 'fail'); }
-        }
-        window.toggleCouponActive = toggleCouponActive;
-
-        function deleteCoupon(id) {
-            window.showActionDialog({
-                type: 'delete',
-                title: 'Delete this coupon?',
-                message: 'Customers will no longer be able to use it.',
-                confirmText: 'Delete',
-                onConfirm: async () => {
-                    try { await deleteDoc(doc(db, 'coupons', id)); window.showToast('Coupon deleted', 'cancel'); }
-                    catch (error) { console.error('Delete coupon error:', error); window.showToast('Failed to delete coupon.', 'fail'); }
-                }
-            });
-        }
-        window.deleteCoupon = deleteCoupon;
-
-        // ---------- Tickets (Firestore: tickets) ----------
-        let TICKETS = {};
-        let ticketsListenerAttached = false;
-        let ticketFilter = 'all';
-
-        function setTicketFilter(f) {
-            ticketFilter = f;
-            document.querySelectorAll('#ticket-filters .tk-filter').forEach(b => b.classList.toggle('active', b.dataset.f === f));
-            renderTicketList();
-        }
-        window.setTicketFilter = setTicketFilter;
-
-        function renderTicketList() {
-            const box = document.getElementById('ticket-list-container');
-            const ids = Object.keys(TICKETS)
-                .filter(id => ticketFilter === 'all' || (TICKETS[id].status === 'closed' ? 'closed' : 'open') === ticketFilter)
-                .sort((a, b) => (TICKETS[b].createdAtMs || 0) - (TICKETS[a].createdAtMs || 0));
-            if (!ids.length) { box.innerHTML = '<p class="empty-msg">No tickets.</p>'; return; }
-            box.innerHTML = ids.map(id => {
-                const t = TICKETS[id];
-                const closed = t.status === 'closed';
-                const when = t.createdAtMs ? new Date(t.createdAtMs).toLocaleString() : '';
-                const who = t.userName || t.email || t.userId || '';
-                return `
-                    <div class="admin-card cp-card">
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                            <b style="font-size:14px;color:var(--text-strong);">${cpEsc(t.subject || 'Ticket')}</b>
-                            <span class="cp-pill ${closed ? 'off' : 'open'}">${closed ? 'Closed' : 'Open'}</span>
-                        </div>
-                        <div class="cp-meta">${cpEsc(who)}${who && when ? ' · ' : ''}${cpEsc(when)}</div>
-                        <p style="font-size:13px;margin-top:8px;white-space:pre-wrap;word-break:break-word;">${cpEsc(t.message || '')}</p>
-                        ${t.reply ? `<div class="cp-meta" style="margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--fill-soft);white-space:pre-wrap;">${cpEsc(t.reply)}</div>` : ''}
-                        <div class="cp-actions" style="flex-wrap:wrap;">
-                            <button class="btn btn-outline" onclick="replyTicket('${cpEsc(id)}')">Reply</button>
-                            <button class="btn btn-outline" onclick="toggleTicketStatus('${cpEsc(id)}')">${closed ? 'Reopen' : 'Close'}</button>
-                            <button class="btn btn-danger" onclick="deleteTicket('${cpEsc(id)}')">Delete</button>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
-
-        function listenTickets() {
-            if (ticketsListenerAttached) return;
-            ticketsListenerAttached = true;
-            onSnapshot(query(collection(db, 'tickets'), orderBy('createdAt', 'desc')), (snap) => {
-                const map = {};
-                snap.forEach(d => {
-                    const data = d.data();
-                    map[d.id] = { ...data, createdAtMs: data.createdAt && data.createdAt.toMillis ? data.createdAt.toMillis() : 0 };
-                });
-                TICKETS = map;
-                renderTicketList();
-            }, (error) => {
-                console.error('Tickets listener error:', error);
-                ticketsListenerAttached = false;
-                document.getElementById('ticket-list-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load tickets.</p>';
-            });
-        }
-
-        async function toggleTicketStatus(id) {
-            const t = TICKETS[id];
-            if (!t) return;
-            try { await updateDoc(doc(db, 'tickets', id), { status: t.status === 'closed' ? 'open' : 'closed' }); }
-            catch (error) { console.error('Ticket status error:', error); window.showToast('Failed to update ticket.', 'fail'); }
-        }
-        window.toggleTicketStatus = toggleTicketStatus;
-
-        function replyTicket(id) {
-            const t = TICKETS[id];
-            if (!t) return;
-            const text = window.prompt('Reply', t.reply || '');
-            if (text === null || !text.trim()) return;
-            updateDoc(doc(db, 'tickets', id), { reply: text.trim(), repliedAt: serverTimestamp(), status: 'closed' })
-                .then(() => window.showToast('Reply saved', 'success'))
-                .catch((error) => { console.error('Ticket reply error:', error); window.showToast('Failed to save reply.', 'fail'); });
-        }
-        window.replyTicket = replyTicket;
-
-        function deleteTicket(id) {
-            window.showActionDialog({
-                type: 'delete',
-                title: 'Delete this ticket?',
-                message: 'This cannot be undone.',
-                confirmText: 'Delete',
-                onConfirm: async () => {
-                    try { await deleteDoc(doc(db, 'tickets', id)); window.showToast('Ticket deleted', 'cancel'); }
-                    catch (error) { console.error('Delete ticket error:', error); window.showToast('Failed to delete ticket.', 'fail'); }
-                }
-            });
-        }
-        window.deleteTicket = deleteTicket;
-
-
         // showPage()/subscribeTabListeners() live in the classic script above and call these by
         // bare name, but they are declared inside this module — expose them so the lazy tab
-        // listeners (Coupons, Tickets, Notify, Ticker, Payment, Settings, Tiers) always resolve.
-        Object.assign(window, { listenCoupons, listenTickets, listenNotifications, listenAnnouncementsAdmin, listenPaymentMethods, listenSocialLinks, listenFlashSaleSettings, listenTierSettings });
+        // listeners (Notify, Ticker, Payment, Settings) always resolve.
+        Object.assign(window, { listenNotifications, listenAnnouncementsAdmin, listenPaymentMethods, listenSocialLinks });
+
+        // ---------- One-time cleanup of removed features' Firestore data ----------
+        // Deletes: coupons + tickets collections, and the settings docs for
+        // Flash Sale, VIP Tiers and API Keys 2FA. Hides its own tile when done.
+        const LEGACY_CLEANUP_KEY = 'pca_legacy_cleanup_done';
+        (function hideCleanupTileIfDone() {
+            try {
+                if (localStorage.getItem(LEGACY_CLEANUP_KEY) === '1') {
+                    const hide = () => { const t = document.getElementById('dz-cleanup-tile'); if (t) t.style.display = 'none'; };
+                    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hide); else hide();
+                }
+            } catch (e) {}
+        })();
+        function runLegacyCleanup() {
+            window.showActionDialog({
+                type: 'delete',
+                title: 'Delete old data permanently?',
+                message: 'This deletes ALL coupons, ALL tickets, and the Flash Sale, VIP Tier and API Keys 2FA settings from Firestore. This cannot be undone.',
+                confirmText: 'Delete',
+                onConfirm: async () => {
+                    const tile = document.getElementById('dz-cleanup-tile');
+                    if (tile) tile.disabled = true;
+                    let deletedDocs = 0;
+                    try {
+                        for (const colName of ['coupons', 'tickets']) {
+                            const snap = await getDocs(collection(db, colName));
+                            const refs = [];
+                            snap.forEach(d => refs.push(d.ref));
+                            for (let i = 0; i < refs.length; i += 400) {
+                                const batch = writeBatch(db);
+                                refs.slice(i, i + 400).forEach(r => batch.delete(r));
+                                await batch.commit();
+                                deletedDocs += Math.min(400, refs.length - i);
+                            }
+                        }
+                        for (const id of ['flashsale', 'tiers', 'apiKeysMfa']) {
+                            await deleteDoc(doc(db, 'settings', id));
+                        }
+                        try { localStorage.setItem(LEGACY_CLEANUP_KEY, '1'); } catch (e) {}
+                        if (tile) tile.style.display = 'none';
+                        window.showToast(`Old data deleted ✓ (${deletedDocs} docs + 3 settings)`, 'success');
+                    } catch (error) {
+                        console.error('Legacy cleanup error:', error);
+                        if (tile) tile.disabled = false;
+                        window.showToast('Cleanup failed: ' + (error && error.message ? error.message : 'unknown error'), 'fail');
+                    }
+                }
+            });
+        }
+        window.runLegacyCleanup = runLegacyCleanup;
 
         // ---------- Payment Methods ----------
         // Firestore collection backing this page.
@@ -12790,7 +12483,7 @@
         function exportUsersCSV() {
             const ids = Object.keys(USERS);
             if (ids.length === 0) { window.showToast('No users to export.', 'warning'); return; }
-            const headers = ['UID', 'Name', 'Phone', 'Wallet Balance (MMK)', 'Order Count', 'Total Spend (MMK)', 'Tier', 'Status', 'Google Verified', 'Last Seen'];
+            const headers = ['UID', 'Name', 'Phone', 'Wallet Balance (MMK)', 'Order Count', 'Total Spend (MMK)', 'Status', 'Google Verified', 'Last Seen'];
             const csvRows = ids.map(id => {
                 const u = USERS[id];
                 const userOrders = Object.values(ORDERS).filter(o => o.userId === id);
@@ -12802,7 +12495,6 @@
                     Number(u.walletBalance) || 0,
                     userOrders.length,
                     spend,
-                    tierForSpendAdmin(spend),
                     u.banned ? 'Banned' : 'Active',
                     u.googleEmail ? 'Yes' : 'No',
                     u.lastSeen ? u.lastSeen.toDate().toLocaleString() : ''
@@ -12874,33 +12566,21 @@
         function buildUserCardInnerHtml(id, u, agg) {
             const displayName = (u.name && u.name.trim()) ? u.name.trim() : (u.guestId || id);
             const orderCount = agg.count;
-            const spend = agg.spend;
-            const tier = tierForSpendAdmin(spend);
             return `
-                <div class="ugc-top">
-                    <span class="badge ${u.banned ? 'badge-danger' : 'badge-success'}">${statusBadgeHtml(u.banned ? 'badge-danger' : 'badge-success', u.banned ? 'Banned' : 'Active')}</span>
-                </div>
-                <div class="ugc-identity">
-                    <div class="user-avatar" style="width:48px;height:48px;flex-shrink:0;">
-                        ${u.photo ? `<img src="${u.photo}" loading="lazy" decoding="async">` : `<svg class="ui-icon" style="width:20px;height:20px;"><use href="#icon-users"></use></svg>`}
+                <div class="ugc-row">
+                    <div class="user-avatar" style="width:38px;height:38px;flex-shrink:0;">
+                        ${u.photo ? `<img src="${u.photo}" loading="lazy" decoding="async">` : `<svg class="ui-icon" style="width:17px;height:17px;"><use href="#icon-users"></use></svg>`}
                     </div>
-                    <div style="min-width:0;">
+                    <div class="ugc-main">
                         <h5>${displayName} ${googleVerifiedBadgeHTML(u)}</h5>
                         <div class="ugc-id">ID: ${u.guestId || id} <svg class="ui-icon copy-id-btn" style="width:12px;height:12px;cursor:pointer;" onclick="copyUserId(event, '${u.guestId || id}')"><use href="#icon-copy"></use></svg></div>
-                        ${adminTierBadgeHTML(tier)}
                     </div>
+                    <span class="badge ${u.banned ? 'badge-danger' : 'badge-success'}">${statusBadgeHtml(u.banned ? 'badge-danger' : 'badge-success', u.banned ? 'Banned' : 'Active')}</span>
                 </div>
-                <div class="ugc-meta">
-                    <div class="ugc-meta-cell"><span>Orders</span><b>${orderCount}</b></div>
-                    <div class="ugc-meta-cell"><span>Wallet</span><b>${fmtMoney(u.walletBalance || 0)}</b></div>
-                </div>
-                <div class="ugc-contact">
-                    <svg class="ui-icon" style="width:14px;height:14px;color:var(--text-muted);"><use href="#icon-phone"></use></svg>
-                    ${u.phone || 'No phone on file'}
-                </div>
-                <div class="ugc-actions">
-                    <button type="button" class="btn btn-primary" onclick="openUserDetails('${id}')">Visit</button>
-                    <button type="button" class="btn btn-danger-outline" onclick="quickDeleteUser('${id}')">Delete</button>
+                <div class="ugc-stats">
+                    <span>Orders <b>${orderCount}</b></span>
+                    <span>Wallet <b>${fmtMoney(u.walletBalance || 0)}</b></span>
+                    ${u.phone ? `<span>${u.phone}</span>` : ''}
                 </div>
             `;
         }
@@ -12964,6 +12644,8 @@
                 if (!entry) {
                     const el = document.createElement('div');
                     el.className = 'user-grid-card';
+                    el.setAttribute('role', 'button');
+                    el.addEventListener('click', () => openUserDetails(id));
                     el.innerHTML = html;
                     entry = { el, html };
                     userCardNodes.set(id, entry);
@@ -12991,7 +12673,7 @@
         }
 
         // Copies a user's ID to the clipboard without triggering the card's
-        // own click handler (which would open the User Details modal).
+        // own click handler (which would open the User Details page).
         function copyUserId(event, userId) {
             event.stopPropagation();
             navigator.clipboard.writeText(userId).then(() => {
@@ -13168,11 +12850,6 @@
             // Login Time tab
             document.getElementById('ud-lt-last-login').innerText = lastSeenStr;
             document.getElementById('ud-lt-joined').innerText = joinDateStr;
-
-            const userOrdersForTier = Object.values(ORDERS).filter(o => o.userId === userId && o.status === 'Success');
-            const spend = userOrdersForTier.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
-            const tier = tierForSpendAdmin(spend);
-            document.getElementById('ud-tier-badge').innerHTML = adminTierBadgeHTML(tier);
 
             const avatarImg = document.getElementById('ud-avatar-img');
             const avatarIcon = document.getElementById('ud-avatar-icon');
@@ -13503,30 +13180,6 @@
         }
         window.deleteCurrentUser = deleteCurrentUser;
 
-        // Quick-delete straight from a card in the grid — no need to open the
-        // full User Details page first. Same cascade-delete as above.
-        function quickDeleteUser(userId) {
-            const u = USERS[userId];
-            const displayName = u ? ((u.name && u.name.trim()) ? u.name.trim() : (u.guestId || userId)) : userId;
-            window.showActionDialog({
-                type: 'delete',
-                title: `Delete ${displayName} permanently?`,
-                message: 'This removes their profile AND every order and wallet top-up record tied to them. Nothing will be left behind. This cannot be undone.',
-                confirmText: 'Delete',
-                onConfirm: async () => {
-                    try {
-                        await performUserCascadeDelete(userId);
-                        window.showToast('User permanently deleted', 'cancel');
-                        if (currentUserDetailsId === userId) closeUserDetails();
-                    } catch (error) {
-                        console.error("Delete user error:", error);
-                        window.showToast('Failed to delete user.', 'fail');
-                    }
-                }
-            });
-        }
-        window.quickDeleteUser = quickDeleteUser;
-
         // Called whenever the orders cache refreshes, so an open modal stays live.
         function renderUserDetailsIfOpen() {
             if (currentUserDetailsId) renderUserOrders(currentUserDetailsId);
@@ -13535,121 +13188,6 @@
         window.openUserDetails = openUserDetails;
         window.closeUserDetails = closeUserDetails;
         window.renderUserDetailsIfOpen = renderUserDetailsIfOpen;
-
-        // ---------- VIP Tier Limits (min lifetime spend per rank, MMK) ----------
-        // Rank names/colors are fixed here and mirrored in Store.html; only the
-        // MMK thresholds are admin-editable, stored at settings/tiers and read
-        // live (onSnapshot) by the Store app so rank-ups apply instantly.
-        // Ordered highest-to-lowest to match how Store.html resolves a rank.
-        const TIER_META = [
-            { name: 'Immortal',  color: '#8A6D00', bg: '#FFF6D9' },
-            { name: 'Mythical',  color: '#FF5A36', bg: '#FFE9E2' },
-            { name: 'Conqueror', color: '#D6338E', bg: '#FDE8F3' },
-            { name: 'Legend',    color: '#7B4FE0', bg: '#F0EAFC' },
-            { name: 'Diamond',   color: '#00B8D9', bg: '#E5FAFD' },
-            { name: 'Platinum',  color: '#5B7DB1', bg: '#EAF0FB' },
-            { name: 'Gold',      color: '#B8860B', bg: '#FFF6DF' },
-            { name: 'Bronze',    color: '#A9673A', bg: '#FBEEE6' },
-        ];
-        const DEFAULT_TIER_MINS = {
-            Bronze: 0, Gold: 100000, Platinum: 300000, Diamond: 700000,
-            Legend: 1500000, Conqueror: 3000000, Mythical: 6000000, Immortal: 12000000
-        };
-        let tierListenerAttached = false;
-        let currentTierMins = { ...DEFAULT_TIER_MINS };
-
-        function tierForSpendAdmin(spend) {
-            for (const t of TIER_META) {
-                if (spend >= (currentTierMins[t.name] ?? DEFAULT_TIER_MINS[t.name])) return t;
-            }
-            return TIER_META[TIER_META.length - 1];
-        }
-        function adminTierBadgeHTML(tier) {
-            return `<span class="tier-mini-badge" style="background:${tier.bg};color:${tier.color};">
-                <svg class="ui-icon"><use href="#icon-trophy"></use></svg>${tier.name}
-            </span>`;
-        }
-
-        // Small green check + blue "verified" badge shown next to a customer's
-        // name once they've signed in with Google at least once (store.html
-        // writes their Google account's email to users/{uid}.googleEmail on
-        // sign-in — its presence is what we check here, not an auth call).
-        function googleVerifiedBadgeHTML(u) {
-            if (!u || !u.googleEmail) return '';
-            return `<span class="gverified-marks" title="Google Verified">
-                <svg class="ui-icon gverified-green"><use href="#icon-check"></use></svg>
-                <svg class="ui-icon gverified-blue"><use href="#icon-verified-blue"></use></svg>
-            </span>`;
-        }
-
-        function renderTierLimitsForm(mins) {
-            const container = document.getElementById('tier-limits-container');
-            if (!container) return;
-            container.innerHTML = TIER_META.map(t => {
-                const isBronze = t.name === 'Bronze';
-                const val = Number.isFinite(mins[t.name]) ? mins[t.name] : DEFAULT_TIER_MINS[t.name];
-                return `
-                    <div class="tier-row">
-                        <span class="tier-row-badge" style="background:${t.bg};color:${t.color};">
-                            <svg class="ui-icon"><use href="#icon-trophy"></use></svg>${t.name}
-                        </span>
-                        <div class="tier-row-input-wrap">
-                            <input type="number" min="0" step="1000" inputmode="numeric"
-                                id="tier-min-${t.name}" value="${val}" ${isBronze ? 'disabled' : ''}>
-                            <span class="tier-row-unit">MMK</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function listenTierSettings() {
-            if (tierListenerAttached) return;
-            tierListenerAttached = true;
-            onSnapshot(doc(db, "settings", "tiers"), (docSnap) => {
-                const data = docSnap.exists() ? (docSnap.data().mins || {}) : {};
-                const mins = { ...DEFAULT_TIER_MINS, ...data };
-                currentTierMins = mins;
-                renderTierLimitsForm(mins);
-                if (Object.keys(USERS).length) renderAdminUsersList();
-            }, (error) => {
-                console.error("Tier settings listener error:", error);
-            });
-        }
-
-        async function saveTierSettings() {
-            const mins = {};
-            for (const t of TIER_META) {
-                if (t.name === 'Bronze') { mins.Bronze = 0; continue; }
-                const el = document.getElementById(`tier-min-${t.name}`);
-                mins[t.name] = Math.max(0, Number(el ? el.value : 0) || 0);
-            }
-            // Ranks should climb as you go up the list — warn (but still allow)
-            // if a higher rank was set lower than the one beneath it.
-            const orderedLowToHigh = [...TIER_META].reverse();
-            for (let i = 1; i < orderedLowToHigh.length; i++) {
-                if (mins[orderedLowToHigh[i].name] <= mins[orderedLowToHigh[i - 1].name]) {
-                    window.showToast(`${orderedLowToHigh[i].name} should be higher than ${orderedLowToHigh[i - 1].name}.`, 'fail');
-                    return;
-                }
-            }
-
-            const btn = document.getElementById('save-tiers-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Saving...';
-            try {
-                await setDoc(doc(db, "settings", "tiers"), { mins }, { merge: true });
-                window.showToast('Tier limits saved!', 'success');
-            } catch (error) {
-                console.error("Save tier settings error:", error);
-                window.showToast('Failed to save tier limits.', 'fail');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.saveTierSettings = saveTierSettings;
 
         // ---------- Social Links (shown as icons on the Store app's Profile page) ----------
         let socialListenerAttached = false;
@@ -13660,64 +13198,6 @@
         // whenever a platform has no uploaded image.
         let editingSocialImageFiles = { facebook: null, telegram: null, tiktok: null };
         let removedSocialImages = { facebook: false, telegram: false, tiktok: false };
-
-        // datetime-local inputs use the browser's local time zone with no
-        // offset info, so both directions here go through the local Date
-        // constructor/getters rather than ISO/UTC conversions.
-        function msToDatetimeLocalValue(ms) {
-            const d = new Date(ms);
-            const pad = n => String(n).padStart(2, '0');
-            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-        }
-
-        let flashSaleListenerAttached = false;
-        let flashSaleSelectedGameId = '';
-        function listenFlashSaleSettings() {
-            if (flashSaleListenerAttached) return;
-            flashSaleListenerAttached = true;
-            onSnapshot(doc(db, "settings", "flashsale"), (docSnap) => {
-                const data = docSnap.exists() ? docSnap.data() : {};
-                document.getElementById('flashsale-enabled').checked = !!data.enabled;
-                document.getElementById('flashsale-title').value = data.title || '';
-                document.getElementById('flashsale-desc').value = data.description || '';
-                document.getElementById('flashsale-endtime').value = data.endTime ? msToDatetimeLocalValue(data.endTime) : '';
-                flashSaleSelectedGameId = data.gameId || '';
-                populateFlashSaleGameSelect();
-            }, (error) => {
-                console.error("Flash sale settings listener error:", error);
-            });
-        }
-
-        async function saveFlashSaleSettings() {
-            const enabled = document.getElementById('flashsale-enabled').checked;
-            const title = document.getElementById('flashsale-title').value.trim();
-            const description = document.getElementById('flashsale-desc').value.trim();
-            const gameId = document.getElementById('flashsale-game-select').value;
-            const endtimeInput = document.getElementById('flashsale-endtime').value;
-            const endTime = endtimeInput ? new Date(endtimeInput).getTime() : null;
-
-            if (enabled && (!endTime || endTime <= Date.now())) {
-                window.showToast('Set an end time in the future before enabling the banner.', 'fail');
-                return;
-            }
-
-            const btn = document.getElementById('save-flashsale-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Saving...';
-
-            try {
-                await setDoc(doc(db, "settings", "flashsale"), { enabled, title, description, gameId, endTime }, { merge: true });
-                window.showToast('Flash sale banner saved!', 'success');
-            } catch (error) {
-                console.error("Save flash sale settings error:", error);
-                window.showToast(error.message || 'Failed to save flash sale settings.', 'fail');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.saveFlashSaleSettings = saveFlashSaleSettings;
 
         function listenSocialLinks() {
             if (socialListenerAttached) return;
@@ -18596,9 +18076,8 @@
             // "Registered users" stat gets its count with a single cheap
             // getCountFromServer() read instead of waiting on either.
             //
-            // listenSocialLinks/listenFlashSaleSettings/
-            // listenTierSettings moved the same way - see subscribeTabListeners
-            // above (gated on 'settings' / 'tier-list' / 'user-list').
+            // listenSocialLinks moved the same way - see subscribeTabListeners
+            // above (gated on 'settings').
             //
             // Everything still called eagerly below is data something OTHER
             // than its own settings page depends on, so it can't wait for a
@@ -18618,10 +18097,6 @@
             //                          disabling another admin must take
             //                          effect immediately, on whatever page
             //                          that admin currently has open
-            //   - listenApiKeysMfaSecret -> the MFA gate checks this secret
-            //                          the moment 'api-docs' is opened, in
-            //                          showPage(), before subscribeTabListeners
-            //                          ever runs - it has to already be loaded
             //   - listenAutoUpdatePricesSetting -> just drives the toggle's
             //                          checked state now; the actual sweep
             //                          moved to telegram-worker.js's daily
@@ -18635,7 +18110,6 @@
             listenTelegramBot();
             listenAdminBroadcastSecret();
             listenAdminAccounts();
-            listenApiKeysMfaSecret();
             listenAutoUpdatePricesSetting();
             startAdminHeartbeat();
             startOrderArchiveScheduler();
