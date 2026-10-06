@@ -1495,24 +1495,29 @@
             .header #header-clock-date { display: none; }
             .header .header-icon, .header .header-flame-wrap { width: 33px; height: 33px; }
         }
-        /* Nav sheet: grid of icon tiles instead of a column of rows */
-        #nav-group-sheet-list { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 12px !important; }
+        /* Nav popover: compact rows (icon · label · chevron), anchored under the tapped tab */
+        #nav-group-sheet-list { display: flex !important; flex-direction: column; gap: 8px !important; }
         .ng-tile {
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
-            padding: 16px 6px 13px; border-radius: 20px; cursor: pointer; position: relative;
-            border: 1px solid var(--border-glass); font-size: 12.5px; font-weight: 600; color: var(--text-primary);
-            background-color: var(--surface);
-            background-image: linear-gradient(145deg, rgba(255,255,255,0.55), rgba(15,23,42,0.03));
-            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+            display: flex; flex-direction: row; align-items: center; gap: 11px; width: 100%; text-align: left;
+            padding: 7px 12px 7px 8px; border-radius: 14px; cursor: pointer; position: relative;
+            border: 1px solid var(--ng-line, var(--border-glass)); font-size: 14px; font-weight: 600; color: var(--text-primary);
+            background: linear-gradient(100deg, var(--ng-bg1, var(--surface)) 0%, var(--ng-bg2, var(--surface)) 100%);
         }
-        .ng-tile:active { transform: scale(0.97); }
+        .ng-tile:active { transform: scale(0.98); }
+        .ng-tile .ng-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ng-ico {
-            width: 52px; height: 52px; border-radius: 17px; display: flex; align-items: center; justify-content: center; color: var(--accent-3);
-            background: linear-gradient(145deg, #fff, #F1F1F4); border: 1px solid rgba(255,255,255,0.95);
-            box-shadow: 0 2px 3px -1px rgba(var(--accent-rgb),0.35);
+            width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff;
+            background: linear-gradient(145deg, var(--ng-c1, var(--accent-1)), var(--ng-c2, var(--accent-3)));
+            box-shadow: 0 2px 4px -1px rgba(var(--accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.35);
         }
-        .ng-ico .ui-icon { width: 24px; height: 24px; }
-        .ng-tile .nav-item-low-balance-dot { top: 8px; right: 10px; }
+        .ng-ico .ui-icon { width: 17px; height: 17px; stroke: #fff; }
+        .ng-chev { width: 15px; height: 15px; flex-shrink: 0; stroke: var(--ng-c1, var(--text-muted)); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+        .ng-tile .nav-item-low-balance-dot { top: 50%; right: 34px; transform: translateY(-50%); }
+        .ng-tile.ng-c0 { --ng-c1:#3B82F6; --ng-c2:#2563EB; --ng-bg1:#EEF4FF; --ng-bg2:#DCE9FF; --ng-line:#BFD3F8; }
+        .ng-tile.ng-c1 { --ng-c1:#8B5CF6; --ng-c2:#7C3AED; --ng-bg1:#F4F0FF; --ng-bg2:#E7DEFF; --ng-line:#D2C4F6; }
+        .ng-tile.ng-c2 { --ng-c1:#EC4899; --ng-c2:#DB2777; --ng-bg1:#FFF1F7; --ng-bg2:#FCE0EC; --ng-line:#F5C2D8; }
+        .ng-tile.ng-c3 { --ng-c1:#10B981; --ng-c2:#059669; --ng-bg1:#ECFDF5; --ng-bg2:#D5F5E6; --ng-line:#B3E8CF; }
+        .ng-tile.ng-c4 { --ng-c1:#F59E0B; --ng-c2:#D97706; --ng-bg1:#FFF8E8; --ng-bg2:#FDEBC5; --ng-line:#F6DDA3; }
 
         /* Page tabs as icon grids */
         .game-list-tabs { display: grid; grid-template-columns: repeat(2, 1fr); }
@@ -1525,15 +1530,30 @@
         .udp-tab.active .ui-icon { stroke: #fff; }
 
 
-        /* ---- Nav group sheet drops down from the TOP instead of rising from the bottom ---- */
-        #nav-group-sheet-overlay { align-items: flex-start; }
+        /* ---- Nav popover: small card that drops from the tapped tab, with a caret pointing at it ---- */
+        #nav-group-sheet-overlay { align-items: flex-start; justify-content: flex-start; background: rgba(15,23,42,0.35); }
         #nav-group-sheet-overlay .modal-box {
-            border-radius: 0 0 24px 24px;
-            border: 1px solid var(--border-glass); border-top: none;
-            padding-top: calc(20px + env(safe-area-inset-top, 0px));
-            transform: translateY(-100%);
+            position: absolute; left: 12px; top: 70px;
+            width: min(300px, calc(100vw - 24px)); max-width: none; height: auto; max-height: 70vh;
+            border-radius: 20px; padding: 12px 12px 14px;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 14px 34px -10px rgba(15,23,42,0.35);
+            transform-origin: var(--caret-x, 50%) -10px;
+            transform: translateY(-8px) scale(0.94); opacity: 0;
+            transition: transform 0.18s ease, opacity 0.18s ease;
+            overflow: visible;
         }
-        #nav-group-sheet-overlay.show .modal-box { transform: translateY(0); }
+        #nav-group-sheet-overlay .modal-box::before {
+            content: ''; position: absolute; top: -7px; left: calc(var(--caret-x, 50%) - 7px);
+            width: 14px; height: 14px; background: var(--surface-strong);
+            border-left: 1px solid var(--border-glass); border-top: 1px solid var(--border-glass);
+            transform: rotate(45deg); border-radius: 3px 0 0 0;
+        }
+        #nav-group-sheet-overlay.show .modal-box { transform: translateY(0) scale(1); opacity: 1; }
+        #nav-group-sheet-overlay .modal-header { padding-bottom: 8px; margin-bottom: 10px; }
+        #nav-group-sheet-overlay .modal-header h3 { font-size: 15px; }
+        #nav-group-sheet-overlay .modal-close { width: 30px; height: 30px; }
+        #nav-group-sheet-overlay .modal-body { padding: 0; overflow: visible; }
 
         /* ---- Store Logo: small 1:1 preview ---- */
         .img-update-box.logo-mini { aspect-ratio: 1 / 1; width: 100px; max-width: 100px; margin: 0; padding: 8px; gap: 3px; }
@@ -1585,7 +1605,7 @@
         .package-row.pkg-selected { border-color: var(--accent); background: var(--accent-soft); }
         #edit-packages-list.pkg-select-mode .pkg-summary-remove { display: none; }
         #edit-packages-list.pkg-select-mode .pkg-summary { cursor: pointer; }
-        #game-editor-page.pkg-select-active { padding-bottom: 150px; }
+        #game-editor-page.pkg-select-active { padding-bottom: 190px; }
         #pkg-select-bar {
             position: fixed; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 140%);
             width: calc(100% - 20px); max-width: 480px; z-index: 150; padding: 10px; border-radius: 18px;
@@ -1598,9 +1618,20 @@
         #pkg-select-bar .psb-count { font-size: 13px; font-weight: 700; color: var(--text-strong); }
         #pkg-select-bar .psb-mini { display: flex; gap: 6px; }
         #pkg-select-bar .psb-mini .btn { flex: unset; padding: 5px 10px; font-size: 12px; }
-        #pkg-select-bar .psb-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        #pkg-select-bar .psb-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         #pkg-select-bar .psb-actions .btn { flex: unset; padding: 9px 4px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
         #pkg-select-bar .btn:disabled { opacity: 0.45; }
+        /* Resync margin stepper ( − 5 % + ) */
+        .resync-group { display: inline-flex; align-items: center; gap: 6px; }
+        .resync-stepper { display: inline-flex; align-items: center; gap: 2px; background: var(--fill-soft); border-radius: 10px; padding: 2px; }
+        .resync-stepper .rs-btn { width: 28px; height: 28px; border: none; border-radius: 8px; background: var(--surface); color: var(--text-strong); font-size: 16px; font-weight: 700; line-height: 1; cursor: pointer; }
+        .resync-stepper .rs-btn:active { background: var(--accent); color: #fff; }
+        .resync-stepper .resync-margin-input { width: 38px; border: none; background: transparent; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-strong); padding: 0; -moz-appearance: textfield; }
+        .resync-stepper .resync-margin-input::-webkit-outer-spin-button, .resync-stepper .resync-margin-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .resync-stepper .rs-pct { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-left: -4px; margin-right: 2px; }
+        #pkg-select-bar .psb-margin-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        #pkg-select-bar .psb-margin-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+
 
         /* ===== Restored: package card / summary / image preview / reorder grid =====
            These rules were missing from the stylesheet (images rendered at full
@@ -1718,6 +1749,21 @@
          a long Base32 key into an authenticator app by hand. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        /* UI-only preview: open admin.html?preview=1 to hide the login screen so the layout can be
+           looked at. It does NOT sign anyone in - without a session no data loads (Firestore rules
+           still apply), only the empty panel shell shows. Remove ?preview=1 for normal use. */
+        (function () {
+            try {
+                if (new URLSearchParams(location.search).get('preview') !== '1') return;
+                var st = document.createElement('style');
+                st.textContent = '#login-screen{display:none !important}' +
+                    'body::after{content:"UI preview - not signed in";position:fixed;left:50%;bottom:10px;transform:translateX(-50%);' +
+                    'background:#111827;color:#fff;font:600 11px Poppins,sans-serif;padding:5px 12px;border-radius:20px;z-index:9999;opacity:.85;pointer-events:none}';
+                document.head.appendChild(st);
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
 
@@ -1971,7 +2017,7 @@
          calls the same showPage()/showGameListTab() the old individual nav
          buttons used, then closes the sheet - see NAV_GROUPS in the script. -->
     <div class="modal-overlay" id="nav-group-sheet-overlay" onclick="if(event.target===this) closeNavGroupSheet()">
-        <div class="modal-box" style="max-width:420px;">
+        <div class="modal-box">
             <div class="modal-header">
                 <h3 id="nav-group-sheet-title">Section</h3>
                 <div class="modal-close" onclick="closeNavGroupSheet()"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div>
@@ -2408,20 +2454,11 @@
 
             <div class="admin-card" id="settings-card-autoprice" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAutoPriceSettings()">
-                    <span style="font-size:15px;font-weight: 600;">Auto Price Update</span>
+                    <span style="font-size:15px;font-weight: 600;">Auto Cost Update</span>
                     <svg class="ui-icon" id="autoprice-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="autoprice-body" style="display:none;margin-top:12px;">
-                    <div class="switch-row">
-                        <div>
-                            <span class="switch-label">Auto-apply price updates</span>
-                            <p style="font-size:11px;color:var(--text-secondary);margin-top:2px;">ဖွင့်ထားရင် admin panel ဝင်တိုင်း G2Bulk/JCPlays/Voucher ရဲ့ ဈေးနှုန်း update ရှိနေတဲ့ package တွေရဲ့ Cost ကို auto update လုပ်ပေးမှာဖြစ်ပါတယ် (Price ကိုတော့ မထိပါ)။ ပိတ်ထားရင် Games list ထဲက "Pass" ခလုတ်ကို manual နှိပ်ပြီးမှ update လုပ်ရပါမယ်။</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="autoupdate-prices-toggle" onchange="onAutoUpdatePricesToggle(this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+                    <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Worker က ၄ နာရီခြားတစ်ခါ (Yangon 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00) G2Bulk / JCPlays / Voucher / FazerCards ရဲ့ Cost ကို auto update လုပ်ပေးပါတယ်။ Game အားလုံးကို တစ်ပြိုင်တည်းမလုပ်ဘဲ cron tick တစ်ခုစီမှာ အနည်းငယ်ချင်း ခွဲလုပ်ပြီး request limit (50) ထဲမှာပဲနေပါတယ်။ Cost ကိုပဲ ပြင်ပါတယ် — Price ကို မထိပါ (လိုရင် Game editor ထဲက Resync − / + နဲ့ ချိန်ပါ)။ Telegram ကို cycle တစ်ခုကို summary တစ်ခါပဲ ပို့ပါတယ်။</p>
                     <p id="autoupdate-prices-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
                 </div>
             </div>
@@ -3293,13 +3330,10 @@
                 <p class="pkg-tab-empty-msg" id="pkg-tab-empty-msg" style="display:none;">No packages in this tab yet — tap "+ Add Package" to add one.</p>
                 <div class="pkg-actions-row">
                     <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
-                    <button class="btn btn-outline" id="pkg-select-toggle-btn" onclick="togglePkgSelectMode()" title="Card တွေကို ရွေးပြီး Image / % / Resync ကို ရွေးထားတာတွေပေါ်ပဲ သုံးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-check"></use></svg> Select</button>
-                    <button class="btn btn-outline" onclick="sortPackageRows()" title="Currency name ထဲက ဂဏန်း (100, 200...) ကို အငယ်ကနေအကြီးသို့ စီပေးမယ်, ဂဏန်းမပါတဲ့ Weekly Pass စတာတွေကို အက္ခရာစဉ်လိုက် အောက်ခြေမှာ ထားပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-sort"></use></svg> Sort</button>
+                    <button class="btn btn-outline" id="pkg-select-toggle-btn" onclick="togglePkgSelectMode()" title="Card တွေကို ရွေးပြီး Image / Resync ကို ရွေးထားတာတွေပေါ်ပဲ သုံးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-check"></use></svg> Select</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
-                    <!-- Pricing tools grouped together: Bulk % / Resync 5% / Check Prices all touch Cost-and-Price, so they read as one group instead of being scattered between row tools and provider imports. -->
-                    <button class="btn btn-outline" onclick="openBulkPkgModal()" title="Cost/Price အားလုံးကို % တစ်ခုတည်းနဲ့ တစ်ခါတည်းချိန်ညှိပေးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-dollar"></use></svg> Bulk %</button>
-                    <button class="btn btn-outline" onclick="resyncAllPricesToMargin()" title="Package အားလုံးရဲ့ Price ကို လက်ရှိ Cost အပေါ်မူတည်ပြီး ~5% margin ပြန်ရောက်အောင် ချိန်ညှိပေးမယ် (Cost မရှိသေးတဲ့ row တွေကိုတော့ ကျော်သွားမယ်)"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Resync 5%</button>
-                    <button class="btn btn-outline" id="pkg-check-prices-btn" onclick="checkLivePriceChanges()" style="display:none;"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Check Prices</button>
+                    <!-- Resync: margin % is set with the − / + stepper (no fixed 5%). -->
+                    <span class="resync-group"><span class="resync-stepper"><button type="button" class="rs-btn" onclick="stepResyncMargin(-1)" aria-label="Decrease margin">&minus;</button><input type="number" class="resync-margin-input" value="5" min="0" max="100" step="0.5" inputmode="decimal" onchange="setResyncMargin(this.value)" aria-label="Resync margin %"><span class="rs-pct">%</span><button type="button" class="rs-btn" onclick="stepResyncMargin(1)" aria-label="Increase margin">+</button></span><button class="btn btn-outline" onclick="resyncAllPricesToMargin()" title="Package အားလုံးရဲ့ Price ကို လက်ရှိ Cost အပေါ် − / + နဲ့ ရွေးထားတဲ့ % margin ရောက်အောင် ချိန်ညှိပေးမယ် (Cost မရှိသေးတဲ့ row တွေကိုတော့ ကျော်သွားမယ်)"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Resync</button></span>
                     <!-- Provider import + its own Debug button kept as adjacent pairs, instead of both Debug buttons being separated from the imports they check. -->
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
                     <button class="btn btn-outline" id="g2bulk-debug-btn" onclick="debugG2BulkServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ G2Bulk ရဲ့ fields/servers raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
@@ -3330,49 +3364,13 @@
                 <button type="button" class="btn btn-primary" onclick="exitPkgSelectMode()">Done</button>
             </div>
         </div>
+        <div class="psb-margin-row"><span class="psb-margin-label">Resync margin</span><span class="resync-stepper"><button type="button" class="rs-btn" onclick="stepResyncMargin(-1)" aria-label="Decrease margin">&minus;</button><input type="number" class="resync-margin-input" value="5" min="0" max="100" step="0.5" inputmode="decimal" onchange="setResyncMargin(this.value)" aria-label="Resync margin %"><span class="rs-pct">%</span><button type="button" class="rs-btn" onclick="stepResyncMargin(1)" aria-label="Increase margin">+</button></span></div>
         <div class="psb-actions">
-            <button type="button" class="btn btn-outline" id="psb-pct-btn" onclick="openBulkPkgModal()">% Adjust</button>
             <button type="button" class="btn btn-outline" id="psb-resync-btn" onclick="resyncAllPricesToMargin(true)">Resync</button>
             <button type="button" class="btn btn-outline" id="psb-img-btn" onclick="document.getElementById('pkg-bulk-img-file').click()">Set Image</button>
             <button type="button" class="btn btn-outline" id="psb-noimg-btn" onclick="bulkRemovePkgImage()">No Image</button>
         </div>
         <input type="file" id="pkg-bulk-img-file" accept="image/*" style="display:none;" onchange="handleBulkPkgImage(this)">
-    </div>
-
-    <!-- Bulk Price/Cost Adjust Modal: shift every package's Price or Cost by a
-         percentage in one tap (e.g. "+5% all prices" after a supplier hike).
-         Scoped to the currently-open tab by default so it matches Sort's
-         per-tab behavior, with an "All tabs" option for a full-game-wide change. -->
-    <div class="modal-overlay" id="bulk-pkg-modal-overlay" onclick="if(event.target===this) closeBulkPkgModal()">
-        <div class="modal-box" style="max-width:400px;">
-            <div class="modal-header">
-                <h3>Bulk Price Adjust</h3>
-                <div class="modal-close" onclick="closeBulkPkgModal()">
-                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
-                </div>
-            </div>
-            <div class="modal-body">
-                <label style="margin-top:0;">Field to change</label>
-                <div class="pkg-type-toggle" id="bulk-pkg-field-toggle" style="padding:4px;">
-                    <button type="button" class="pkg-type-opt active" data-value="price" onclick="setBulkPkgField(this,'price')">Price</button>
-                    <button type="button" class="pkg-type-opt" data-value="cost" onclick="setBulkPkgField(this,'cost')">Cost</button>
-                </div>
-
-                <label>Apply to</label>
-                <div class="pkg-type-toggle" id="bulk-pkg-scope-toggle" style="padding:4px;">
-                    <button type="button" class="pkg-type-opt active" data-value="tab" onclick="setBulkPkgScope(this,'tab')">This tab (<span id="bulk-pkg-tab-name"></span>)</button>
-                    <button type="button" class="pkg-type-opt" data-value="all" onclick="setBulkPkgScope(this,'all')">All tabs</button>
-                    <button type="button" class="pkg-type-opt" id="bulk-pkg-scope-selected" data-value="selected" style="display:none;" onclick="setBulkPkgScope(this,'selected')">Selected (<span id="bulk-pkg-sel-count">0</span>)</button>
-                </div>
-
-                <label>Change (%)</label>
-                <input type="number" id="bulk-pkg-percent" placeholder="e.g. 5 or -10" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeBulkPkgModal()" style="flex:1;">Cancel</button>
-                <button class="btn btn-primary" onclick="applyBulkPkgAdjust()" style="flex:1;">Apply</button>
-            </div>
-        </div>
     </div>
 
     <!-- Game Picker Modal: shared grid-with-images + search picker for linking a
@@ -3905,11 +3903,12 @@
             const list = document.getElementById('nav-group-sheet-list');
             list.innerHTML = '';
             const items = group.items;
-            items.forEach(it => {
+            items.forEach((it, i) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'ng-tile';
-                btn.innerHTML = `<span class="ng-ico"><svg class="ui-icon"><use href="${it.icon}"></use></svg></span><span>${it.label}</span>` +
+                btn.className = 'ng-tile ng-c' + (i % 5);
+                btn.innerHTML = `<span class="ng-ico"><svg class="ui-icon"><use href="${it.icon}"></use></svg></span><span class="ng-label">${it.label}</span>` +
+                    `<svg class="ng-chev" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"></polyline></svg>` +
                     (it.dotId ? `<span class="nav-item-low-balance-dot" id="${it.dotId}"></span>` : '');
                 btn.onclick = () => { closeNavGroupSheet(); it.run(); };
                 list.appendChild(btn);
@@ -3918,8 +3917,25 @@
             // freshly-rendered sheet (they get wiped/rebuilt every time it opens).
             if (window.checkLowBalanceAlerts) window.checkLowBalanceAlerts();
         }
+        // Places the popover under the tapped nav tab (centred on it, kept inside the
+        // screen) and points the caret at the tab's centre.
+        function positionNavGroupSheet(groupKey) {
+            const overlay = document.getElementById('nav-group-sheet-overlay');
+            const box = overlay.querySelector('.modal-box');
+            const anchor = document.getElementById('group-' + groupKey);
+            if (!box || !anchor) return;
+            const r = anchor.getBoundingClientRect();
+            const w = box.offsetWidth;
+            const margin = 12;
+            const cx = r.left + r.width / 2;
+            const left = Math.max(margin, Math.min(cx - w / 2, window.innerWidth - w - margin));
+            box.style.left = left + 'px';
+            box.style.top = (r.bottom + 12) + 'px';
+            box.style.setProperty('--caret-x', Math.max(20, Math.min(cx - left, w - 20)) + 'px');
+        }
         function openNavGroupSheet(groupKey) {
             renderNavGroupSheet(groupKey);
+            positionNavGroupSheet(groupKey);
             document.getElementById('nav-group-sheet-overlay').classList.add('show');
         }
         function closeNavGroupSheet() {
@@ -10279,7 +10295,6 @@
             const badge = row.querySelector('.pkg-profit-badge');
             const cost = Number(row.querySelector('.pkg-cost').value) || 0;
             const price = Number(row.querySelector('.pkg-price').value) || 0;
-            let lowMargin = false;
             if (cost <= 0) {
                 badge.className = 'pkg-profit-badge';
                 badge.innerText = '--';
@@ -10287,12 +10302,7 @@
                 const pct = ((price - cost) / cost) * 100;
                 badge.className = 'pkg-profit-badge ' + (pct > 0 ? 'positive' : (pct < 0 ? 'negative' : ''));
                 badge.innerText = (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
-                lowMargin = price > 0 && pct < MIN_PROFIT_MARGIN_PCT;
             }
-            // Price card (the collapsed summary row) turns red while its margin
-            // sits below the MIN_PROFIT_MARGIN_PCT (4%) floor, and reverts to
-            // normal the moment Cost/Price puts it back at or above 4%.
-            row.querySelector('.pkg-summary').classList.toggle('pkg-summary-low-margin', lowMargin);
             syncPkgSummary(row);
         }
         window.updatePackageProfit = updatePackageProfit;
@@ -10636,7 +10646,7 @@
         // ---------- Package multi-select (Select button) ----------
         // Tick package cards, then use the bottom bar (or the normal % / Resync
         // buttons) to change ONLY the ticked ones: set/remove one image for all,
-        // % adjust Price/Cost, or resync Price to the ~5% margin. Nothing is
+        // or resync Price to the chosen margin (− / +). Nothing is
         // saved until "Save Game" is tapped, same as editing a single card.
         let pkgSelectMode = false;
         function pkgSelectedRows() {
@@ -10646,7 +10656,7 @@
             const n = pkgSelectedRows().length;
             const c = document.getElementById('psb-count');
             if (c) c.innerText = n + ' selected';
-            ['psb-pct-btn', 'psb-resync-btn', 'psb-img-btn', 'psb-noimg-btn'].forEach(id => {
+            ['psb-resync-btn', 'psb-img-btn', 'psb-noimg-btn'].forEach(id => {
                 const b = document.getElementById(id);
                 if (b) b.disabled = n === 0;
             });
@@ -10733,58 +10743,7 @@
             });
             window.showToast(`Image removed from ${rows.length} package(s) ✓`, 'success');
         }
-        Object.assign(window, { togglePkgSelectMode, exitPkgSelectMode, pkgSelectAllInTab, pkgClearSelection, handleBulkPkgImage, bulkRemovePkgImage, resyncAllPricesToMargin });
-
-        // ---------- Bulk % adjust for Price/Cost ----------
-        let bulkPkgField = 'price';
-        let bulkPkgScope = 'tab';
-
-        function openBulkPkgModal() {
-            document.getElementById('bulk-pkg-percent').value = '';
-            document.getElementById('bulk-pkg-tab-name').innerText = pkgTabLabel(currentPkgTab);
-            // "Selected (N)" scope: only offered while ticked cards exist, and
-            // becomes the default so ticked cards are what actually change.
-            const selCount = pkgSelectedRows().length;
-            const selBtn = document.getElementById('bulk-pkg-scope-selected');
-            document.getElementById('bulk-pkg-sel-count').innerText = String(selCount);
-            selBtn.style.display = selCount > 0 ? '' : 'none';
-            if (selCount > 0) bulkPkgScope = 'selected';
-            else if (bulkPkgScope === 'selected') bulkPkgScope = 'tab';
-            document.querySelectorAll('#bulk-pkg-scope-toggle .pkg-type-opt').forEach(b => b.classList.toggle('active', b.dataset.value === bulkPkgScope));
-            document.getElementById('bulk-pkg-modal-overlay').classList.add('show');
-        }
-        window.openBulkPkgModal = openBulkPkgModal;
-
-        function closeBulkPkgModal() {
-            document.getElementById('bulk-pkg-modal-overlay').classList.remove('show');
-        }
-        window.closeBulkPkgModal = closeBulkPkgModal;
-
-        function setBulkPkgField(btn, value) {
-            bulkPkgField = value;
-            btn.closest('.pkg-type-toggle').querySelectorAll('.pkg-type-opt').forEach(b => b.classList.toggle('active', b.dataset.value === value));
-        }
-        window.setBulkPkgField = setBulkPkgField;
-
-        function setBulkPkgScope(btn, value) {
-            bulkPkgScope = value;
-            btn.closest('.pkg-type-toggle').querySelectorAll('.pkg-type-opt').forEach(b => b.classList.toggle('active', b.dataset.value === value));
-        }
-        window.setBulkPkgScope = setBulkPkgScope;
-
-        // Rounds a bulk-adjusted amount to a "clean" store price: down to the
-        // hundred below when the last two digits are 00-49, kept exactly on
-        // the half-hundred mark when they land on 50, and up to the hundred
-        // above when they're 51-99. e.g. 13,915 -> 13,900 · 812 -> 800 ·
-        // 850 -> 850 (unchanged) · 851 -> 900.
-        function roundBulkPrice(value) {
-            const rounded = Math.round(value);
-            const base = Math.floor(rounded / 100) * 100;
-            const rem = rounded - base;
-            if (rem <= 49) return base;
-            if (rem === 50) return base + 50;
-            return base + 100;
-        }
+        Object.assign(window, { stepResyncMargin, setResyncMargin, togglePkgSelectMode, exitPkgSelectMode, pkgSelectAllInTab, pkgClearSelection, handleBulkPkgImage, bulkRemovePkgImage, resyncAllPricesToMargin });
 
         // ---------- Auto Price-to-Cost margin sync (Cost update -> Price follows) ----------
         // Whenever a package's Cost is refreshed from a live sync — the
@@ -10802,64 +10761,33 @@
         // touched by this — it only fires on a live cost sync.
         const AUTO_PRICE_MARGIN_PCT = 5;
 
-        function autoPriceForCost(cost) {
+        function autoPriceForCost(cost, marginPct = AUTO_PRICE_MARGIN_PCT) {
             if (!cost || cost <= 0) return 0;
-            const rawTarget = cost * (1 + AUTO_PRICE_MARGIN_PCT / 100); // exact 5% above cost
-            const hardCeiling = cost * 1.07; // margin must never drift past 7%
+            const rawTarget = cost * (1 + marginPct / 100); // exact target margin above cost
+            const hardCeiling = cost * (1 + (marginPct + 2) / 100); // margin must never drift past target + 2pp
             const step = 50; // round up to a clean 50-MMK grid (…00 / …50 endings, no odd …90-style prices)
             let price = Math.ceil(rawTarget / step) * step;
-            if (price > hardCeiling) price = Math.ceil(rawTarget); // step rounding would overshoot 7% (tiny Cost values) — fall back to the exact 5% price instead
+            if (price > hardCeiling) price = Math.ceil(rawTarget); // step rounding would overshoot (tiny Cost values) — fall back to the exact target price instead
             return price;
         }
 
-        // Shifts every matched row's Price or Cost by the given percentage —
-        // rounds to a clean price via roundBulkPrice() (see above) and skips
-        // rows where the field is blank or zero, so an unset package never
-        // gets a value invented for it. Reuses updatePackageProfit() per row
-        // so the profit badge AND the collapsed summary line (via
-        // syncPkgSummary) both stay in sync.
-        function applyBulkPkgAdjust() {
-            const pctInput = document.getElementById('bulk-pkg-percent');
-            const pct = Number(pctInput.value);
-            if (!pctInput.value.trim() || isNaN(pct) || pct === 0) {
-                window.showToast('Enter a percentage first (e.g. 5 or -10)', 'fail');
-                return;
-            }
-            const allRows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
-            const rows = bulkPkgScope === 'selected' ? pkgSelectedRows()
-                : bulkPkgScope === 'tab' ? allRows.filter(r => r.dataset.tab === currentPkgTab) : allRows;
-            if (rows.length === 0) {
-                window.showToast('No packages to update', 'fail');
-                return;
-            }
-            const fieldClass = bulkPkgField === 'price' ? '.pkg-price' : '.pkg-cost';
-            let changed = 0;
-            rows.forEach(row => {
-                const input = row.querySelector(fieldClass);
-                const current = Number(input.value);
-                if (!current || current <= 0) return;
-                const newValue = Math.max(0, roundBulkPrice(current * (1 + pct / 100)));
-                input.value = newValue;
-                // Adjusting Cost by bulk % shifts the sell Price too, so the
-                // margin stays pinned at ~5% (autoPriceForCost) instead of
-                // drifting further from it every time a bulk cost change
-                // lands. Adjusting Price directly is left as a pure % shift
-                // with no Cost side-effect, same as before.
-                if (bulkPkgField === 'cost') {
-                    row.querySelector('.pkg-price').value = autoPriceForCost(newValue);
-                }
-                updatePackageProfit(input);
-                changed++;
-            });
-            closeBulkPkgModal();
-            if (changed === 0) {
-                window.showToast(`No packages had a ${bulkPkgField === 'price' ? 'Price' : 'Cost'} set to adjust`, 'fail');
-            } else {
-                const priceNote = bulkPkgField === 'cost' ? ' (Price re-synced to ~5% margin)' : '';
-                window.showToast(`Updated ${changed} package(s) ${pct > 0 ? '+' : ''}${pct}%${priceNote} ✓`, 'success');
-            }
+        // Resync margin (%) — set with the − / + stepper next to the Resync button
+        // (and in the Select bar). Remembered on this device. Only Resync uses it;
+        // other cost syncs still use AUTO_PRICE_MARGIN_PCT above.
+        let resyncMarginPct = AUTO_PRICE_MARGIN_PCT;
+        try { const v = parseFloat(localStorage.getItem('pca-admin-resync-margin')); if (!isNaN(v) && v >= 0 && v <= 100) resyncMarginPct = v; } catch (e) {}
+        function setResyncMargin(v) {
+            v = Number(v);
+            if (isNaN(v)) v = resyncMarginPct;
+            v = Math.min(100, Math.max(0, Math.round(v * 10) / 10));
+            resyncMarginPct = v;
+            document.querySelectorAll('.resync-margin-input').forEach(i => { i.value = v; });
+            try { localStorage.setItem('pca-admin-resync-margin', String(v)); } catch (e) {}
         }
-        window.applyBulkPkgAdjust = applyBulkPkgAdjust;
+        function stepResyncMargin(d) { setResyncMargin(resyncMarginPct + d); }
+        window.setResyncMargin = setResyncMargin;
+        window.stepResyncMargin = stepResyncMargin;
+        setResyncMargin(resyncMarginPct);
 
         // One-tap fix for every package in this game, across every tab:
         // recomputes Price straight from its current Cost via
@@ -10879,14 +10807,14 @@
                 return;
             }
             const scopeText = useSelected ? `${rows.length} selected package(s)` : 'every package (all tabs)';
-            if (!confirm(`This overwrites Price on ${scopeText} to hold a ~${AUTO_PRICE_MARGIN_PCT}% margin above its current Cost. Continue?`)) return;
+            if (!confirm(`This overwrites Price on ${scopeText} to hold a ${resyncMarginPct}% margin above its current Cost. Continue?`)) return;
             let changed = 0, skipped = 0;
             rows.forEach(row => {
                 const costInput = row.querySelector('.pkg-cost');
                 const priceInput = row.querySelector('.pkg-price');
                 const cost = Number(costInput.value);
                 if (!cost || cost <= 0) { skipped++; return; }
-                const newPrice = autoPriceForCost(cost);
+                const newPrice = autoPriceForCost(cost, resyncMarginPct);
                 if (Number(priceInput.value) === newPrice) return;
                 priceInput.value = newPrice;
                 updatePackageProfit(priceInput);
@@ -10895,7 +10823,7 @@
             if (changed === 0) {
                 window.showToast(skipped ? `Already synced — ${skipped} row(s) skipped (no Cost set)` : 'Every price already matches the target margin', 'success');
             } else {
-                window.showToast(`${changed} price(s) re-synced to ~${AUTO_PRICE_MARGIN_PCT}% margin ✓${skipped ? ` (${skipped} skipped — no Cost)` : ''}`, 'success');
+                window.showToast(`${changed} price(s) re-synced to ${resyncMarginPct}% margin ✓${skipped ? ` (${skipped} skipped — no Cost)` : ''}`, 'success');
             }
         }
         window.resyncAllPricesToMargin = resyncAllPricesToMargin;
