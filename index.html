@@ -1501,7 +1501,7 @@
             display: flex; flex-direction: row; align-items: center; gap: 11px; width: 100%; text-align: left;
             padding: 7px 12px 7px 8px; border-radius: 14px; cursor: pointer; position: relative;
             border: 1px solid var(--ng-line, var(--border-glass)); font-size: 14px; font-weight: 600; color: var(--text-primary);
-            background: linear-gradient(100deg, var(--ng-bg1, var(--surface)) 0%, var(--ng-bg2, var(--surface)) 100%);
+            background: linear-gradient(100deg, var(--ng-bg1, transparent) 0%, var(--ng-bg2, transparent) 100%);
         }
         .ng-tile:active { transform: scale(0.98); }
         .ng-tile .ng-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1513,11 +1513,11 @@
         .ng-ico .ui-icon { width: 17px; height: 17px; stroke: #fff; }
         .ng-chev { width: 15px; height: 15px; flex-shrink: 0; stroke: var(--ng-c1, var(--text-muted)); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
         .ng-tile .nav-item-low-balance-dot { top: 50%; right: 34px; transform: translateY(-50%); }
-        .ng-tile.ng-c0 { --ng-c1:#3B82F6; --ng-c2:#2563EB; --ng-bg1:#EEF4FF; --ng-bg2:#DCE9FF; --ng-line:#BFD3F8; }
-        .ng-tile.ng-c1 { --ng-c1:#8B5CF6; --ng-c2:#7C3AED; --ng-bg1:#F4F0FF; --ng-bg2:#E7DEFF; --ng-line:#D2C4F6; }
-        .ng-tile.ng-c2 { --ng-c1:#EC4899; --ng-c2:#DB2777; --ng-bg1:#FFF1F7; --ng-bg2:#FCE0EC; --ng-line:#F5C2D8; }
-        .ng-tile.ng-c3 { --ng-c1:#10B981; --ng-c2:#059669; --ng-bg1:#ECFDF5; --ng-bg2:#D5F5E6; --ng-line:#B3E8CF; }
-        .ng-tile.ng-c4 { --ng-c1:#F59E0B; --ng-c2:#D97706; --ng-bg1:#FFF8E8; --ng-bg2:#FDEBC5; --ng-line:#F6DDA3; }
+        .ng-tile.ng-c0 { --ng-c1:#3B82F6; --ng-c2:#2563EB; --ng-bg1:rgba(59,130,246,0.20); --ng-bg2:rgba(59,130,246,0.07); --ng-line:rgba(59,130,246,0.40); }
+        .ng-tile.ng-c1 { --ng-c1:#8B5CF6; --ng-c2:#7C3AED; --ng-bg1:rgba(139,92,246,0.20); --ng-bg2:rgba(139,92,246,0.07); --ng-line:rgba(139,92,246,0.40); }
+        .ng-tile.ng-c2 { --ng-c1:#EC4899; --ng-c2:#DB2777; --ng-bg1:rgba(236,72,153,0.20); --ng-bg2:rgba(236,72,153,0.07); --ng-line:rgba(236,72,153,0.40); }
+        .ng-tile.ng-c3 { --ng-c1:#10B981; --ng-c2:#059669; --ng-bg1:rgba(16,185,129,0.20); --ng-bg2:rgba(16,185,129,0.07); --ng-line:rgba(16,185,129,0.40); }
+        .ng-tile.ng-c4 { --ng-c1:#F59E0B; --ng-c2:#D97706; --ng-bg1:rgba(245,158,11,0.20); --ng-bg2:rgba(245,158,11,0.07); --ng-line:rgba(245,158,11,0.40); }
 
         /* Page tabs as icon grids */
         .game-list-tabs { display: grid; grid-template-columns: repeat(2, 1fr); }
@@ -16798,7 +16798,7 @@
             listenTelegramBot();
             listenAdminBroadcastSecret();
             listenAdminAccounts();
-            listenAutoUpdatePricesSetting();
+            // listenAutoUpdatePricesSetting() no longer started: Cost update always runs in the Worker (saves one read per load)
             startAdminHeartbeat();
             startOrderArchiveScheduler();
             startDailySummaryScheduler();
