@@ -238,7 +238,12 @@
             window.addEventListener('pagehide', flush);
         })();
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#584790">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
     <title>PCA Store - Admin</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
@@ -274,8 +279,6 @@
             --border-dashed: rgba(30,30,40,0.25);
             --shadow-soft: 0 8px 30px -8px rgba(30,30,40,0.18);
             --glass-blur: 14px;
-            --icon-fg: #ffffff;
-            --scheme: light;
             --accent: #7C3AED;
             --accent-rgb: 124,58,237;
             --accent-soft: rgba(124,58,237,0.14);
@@ -307,8 +310,6 @@
             --border-dashed: rgba(255,255,255,0.26);
             --shadow-soft: 0 14px 40px -10px rgba(0,0,0,0.65);
             --glass-blur: 16px;
-            --icon-fg: #ffffff;
-            --scheme: dark;
             --accent: #A78BFA;
             --accent-rgb: 139,92,246;
             --accent-soft: rgba(139,92,246,0.2);
@@ -394,7 +395,7 @@
            blur — each blurred layer has to be recomposited by the GPU on
            every scroll frame, so blurring dozens of rows/buttons at once
            is what was causing the scroll/tap stutter. */
-        .glass, .modal-box, .dialog-box, .login-box, .header, .top-nav, #toast {
+        .modal-box, .dialog-box, .login-box, .header, .top-nav, #toast {
             -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
             backdrop-filter: blur(var(--glass-blur)) saturate(160%);
         }
@@ -411,13 +412,10 @@
            own class (.lg-*), so nothing leaks onto the password eye or the
            OTP boxes the way the old generic ".login-box button" rule did. */
         :root {
-            --lg-ink-0: #F5F5F7;
-            --lg-ink-1: rgba(255,255,255,0.5);
             --lg-ink-2: rgba(255,255,255,0.62);
             --lg-line: rgba(var(--accent-rgb),0.2);
             --lg-brass: var(--accent-2);
             --lg-brass-deep: var(--accent-3);
-            --lg-jade: var(--accent-2);
             --lg-text: #1C1E21;
             --lg-muted: #80848C;
         }
@@ -832,66 +830,6 @@
         }
         #admin-games-container .admin-card:last-child { margin-bottom: 0; }
 
-        /* Game Accounts (marketplace) — same bounded, independently-scrollable
-           list box pattern as Orders/Games above. */
-        #admin-accounts-container {
-            max-height: 65vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
-            padding: 10px;
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
-            background: var(--surface);
-            box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass);
-        }
-        #admin-accounts-container .admin-card:last-child { margin-bottom: 0; }
-        .acct-card-row { display:flex; align-items:center; gap:10px; cursor:pointer; }
-        .acct-card-thumb { width:92px; height:52px; border-radius:6px; object-fit:cover; flex-shrink:0; background:var(--bg-subtle); }
-        .acct-card-info { min-width:0; flex:1; }
-        .acct-card-title { font-size:13.5px; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .acct-card-meta { font-size:11.5px; color:var(--text-secondary); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .acct-card-price { font-size:12.5px; font-weight:600; color:var(--accent); margin-top:2px; }
-        .acct-status-badge { font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:20px; flex-shrink:0; white-space:nowrap; }
-        .acct-status-badge.available { background:rgba(52,211,153,0.15); color:#059669; }
-        .acct-status-badge.sold { background:rgba(251,113,133,0.15); color:#E11D48; }
-        .acct-status-badge.pending { background:rgba(251,191,36,0.16); color:#B45309; }
-        .acct-status-badge.confirmed { background:rgba(52,211,153,0.15); color:#059669; }
-        .acct-status-badge.rejected { background:rgba(251,113,133,0.15); color:#E11D48; }
-        .acct-status-badge.listed { background:rgba(76,154,255,0.16); color:#1877F2; }
-
-        /* Sell Requests sub-tab inside the Game Accounts page — a header
-           tab-bar that swaps between the existing marketplace listings and
-           the incoming "sell my account" leads, instead of a separate
-           top nav page. */
-        .acct-subtab-bar { display:flex; gap:6px; background:var(--fill-soft); border-radius:14px; padding:4px; margin-bottom:14px; }
-        .acct-subtab { flex:1; text-align:center; padding:9px 8px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--text-secondary); cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:center; gap:6px; }
-        .acct-subtab.active { background:var(--surface); color:var(--accent); box-shadow:var(--shadow-soft); }
-        .acct-subtab .acct-subtab-count { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:20px; background:rgba(251,191,36,0.18); color:#B45309; }
-        .acct-subtab.active .acct-subtab-count { background:var(--accent-soft); color:var(--accent); }
-
-        /* Sell-request review modal (bigger than the standard modal-box so
-           the ID / selfie video / screenshots stay readable). */
-        .sr-detail-box { max-width:560px; }
-        .sr-section-title { font-size:12.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.03em; margin:16px 0 8px; }
-        .sr-section-title:first-child { margin-top:0; }
-        .sr-kv-row { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--border-glass); font-size:13px; }
-        .sr-kv-row:last-child { border-bottom:none; }
-        .sr-kv-row span:first-child { color:var(--text-secondary); flex-shrink:0; }
-        .sr-kv-row span:last-child { font-weight:600; text-align:right; }
-        .sr-media-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-        .sr-media-grid img, .sr-media-grid video { width:100%; height:120px; object-fit:cover; border-radius:10px; background:var(--bg-subtle); cursor:pointer; }
-        .sr-confirm-box { background:var(--fill-soft); border-radius:14px; padding:12px; margin-top:6px; }
-        .sr-confirmed-display { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; color:#059669; }
-        .sr-confirmed-display svg { width:18px; height:18px; flex-shrink:0; }
-        .acct-gallery-row { display:flex; gap:8px; overflow-x:auto; padding:2px; -webkit-overflow-scrolling:touch; }
-        .acct-gallery-thumb { position:relative; width:114px; height:64px; border-radius:6px; overflow:hidden; flex-shrink:0; background:var(--bg-subtle-2); border:1px solid var(--fill-soft); }
-        .acct-gallery-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-        .acct-gallery-remove { position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; cursor:pointer; }
-        .acct-gallery-remove svg { width:11px; height:11px; stroke:#fff; }
-        .acct-gallery-add { width:114px; height:64px; border-radius:6px; border:2px dashed var(--border-dashed); background:var(--bg-subtle-2); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
-        .acct-gallery-add svg { width:20px; height:20px; color:var(--text-secondary); }
-
         /* Bulk order selection (Pending orders only) + sticky action bar */
         .order-select-box { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
         .order-select-box input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
@@ -923,9 +861,6 @@
         .badge-processing { background: rgba(56,189,248,0.16); color: #0369A1; }
         .badge-success { background: rgba(52,211,153,0.16); color: #047857; }
         .badge-danger { background: rgba(251,113,133,0.16); color: #BE123C; }
-        /* Dashed spinning ring for the "Processing" badge (mirrors an "in progress" loader) */
-
-        @keyframes badge-spin { to { transform: rotate(360deg); } }
         /* Static dashed ring for the "Draft" badge (Pending, before it enters
            Processing/In-progress) — same look as the spinner above, minus
            the rotation, since a draft/queued order isn't actively moving yet. */
@@ -1030,8 +965,6 @@
         .game-list-tab-btn { flex: 1; text-align: center; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--fill-soft); background: var(--surface); font-size: 12.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
         .game-list-tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
         .user-grid-card { background: var(--surface); border-radius: 18px; padding: 16px; border: 1px solid var(--border-glass); box-shadow: var(--shadow-soft), inset 0 1px 0 var(--border-glass); display: flex; flex-direction: column; }
-        .btn-danger-outline { background: var(--danger-soft); color: var(--danger-strong); border-color: transparent; }
-        .btn-danger-outline:active { filter: brightness(0.95); }
 
         /* ---- User Details: full-page Grid layout with tabs ---- */
         .udp-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); cursor: pointer; margin-bottom: 14px; }
@@ -1048,12 +981,6 @@
         .login-entry-body b { font-size: 13.5px; color: var(--text-strong); display: block; }
         .login-entry-body span { font-size: 11.5px; color: var(--text-muted); }
 
-        /* ---- Google-verified marks (green check + blue "verified" badge) ---- */
-        .gverified-marks { display: inline-flex; align-items: center; gap: 3px; vertical-align: middle; }
-        .gverified-marks svg { width: 14px; height: 14px; flex-shrink: 0; }
-        .gverified-green { color: #22C55E; }
-        .gverified-blue circle, .gverified-blue path { fill: #1877F2; }
-        .gverified-blue .gv-check { fill: none; stroke: #ffffff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
         .user-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -1626,7 +1553,7 @@
         .resync-stepper { display: inline-flex; align-items: center; gap: 2px; background: var(--fill-soft); border-radius: 10px; padding: 2px; }
         .resync-stepper .rs-btn { width: 28px; height: 28px; border: none; border-radius: 8px; background: var(--surface); color: var(--text-strong); font-size: 16px; font-weight: 700; line-height: 1; cursor: pointer; }
         .resync-stepper .rs-btn:active { background: var(--accent); color: #fff; }
-        .resync-stepper .resync-margin-input { width: 38px; border: none; background: transparent; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-strong); padding: 0; -moz-appearance: textfield; }
+        .resync-stepper .resync-margin-input { width: 52px; border: none; background: transparent; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-strong); padding: 0; -moz-appearance: textfield; }
         .resync-stepper .resync-margin-input::-webkit-outer-spin-button, .resync-stepper .resync-margin-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .resync-stepper .rs-pct { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-left: -4px; margin-right: 2px; }
         #pkg-select-bar .psb-margin-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1749,21 +1676,258 @@
          a long Base32 key into an authenticator app by hand. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script>
-        /* UI-only preview: open admin.html?preview=1 to hide the login screen so the layout can be
-           looked at. It does NOT sign anyone in - without a session no data loads (Firestore rules
-           still apply), only the empty panel shell shows. Remove ?preview=1 for normal use. */
-        (function () {
-            try {
-                if (new URLSearchParams(location.search).get('preview') !== '1') return;
-                var st = document.createElement('style');
-                st.textContent = '#login-screen{display:none !important}' +
-                    'body::after{content:"UI preview - not signed in";position:fixed;left:50%;bottom:10px;transform:translateX(-50%);' +
-                    'background:#111827;color:#fff;font:600 11px Poppins,sans-serif;padding:5px 12px;border-radius:20px;z-index:9999;opacity:.85;pointer-events:none}';
-                document.head.appendChild(st);
-            } catch (e) {}
-        })();
-    </script>
+<style id="pca-mobile-polish">
+/* Mobile polish: no accidental iOS zoom on focus, faster taps, 44px touch targets */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,a,[role="button"],select,label,summary{touch-action:manipulation}
+@media (max-width:768px){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:max(16px,1em)}
+}
+@media (pointer:coarse){
+  button:not(.pca-keep-size),[role="button"]:not(.pca-keep-size){min-height:40px}
+}
+</style>
+<style id="pca-mobile-v2">
+/* ==========================================================================
+   PCA Admin - Mobile v2
+   One override layer on top of the existing theme. Everything that changes
+   layout is scoped to phones/tablets (< 900px) so the desktop view that
+   already exists is left alone.
+   ========================================================================== */
+:root {
+    --pca-nav-h: 62px;
+    --pca-safe-t: env(safe-area-inset-top, 0px);
+    --pca-safe-b: env(safe-area-inset-bottom, 0px);
+    --pca-ease: cubic-bezier(.22, .8, .3, 1);
+    --pca-sheet: #FBFBFD;
+}
+html[data-theme="dark-purple"] { --pca-sheet: #1D1D23; }
+
+/* ---- Always-on fixes (all screen sizes) --------------------------------- */
+input, select, textarea { min-width: 0; max-width: 100%; }
+img, video, canvas { max-width: 100%; }
+body { overscroll-behavior-y: none; }
+html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
+.modal-box, .od-card, .dialog-box { overscroll-behavior: contain; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nav-badge {
+    position: absolute; top: 3px; left: calc(50% + 6px);
+    min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px;
+    background: #FF3B30; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 17px;
+    text-align: center; pointer-events: none; z-index: 2;
+    box-shadow: 0 0 0 2px var(--surface-strong, #fff);
+}
+.nav-badge[hidden] { display: none; }
+#group-more { display: none; }
+.nav-item { position: relative; }
+
+/* ---- Phones & tablets --------------------------------------------------- */
+@media (max-width: 899.98px) {
+
+    /* 1. Header: slimmer, notch-safe, tucks away while scrolling down */
+    .header {
+        padding: calc(var(--pca-safe-t) + 6px) 12px 6px !important;
+        min-height: calc(52px + var(--pca-safe-t));
+        gap: 8px;
+        transition: transform .24s var(--pca-ease);
+    }
+    body.pca-hdr-hidden .header { transform: translate3d(0, -100%, 0); }
+    .header .logo { font-size: 15px; min-width: 0; flex: 0 1 auto; gap: 8px; }
+    .header .logo-icon { width: 30px; height: 30px; flex-shrink: 0; }
+    #store-switcher-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 36vw; }
+    .header .header-icon { width: 40px; height: 40px; }
+    .header .header-flame-wrap { display: none; }
+    #header-clock { padding: 3px 9px; }
+    .header > div[style*="gap:8px"] { gap: 6px !important; }
+
+    /* 2. Navigation: fixed bottom tab bar (thumb zone), 5 tabs + More */
+    .app-layout { padding-bottom: calc(var(--pca-nav-h) + var(--pca-safe-b) + 14px); }
+    .top-nav {
+        position: fixed !important; top: auto !important; left: 0; right: 0; bottom: 0; z-index: 120;
+        display: grid !important; grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0 !important; overflow: visible !important;
+        padding: 6px 6px calc(6px + var(--pca-safe-b)) !important;
+        background-color: var(--surface-strong) !important; background-image: none !important;
+        -webkit-backdrop-filter: none; backdrop-filter: none;
+        border-top: 1px solid var(--border-glass); border-bottom: none !important;
+        box-shadow: 0 -10px 28px -14px rgba(0, 0, 0, .45);
+        transition: transform .22s var(--pca-ease);
+    }
+    body.pca-kb-open .top-nav { transform: translate3d(0, 110%, 0); }
+    body.pca-kb-open .app-layout { padding-bottom: 14px; }
+    #group-game, #group-api, #group-setting { display: none !important; }
+    #group-more { display: flex; }
+    .top-nav .nav-item {
+        min-width: 0 !important; min-height: 50px; flex: none; gap: 2px;
+        padding: 8px 2px 4px !important; border-radius: 14px;
+        font-size: 10.5px; font-weight: 500; letter-spacing: 0;
+        background: transparent !important; box-shadow: none !important; color: var(--text-secondary);
+        -webkit-user-select: none; user-select: none;
+        transition: color .18s ease, transform .12s ease;
+    }
+    .top-nav .nav-item:active { transform: scale(.94); }
+    .top-nav .nav-item .ui-icon { width: 22px; height: 22px; position: relative; z-index: 1; stroke: currentColor; transition: transform .22s var(--pca-ease); }
+    .top-nav .nav-item .nav-label { white-space: nowrap; }
+    /* the pill that grows behind the active icon: the one deliberate motion */
+    .top-nav .nav-item::before {
+        content: ''; position: absolute; top: 4px; left: 50%; width: 54px; height: 30px; border-radius: 15px;
+        background: var(--accent-soft); opacity: 0;
+        transform: translateX(-50%) scaleX(.35);
+        transition: transform .26s var(--pca-ease), opacity .18s ease;
+    }
+    .top-nav .nav-item.active { color: var(--accent); font-weight: 600; background: transparent !important; box-shadow: none !important; }
+    .top-nav .nav-item.active::before { opacity: 1; transform: translateX(-50%) scaleX(1); }
+    .top-nav .nav-item.active .ui-icon { stroke: var(--accent); transform: translateY(-1px); }
+    .top-nav .nav-item .nav-item-low-balance-dot { top: 5px; right: calc(50% - 20px); }
+
+    /* 3. Page content */
+    .content-area { padding: 12px 14px; }
+    .page-section { animation: pcaPageIn .16s ease-out; }
+    @keyframes pcaPageIn { from { opacity: 0; } to { opacity: 1; } }
+    .title-header { font-size: 18px; position: relative; }
+    /* long lists were each fading/sliding in on scroll - that is what made scrolling feel heavy */
+    .scroll-reveal, .scroll-reveal.revealed { opacity: 1 !important; transform: none !important; transition: none !important; }
+
+    /* 4. Buttons & touch targets */
+    .btn { min-height: 44px; padding: 10px 14px; font-size: 14px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn:active { transform: scale(.97); }
+    .btn[disabled], .btn.is-loading { opacity: .6; pointer-events: none; }
+    .btn.is-loading::after { content: ''; width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: pcaSpin .7s linear infinite; }
+    @keyframes pcaSpin { to { transform: rotate(360deg); } }
+    .modal-close, .od-card-close { width: 40px; height: 40px; border-radius: 12px; }
+    .udp-back { min-height: 44px; padding: 0 6px 0 0; margin-bottom: 6px; }
+    .rs-btn { min-width: 40px; min-height: 40px; }
+    .pkg-type-tab, .udp-tab, .game-list-tab-btn { min-height: 42px; }
+    input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), select { min-height: 44px; }
+    input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+    .order-select-box { padding: 10px; margin: -10px 0 -10px -10px; }
+
+    /* Toolbars: one scrolling row of chips instead of buttons wrapping to uneven lines */
+    #order-list > .title-header { flex-direction: column; flex-wrap: nowrap !important; align-items: stretch !important; gap: 10px !important; border-bottom: none; padding-bottom: 0; margin-bottom: 12px; }
+    #order-list > .title-header > span:last-child {
+        display: flex !important; flex-wrap: nowrap !important; gap: 8px !important;
+        overflow-x: auto; min-width: 0; margin: 0 -14px; padding: 2px 14px 4px;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; scroll-padding: 0 14px;
+    }
+    #order-list > .title-header > span:last-child::-webkit-scrollbar { display: none; }
+    #order-list > .title-header .btn { flex: 0 0 auto !important; white-space: nowrap; padding: 8px 14px !important; font-size: 13px !important; font-weight: 500 !important; scroll-snap-align: start; }
+    #order-list > .title-header .btn-primary { order: -1; font-weight: 600 !important; }
+    .pkg-actions-row .btn { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+
+    /* Order summary: 4 compact status tiles instead of 4 tall gradient cards */
+    .order-stat-grid { gap: 8px; margin-bottom: 12px; }
+    .order-stat-card { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-radius: 14px; min-height: 52px; }
+    .order-stat-card h5 { margin: 0; font-size: 12.5px; }
+    .order-stat-card .val { font-size: 22px; line-height: 1; order: 2; }
+    .order-stat-card .sub { display: none; }
+
+    /* Search / filter rows */
+    .admin-search-wrap input { min-height: 46px; }
+    .date-filter-trigger { min-height: 46px; }
+
+    /* Order / top-up bulk bar: stay reachable above the tab bar */
+    .order-bulk-bar.show, .order-bulk-bar.active, .order-bulk-bar[style*="flex"] {
+        position: sticky; bottom: calc(var(--pca-nav-h) + var(--pca-safe-b) + 8px); z-index: 60;
+    }
+    .obb-actions { display: flex; gap: 8px; }
+    .obb-actions .btn { flex: 1; min-height: 44px; }
+
+    /* 5. Sheets & dialogs: real bottom sheets with a grab handle */
+    .modal-overlay { align-items: flex-end; }
+    .modal-box {
+        max-width: 560px; max-height: 92vh; max-height: 92dvh;
+        border-radius: 24px 24px 0 0;
+        padding: 10px 18px calc(18px + var(--pca-safe-b));
+        transition: transform .28s var(--pca-ease);
+        touch-action: pan-y;
+    }
+    .modal-box::before {
+        content: ''; align-self: center; flex: none; width: 40px; height: 4px; border-radius: 2px;
+        background: var(--fill-soft); margin: 2px 0 10px;
+        box-shadow: inset 0 0 0 1px var(--border-glass);
+    }
+    .modal-box.pca-dragging { transition: none; }
+    .modal-body { -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .dialog-box { max-height: 88vh; max-height: 88dvh; overflow-y: auto; }
+
+
+    /* Sheets must be opaque on phones - translucent glass let the page show through the text */
+    .modal-box, .od-card, .dialog-box { background-color: var(--pca-sheet) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    .od-card::before {
+        content: ''; align-self: center; flex: none; width: 40px; height: 4px; border-radius: 2px;
+        background: var(--fill-soft); margin: -4px 0 6px; box-shadow: inset 0 0 0 1px var(--border-glass);
+    }
+    .pca-more-grid.cols2 { grid-template-columns: repeat(2, 1fr); }
+
+    /* Nav-group popover (legacy) -> bottom sheet, in case it is ever opened */
+    #nav-group-sheet-overlay .modal-box { left: 0 !important; right: 0 !important; top: auto !important; bottom: 0 !important; margin: 0 auto; position: relative; }
+
+    /* Order / top-up detail popup: bottom sheet + pinned action buttons */
+    .admin-card.oc-open .od-overlay { align-items: flex-end; padding: 0; background: rgba(0, 0, 0, .5); }
+    .od-card {
+        max-width: 560px; border-radius: 24px 24px 0 0;
+        max-height: 92vh; max-height: 92dvh;
+        padding: 14px 16px 0; animation: pcaSheetUp .26s var(--pca-ease);
+    }
+    @keyframes pcaSheetUp { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+    .od-card-footer {
+        position: sticky; bottom: 0; z-index: 3; margin: 8px -16px 0; gap: 8px;
+        padding: 12px 16px calc(12px + var(--pca-safe-b));
+        background: var(--surface-strong); border-top: 1px solid var(--fill-soft);
+    }
+    .od-card-footer .btn { flex: 1 1 calc(50% - 8px); min-height: 46px; }
+    .od-cell { padding: 10px 12px; }
+    .od-value { font-size: 14px; }
+
+    /* Toast: clear of the notch, never wider than the screen */
+    #toast { top: calc(10px + var(--pca-safe-t)); left: 12px; right: 12px; }
+    #offline-banner { padding-top: var(--pca-safe-t); }
+
+    /* 6. Cards: lighter paint cost on phones (blur on every card is what janks scroll) */
+    .admin-card, .stat-chip, .user-grid-card, .udp-profile-card, .login-entry {
+        -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+        background-color: var(--surface-strong);
+    }
+    .admin-card { border-radius: 16px; }
+    .admin-card:active { filter: none; }
+    html[data-theme="dark-purple"] .admin-card { background-color: rgba(30, 30, 36, .92); }
+
+    /* Wide content scrolls inside itself, never the page */
+    .udp-tabs, .pkg-type-tabs { -webkit-overflow-scrolling: touch; }
+    table { display: block; max-width: 100%; overflow-x: auto; }
+    pre, code { overflow-wrap: anywhere; white-space: pre-wrap; }
+
+    /* "More" sheet */
+    #pca-more-overlay .modal-box { max-width: 560px; }
+    .pca-more-group { margin-bottom: 14px; }
+    .pca-more-title { font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 0 0 8px 4px; }
+    .pca-more-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .pca-more-tile {
+        position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+        min-height: 84px; padding: 12px 6px; border-radius: 16px; cursor: pointer;
+        background: var(--fill-soft); border: 1px solid var(--border-glass);
+        color: var(--text-primary); font-size: 12.5px; font-weight: 600; text-align: center;
+        transition: transform .12s ease, background .15s ease;
+    }
+    .pca-more-tile:active { transform: scale(.96); background: var(--accent-soft); }
+    .pca-more-tile .ui-icon { width: 24px; height: 24px; stroke: var(--accent); }
+    .pca-more-tile.is-current { background: var(--accent-soft); border-color: rgba(var(--accent-rgb), .45); color: var(--accent); }
+    .pca-more-tile.is-danger .ui-icon, .pca-more-tile.is-danger { color: var(--danger); stroke: var(--danger); }
+    .pca-more-tile .nav-item-low-balance-dot { position: absolute; top: 9px; right: 12px; }
+}
+
+/* ---- Desktop: keep the original top navigation ---------------------------- */
+@media (min-width: 900px) {
+    #group-more, .nav-badge.pca-mobile-only { display: none !important; }
+    .nav-badge { left: auto; right: 10px; top: 5px; }
+}
+
+/* ---- Reduced motion: respect the OS setting ------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    .page-section, .od-card, .top-nav .nav-item, .top-nav .nav-item::before, .modal-box, .header { animation: none !important; transition: none !important; }
+    .header-flame, .clock-colon, .live-dot { animation: none !important; }
+}
+</style>
 </head>
 <body>
 
@@ -1867,7 +2031,6 @@
     </script>
 
     <svg style="display: none;">
-        <symbol id="icon-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></symbol>
         <symbol id="icon-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></symbol>
         <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
         <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
@@ -1876,7 +2039,6 @@
         <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
         <symbol id="icon-gamepad" viewBox="0 0 24 24"><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z"></path><path d="M6.7 10.7v3.2M5.1 12.3h3.2"></path><circle cx="15.9" cy="11.1" r="0.6" fill="currentColor"></circle><circle cx="18.3" cy="13.5" r="0.6" fill="currentColor"></circle></symbol>
         <symbol id="icon-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></symbol>
-        <symbol id="icon-tag" viewBox="0 0 24 24"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></symbol>
         <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
         <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
         <symbol id="icon-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></symbol>
@@ -1906,8 +2068,7 @@
         <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
         <symbol id="icon-trending-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></symbol>
         <symbol id="icon-key" viewBox="0 0 24 24"><path d="M21 2l-9.6 9.6"></path><circle cx="7.5" cy="16.5" r="5.5"></circle><path d="M15.5 7.5l2 2M18 5l2 2"></path></symbol>
-        <symbol id="icon-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></symbol>
-        <symbol id="icon-verified-blue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline class="gv-check" points="7.5 12.5 10.5 15.5 16.5 9.5"></polyline></symbol>
+        <symbol id="icon-verified-blue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="7.5 12.5 10.5 15.5 16.5 9.5"></polyline></symbol>
         <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></symbol>
         <symbol id="icon-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></symbol>
         <symbol id="icon-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></symbol>
@@ -2082,6 +2243,7 @@
         </div>
         <div class="nav-item" id="group-orders" onclick="showPage('order-list')">
             <svg class="ui-icon"><use href="#icon-cart"></use></svg> <span class="nav-label">Orders</span>
+            <span class="nav-badge" id="nav-orders-badge" hidden></span>
         </div>
         <div class="nav-item" id="group-game" onclick="openNavGroupSheet('game')">
             <svg class="ui-icon"><use href="#icon-gamepad"></use></svg> <span class="nav-label">Game</span>
@@ -2094,10 +2256,15 @@
             <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
         <div class="nav-item" id="group-userlist" onclick="showPage('user-list')">
-            <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Userlist</span>
+            <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Users</span>
         </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
             <svg class="ui-icon"><use href="#icon-gear"></use></svg> <span class="nav-label">Setting</span>
+        </div>
+        <!-- Phones only (hidden on desktop by CSS): Game, API and Setting live behind this tab -->
+        <div class="nav-item" id="group-more" role="button" onclick="pcaOpenMore()">
+            <svg class="ui-icon"><use href="#icon-grid"></use></svg> <span class="nav-label">More</span>
+            <span class="nav-item-low-balance-dot" id="more-nav-low-dot"></span>
         </div>
     </nav>
 
@@ -2458,8 +2625,7 @@
                     <svg class="ui-icon" id="autoprice-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="autoprice-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Worker က ၄ နာရီခြားတစ်ခါ (Yangon 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00) G2Bulk / JCPlays / Voucher / FazerCards ရဲ့ Cost ကို auto update လုပ်ပေးပါတယ်။ Game အားလုံးကို တစ်ပြိုင်တည်းမလုပ်ဘဲ cron tick တစ်ခုစီမှာ အနည်းငယ်ချင်း ခွဲလုပ်ပြီး request limit (50) ထဲမှာပဲနေပါတယ်။ Cost ကိုပဲ ပြင်ပါတယ် — Price ကို မထိပါ (လိုရင် Game editor ထဲက Resync − / + နဲ့ ချိန်ပါ)။ Telegram ကို cycle တစ်ခုကို summary တစ်ခါပဲ ပို့ပါတယ်။</p>
-                    <p id="autoupdate-prices-status" style="font-size:12px;color:var(--text-secondary);margin-top:8px;"></p>
+                    <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Worker က ၄ နာရီခြားတစ်ခါ (Yangon 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00) G2Bulk / JCPlays / Voucher / FazerCards ရဲ့ Cost ကို auto update လုပ်ပေးပါတယ်။ Game အားလုံးကို တစ်ပြိုင်တည်းမလုပ်ဘဲ cron tick တစ်ခုစီမှာ အနည်းငယ်ချင်း ခွဲလုပ်ပြီး request limit (50) ထဲမှာပဲနေပါတယ်။ Store မှာတင်ထားတဲ့ game တွေထဲက Cost ပြောင်းသွားတဲ့ package ရဲ့ Price ကိုပါ Resync margin % (ဒဿမ 1.25 စသဖြင့် ရ) အတိုင်း auto ပြန်ချိန်ပေးပါတယ်။ Telegram ကို cycle တစ်ခုကို summary တစ်ခါပဲ ပို့ပါတယ်။</p>
                 </div>
             </div>
 
@@ -2545,10 +2711,8 @@
         </div>
 
         <!-- Telegram Link Modal: shows a short-lived 6-digit code the admin
-             DMs to the bot (/link CODE) to connect their own Telegram, so
-             telegram-worker.js's sweepSupportChatMessages() can forward a
-             support-chat message to the one admin it's addressed to instead
-             of one shared group — see openTelegramLinkModal(). Self-service
+             DMs to the bot (/link CODE) to connect their own Telegram — see
+             openTelegramLinkModal(). Self-service
              only: the code is generated for (and only usable by) whichever
              admin's own card it was opened from. Closes itself the instant
              the code is redeemed — see the live onSnapshot watch inside
@@ -3005,7 +3169,7 @@
 
                 <h3 class="detail-section-title" style="margin-top:16px;">Deduct From Wallet</h3>
                 <div style="display:flex;gap:8px;">
-                    <input type="number" id="ud-deduct-amount" placeholder="Amount (MMK)" inputmode="numeric" style="flex:1;padding:12px 14px;border:1.5px solid var(--border-dashed);border-radius:10px;font-size:15px;background:var(--surface);color:var(--text-primary);">
+                    <input type="number" id="ud-deduct-amount" placeholder="Amount (MMK)" inputmode="numeric" style="flex:1;min-width:0;padding:12px 14px;border:1.5px solid var(--border-dashed);border-radius:10px;font-size:15px;background:var(--surface);color:var(--text-primary);">
                     <button class="btn btn-outline" style="flex:0 0 auto;padding:10px 16px;" onclick="deductCurrentUserWallet()">Deduct</button>
                 </div>
 
@@ -3014,11 +3178,6 @@
                     <div class="details-grid-item" style="padding:8px;"><span>Processing</span><b id="ud-count-processing">0</b></div>
                     <div class="details-grid-item" style="padding:8px;"><span>Success</span><b id="ud-count-success">0</b></div>
                     <div class="details-grid-item" style="padding:8px;"><span>Fail</span><b id="ud-count-fail">0</b></div>
-                </div>
-
-                <h3 class="detail-section-title" style="margin-top:16px;">Identity Verification (KYC)</h3>
-                <div id="ud-kyc-section">
-                    <p class="empty-msg" style="margin:0;">No ID submitted yet.</p>
                 </div>
 
                 <h3 class="detail-section-title" style="margin-top:16px;">Admin Note</h3>
@@ -3333,7 +3492,7 @@
                     <button class="btn btn-outline" id="pkg-select-toggle-btn" onclick="togglePkgSelectMode()" title="Card တွေကို ရွေးပြီး Image / Resync ကို ရွေးထားတာတွေပေါ်ပဲ သုံးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-check"></use></svg> Select</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                     <!-- Resync: margin % is set with the − / + stepper (no fixed 5%). -->
-                    <span class="resync-group"><span class="resync-stepper"><button type="button" class="rs-btn" onclick="stepResyncMargin(-1)" aria-label="Decrease margin">&minus;</button><input type="number" class="resync-margin-input" value="5" min="0" max="100" step="0.5" inputmode="decimal" onchange="setResyncMargin(this.value)" aria-label="Resync margin %"><span class="rs-pct">%</span><button type="button" class="rs-btn" onclick="stepResyncMargin(1)" aria-label="Increase margin">+</button></span><button class="btn btn-outline" onclick="resyncAllPricesToMargin()" title="Package အားလုံးရဲ့ Price ကို လက်ရှိ Cost အပေါ် − / + နဲ့ ရွေးထားတဲ့ % margin ရောက်အောင် ချိန်ညှိပေးမယ် (Cost မရှိသေးတဲ့ row တွေကိုတော့ ကျော်သွားမယ်)"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Resync</button></span>
+                    <span class="resync-group"><span class="resync-stepper"><button type="button" class="rs-btn" onclick="stepResyncMargin(-1)" aria-label="Decrease margin">&minus;</button><input type="number" class="resync-margin-input" value="5" min="0" max="100" step="any" inputmode="decimal" onchange="setResyncMargin(this.value)" aria-label="Resync margin %"><span class="rs-pct">%</span><button type="button" class="rs-btn" onclick="stepResyncMargin(1)" aria-label="Increase margin">+</button></span><button class="btn btn-outline" onclick="resyncAllPricesToMargin()" title="Package အားလုံးရဲ့ Price ကို လက်ရှိ Cost အပေါ် − / + နဲ့ ရွေးထားတဲ့ % margin ရောက်အောင် ချိန်ညှိပေးမယ် (Cost မရှိသေးတဲ့ row တွေကိုတော့ ကျော်သွားမယ်)"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-refresh"></use></svg> Resync</button></span>
                     <!-- Provider import + its own Debug button kept as adjacent pairs, instead of both Debug buttons being separated from the imports they check. -->
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
                     <button class="btn btn-outline" id="g2bulk-debug-btn" onclick="debugG2BulkServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ G2Bulk ရဲ့ fields/servers raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
@@ -3364,7 +3523,7 @@
                 <button type="button" class="btn btn-primary" onclick="exitPkgSelectMode()">Done</button>
             </div>
         </div>
-        <div class="psb-margin-row"><span class="psb-margin-label">Resync margin</span><span class="resync-stepper"><button type="button" class="rs-btn" onclick="stepResyncMargin(-1)" aria-label="Decrease margin">&minus;</button><input type="number" class="resync-margin-input" value="5" min="0" max="100" step="0.5" inputmode="decimal" onchange="setResyncMargin(this.value)" aria-label="Resync margin %"><span class="rs-pct">%</span><button type="button" class="rs-btn" onclick="stepResyncMargin(1)" aria-label="Increase margin">+</button></span></div>
+        <div class="psb-margin-row"><span class="psb-margin-label">Resync margin</span><span class="resync-stepper"><button type="button" class="rs-btn" onclick="stepResyncMargin(-1)" aria-label="Decrease margin">&minus;</button><input type="number" class="resync-margin-input" value="5" min="0" max="100" step="any" inputmode="decimal" onchange="setResyncMargin(this.value)" aria-label="Resync margin %"><span class="rs-pct">%</span><button type="button" class="rs-btn" onclick="stepResyncMargin(1)" aria-label="Increase margin">+</button></span></div>
         <div class="psb-actions">
             <button type="button" class="btn btn-outline" id="psb-resync-btn" onclick="resyncAllPricesToMargin(true)">Resync</button>
             <button type="button" class="btn btn-outline" id="psb-img-btn" onclick="document.getElementById('pkg-bulk-img-file').click()">Set Image</button>
@@ -3845,8 +4004,8 @@
         }
 
         // ---------- Lazy tab listeners ----------
-        // Full-collection onSnapshot listeners (Users, Game Accounts, Sell
-        // Requests, Notifications, Ticker, Payment Methods) used to
+        // Full-collection onSnapshot listeners (Users, Notifications, Ticker,
+        // Payment Methods) used to
         // all attach at login inside startAdminApp(), so every one of them
         // stayed open - and billing on every doc change - for the whole
         // session even on tabs an admin never opened. Each listener already
@@ -4169,7 +4328,7 @@
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, Timestamp, collection, getDocs as _fsGetDocs, getDocsFromServer as _fsGetDocsFromServer, getDoc as _fsGetDoc, getCountFromServer as _fsGetCount, addDoc as _fsAddDoc, doc, setDoc as _fsSetDoc, updateDoc as _fsUpdateDoc, deleteDoc as _fsDeleteDoc, deleteField, query, where, orderBy, onSnapshot as _fsOnSnapshot, serverTimestamp, increment, runTransaction as _fsRunTransaction, writeBatch as _fsWriteBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, Timestamp, collection, getDocs as _fsGetDocs, getDocsFromServer as _fsGetDocsFromServer, getDoc as _fsGetDoc, getCountFromServer as _fsGetCount, addDoc as _fsAddDoc, doc, setDoc as _fsSetDoc, updateDoc as _fsUpdateDoc, deleteDoc as _fsDeleteDoc, deleteField, query, where, orderBy, onSnapshot as _fsOnSnapshot, serverTimestamp, increment, arrayUnion, runTransaction as _fsRunTransaction, writeBatch as _fsWriteBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // ---------- Request usage meter: Firestore instrumentation ----------
@@ -4618,6 +4777,16 @@
         // Firestore before doing anything). Best-effort: failures are logged
         // but never block the UI action that triggered them, since the next
         // successful sync (or the existing cron/manual paths) will catch up.
+        // Append-only "who did what" row for manual money actions. Written inside the same
+        // transaction as the wallet change, so a credit/deduct can never happen without its row.
+        // Firestore rules: admins may create auditLog rows but never edit or delete them.
+        function auditEntry(action, targetType, targetId, extra) {
+            return Object.assign({
+                action, targetType, targetId: String(targetId),
+                actor: currentAdminUsername || 'unknown', source: 'admin-panel', at: serverTimestamp()
+            }, extra || {});
+        }
+
         async function callAdminSyncClaims() {
             try {
                 if (!auth.currentUser) return null;
@@ -4741,8 +4910,8 @@
         // exactly the "stuck on ..." symptom this was causing. This setting
         // makes the SDK detect that case and transparently fall back to
         // long-polling instead of hanging indefinitely.
-        // Persistent (IndexedDB) local cache: live listeners (payment methods, sell requests,
-        // game accounts, settings ...) resume from the on-device copy after a reload and
+        // Persistent (IndexedDB) local cache: live listeners (payment methods,
+        // settings ...) resume from the on-device copy after a reload and
         // the server only sends what changed, instead of re-billing every doc. Falls back
         // to the plain in-memory cache if IndexedDB is unavailable (e.g. private mode).
         let db;
@@ -5531,26 +5700,6 @@
         }
         document.addEventListener('DOMContentLoaded', applyRememberedUsername);
 
-        async function handleForgotPassword() {
-            const username = document.getElementById('login-username').value.trim().toLowerCase();
-            if (!username) {
-                window.showToast('Enter your username first, then tap Forgot password.', 'fail');
-                return;
-            }
-            try {
-                const email = await lookupAdminEmailByUsername(username);
-                if (!email) {
-                    window.showToast('No account found for that username.', 'fail');
-                    return;
-                }
-                await sendPasswordResetEmail(auth, email);
-                window.showToast('Password reset link sent to your email.', 'success');
-            } catch (error) {
-                console.error('Forgot password error:', error);
-                window.showToast('Could not send reset link. Try again later.', 'fail');
-            }
-        }
-        window.handleForgotPassword = handleForgotPassword;
 
         // ---------- Step 1: username + password ----------
         async function handleAdminLogin() {
@@ -5652,13 +5801,11 @@
             closeQuitModal();
             await signOut(auth);
         }
-        function handleAdminLogout() { openQuitModal(); }
         window.openQuitModal = openQuitModal;
         window.closeQuitModal = closeQuitModal;
         window.onQuitInput = onQuitInput;
         window.copyQuitWord = copyQuitWord;
         window.confirmQuit = confirmQuit;
-        window.handleAdminLogout = handleAdminLogout;
 
         function backToLogin() {
             signOut(auth).catch(() => {});
@@ -5681,7 +5828,6 @@
             if (t && user && t.uid === user.uid) return Date.now() < t.until ? 'ok' : 'expired';
             return 'none';
         }
-        function isMfaTrusted(user) { return loginSessionState(user) === 'ok'; }
         function startLoginSession() {   // called only after a fresh, verified login
             try {
                 if (auth.currentUser) localStorage.setItem('pca_mfa_trust', JSON.stringify({ uid: auth.currentUser.uid, at: Date.now(), until: Date.now() + LOGIN_SESSION_MS }));
@@ -5955,19 +6101,139 @@
                 return ms && ms < cutoffMs;
             });
             if (!stale.length) return;
-            // Chunk at 225 (each order = 1 archive-set write + 1 delete
-            // write = 2 writes) to stay safely under Firestore's 500-write
-            // batch limit.
-            for (let i = 0; i < stale.length; i += 225) {
-                const chunk = stale.slice(i, i + 225);
-                const batch = writeBatch(db);
-                chunk.forEach(o => {
-                    const { id, ...orderData } = o;
-                    batch.set(doc(db, "ordersArchive", o.id), { ...orderData, archivedAt: serverTimestamp() });
-                    batch.delete(doc(db, "orders", o.id));
+            archiveStaleOrders(stale);
+        }
+
+        // ---------- Lifetime spend counters (VIP tier must survive archiving) ----------
+        // The storefront's VIP tier / "Total spent" used to be summed from the live
+        // "orders" + "walletTopups" collections, which this panel prunes (orders ->
+        // ordersArchive after 21 days, top-ups deleted after 60). Spend therefore
+        // shrank and tiers dropped. Now every sweep credits the customer's users/{id}
+        // doc in the SAME transaction that removes the docs:
+        //   archivedSpent / archivedOrders / archivedGames  (Success orders swept)
+        //   archivedTopups                                  (Completed top-ups swept)
+        // The transaction re-reads each doc first, so a second admin tab sweeping the
+        // same docs cannot double-count (the doc is already gone -> skipped).
+        // Orders archived BEFORE this change are counted once by backfillArchivedSpend()
+        // into the legacy* fields (documents with archivedAt < settings/archiveCounters.cutAt).
+        let archiveCutAt = null;
+        let archiveCutPromise = null;
+        function ensureArchiveCut() {
+            if (archiveCutAt) return Promise.resolve(archiveCutAt);
+            if (archiveCutPromise) return archiveCutPromise;
+            archiveCutPromise = (async () => {
+                const ref = doc(db, "settings", "archiveCounters");
+                await runTransaction(db, async (tx) => {
+                    const s = await tx.get(ref);
+                    if (!s.exists() || !s.data().cutAt) tx.set(ref, { cutAt: serverTimestamp() }, { merge: true });
                 });
-                batch.commit().then(() => { chunk.forEach(o => { delete ORDERS[o.id]; }); scheduleOrdersRender(); }).catch(err => console.error("Order archive error:", err));
+                // Read back so the cut is the SERVER's timestamp, not this device's clock.
+                const fresh = await getDoc(ref);
+                archiveCutAt = fresh.exists() ? fresh.data().cutAt : null;
+                if (!archiveCutAt) throw new Error('archive cut not available');
+                return archiveCutAt;
+            })().catch((e) => { archiveCutPromise = null; throw e; });
+            return archiveCutPromise;
+        }
+
+        let orderArchiveInFlight = false;
+        async function archiveStaleOrders(stale) {
+            if (orderArchiveInFlight) return;
+            orderArchiveInFlight = true;
+            try {
+                // Never archive anything until the counter baseline exists.
+                await ensureArchiveCut();
+                // Per chunk: up to 100 reads, 100 archive sets, 100 deletes and at most
+                // 100 user writes = 300 writes, under the 500-write transaction limit.
+                for (let i = 0; i < stale.length; i += 100) {
+                    const chunk = stale.slice(i, i + 100);
+                    try {
+                        await runTransaction(db, async (tx) => {
+                            const snaps = await Promise.all(chunk.map(o => tx.get(doc(db, "orders", o.id))));
+                            const per = {};
+                            const moved = [];
+                            snaps.forEach((s) => {
+                                if (!s.exists()) return; // already swept by another admin tab
+                                const d = s.data();
+                                if (d.status !== 'Success' && d.status !== 'Fail') return; // changed since the listener saw it
+                                moved.push({ id: s.id, d });
+                                if (d.status === 'Success' && d.userId) {
+                                    const p = per[d.userId] || (per[d.userId] = { spent: 0, n: 0, games: new Set() });
+                                    p.spent += Number(d.price) || 0;
+                                    p.n += 1;
+                                    if (d.game) p.games.add(d.game);
+                                }
+                            });
+                            moved.forEach(({ id, d }) => {
+                                tx.set(doc(db, "ordersArchive", id), { ...d, archivedAt: serverTimestamp() });
+                                tx.delete(doc(db, "orders", id));
+                            });
+                            Object.entries(per).forEach(([uid, p]) => {
+                                const upd = { archivedSpent: increment(p.spent), archivedOrders: increment(p.n) };
+                                if (p.games.size) upd.archivedGames = arrayUnion(...p.games);
+                                tx.set(doc(db, "users", uid), upd, { merge: true });
+                            });
+                        });
+                        chunk.forEach(o => { delete ORDERS[o.id]; });
+                        scheduleOrdersRender();
+                    } catch (err) {
+                        console.error("Order archive error:", err);
+                    }
+                }
+            } catch (err) {
+                console.error("Order archive skipped:", err);
+            } finally {
+                orderArchiveInFlight = false;
             }
+        }
+
+        // One-time: credits orders that were archived before the counters existed.
+        // Idempotent - it SETS absolute legacy* values (never increments) from the
+        // archive docs older than the cut, so running it twice changes nothing.
+        async function backfillArchivedSpend() {
+            try {
+                const cutAt = await ensureArchiveCut();
+                const flagRef = doc(db, "settings", "archiveCounters");
+                const flag = await getDoc(flagRef);
+                if (flag.exists() && flag.data().backfillDone) { localStorage.setItem('pca_archive_backfill_done', '1'); return; }
+                const q = query(collection(db, "ordersArchive"), where("archivedAt", "<", cutAt));
+                const cnt = (await getCountFromServer(q)).data().count || 0;
+                if (!confirm(`Lifetime spend fix (one-time)\n\n${cnt} archived orders will be read once to restore customers' VIP spend (about ${cnt} reads). Continue?`)) return;
+                const snap = await getDocs(q);
+                const per = {};
+                snap.forEach((s) => {
+                    const d = s.data();
+                    if (d.status !== 'Success' || !d.userId) return;
+                    const p = per[d.userId] || (per[d.userId] = { spent: 0, n: 0, games: new Set() });
+                    p.spent += Number(d.price) || 0;
+                    p.n += 1;
+                    if (d.game) p.games.add(d.game);
+                });
+                const entries = Object.entries(per);
+                for (let i = 0; i < entries.length; i += 400) {
+                    const batch = writeBatch(db);
+                    entries.slice(i, i + 400).forEach(([uid, p]) => {
+                        batch.set(doc(db, "users", uid), {
+                            legacyArchivedSpent: p.spent, legacyArchivedOrders: p.n, legacyArchivedGames: Array.from(p.games)
+                        }, { merge: true });
+                    });
+                    await batch.commit();
+                }
+                await setDoc(flagRef, { backfillDone: true, backfillAt: serverTimestamp(), backfillOrders: snap.size, backfillUsers: entries.length }, { merge: true });
+                localStorage.setItem('pca_archive_backfill_done', '1');
+                window.showToast(`Lifetime spend restored for ${entries.length} customers ✓`);
+            } catch (err) {
+                console.error('backfillArchivedSpend error:', err);
+                window.showToast('Lifetime spend fix failed - see console', 'fail');
+            }
+        }
+        window.backfillArchivedSpend = backfillArchivedSpend;
+        let archiveBackfillPrompted = false;
+        function maybePromptArchiveBackfill() {
+            if (archiveBackfillPrompted) return;
+            archiveBackfillPrompted = true; // at most once per page load, even if declined
+            try { if (localStorage.getItem('pca_archive_backfill_done') === '1') return; } catch (e) { /* ignore */ }
+            setTimeout(() => { backfillArchivedSpend(); }, 4000);
         }
 
         // ---------- Day-20 archive notice (PDF, admin-only via Telegram) ----------
@@ -6072,7 +6338,6 @@
             if (window.renderUserDetailsIfOpen) window.renderUserDetailsIfOpen();
             if (Object.keys(USERS).length) renderAdminUsersList();
             renderOrdersList();
-            if (window.renderAccountDashboard) window.renderAccountDashboard();
             const activePageNow = document.querySelector('.page-section.active')?.id;
             if ((activePageNow === 'dashboard' || activePageNow === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
         }
@@ -6109,6 +6374,7 @@
                     renderOrdersDependents();
                     checkOrdersAutoDelete(newOrders);
                     checkOrderDay20Notice(newOrders);
+                    maybePromptArchiveBackfill();
                     if (silent !== true) window.showToast('Orders updated ✓');
                     // NOTE: Telegram push for new Pending orders and wallet-order auto-fulfillment
                     // are handled server-side by the Cloudflare Worker (see git history) - not here.
@@ -6464,8 +6730,8 @@
                             ${selectBox}
                             <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
                             <div class="oc-info">
-                                <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
-                                <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${data.itemAmount} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${escapeHtml(data.userName)}` : ''}</p>
+                                <span class="oc-game-name">${esc(data.game)}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${esc(data.serverRegion)})</span>` : ''}</span>
+                                <p class="oc-meta">ID: ${orderId.substring(0, 8)} &middot; ${esc(data.itemAmount)}${data.packageTab ? ` <span style="color:var(--accent);">[${escapeHtml(data.packageTab)}]</span>` : ''}${Number(data.quantity) > 1 ? ` ×${Number(data.quantity)}` : ''} &middot; <b>${Number(data.price).toLocaleString()} MMK</b>${data.userName ? ` &middot; ${escapeHtml(data.userName)}` : ''}</p>
                             </div>
                             <div class="oc-status">
                                 <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(data.status))}</span>
@@ -6478,7 +6744,7 @@
                                     <div class="od-card-title">
                                         <div class="oc-thumb">${gameImg ? `<img src="${gameImg}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}</div>
                                         <div class="od-card-title-text">
-                                            <span class="oc-game-name">${data.game}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${data.serverRegion})</span>` : ''}</span>
+                                            <span class="oc-game-name">${esc(data.game)}${data.serverRegion ? ` <span style="font-weight:400;color:var(--accent);">(${esc(data.serverRegion)})</span>` : ''}</span>
                                             <p class="oc-meta">${Number(data.price).toLocaleString()} MMK &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(data.status))}</span></p>
                                         </div>
                                     </div>
@@ -6493,7 +6759,11 @@
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">In-Game Name</div>
-                                        <div class="od-value">${escapeHtml(data.inGameName || 'N/A')}</div>
+                                        <div class="od-value">${escapeHtml(data.inGameName || data.fazercardVerifiedName || 'N/A')}</div>
+                                    </div>
+                                    <div class="od-cell">
+                                        <div class="od-label">Package Type</div>
+                                        <div class="od-value">${escapeHtml(data.packageTab || 'N/A')}${Number(data.quantity) > 1 ? ` &middot; ×${Number(data.quantity)}` : ''}</div>
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">ID</div>
@@ -6501,7 +6771,7 @@
                                     </div>
                                     ${data.serverId ? `<div class="od-cell">
                                         <div class="od-label">Server ID</div>
-                                        <div class="od-value mono">${data.serverId}</div>
+                                        <div class="od-value mono">${esc(data.serverId)}</div>
                                     </div>` : ''}
                                     ${data.jcplaysProductId ? `<div class="od-cell span-2" id="jcplays-role-cell-${orderId}">
                                         <div class="od-label">JCPlays Redeem Code</div>
@@ -6541,16 +6811,16 @@
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">Paid Via</div>
-                                        <div class="od-value">${data.paymentMethod || 'N/A'}</div>
+                                        <div class="od-value">${esc(data.paymentMethod || 'N/A')}</div>
                                     </div>
                                     <div class="od-cell span-2">
                                         <div class="od-label">Date</div>
                                         <div class="od-value">${dateStr}</div>
                                     </div>
                                 </div>
-                                ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${data.serverRegion}</span></p>` : ''}
-                                ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);">View on Map</a></p>` : ''}
-                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${data.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${data.receiptUrl}" loading="lazy" decoding="async" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                                ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${esc(data.serverRegion)}</span></p>` : ''}
+                                ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);" rel="noopener noreferrer">View on Map</a></p>` : ''}
+                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${esc(data.receiptUrl)}" target="_blank" style="color:var(--accent);" rel="noopener noreferrer">View Screenshot</a></p><img src="${esc(data.receiptUrl)}" loading="lazy" decoding="async" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
                                 ${Array.isArray(data.deliveredCodes) && data.deliveredCodes.length ? `<div style="margin-top:8px;padding:10px;background:var(--fill-soft);border-radius:8px;">
                                     <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px;">Delivered Voucher Code${data.deliveredCodes.length > 1 ? 's' : ''} — copy &amp; send to customer</div>
                                     ${data.deliveredCodes.map(c => `<div class="mono" style="font-size:13px;padding:4px 0;word-break:break-all;">${escapeHtml(String(c))}</div>`).join('')}
@@ -7807,12 +8077,42 @@
                 return ms && ms < cutoffMs;
             });
             if (!stale.length) return;
-            // Chunk at 450 to stay safely under Firestore's 500-write batch limit.
-            for (let i = 0; i < stale.length; i += 450) {
-                const chunk = stale.slice(i, i + 450);
-                const batch = writeBatch(db);
-                chunk.forEach(t => batch.delete(doc(db, "walletTopups", t.id)));
-                batch.commit().catch(err => console.error("Wallet top-up auto-delete error:", err));
+            archiveStaleTopups(stale);
+        }
+
+        // Completed top-ups count toward the customer's VIP spend, so their amount is
+        // credited to users/{id}.archivedTopups in the same transaction that deletes
+        // them (see the lifetime-counter note above checkOrdersAutoDelete). Top-ups
+        // deleted by the OLD sweep before this change cannot be recovered.
+        let topupArchiveInFlight = false;
+        async function archiveStaleTopups(stale) {
+            if (topupArchiveInFlight) return;
+            topupArchiveInFlight = true;
+            try {
+                // Per chunk: 150 reads + 150 deletes + at most 150 user writes = 300 writes.
+                for (let i = 0; i < stale.length; i += 150) {
+                    const chunk = stale.slice(i, i + 150);
+                    try {
+                        await runTransaction(db, async (tx) => {
+                            const snaps = await Promise.all(chunk.map(t => tx.get(doc(db, "walletTopups", t.id))));
+                            const per = {};
+                            snaps.forEach((s) => {
+                                if (!s.exists()) return; // already swept by another admin tab
+                                const d = s.data();
+                                if (d.status !== 'Completed' && d.status !== 'Rejected') return;
+                                if (d.status === 'Completed' && d.userId) per[d.userId] = (per[d.userId] || 0) + (Number(d.amount) || 0);
+                                tx.delete(doc(db, "walletTopups", s.id));
+                            });
+                            Object.entries(per).forEach(([uid, amt]) => {
+                                if (amt > 0) tx.set(doc(db, "users", uid), { archivedTopups: increment(amt) }, { merge: true });
+                            });
+                        });
+                    } catch (err) {
+                        console.error("Wallet top-up auto-delete error:", err);
+                    }
+                }
+            } finally {
+                topupArchiveInFlight = false;
             }
         }
 
@@ -7913,7 +8213,7 @@
                             ${walletThumb}
                             <div class="oc-info">
                                 <span class="oc-game-name">+${Number(t.amount || 0).toLocaleString()} MMK</span>
-                                <p class="oc-meta">${t.userName || t.userId || 'Guest'} &middot; ${t.paymentMethod || 'N/A'}${t.fazercardPaymentId ? ' &middot; <span style="color:var(--accent);">Auto-verified</span>' : ''}</p>
+                                <p class="oc-meta">${esc(t.userName || t.userId || 'Guest')} &middot; ${esc(t.paymentMethod || 'N/A')}${t.fazercardPaymentId ? ' &middot; <span style="color:var(--accent);">Auto-verified</span>' : ''}</p>
                             </div>
                             <div class="oc-status">
                                 <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status))}</span>
@@ -7927,7 +8227,7 @@
                                         ${walletThumb}
                                         <div class="od-card-title-text">
                                             <span class="oc-game-name">+${Number(t.amount || 0).toLocaleString()} MMK</span>
-                                            <p class="oc-meta">${t.paymentMethod || 'N/A'} &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status))}</span></p>
+                                            <p class="oc-meta">${esc(t.paymentMethod || 'N/A')} &middot; <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status))}</span></p>
                                         </div>
                                     </div>
                                     <div class="od-card-close" onclick="toggleTopupCard('${t.id}')">
@@ -7936,16 +8236,16 @@
                                 </div>
                                 <div style="display:flex;gap:10px;align-items:stretch;">
                                     <div class="od-grid" style="flex:1;grid-template-columns:1fr;">
-                                        <div class="od-cell"><div class="od-label">UID</div><div class="od-value highlight-id">${t.userId || 'N/A'}</div></div>
-                                        ${t.userPhone ? `<div class="od-cell"><div class="od-label">Phone</div><div class="od-value"><a href="tel:${t.userPhone}">${t.userPhone}</a></div></div>` : ''}
-                                        <div class="od-cell"><div class="od-label">Payment</div><div class="od-value">${t.paymentMethod || 'N/A'}</div></div>
+                                        <div class="od-cell"><div class="od-label">UID</div><div class="od-value highlight-id">${esc(t.userId || 'N/A')}</div></div>
+                                        ${t.userPhone ? `<div class="od-cell"><div class="od-label">Phone</div><div class="od-value"><a href="tel:${esc(t.userPhone)}">${esc(t.userPhone)}</a></div></div>` : ''}
+                                        <div class="od-cell"><div class="od-label">Payment</div><div class="od-value">${esc(t.paymentMethod || 'N/A')}</div></div>
                                     </div>
-                                    ${t.receiptUrl ? `<a href="${t.receiptUrl}" target="_blank" title="View full screenshot" style="flex-shrink:0;width:90px;height:90px;border-radius:12px;overflow:hidden;display:block;background:var(--bg-subtle);border:1px solid var(--border-glass);">
-                                        <img src="${t.receiptUrl}" alt="Receipt" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">
+                                    ${t.receiptUrl ? `<a href="${esc(t.receiptUrl)}" target="_blank" title="View full screenshot" style="flex-shrink:0;width:90px;height:90px;border-radius:12px;overflow:hidden;display:block;background:var(--bg-subtle);border:1px solid var(--border-glass);" rel="noopener noreferrer">
+                                        <img src="${esc(t.receiptUrl)}" alt="Receipt" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">
                                     </a>` : ''}
                                 </div>
                                 <p style="color:var(--text-secondary); font-size:12px;">Requested: ${dateStr}</p>
-                                ${t.statusNote ? `<p style="color:var(--text-secondary); font-size:12px;">Note: ${t.statusNote}</p>` : ''}
+                                ${t.statusNote ? `<p style="color:var(--text-secondary); font-size:12px;">Note: ${esc(t.statusNote)}</p>` : ''}
                                 <div class="od-card-footer" id="topup-footer-${t.id}">
                                     ${actionButtons}
                                 </div>
@@ -8004,6 +8304,7 @@
                 if (!userId) throw new Error('Top up request has no UID.');
                 const userRef = doc(db, "users", userId);
                 tx.set(userRef, { walletBalance: increment(amount) }, { merge: true });
+                tx.set(doc(collection(db, "auditLog")), auditEntry('topup_credit', 'user', userId, { amount, topupId: id, detail: String(note || '').slice(0, 200) }));
                 tx.update(topupRef, {
                     status: 'Completed',
                     confirmedAt: serverTimestamp(),
@@ -8248,6 +8549,7 @@
                     if (!snap.exists()) throw new Error('NOT_REGISTERED');
                     userName = snap.data().name || snap.data().googleEmail || uid;
                     tx.set(userRef, { walletBalance: increment(amount) }, { merge: true });
+                    tx.set(doc(collection(db, "auditLog")), auditEntry('manual_credit', 'user', uid, { amount }));
                     tx.set(doc(collection(db, "walletTopups")), {
                         amount,
                         paymentMethod: 'Admin Top Up',
@@ -8986,37 +9288,6 @@
             setInterval(autoFixLossMakingPackages, LOSS_FIX_INTERVAL_MS);
         }
 
-        // Still tracked/shown (drives the Dashboard toggle's checked state and
-        // whatever else reads it), just no longer used to trigger a run here -
-        // the toggle's real effect now lives entirely in the Worker's sweep.
-        let AUTO_UPDATE_PRICES_ENABLED = false;
-
-        function listenAutoUpdatePricesSetting() {
-            onSnapshot(doc(db, "settings", "pricing"), (docSnap) => {
-                const data = docSnap.exists() ? docSnap.data() : {};
-                AUTO_UPDATE_PRICES_ENABLED = !!data.autoApplyOnLoad;
-                const toggle = document.getElementById('autoupdate-prices-toggle');
-                if (toggle) toggle.checked = AUTO_UPDATE_PRICES_ENABLED;
-            }, (error) => console.error('Auto Price Update setting listener error:', error));
-        }
-
-        async function onAutoUpdatePricesToggle(checked) {
-            const statusEl = document.getElementById('autoupdate-prices-status');
-            try {
-                await setDoc(doc(db, "settings", "pricing"), { autoApplyOnLoad: checked }, { merge: true });
-                statusEl.style.color = 'var(--text-secondary)';
-                statusEl.innerText = checked
-                    ? 'Admin panel ဖွင့်တိုင်း ဈေးနှုန်း update ကို auto ဆွဲပြီး Cost update လုပ်ပေးပါမယ်။'
-                    : 'Auto update ပိတ်ထားပါပြီ — Games list ထဲက "Pass" ခလုတ်ကို manual နှိပ်ပြီးမှ update လုပ်ရပါမယ်။';
-            } catch (error) {
-                console.error('Auto Price Update toggle save error:', error);
-                statusEl.style.color = 'var(--danger-strong)';
-                statusEl.innerText = 'Save failed: ' + error.message;
-                window.showToast('Failed to save setting.', 'fail');
-            }
-        }
-        window.onAutoUpdatePricesToggle = onAutoUpdatePricesToggle;
-
         // Sort key mirrors store.html: explicit `order` field wins (ascending),
         // games without one yet fall to the end, alphabetically - so nothing
         // reshuffles until an admin actually uses "Reorder".
@@ -9206,628 +9477,6 @@
         }
         window.refreshGames = () => loadGames(false, true); // explicit tap on ↻ Refresh always forces a real fetch, bypassing the cache
         function listenGames() { return loadGames(true); } // kept so the startup call site is unchanged
-
-        // ---------- Game Accounts (marketplace) admin management ----------
-        // Manages the "gameAccounts" collection the store's Account tab reads
-        // from (see store's listenGameAccounts()/renderAccountGames()).
-        // Deliberately no auto-fulfillment here: the admin marks an account
-        // "Sold" by hand from this list after confirming the matching order
-        // in Active Orders (orderType: "gameAccount"), since handing over
-        // account credentials is a manual, human step.
-        let GAME_ACCOUNTS = {};
-        let editingAccountImages = [];
-        // Extra label/value chips beyond the fixed Rank/Server fields — same
-        // idea as packages' custom tabs (customPkgTabs), just simpler since
-        // these don't need to be a tab bar, just a growable list of rows.
-        let editingAccountCustomFields = [];
-        // BUGFIX: this listener was missing the attached-flag guard every
-        // other lazy tab listener uses (see subscribeTabListeners()'s
-        // comment, which wrongly assumed this one already had it). Without
-        // the guard, re-opening the Account tab attached a brand new
-        // onSnapshot on top of the old one every time instead of a no-op —
-        // each stacked listener re-fires (and re-bills reads) on every doc
-        // change, so a session with repeated tab switches multiplied reads
-        // on this collection. The old listener was also never unsubscribed,
-        // so it kept running invisibly in the background.
-        let gameAccountsListenerAttached = false;
-        function listenGameAccounts() {
-            if (gameAccountsListenerAttached) return;
-            gameAccountsListenerAttached = true;
-            onSnapshot(collection(db, "gameAccounts"), (snap) => {
-                const map = {};
-                snap.forEach(docSnap => { map[docSnap.id] = docSnap.data(); });
-                GAME_ACCOUNTS = map;
-                renderAccountsList();
-            }, (error) => {
-                console.error("Game accounts listener error:", error);
-                const el = document.getElementById('admin-accounts-container');
-                if (el) el.innerHTML = '<p class="empty-msg" style="color:red;">Could not load accounts. Check connection.</p>';
-            });
-        }
-
-        // Firestore onSnapshot for a full collection fires once per doc change in
-        // a burst (initial load, then every edit/sold-toggle), and this list was
-        // rebuilding its entire innerHTML + every thumbnail image on each one -
-        // same stutter class of bug already fixed for Orders/Games/Users, just
-        // missed here. Coalesce bursts into a single settled render.
-        let accountsRenderScheduled = null;
-        function renderAccountsList() {
-            clearTimeout(accountsRenderScheduled);
-            const container = document.getElementById('admin-accounts-container');
-            attachScrollTouchGuard(container);
-            const runWhenSettled = () => {
-                if (container && container._isTouching) { accountsRenderScheduled = setTimeout(runWhenSettled, 150); return; }
-                renderAccountsListImpl();
-            };
-            accountsRenderScheduled = setTimeout(runWhenSettled, 60);
-        }
-        window.renderAccountsList = renderAccountsList;
-
-        function renderAccountsListImpl() {
-            const container = document.getElementById('admin-accounts-container');
-            if (!container) return;
-            const searchTerm = (document.getElementById('account-search')?.value || '').trim().toLowerCase();
-            const ids = Object.keys(GAME_ACCOUNTS).filter(id => {
-                const a = GAME_ACCOUNTS[id];
-                if (!searchTerm) return true;
-                return (a.gameName || '').toLowerCase().includes(searchTerm) || (a.title || '').toLowerCase().includes(searchTerm);
-            }).sort((a, b) => {
-                const ga = GAME_ACCOUNTS[a], gb = GAME_ACCOUNTS[b];
-                return (ga.gameName || '').localeCompare(gb.gameName || '') || (ga.title || '').localeCompare(gb.title || '');
-            });
-            if (ids.length === 0) {
-                container.innerHTML = searchTerm
-                    ? '<p class="empty-msg">No accounts match your search.</p>'
-                    : '<p class="empty-msg">No game accounts yet. Tap + Add Account to create one.</p>';
-                return;
-            }
-            container.innerHTML = ids.map(id => {
-                const a = GAME_ACCOUNTS[id];
-                const cover = (Array.isArray(a.images) && a.images[0]) || '';
-                const sold = (a.status || 'available') === 'sold';
-                return `
-                    <div class="admin-card acct-card-row" onclick="openAccountEditor('${id}')">
-                        <img class="acct-card-thumb" src="${cover}" alt="" loading="lazy" decoding="async">
-                        <div class="acct-card-info">
-                            <div class="acct-card-title">${escapeHtml(a.title || 'Untitled Account')}</div>
-                            <div class="acct-card-meta">${escapeHtml(a.gameName || '')}${a.rank ? ' • ' + escapeHtml(a.rank) : ''}${a.server ? ' • ' + escapeHtml(a.server) : ''}</div>
-                            <div class="acct-card-price">${Number(a.price || 0).toLocaleString()} MMK</div>
-                        </div>
-                        <span class="acct-status-badge ${sold ? 'sold' : 'available'}">${sold ? 'Sold' : 'Available'}</span>
-                    </div>
-                `;
-            }).join('');
-            initScrollReveal(container);
-        }
-
-        function renderAccountGalleryEditor() {
-            const wrap = document.getElementById('edit-account-gallery');
-            const addTile = wrap.querySelector('.acct-gallery-add');
-            wrap.querySelectorAll('.acct-gallery-thumb').forEach(el => el.remove());
-            editingAccountImages.forEach((url, idx) => {
-                const thumb = document.createElement('div');
-                thumb.className = 'acct-gallery-thumb';
-                thumb.innerHTML = `<img src="${url}" alt="" loading="lazy" decoding="async"><span class="acct-gallery-remove" onclick="event.stopPropagation(); removeAccountImage(${idx})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>`;
-                wrap.insertBefore(thumb, addTile);
-            });
-        }
-
-        function removeAccountImage(idx) {
-            editingAccountImages.splice(idx, 1);
-            renderAccountGalleryEditor();
-        }
-        window.removeAccountImage = removeAccountImage;
-
-        async function addAccountImageFiles(e) {
-            const files = Array.from(e.target.files || []);
-            if (!files.length) return;
-            const statusEl = document.getElementById('account-upload-status');
-            statusEl.style.display = 'block';
-            for (const file of files) {
-                try {
-                    statusEl.innerText = `Uploading photo ${editingAccountImages.length + 1}...`;
-                    const url = await uploadImageToImgBB(file, 'account-upload-status');
-                    editingAccountImages.push(url);
-                    renderAccountGalleryEditor();
-                } catch (error) {
-                    console.error("Account image upload error:", error);
-                    window.showToast(error.message || 'Photo upload failed.', 'fail');
-                }
-            }
-            statusEl.innerText = 'Photos uploaded ✓';
-            e.target.value = '';
-        }
-        window.addAccountImageFiles = addAccountImageFiles;
-
-        // Renders the growable list of custom Rank/Server-style chips for
-        // whichever account is currently open in the editor.
-        function renderAccountCustomFieldsEditor() {
-            const wrap = document.getElementById('edit-account-custom-fields');
-            wrap.innerHTML = editingAccountCustomFields.map((f, i) => `
-                <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-                    <input type="text" placeholder="Tab name (e.g. Emblem)" value="${escapeHtml(f.label || '')}" oninput="updateAccountCustomField(${i},'label',this.value)" style="flex:1;min-width:0;">
-                    <input type="text" placeholder="Value (e.g. Legend)" value="${escapeHtml(f.value || '')}" oninput="updateAccountCustomField(${i},'value',this.value)" style="flex:1;min-width:0;">
-                    <div class="pkg-x-icon" style="cursor:pointer;color:var(--danger);flex-shrink:0;" onclick="removeAccountCustomFieldRow(${i})" title="ဖျက်ရန်"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
-                </div>
-            `).join('');
-        }
-
-        function addAccountCustomFieldRow() {
-            editingAccountCustomFields.push({ label: '', value: '' });
-            renderAccountCustomFieldsEditor();
-        }
-        window.addAccountCustomFieldRow = addAccountCustomFieldRow;
-
-        function removeAccountCustomFieldRow(i) {
-            editingAccountCustomFields.splice(i, 1);
-            renderAccountCustomFieldsEditor();
-        }
-        window.removeAccountCustomFieldRow = removeAccountCustomFieldRow;
-
-        // Typed directly into module state rather than re-read on save, so
-        // a row can be removed/reordered without losing in-progress typing
-        // in the rows around it.
-        function updateAccountCustomField(i, key, value) {
-            if (editingAccountCustomFields[i]) editingAccountCustomFields[i][key] = value;
-        }
-        window.updateAccountCustomField = updateAccountCustomField;
-
-        function openAccountEditor(id = null, prefill = null) {
-            // A normal open (Add Account button, or tapping an existing
-            // listing) always clears any stale sell-request link so it can't
-            // leak into an unrelated save; listSellRequestToStore() sets the
-            // link itself right after this call returns.
-            if (!prefill) pendingListSellRequestSourceId = null;
-            document.getElementById('edit-account-id').value = id || '';
-            document.getElementById('edit-account-file').value = '';
-            document.getElementById('account-upload-status').style.display = 'none';
-            const deleteBtn = document.getElementById('delete-account-btn');
-            if (id && GAME_ACCOUNTS[id]) {
-                const a = GAME_ACCOUNTS[id];
-                document.getElementById('account-editor-title').innerText = 'Edit Account';
-                document.getElementById('edit-account-gamename').value = a.gameName || '';
-                document.getElementById('edit-account-title').value = a.title || '';
-                document.getElementById('edit-account-price').value = a.price || '';
-                document.getElementById('edit-account-rank').value = a.rank || '';
-                document.getElementById('edit-account-server').value = a.server || '';
-                document.getElementById('edit-account-description').value = a.description || '';
-                document.getElementById('edit-account-skins').value = Array.isArray(a.skins) ? a.skins.join(', ') : '';
-                document.getElementById('edit-account-sold').checked = (a.status || 'available') === 'sold';
-                editingAccountImages = Array.isArray(a.images) ? a.images.slice() : [];
-                editingAccountCustomFields = Array.isArray(a.customFields) ? a.customFields.map(f => ({ label: f.label || '', value: f.value || '' })) : [];
-                deleteBtn.style.display = 'block';
-            } else {
-                document.getElementById('account-editor-title').innerText = prefill ? 'List Account (from Sell Request)' : 'Add Account';
-                document.getElementById('edit-account-gamename').value = prefill?.gameName || '';
-                document.getElementById('edit-account-title').value = prefill?.title || '';
-                document.getElementById('edit-account-price').value = prefill?.price || '';
-                document.getElementById('edit-account-rank').value = '';
-                document.getElementById('edit-account-server').value = '';
-                document.getElementById('edit-account-description').value = prefill?.description || '';
-                document.getElementById('edit-account-skins').value = '';
-                document.getElementById('edit-account-sold').checked = false;
-                editingAccountImages = Array.isArray(prefill?.images) ? prefill.images.slice() : [];
-                editingAccountCustomFields = [];
-                deleteBtn.style.display = 'none';
-            }
-            renderAccountGalleryEditor();
-            renderAccountCustomFieldsEditor();
-            document.getElementById('account-editor-modal-overlay').classList.add('show');
-        }
-        window.openAccountEditor = openAccountEditor;
-
-        function closeAccountEditor() {
-            document.getElementById('account-editor-modal-overlay').classList.remove('show');
-            pendingListSellRequestSourceId = null;
-        }
-        window.closeAccountEditor = closeAccountEditor;
-
-        async function saveGameAccount() {
-            const id = document.getElementById('edit-account-id').value;
-            const gameName = document.getElementById('edit-account-gamename').value.trim();
-            const title = document.getElementById('edit-account-title').value.trim();
-            const price = Number(document.getElementById('edit-account-price').value) || 0;
-            const rank = document.getElementById('edit-account-rank').value.trim();
-            const server = document.getElementById('edit-account-server').value.trim();
-            const description = document.getElementById('edit-account-description').value.trim();
-            const skins = document.getElementById('edit-account-skins').value.split(',').map(s => s.trim()).filter(Boolean);
-            const sold = document.getElementById('edit-account-sold').checked;
-            // Blank rows (name typed with no value, or vice versa) are just
-            // dropped rather than saved as a half-empty chip.
-            const customFields = editingAccountCustomFields
-                .map(f => ({ label: (f.label || '').trim(), value: (f.value || '').trim() }))
-                .filter(f => f.label && f.value);
-
-            if (!gameName || !title || !price) { window.showToast('Game Name, Title, Price တွေ ဖြည့်ပါ', 'fail'); return; }
-            if (editingAccountImages.length === 0) { window.showToast('ဓာတ်ပုံ အနည်းဆုံး တစ်ပုံ ထည့်ပါ', 'fail'); return; }
-
-            const saveBtn = document.getElementById('save-account-btn');
-            const originalText = saveBtn.innerText;
-            saveBtn.disabled = true;
-            saveBtn.innerText = 'Saving...';
-
-            try {
-                const data = {
-                    gameName, title, price, rank, server, description, skins, customFields,
-                    images: editingAccountImages,
-                    status: sold ? 'sold' : 'available'
-                };
-                if (!id) {
-                    // Ownership is fixed at creation time - whichever admin
-                    // lists it is who a buyer's "Ask about this account"
-                    // Telegram message gets sent to (see contactAccountAdminOnTelegram()
-                    // in store.html). Never reassigned on a later edit, even
-                    // by a different admin.
-                    data.postedByAdmin = currentAdminUsername || '';
-                    // Denormalized alongside postedByAdmin so store.html can build
-                    // the buyer's Telegram deep-link without ever reading the
-                    // adminUsernames collection directly (that doc also holds
-                    // totpSecret/email — not safe to expose to store guests).
-                    // Falls back to the store's shared Telegram in store.html if
-                    // this admin hasn't linked their Telegram yet.
-                    const me = (typeof ADMIN_ACCOUNTS !== 'undefined' ? ADMIN_ACCOUNTS.find(a => a.username === currentAdminUsername) : null) || {};
-                    data.postedByAdminTelegram = me.telegramUsername || '';
-                }
-                if (id) {
-                    await updateDoc(doc(db, "gameAccounts", id), data);
-                } else {
-                    await addDoc(collection(db, "gameAccounts"), data);
-                    // If this "Add" started from a confirmed sell request's
-                    // "List to Store" button, mark that request as listed so
-                    // it's clear at a glance it's already live in the store.
-                    if (pendingListSellRequestSourceId) {
-                        try {
-                            await updateDoc(doc(db, "sellRequests", pendingListSellRequestSourceId), {
-                                status: 'listed',
-                                listedAt: serverTimestamp()
-                            });
-                        } catch (e) {
-                            console.error("Mark sell request as listed error:", e);
-                        }
-                    }
-                }
-                window.showToast('Account saved!', 'success');
-                closeAccountEditor();
-            } catch (error) {
-                console.error("Save game account error:", error);
-                window.showToast(error.message || 'Failed to save account.', 'fail');
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.innerText = originalText;
-            }
-        }
-        window.saveGameAccount = saveGameAccount;
-
-        function deleteCurrentAccount() {
-            const id = document.getElementById('edit-account-id').value;
-            if (!id) return;
-            window.showActionDialog({
-                type: 'delete',
-                title: 'Delete Account?',
-                message: 'This cannot be undone.',
-                confirmText: 'Delete',
-                onConfirm: async () => {
-                    try {
-                        await deleteDoc(doc(db, "gameAccounts", id));
-                        window.showToast('Account deleted.', 'success');
-                        closeAccountEditor();
-                    } catch (error) {
-                        console.error("Delete game account error:", error);
-                        window.showToast(error.message || 'Failed to delete account.', 'fail');
-                    }
-                }
-            });
-        }
-        window.deleteCurrentAccount = deleteCurrentAccount;
-
-        // ---------- Sell Requests (Game Accounts → "Sell Requests" sub-tab) ----------
-        // Reviews leads from the store's "Sell Your Account" form (Firestore
-        // collection "sellRequests"). These never touch the buyer-facing
-        // GAME_ACCOUNTS marketplace directly — a customer sends their info,
-        // admin negotiates the real price with them directly, then
-        // locks it in here as confirmedPrice/status:'confirmed'. The seller
-        // never had an edit control for price in their own submission, so
-        // once confirmed there's nothing on their side that can change it;
-        // only an admin can re-open it via "Change confirmed price".
-        let SELL_REQUESTS = {};
-        let currentSellRequestId = null;
-
-        // BUGFIX: same missing-guard issue as listenGameAccounts() above —
-        // this attached a fresh onSnapshot every time the Account tab was
-        // opened instead of no-op'ing on repeat calls.
-        let sellRequestsListenerAttached = false;
-        function listenSellRequests() {
-            if (sellRequestsListenerAttached) return;
-            sellRequestsListenerAttached = true;
-            onSnapshot(collection(db, "sellRequests"), (snap) => {
-                const map = {};
-                snap.forEach(docSnap => { map[docSnap.id] = docSnap.data(); });
-                SELL_REQUESTS = map;
-                renderSellRequestsList();
-                renderAccountDashboard();
-            }, (error) => {
-                console.error("Sell requests listener error:", error);
-                const el = document.getElementById('admin-sellrequests-container');
-                if (el) el.innerHTML = '<p class="empty-msg" style="color:red;">Could not load sell requests. Check connection.</p>';
-            });
-        }
-
-        // ---------- Account Dashboard  ----------
-        // Pulls only from GAME_ACCOUNTS / SELL_REQUESTS / ORDERS — never
-        // touches top-up sales, so a Product-side admin's numbers never leak
-        // in here and vice versa. Safe to call before those caches are
-        // populated (renders zeros, then live-updates as each listener fires).
-        function renderAccountDashboard() {
-            const totalEl = document.getElementById('acct-stat-total');
-            if (!totalEl) return; // page not in this build / not yet rendered
-            const accounts = Object.values(GAME_ACCOUNTS);
-            const total = accounts.length;
-            const sold = accounts.filter(a => (a.status || 'available') === 'sold').length;
-            const available = total - sold;
-            const sellReqPending = Object.values(SELL_REQUESTS).filter(r => (r.status || 'pending') === 'pending').length;
-            let pendingOrders = 0, totalSales = 0;
-            Object.values(ORDERS).forEach(o => {
-                if (o.orderType !== 'gameAccount') return;
-                if (o.status === 'Pending' || o.status === 'Processing') pendingOrders++;
-                if (o.status === 'Success') totalSales += Number(o.price) || 0;
-            });
-            document.getElementById('acct-stat-total').innerText = total.toLocaleString();
-            document.getElementById('acct-stat-available').innerText = available.toLocaleString();
-            document.getElementById('acct-stat-sold').innerText = sold.toLocaleString();
-            document.getElementById('acct-stat-pending-orders').innerText = pendingOrders.toLocaleString();
-            document.getElementById('acct-stat-sellreq').innerText = sellReqPending.toLocaleString();
-            document.getElementById('acct-stat-sales').innerText = totalSales.toLocaleString() + ' MMK';
-        }
-        window.renderAccountDashboard = renderAccountDashboard;
-
-        let sellRequestsRenderScheduled = null;
-        function renderSellRequestsList() {
-            clearTimeout(sellRequestsRenderScheduled);
-            const container = document.getElementById('admin-sellrequests-container');
-            attachScrollTouchGuard(container);
-            const runWhenSettled = () => {
-                if (container && container._isTouching) { sellRequestsRenderScheduled = setTimeout(runWhenSettled, 150); return; }
-                renderSellRequestsListImpl();
-            };
-            sellRequestsRenderScheduled = setTimeout(runWhenSettled, 60);
-        }
-        window.renderSellRequestsList = renderSellRequestsList;
-
-        function sellRequestStatusLabel(status) {
-            if (status === 'listed') return 'Listed';
-            if (status === 'confirmed') return 'Confirmed';
-            if (status === 'rejected') return 'Rejected';
-            return 'Pending';
-        }
-
-        function renderSellRequestsListImpl() {
-            const container = document.getElementById('admin-sellrequests-container');
-            if (!container) return;
-            const searchTerm = (document.getElementById('sellreq-search')?.value || '').trim().toLowerCase();
-            const ids = Object.keys(SELL_REQUESTS).filter(id => {
-                const r = SELL_REQUESTS[id];
-                if (!searchTerm) return true;
-                return (r.game || '').toLowerCase().includes(searchTerm) ||
-                       (r.title || '').toLowerCase().includes(searchTerm) ||
-                       (r.userName || '').toLowerCase().includes(searchTerm);
-            }).sort((a, b) => {
-                const ra = SELL_REQUESTS[a], rb = SELL_REQUESTS[b];
-                // Pending first (needs attention), newest first within a status.
-                const statusRank = { pending: 0, confirmed: 1, listed: 2, rejected: 3 };
-                const rankDiff = (statusRank[ra.status] ?? 0) - (statusRank[rb.status] ?? 0);
-                if (rankDiff !== 0) return rankDiff;
-                return (rb.createdAt?.seconds || 0) - (ra.createdAt?.seconds || 0);
-            });
-
-            // Badge the tab itself with the count still awaiting review.
-            const pendingCount = Object.values(SELL_REQUESTS).filter(r => (r.status || 'pending') === 'pending').length;
-            const countEl = document.getElementById('sellreq-pending-count');
-            if (countEl) {
-                if (pendingCount > 0) { countEl.style.display = 'inline-flex'; countEl.textContent = String(pendingCount); }
-                else { countEl.style.display = 'none'; }
-            }
-
-            if (ids.length === 0) {
-                container.innerHTML = searchTerm
-                    ? '<p class="empty-msg">No sell requests match your search.</p>'
-                    : '<p class="empty-msg">No sell requests yet. Submissions from the store\'s "Sell" tab will show up here.</p>';
-                return;
-            }
-            container.innerHTML = ids.map(id => {
-                const r = SELL_REQUESTS[id];
-                const status = r.status || 'pending';
-                const priceLine = (status === 'confirmed' || status === 'listed')
-                    ? `${Number(r.confirmedPrice || 0).toLocaleString()} MMK ✓`
-                    : `${Number(r.price || 0).toLocaleString()} MMK (asking)`;
-                return `
-                    <div class="admin-card acct-card-row" onclick="openSellRequestDetail('${id}')">
-                        <img class="acct-card-thumb" src="${r.photoUrl || ''}" alt="" loading="lazy" decoding="async">
-                        <div class="acct-card-info">
-                            <div class="acct-card-title">${escapeHtml(r.title || 'Untitled')}</div>
-                            <div class="acct-card-meta">${escapeHtml(r.game || '')} • ${escapeHtml(r.userName || r.userId || '')}</div>
-                            <div class="acct-card-price">${priceLine}</div>
-                        </div>
-                        <span class="acct-status-badge ${status}">${sellRequestStatusLabel(status)}</span>
-                    </div>
-                `;
-            }).join('');
-            initScrollReveal(container);
-        }
-
-        function switchAccountSubTab(tab) {
-            const listingsTab = document.getElementById('acct-subtab-listings');
-            const sellreqTab = document.getElementById('acct-subtab-sellreq');
-            const listingsPane = document.getElementById('acct-tab-listings');
-            const sellreqPane = document.getElementById('acct-tab-sellreq');
-            const showSellReq = tab === 'sellreq';
-            listingsTab.classList.toggle('active', !showSellReq);
-            sellreqTab.classList.toggle('active', showSellReq);
-            listingsPane.style.display = showSellReq ? 'none' : '';
-            sellreqPane.style.display = showSellReq ? '' : 'none';
-            if (showSellReq) renderSellRequestsList();
-        }
-        window.switchAccountSubTab = switchAccountSubTab;
-
-        function openSellRequestDetail(id) {
-            const r = SELL_REQUESTS[id];
-            if (!r) return;
-            currentSellRequestId = id;
-            const status = r.status || 'pending';
-
-            document.getElementById('sr-detail-title').innerText = r.title || 'Sell Request';
-            const statusBadge = document.getElementById('sr-detail-status');
-            statusBadge.className = `acct-status-badge ${status}`;
-            statusBadge.textContent = sellRequestStatusLabel(status);
-
-            document.getElementById('sr-detail-game').textContent = r.game || '—';
-            document.getElementById('sr-detail-listtitle').textContent = r.title || '—';
-            document.getElementById('sr-detail-askprice').textContent = r.price ? `${Number(r.price).toLocaleString()} MMK` : '—';
-            document.getElementById('sr-detail-desc').textContent = r.description || '—';
-
-            const photo = document.getElementById('sr-detail-photo');
-            if (r.photoUrl) { photo.src = r.photoUrl; photo.style.display = 'block'; photo.onclick = () => window.open(r.photoUrl, '_blank'); }
-            else { photo.style.display = 'none'; }
-
-            document.getElementById('sr-detail-sellername').textContent = r.userName || r.userId || '—';
-            document.getElementById('sr-detail-contact').textContent = r.contact || '—';
-            document.getElementById('sr-detail-submitted').textContent = r.createdAt?.seconds
-                ? new Date(r.createdAt.seconds * 1000).toLocaleString()
-                : '—';
-
-            const kycFront = document.getElementById('sr-detail-kyc-front');
-            const kycBack = document.getElementById('sr-detail-kyc-back');
-            kycFront.src = r.sellerKycNrcFrontUrl || '';
-            kycBack.src = r.sellerKycNrcBackUrl || '';
-            const kycVideo = document.getElementById('sr-detail-kyc-video');
-            kycVideo.src = r.sellerKycVideoUrl || '';
-
-            const locEl = document.getElementById('sr-detail-location');
-            if (r.sellerKycLocation && r.sellerKycLocation.lat != null) {
-                const { lat, lng } = r.sellerKycLocation;
-                locEl.innerHTML = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--accent);font-weight:600;">View on map ↗</a>`;
-            } else {
-                locEl.textContent = '—';
-            }
-
-            // Price confirmation section: show the locked, checkmarked view
-            // once confirmed; otherwise show the input the admin fills in
-            // after negotiating with the seller.
-            const confirmedView = document.getElementById('sr-confirmed-view');
-            const inputRow = document.getElementById('sr-confirm-input-row');
-            const priceInput = document.getElementById('sr-confirm-price-input');
-            if (status === 'confirmed' || status === 'listed') {
-                document.getElementById('sr-confirmed-amount').textContent = `Confirmed: ${Number(r.confirmedPrice || 0).toLocaleString()} MMK`;
-                confirmedView.style.display = 'block';
-                inputRow.style.display = 'none';
-            } else {
-                confirmedView.style.display = 'none';
-                inputRow.style.display = 'block';
-                priceInput.value = r.confirmedPrice || r.price || '';
-            }
-            const listedNote = document.getElementById('sr-already-listed-note');
-            if (listedNote) listedNote.style.display = status === 'listed' ? 'block' : 'none';
-
-            const rejectBtn = document.getElementById('sr-reject-btn');
-            rejectBtn.style.display = (status === 'rejected' || status === 'listed') ? 'none' : '';
-
-            document.getElementById('sellreq-detail-overlay').classList.add('show');
-        }
-        window.openSellRequestDetail = openSellRequestDetail;
-
-        function closeSellRequestDetail() {
-            document.getElementById('sellreq-detail-overlay').classList.remove('show');
-            currentSellRequestId = null;
-        }
-        window.closeSellRequestDetail = closeSellRequestDetail;
-
-        // Re-opens the input on an already-confirmed request, for the rare
-        // case the negotiated price genuinely changes later.
-        function unlockSellRequestPriceEdit() {
-            const r = SELL_REQUESTS[currentSellRequestId];
-            document.getElementById('sr-confirmed-view').style.display = 'none';
-            const inputRow = document.getElementById('sr-confirm-input-row');
-            inputRow.style.display = 'block';
-            document.getElementById('sr-confirm-price-input').value = r ? (r.confirmedPrice || '') : '';
-        }
-        window.unlockSellRequestPriceEdit = unlockSellRequestPriceEdit;
-
-        async function confirmSellRequestPrice() {
-            const id = currentSellRequestId;
-            if (!id) return;
-            const raw = document.getElementById('sr-confirm-price-input').value.trim();
-            const price = Number(raw);
-            if (!raw || !Number.isFinite(price) || price <= 0) {
-                window.showToast('Confirmed price ထည့်ပါ', 'fail');
-                return;
-            }
-            try {
-                await updateDoc(doc(db, "sellRequests", id), {
-                    status: 'confirmed',
-                    confirmedPrice: price,
-                    confirmedAt: serverTimestamp()
-                });
-                window.showToast('Price confirmed ✓', 'success');
-                openSellRequestDetail(id); // refresh the modal into the locked view
-            } catch (error) {
-                console.error("Confirm sell request price error:", error);
-                window.showToast(error.message || 'Failed to confirm price.', 'fail');
-            }
-        }
-        window.confirmSellRequestPrice = confirmSellRequestPrice;
-
-        // ---------- List to Store ----------
-        // Only an admin can push a sell request onto the buyer-facing
-        // marketplace — this is the explicit "post it" action, separate from
-        // just confirming a price with the seller. It hands the already-
-        // uploaded game/title/price/photo/description into the same Account
-        // Editor used by "+ Add Account", pre-filled, so admin isn't retyping
-        // it; admin can still adjust anything (add more photos, rank/server,
-        // skins) before saving. Saving marks the original sell request as
-        // "listed" so it's clear at a glance it's already live.
-        let pendingListSellRequestSourceId = null;
-
-        function listSellRequestToStore() {
-            const id = currentSellRequestId;
-            const r = SELL_REQUESTS[id];
-            if (!r) return;
-            const status = r.status || 'pending';
-            if (status !== 'confirmed' && status !== 'listed') {
-                window.showToast('Confirm the price with the seller first.', 'fail');
-                return;
-            }
-            closeSellRequestDetail();
-            openAccountEditor(null, {
-                gameName: r.game || '',
-                title: r.title || '',
-                price: r.confirmedPrice || r.price || '',
-                description: r.description || '',
-                images: r.photoUrl ? [r.photoUrl] : []
-            });
-            pendingListSellRequestSourceId = id;
-        }
-        window.listSellRequestToStore = listSellRequestToStore;
-
-        function rejectSellRequest() {
-            const id = currentSellRequestId;
-            if (!id) return;
-            window.showActionDialog({
-                type: 'delete',
-                title: 'Reject this sell request?',
-                message: 'The seller keeps their submission on file, but it will be marked as rejected.',
-                confirmText: 'Reject',
-                onConfirm: async () => {
-                    try {
-                        await updateDoc(doc(db, "sellRequests", id), { status: 'rejected' });
-                        window.showToast('Sell request rejected.', 'success');
-                        closeSellRequestDetail();
-                    } catch (error) {
-                        console.error("Reject sell request error:", error);
-                        window.showToast(error.message || 'Failed to reject.', 'fail');
-                    }
-                }
-            });
-        }
-        window.rejectSellRequest = rejectSellRequest;
 
         function previewGameImage(e) {
             const file = e.target.files[0];
@@ -10779,12 +10428,17 @@
         function setResyncMargin(v) {
             v = Number(v);
             if (isNaN(v)) v = resyncMarginPct;
-            v = Math.min(100, Math.max(0, Math.round(v * 10) / 10));
+            v = Math.min(100, Math.max(0, Math.round(v * 100) / 100)); // 2 decimals: 1.25% is valid
             resyncMarginPct = v;
             document.querySelectorAll('.resync-margin-input').forEach(i => { i.value = v; });
             try { localStorage.setItem('pca-admin-resync-margin', String(v)); } catch (e) {}
+            // The Worker re-prices a package with this same margin whenever its Cost changes.
+            clearTimeout(window._resyncMarginSaveT);
+            window._resyncMarginSaveT = setTimeout(() => {
+                try { setDoc(doc(db, "settings", "pricing"), { resyncMarginPct: v }, { merge: true }).catch(() => {}); } catch (e) {}
+            }, 700);
         }
-        function stepResyncMargin(d) { setResyncMargin(resyncMarginPct + d); }
+        function stepResyncMargin(d) { setResyncMargin(resyncMarginPct + d * 0.25); }
         window.setResyncMargin = setResyncMargin;
         window.stepResyncMargin = stepResyncMargin;
         setResyncMargin(resyncMarginPct);
@@ -10995,14 +10649,13 @@
                 document.getElementById('g2bulk-import-status').innerText = '';
                 document.getElementById('edit-game-jcplays-code').value = g.jcplaysProduct || '';
                 document.getElementById('jcplays-denom-status').innerText = '';
-                // refreshPickerButton/refreshCheckPricesBtn read these two
+                // refreshPickerButton reads these two
                 // fields directly, but setting .value above doesn't fire an
                 // onchange — refresh both explicitly now that they're loaded
                 // (matters more now that a game can have both linked at once).
                 refreshPickerButton('g2bulk');
                 refreshPickerButton('jcplays');
-                refreshCheckPricesBtn();
-                document.getElementById('edit-game-voucher-category').value = g.g2bulkVoucherCategory || '';
+                    document.getElementById('edit-game-voucher-category').value = g.g2bulkVoucherCategory || '';
                 // Same leak as g2bulk-import-status above - only ever cleared
                 // in the "Add New Game" branch, so a leftover voucher import
                 // message could bleed into the next game's editor too.
@@ -11081,7 +10734,6 @@
             refreshPickerButton('fazercard_giftcard');
             onG2BulkGameChange();
             onVoucherCategoryChange();
-            refreshCheckPricesBtn();
             document.getElementById('pkg-price-check-status').innerText = '';
             document.getElementById('pkg-apply-all-cost-btn').style.display = 'none';
             // Fetch G2Bulk's games/categories lists in the background (cached
@@ -11577,9 +11229,10 @@
                         window.showToast('No user found with that ID', 'fail');
                         return;
                     }
-                    payload.targetUserId = targetUserId;
                 }
-                await addDoc(collection(db, "notifications"), payload);
+                // One customer -> private inbox (users/{id}/inbox); everyone -> public broadcast list.
+                if (audience === 'user') await addDoc(collection(db, "users", targetUserId, "inbox"), payload);
+                else await addDoc(collection(db, "notifications"), payload);
                 titleEl.value = '';
                 introEl.value = '';
                 detailsEl.value = '';
@@ -12115,7 +11768,7 @@
                 <div class="ugc-stats">
                     <span>Orders <b>${orderCount}</b></span>
                     <span>Wallet <b>${fmtMoney(u.walletBalance || 0)}</b></span>
-                    ${u.phone ? `<span>${u.phone}</span>` : ''}
+                    ${u.phone ? `<span>${esc(u.phone)}</span>` : ''}
                 </div>
             `;
         }
@@ -12307,27 +11960,31 @@
                 return `
                     <div class="admin-card" style="padding:12px;">
                         <div class="ac-header" style="margin-bottom:6px;padding-bottom:6px;cursor:pointer;" onclick="toggleUserOrderCard('${orderId}')">
-                            <span class="ac-id">${o.game} (${o.itemAmount})</span>
+                            <span class="ac-id">${esc(o.game)} (${esc(o.itemAmount)})</span>
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(o.status) + (o.adminCleared ? ' · cleaned' : ''))}</span>
                                 <svg class="ui-icon" id="ud-oc-chevron-${orderId}" style="width:15px;height:15px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(${isOpen ? '180' : '0'}deg);"><use href="#icon-chevron-down"></use></svg>
                             </div>
                         </div>
-                        <p style="font-size:13px;color:var(--text-secondary);">${fmtMoney(o.price)} &middot; ${o.paymentMethod || 'N/A'}</p>
+                        <p style="font-size:13px;color:var(--text-secondary);">${fmtMoney(o.price)} &middot; ${esc(o.paymentMethod || 'N/A')}</p>
                         <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">${dateStr}</p>
                         <div id="ud-oc-body-${orderId}" style="display:${isOpen ? 'block' : 'none'};padding-top:10px;margin-top:10px;border-top:1px solid var(--bg-subtle);">
                             <div class="od-grid">
                                 <div class="od-cell">
                                     <div class="od-label">In-Game Name</div>
-                                    <div class="od-value">${o.inGameName || 'N/A'}</div>
+                                    <div class="od-value">${escapeHtml(o.inGameName || o.fazercardVerifiedName || 'N/A')}</div>
+                                </div>
+                                <div class="od-cell">
+                                    <div class="od-label">Package Type</div>
+                                    <div class="od-value">${escapeHtml(o.packageTab || 'N/A')}${Number(o.quantity) > 1 ? ` &middot; ×${Number(o.quantity)}` : ''}</div>
                                 </div>
                                 <div class="od-cell">
                                     <div class="od-label">Player ID</div>
-                                    <div class="od-value mono">${o.playerId || 'N/A'}</div>
+                                    <div class="od-value mono">${esc(o.playerId || 'N/A')}</div>
                                 </div>
                                 ${o.serverId ? `<div class="od-cell">
                                     <div class="od-label">Server ID</div>
-                                    <div class="od-value mono">${o.serverId}</div>
+                                    <div class="od-value mono">${esc(o.serverId)}</div>
                                 </div>` : ''}
                                 <div class="od-cell">
                                     <div class="od-label">Order ID</div>
@@ -12341,19 +11998,19 @@
                                 </div>` : ''}
                                 <div class="od-cell">
                                     <div class="od-label">Transaction ID</div>
-                                    <div class="od-value mono">${o.transactionId || 'N/A'}</div>
+                                    <div class="od-value mono">${esc(o.transactionId || 'N/A')}</div>
                                 </div>
                                 <div class="od-cell">
                                     <div class="od-label">Paid Via</div>
-                                    <div class="od-value">${o.paymentMethod || 'N/A'}</div>
+                                    <div class="od-value">${esc(o.paymentMethod || 'N/A')}</div>
                                 </div>
                                 <div class="od-cell span-2">
                                     <div class="od-label">Date</div>
                                     <div class="od-value">${dateStr}</div>
                                 </div>
                             </div>
-                            ${o.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${o.serverRegion}</span></p>` : ''}
-                            ${o.receiptUrl ? `<p><b>Receipt:</b> <a href="${o.receiptUrl}" target="_blank" style="color:var(--accent);">View Screenshot</a></p><img src="${o.receiptUrl}" loading="lazy" decoding="async" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                            ${o.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${esc(o.serverRegion)}</span></p>` : ''}
+                            ${o.receiptUrl ? `<p><b>Receipt:</b> <a href="${esc(o.receiptUrl)}" target="_blank" style="color:var(--accent);" rel="noopener noreferrer">View Screenshot</a></p><img src="${esc(o.receiptUrl)}" loading="lazy" decoding="async" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
                         </div>
                     </div>
                 `;
@@ -12376,7 +12033,6 @@
             document.getElementById('ud-last-seen-h').innerText = lastSeenStr;
             document.getElementById('ud-join-date').innerText = joinDateStr;
             document.getElementById('ud-admin-note').value = u.adminNote || '';
-            renderUserKycSection(u);
             document.getElementById('ud-wallet-balance-h').innerText = fmtMoney(u.walletBalance || 0);
             document.getElementById('ud-deduct-amount').value = '';
 
@@ -12459,7 +12115,7 @@
                             <span class="ac-id">${fmtMoney(t.amount || 0)}</span>
                             <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status || 'Pending'))}</span>
                         </div>
-                        <p style="font-size:13px;color:var(--text-secondary);">${t.paymentMethod || 'N/A'}</p>
+                        <p style="font-size:13px;color:var(--text-secondary);">${esc(t.paymentMethod || 'N/A')}</p>
                         <p style="font-size:12px;color:var(--text-muted);margin-top:4px;">${dateStr}</p>
                     </div>
                 `;
@@ -12500,50 +12156,6 @@
             }
         }
         window.saveUserAdminNote = saveUserAdminNote;
-
-        // Shows whatever NRC photo the customer submitted (from store.html's
-        // account-purchase KYC gate) plus Approve/Reject controls. A user
-        // with no kycStatus at all has never opened that gate, so there's
-        // nothing to review yet.
-        function renderUserKycSection(u) {
-            const el = document.getElementById('ud-kyc-section');
-            if (!el) return;
-            const status = u.kycStatus || 'none';
-            if (status === 'none') {
-                el.innerHTML = `<p class="empty-msg" style="margin:0;">No ID submitted yet.</p>`;
-                return;
-            }
-            const cls = status === 'verified' ? 'badge-success' : status === 'rejected' ? 'badge-danger' : 'badge-warning';
-            const label = status === 'verified' ? 'Verified' : status === 'rejected' ? 'Rejected' : 'Pending Review';
-            el.innerHTML = `
-                <div style="margin-bottom:10px;"><span class="badge ${cls}">${statusBadgeHtml(cls, label)}</span></div>
-                ${u.kycNrcUrl ? `<img src="${u.kycNrcUrl}" alt="Submitted NRC" loading="lazy" decoding="async" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-bottom:10px;cursor:pointer;" onclick="window.open('${u.kycNrcUrl}','_blank')">` : ''}
-                <div style="display:flex;gap:8px;">
-                    ${status !== 'verified' ? `<button class="btn btn-outline" onclick="setUserKycStatus('verified')">Approve</button>` : ''}
-                    ${status !== 'rejected' ? `<button class="btn btn-danger" onclick="setUserKycStatus('rejected')">Reject</button>` : ''}
-                </div>
-            `;
-        }
-
-        // Approve/reject a customer's submitted NRC. Store.html's account
-        // purchase flow reads kycStatus live (via its wallet-balance
-        // listener), so approving here unblocks their pending purchase
-        // instantly without them needing to reload.
-        async function setUserKycStatus(status) {
-            if (!currentUserDetailsId) return;
-            const userId = currentUserDetailsId;
-            const u = USERS[userId];
-            try {
-                await updateDoc(doc(db, "users", userId), { kycStatus: status });
-                if (u) u.kycStatus = status;
-                renderUserKycSection(USERS[userId] || {});
-                window.showToast(status === 'verified' ? 'Identity verified ✓' : 'Marked as rejected', status === 'verified' ? 'success' : 'fail');
-            } catch (error) {
-                console.error('KYC status update error:', error);
-                window.showToast('Failed to update verification status.', 'fail');
-            }
-        }
-        window.setUserKycStatus = setUserKycStatus;
 
         function closeUserDetails() {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
@@ -12651,6 +12263,7 @@
                                 throw new Error('INSUFFICIENT_BALANCE');
                             }
                             tx.set(userRef, { walletBalance: increment(-amount) }, { merge: true });
+                            tx.set(doc(collection(db, "auditLog")), auditEntry('manual_deduct', 'user', userId, { amount, detail: String(note || '').slice(0, 200) }));
                         });
                         input.value = '';
                         window.showToast(`Deducted ${fmtMoney(amount)} ✓`, 'success');
@@ -14246,7 +13859,6 @@
             if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
             if (provider === 'fazercard') { refreshPickerButton('fazercard'); }
             if (provider === 'fazercard_giftcard') { refreshPickerButton('fazercard_giftcard'); onFazerCardGiftCardCategoryChange(); }
-            refreshCheckPricesBtn();
         }
         window.setFulfillProvider = setFulfillProvider;
 
@@ -14266,7 +13878,6 @@
             const code = document.getElementById('edit-game-g2bulk-code').value;
             document.getElementById('g2bulk-import-btn').style.display = code ? 'block' : 'none';
             document.getElementById('g2bulk-debug-btn').style.display = code ? 'block' : 'none';
-            refreshCheckPricesBtn();
         }
 
         function onFazerCardGameChange() {
@@ -14278,22 +13889,6 @@
         function onFazerCardGiftCardCategoryChange() {
             const categoryId = document.getElementById('edit-game-fazercard-giftcard-category').value;
             document.getElementById('fazercard-giftcard-import-btn').style.display = categoryId ? '' : 'none';
-        }
-
-        // Shows the "Check Prices" button only when the game is actually
-        // linked to a provider (has a G2Bulk code or JCPlays product code) -
-        // there's nothing to check against for manual-fulfillment games.
-        function refreshCheckPricesBtn() {
-            const btn = document.getElementById('pkg-check-prices-btn');
-            if (!btn) return;
-            const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value.trim();
-            const jcplaysCode = document.getElementById('edit-game-jcplays-code').value.trim();
-            const voucherCategory = document.getElementById('edit-game-voucher-category').value.trim();
-            // g2bulkCode/jcplaysCode can now both be set at once (mixed
-            // per-package providers) — show the button if either is linked,
-            // not just whichever tab happens to be open.
-            const linked = (currentFulfillProvider === 'g2bulk_voucher' && voucherCategory) || g2bulkCode || jcplaysCode;
-            btn.style.display = linked ? 'inline-flex' : 'none';
         }
 
         // ---------- Shared Game Picker (grid with images + search) ----------
@@ -14767,7 +14362,6 @@
         // one from the grid.
         function onJCPlaysCodeTyped() {
             refreshPickerButton('jcplays');
-            refreshCheckPricesBtn();
         }
         window.onJCPlaysCodeTyped = onJCPlaysCodeTyped;
 
@@ -15456,7 +15050,6 @@
         // the new value. Nothing is written until the admin taps it.
         async function checkLivePriceChanges(silent = false) {
             const statusEl = document.getElementById('pkg-price-check-status');
-            const btn = document.getElementById('pkg-check-prices-btn');
             const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row'));
             if (rows.length === 0) return;
 
@@ -15471,8 +15064,6 @@
             const allBtn = document.getElementById('pkg-apply-all-cost-btn');
             if (allBtn) allBtn.style.display = 'none';
 
-            const originalHTML = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.innerText = 'Checking...'; }
             if (statusEl) { statusEl.style.color = 'var(--text-secondary)'; statusEl.innerText = 'Checking live prices...'; }
 
             try {
@@ -15556,8 +15147,6 @@
                 console.error('Price check error:', error);
                 if (statusEl) { statusEl.style.color = 'var(--danger-strong)'; statusEl.innerText = 'Price check failed: ' + error.message; }
                 if (!silent) window.showToast('Price check failed.', 'fail');
-            } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
             }
         }
         window.checkLivePriceChanges = checkLivePriceChanges;
@@ -15571,8 +15160,6 @@
         // steps in the mid-range, 5,000 MMK steps for big top-ups. Admin can
         // always type a higher Price by hand afterward; this only ever
         // raises, never lowers.
-        const MIN_PROFIT_MARGIN_PCT = 4;
-
         function roundUpToPriceTier(value) {
             let step;
             if (value < 1000) step = 100;
@@ -16750,8 +16337,7 @@
             // Cloudflare/Firestore usage: manual Refresh only.
             // Orders are no longer auto-loaded here: they load when the Orders page is opened.
             fetchWalletTopups();
-            // listenGameAccounts/listenSellRequests/listenNotifications/
-            // listenAnnouncementsAdmin/listenPaymentMethods
+            // listenNotifications/listenAnnouncementsAdmin/listenPaymentMethods
             // used to all fire here unconditionally - each is a
             // full-collection onSnapshot with no query bound, so every one
             // stayed open and billing for the whole session even on tabs
@@ -16787,10 +16373,6 @@
             //                          disabling another admin must take
             //                          effect immediately, on whatever page
             //                          that admin currently has open
-            //   - listenAutoUpdatePricesSetting -> just drives the toggle's
-            //                          checked state now; the actual sweep
-            //                          moved to telegram-worker.js's daily
-            //                          07:00 Yangon-time cron (see there)
             listenBranding();
             listenG2Bulk();
             listenJCPlays();
@@ -16798,7 +16380,6 @@
             listenTelegramBot();
             listenAdminBroadcastSecret();
             listenAdminAccounts();
-            // listenAutoUpdatePricesSetting() no longer started: Cost update always runs in the Worker (saves one read per load)
             startAdminHeartbeat();
             startOrderArchiveScheduler();
             startDailySummaryScheduler();
@@ -16880,5 +16461,234 @@
             autoPollG2BulkOrders();
         });
     </script>
+<script id="pca-mobile-v2-js">
+/* PCA Admin - Mobile v2 behaviour layer.
+   UI-only: it never reads or writes Firestore, never calls a Worker, and does not
+   touch any order / wallet logic. It only watches the DOM that already exists. */
+(function () {
+    'use strict';
+    var mqMobile = window.matchMedia('(max-width: 899.98px)');
+    function $(id) { return document.getElementById(id); }
+    function isMobile() { return mqMobile.matches; }
+    function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 8); } catch (e) {} }
+
+    /* ---- 1. Which bottom tab is lit up (also fixes Users detail / Game pages) ---- */
+    var MOBILE_TAB = {
+        'dashboard': 'group-dashboard', 'analytics': 'group-dashboard',
+        'order-list': 'group-orders',
+        'topup-list': 'group-wallet', 'payment-list': 'group-wallet',
+        'user-list': 'group-userlist', 'user-detail-page': 'group-userlist'
+    };
+    var DESKTOP_TAB = {
+        'dashboard': 'group-dashboard', 'analytics': 'group-dashboard',
+        'order-list': 'group-orders',
+        'game-list': 'group-game', 'game-editor-page': 'group-game',
+        'topup-list': 'group-wallet', 'payment-list': 'group-wallet',
+        'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
+        'user-list': 'group-userlist', 'user-detail-page': 'group-userlist',
+        'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
+    };
+    var syncing = false;
+    function syncNav() {
+        if (syncing) return; syncing = true;
+        var page = document.querySelector('.page-section.active');
+        var id = page ? page.id : 'dashboard';
+        var target = isMobile() ? (MOBILE_TAB[id] || 'group-more') : (DESKTOP_TAB[id] || null);
+        document.querySelectorAll('#admin-top-nav .nav-item').forEach(function (n) {
+            n.classList.toggle('active', n.id === target);
+        });
+        document.body.setAttribute('data-page', id);
+        syncing = false;
+    }
+    var navObs = new MutationObserver(function () { requestAnimationFrame(syncNav); });
+    document.querySelectorAll('.page-section').forEach(function (p) {
+        navObs.observe(p, { attributes: true, attributeFilter: ['class'] });
+    });
+    var nav = $('admin-top-nav');
+    if (nav) nav.addEventListener('click', function (e) { if (e.target.closest('.nav-item')) buzz(6); }, { passive: true });
+    if (mqMobile.addEventListener) mqMobile.addEventListener('change', syncNav);
+    syncNav();
+
+    /* ---- 2. "More" sheet: Game, API, Settings, Account ---------------------- */
+    var moreOverlay = null;
+    function go(fn) { return function () { closeMore(); try { fn(); } catch (e) { console.error(e); } }; }
+    function moreGroups() {
+        var W = window;
+        return [
+            { title: 'Games', items: [
+                { label: 'Direct', icon: 'icon-gamepad', page: 'game-list', run: function () { W.showGameListTab('direct'); } },
+                { label: 'Voucher', icon: 'icon-gift', page: 'game-list', run: function () { W.showGameListTab('voucher'); } }
+            ]},
+            { title: 'API providers', items: [
+                { label: 'G2Bulk', icon: 'icon-g2bulk', page: 'g2bulk', key: 'g2bulk', run: function () { W.showPage('g2bulk'); } },
+                { label: 'JCPlays', icon: 'icon-key', page: 'jcplays', key: 'jcplays', run: function () { W.showPage('jcplays'); } },
+                { label: 'API Keys', icon: 'icon-plug', page: 'api-docs', run: function () { W.showPage('api-docs'); } },
+                { label: 'API Balance', icon: 'icon-bar-chart', page: 'analytics', run: function () { W.showPage('analytics'); } }
+            ]},
+            { title: 'Settings', items: [
+                { label: 'General', icon: 'icon-gear', page: 'settings', run: function () { W.showPage('settings'); } },
+                { label: 'Notify', icon: 'icon-bell', page: 'notify-list', run: function () { W.showPage('notify-list'); } },
+                { label: 'Ticker', icon: 'icon-megaphone', page: 'ticker-list', run: function () { W.showPage('ticker-list'); } }
+            ]},
+            { title: 'Account', items: [
+                { label: 'My Account', icon: 'icon-users', run: function () { W.openMyAccountModal && W.openMyAccountModal(); } },
+                { label: 'Appearance', icon: 'icon-palette', run: function () { W.openThemeSheet && W.openThemeSheet(); } },
+                { label: 'Log out', icon: 'icon-log-out', danger: true, run: function () { W.openQuitModal && W.openQuitModal(); } }
+            ]}
+        ];
+    }
+    function lowProviders() {
+        var bell = $('low-balance-alert-btn');
+        var t = bell && bell.style.display !== 'none' ? (bell.title || '') : '';
+        return { g2bulk: /G2Bulk/i.test(t), jcplays: /JCPlays/i.test(t) };
+    }
+    function buildMore() {
+        if (moreOverlay) moreOverlay.remove();
+        var low = lowProviders();
+        var cur = (document.querySelector('.page-section.active') || {}).id;
+        var html = '<div class="modal-box"><div class="modal-header"><h3>More</h3>' +
+            '<div class="modal-close" role="button" aria-label="Close"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div></div>' +
+            '<div class="modal-body">';
+        moreGroups().forEach(function (g, gi) {
+            html += '<div class="pca-more-group"><p class="pca-more-title">' + g.title + '</p><div class="pca-more-grid' + (g.items.length % 3 ? ' cols2' : '') + '">';
+            g.items.forEach(function (it, ii) {
+                var isCur = it.page && it.page === cur;
+                html += '<button type="button" class="pca-more-tile' + (isCur ? ' is-current' : '') + (it.danger ? ' is-danger' : '') + '" data-g="' + gi + '" data-i="' + ii + '">' +
+                    '<svg class="ui-icon"><use href="#' + it.icon + '"></use></svg><span>' + it.label + '</span>' +
+                    (it.key && low[it.key] ? '<span class="nav-item-low-balance-dot" style="display:block"></span>' : '') + '</button>';
+            });
+            html += '</div></div>';
+        });
+        html += '</div></div>';
+        moreOverlay = document.createElement('div');
+        moreOverlay.className = 'modal-overlay'; moreOverlay.id = 'pca-more-overlay';
+        moreOverlay.innerHTML = html;
+        moreOverlay.addEventListener('click', function (e) {
+            if (e.target === moreOverlay || e.target.closest('.modal-close')) { closeMore(); return; }
+            var tile = e.target.closest('.pca-more-tile');
+            if (!tile) return;
+            buzz(8);
+            var it = moreGroups()[+tile.dataset.g].items[+tile.dataset.i];
+            go(it.run)();
+        });
+        document.body.appendChild(moreOverlay);
+    }
+    function openMore() {
+        buildMore();
+        requestAnimationFrame(function () { requestAnimationFrame(function () { moreOverlay.classList.add('show'); lockCheck(); }); });
+    }
+    function closeMore() {
+        if (!moreOverlay) return;
+        moreOverlay.classList.remove('show'); lockCheck();
+    }
+    window.pcaOpenMore = openMore; window.pcaCloseMore = closeMore;
+
+    /* ---- 3. Badges: new orders on the Orders tab; low balance on More ------- */
+    var badge = $('nav-orders-badge');
+    function updateBadge() {
+        if (!badge) return;
+        var el = document.querySelector('.js-stat-pending');
+        var n = el ? parseInt((el.textContent || '').replace(/[^0-9]/g, ''), 10) : 0;
+        if (!n || isNaN(n)) { badge.hidden = true; return; }
+        badge.textContent = n > 99 ? '99+' : String(n);
+        badge.hidden = false;
+    }
+    var statObs = new MutationObserver(updateBadge);
+    document.querySelectorAll('.js-stat-pending').forEach(function (el) {
+        statObs.observe(el, { childList: true, characterData: true, subtree: true });
+    });
+    updateBadge();
+    var apiDot = $('api-nav-low-dot'), moreDot = $('more-nav-low-dot');
+    function syncMoreDot() { if (apiDot && moreDot) moreDot.style.display = (apiDot.style.display === 'block') ? 'block' : 'none'; }
+    if (apiDot) new MutationObserver(syncMoreDot).observe(apiDot, { attributes: true, attributeFilter: ['style'] });
+    syncMoreDot();
+
+    /* ---- 4. Header tucks away while scrolling down, returns on scroll up ---- */
+    var lastY = window.scrollY || 0, ticking = false;
+    window.addEventListener('scroll', function () {
+        if (ticking) return; ticking = true;
+        requestAnimationFrame(function () {
+            var y = window.scrollY || 0, d = y - lastY;
+            if (!isMobile() || y < 48 || document.documentElement.classList.contains('pca-modal-open')) {
+                document.body.classList.remove('pca-hdr-hidden');
+            } else if (d > 8) { document.body.classList.add('pca-hdr-hidden'); }
+            else if (d < -8) { document.body.classList.remove('pca-hdr-hidden'); }
+            lastY = y; ticking = false;
+        });
+    }, { passive: true });
+
+    /* ---- 5. Hide the tab bar while the keyboard is up ----------------------- */
+    var TEXTY = 'input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=range]):not([type=hidden]),textarea,select';
+    document.addEventListener('focusin', function (e) {
+        if (e.target.matches && e.target.matches(TEXTY)) document.body.classList.add('pca-kb-open');
+    });
+    document.addEventListener('focusout', function () {
+        setTimeout(function () {
+            var a = document.activeElement;
+            if (!(a && a.matches && a.matches(TEXTY))) document.body.classList.remove('pca-kb-open');
+        }, 60);
+    });
+
+    /* ---- 6. Lock the page behind any open sheet / dialog -------------------- */
+    function lockCheck() {
+        var open = document.querySelector('.modal-overlay.show, .dialog-overlay.show, .admin-card.oc-open');
+        document.documentElement.classList.toggle('pca-modal-open', !!open);
+    }
+    var lockTimer = 0;
+    new MutationObserver(function () {
+        cancelAnimationFrame(lockTimer); lockTimer = requestAnimationFrame(lockCheck);
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+
+    /* ---- 7. Swipe a sheet down to close it ---------------------------------- */
+    var drag = null;
+    document.addEventListener('touchstart', function (e) {
+        if (!isMobile() || e.touches.length !== 1) return;
+        var sheet = e.target.closest('.modal-box, .od-card');
+        if (!sheet) return;
+        var t = e.touches[0], r = sheet.getBoundingClientRect();
+        var onHandle = (t.clientY - r.top) < 30;
+        var onHeader = !!e.target.closest('.modal-header, .od-card-header');
+        if (!(onHandle || onHeader)) return;
+        if (sheet.classList.contains('od-card') && sheet.scrollTop > 0) return;
+        drag = { sheet: sheet, y0: t.clientY, dy: 0, t0: Date.now(), moved: false };
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+        if (!drag) return;
+        var dy = e.touches[0].clientY - drag.y0;
+        if (dy < 6 && !drag.moved) return;
+        drag.moved = true; drag.dy = Math.max(0, dy);
+        drag.sheet.classList.add('pca-dragging');
+        drag.sheet.style.transform = 'translate3d(0,' + drag.dy + 'px,0)';
+    }, { passive: true });
+    function endDrag() {
+        if (!drag) return;
+        var s = drag.sheet, dy = drag.dy, fast = dy / Math.max(1, Date.now() - drag.t0) > 0.6;
+        drag = null;
+        s.classList.remove('pca-dragging');
+        s.style.transform = '';
+        if (dy > 110 || (dy > 50 && fast)) {
+            var btn = s.querySelector('.modal-close, .od-card-close');
+            if (btn) { buzz(6); btn.click(); }
+        }
+    }
+    document.addEventListener('touchend', endDrag, { passive: true });
+    document.addEventListener('touchcancel', endDrag, { passive: true });
+
+    /* ---- 8. Sheet-style buttons give a tiny haptic tick on press ------------ */
+    document.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('.btn-primary, .btn-danger')) buzz(8);
+    }, { passive: true });
+
+    /* ---- 9. Browser bar colour follows the theme ----------------------------- */
+    function syncThemeColor() {
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (!m) return;
+        var c = getComputedStyle(document.documentElement).getPropertyValue('--header-2').trim();
+        if (c) m.setAttribute('content', c);
+    }
+    new MutationObserver(syncThemeColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    syncThemeColor();
+})();
+</script>
 </body>
 </html>
