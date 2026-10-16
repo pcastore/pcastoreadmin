@@ -8601,8 +8601,8 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             if (!TELEGRAM_SETTINGS.botToken || !TELEGRAM_SETTINGS.chatId) return;
             const text = buildTelegramWalletTopupText(topupId, t);
             const reply_markup = { inline_keyboard: [[
-                { text: '✅ Confirm', callback_data: 'wtopup_confirm:' + topupId },
-                { text: '❌ Reject', callback_data: 'wtopup_reject:' + topupId }
+                { text: '✅ Confirm', style: 'success', callback_data: 'wtopup_confirm:' + topupId },
+                { text: '❌ Reject', style: 'danger', callback_data: 'wtopup_reject:' + topupId }
             ]] };
             try {
                 const usePhoto = !!t.receiptUrl;
@@ -8638,9 +8638,9 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/editMessageReplyMarkup`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ...base, reply_markup: status === 'Processing' ? { inline_keyboard: [[
-                        { text: '✅ Confirm', callback_data: 'wtopup_confirm:' + topupId },
-                        { text: '❌ Reject', callback_data: 'wtopup_reject:' + topupId }
-                    ]] } : { inline_keyboard: [] } })
+                        { text: '✅ Confirm', style: 'success', callback_data: 'wtopup_confirm:' + topupId },
+                        { text: '❌ Reject', style: 'danger', callback_data: 'wtopup_reject:' + topupId }
+                    ]] } : { inline_keyboard: [[{ text: statusLine.replace(/<[^>]+>/g, '').trim().slice(0, 40), style: status === 'Completed' ? 'success' : 'danger', disabled: {} }]] } })
                 });
                 const text = buildTelegramWalletTopupText(topupId, t) + '\n\n' + statusLine;
                 const endpoint = t.receiptUrl ? 'editMessageCaption' : 'editMessageText';
@@ -13080,10 +13080,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 : '❌ <b>REJECTED</b>';
             const base = { chat_id: order.telegramChatId, message_id: order.telegramMessageId };
             try {
-                await fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/editMessageReplyMarkup`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...base, reply_markup: { inline_keyboard: [] } })
-                });
+                await tgSetResolvedButton(base, statusLine, status === 'Success' ? 'success' : status === 'Processing' ? 'primary' : 'danger');
                 const text = buildTelegramOrderText(orderId, order) + '\n\n' + statusLine;
                 const endpoint = order.receiptUrl ? 'editMessageCaption' : 'editMessageText';
                 const field = order.receiptUrl ? 'caption' : 'text';
@@ -13094,6 +13091,18 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             } catch (error) {
                 console.error('editTelegramOrderMessage error:', error);
             }
+        }
+
+        // Bot API 10.3 disabled button: shows the final status on the card, not tappable.
+        // Falls back to removing the keyboard if Telegram rejects it.
+        async function tgSetResolvedButton(base, statusLine, style) {
+            const label = statusLine.replace(/<[^>]+>/g, '').trim().slice(0, 40);
+            const call = (rm) => fetch(`https://api.telegram.org/bot${TELEGRAM_SETTINGS.botToken}/editMessageReplyMarkup`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...base, reply_markup: rm })
+            }).then(r => r.json()).catch(() => ({ ok: false }));
+            const d = await call({ inline_keyboard: [[{ text: label, style, disabled: {} }]] });
+            if (!d.ok && !/not modified/i.test(d.description || '')) await call({ inline_keyboard: [] });
         }
 
         async function answerTelegramCallback(callbackQueryId, text, showAlert = false) {
