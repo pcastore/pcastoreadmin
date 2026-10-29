@@ -1928,6 +1928,59 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
     .header-flame, .clock-colon, .live-dot { animation: none !important; }
 }
 </style>
+<style id="pca-spin-skel-css">
+/* Order / Wallet Top Up details: Telegram-style bordered grid table (label | value) */
+.od-grid{display:flex !important;flex-direction:column;gap:0 !important;border:1px solid var(--text-faint,#c3c6cc);border-radius:6px;overflow:hidden;background:transparent}
+.od-grid>.od-cell,.od-grid>.od-cell.span-2{display:flex;align-items:stretch;gap:0;padding:0 !important;border:0 !important;border-top:1px solid var(--text-faint,#c3c6cc) !important;border-radius:0 !important;background:transparent !important;grid-column:auto}
+.od-grid>.od-cell:first-child{border-top:0 !important}
+.od-grid>.od-cell>.od-label{flex:0 0 36%;max-width:36%;margin:0;padding:8px 10px;text-transform:none;letter-spacing:0;font-size:12px;border-right:1px solid var(--text-faint,#c3c6cc);background:var(--fill-soft,rgba(127,127,127,.08));display:flex;align-items:center}
+.od-grid>.od-cell>.od-value{flex:1;min-width:0;padding:8px 10px;align-self:center}
+
+/* Spinner that replaces "Saving..." / "Updating..." button text */
+.pca-spin{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;vertical-align:-3px;animation:pcaSpinRot .7s linear infinite;opacity:.9}
+@keyframes pcaSpinRot{to{transform:rotate(360deg)}}
+/* Skeleton placeholders shown while a tab's data is being fetched */
+.pca-skel-wrap{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+.pca-skel-row{height:64px;border-radius:12px;background:linear-gradient(90deg,var(--surface-alt,#eef0f3) 25%,rgba(255,255,255,.55) 50%,var(--surface-alt,#eef0f3) 75%);background-size:200% 100%;animation:pcaShimmer 1.2s linear infinite}
+.pca-skel-row.sm{height:40px}
+/* Telegram-style bordered grid table (Order / Wallet Top Up) */
+.pca-grid-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.pca-grid-table td,.pca-grid-table th{border:1px solid var(--border,#d6d9de);padding:7px 10px;text-align:left;vertical-align:top;word-break:break-word}
+.pca-grid-table td:first-child,.pca-grid-table th{width:38%;font-weight:600;color:var(--text-secondary,#5b606a);background:var(--surface-alt,#f4f4f6)}
+.pca-grid-table tr:nth-child(even) td:last-child{background:rgba(127,127,127,.05)}
+</style>
+<script id="pca-spin-js">
+/* Any button whose text turns into "Saving..." / "Updating..." / "Checking..." etc. shows a spinner instead. */
+(function(){
+  var RE=/^\s*(Saving|Updating|Checking|Sending|Loading|Syncing|Processing|Verifying|Deleting|Refreshing|Fetching|Importing|Resyncing|Approving|Rejecting|Confirming|Cancelling|Uploading)\b[^]{0,40}?(\.\.\.|\u2026)\s*$/i;
+  var busy=false;
+  function fix(btn){
+    if(!btn||btn.tagName!=='BUTTON')return;
+    var has=btn.querySelector(':scope>.pca-spin');
+    var txt=(btn.textContent||'').trim();
+    if(!has&&txt&&txt.length<48&&RE.test(txt)){
+      busy=true;
+      var w=btn.offsetWidth;
+      if(w&&!btn.dataset.pcaMinW){btn.dataset.pcaMinW='1';btn.style.minWidth=w+'px';}
+      btn.setAttribute('aria-label',txt);
+      btn.innerHTML='<span class="pca-spin"></span>';
+      busy=false;
+    }else if(!has&&btn.dataset.pcaMinW){
+      btn.style.minWidth='';delete btn.dataset.pcaMinW;
+    }else if(has&&btn.childNodes.length>1){ /* new text arrived next to the spinner */
+      busy=true;has.remove();busy=false;
+    }
+  }
+  new MutationObserver(function(ms){
+    if(busy)return;
+    ms.forEach(function(m){
+      var n=m.target.nodeType===1?m.target:m.target.parentElement;
+      var b=n&&n.closest?n.closest('button'):null;
+      if(b)fix(b);
+    });
+  }).observe(document.documentElement,{childList:true,characterData:true,subtree:true});
+})();
+</script>
 </head>
 <body>
 
@@ -2619,6 +2672,13 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 </div>
             </div>
 
+            <div class="admin-card" id="settings-card-receipt" style="margin-top:14px;">
+                <span style="font-size:15px;font-weight:600;">Receipt</span>
+                <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin:6px 0 10px;">Customer receipt အောက်ဆုံးက Verified badge နဲ့အတူ ပေါ်မယ့် domain။ မထည့်ရင် pcagamestoremm.vercel.app ကို သုံးပါမယ်။</p>
+                <input type="text" id="receipt-domain-input" placeholder="pcagamestoremm.vercel.app" autocapitalize="off" autocomplete="off" style="width:100%;">
+                <button type="button" class="btn btn-primary" id="receipt-domain-save" style="margin-top:10px;width:100%;" onclick="saveReceiptSettings(this)">Save</button>
+            </div>
+
             <div class="admin-card" id="settings-card-autoprice" style="margin-top:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAutoPriceSettings()">
                     <span style="font-size:15px;font-weight: 600;">Auto Cost Update</span>
@@ -2974,7 +3034,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
 
             <!-- Firebase Container -->
             <div id="orders-container">
-                <p class="empty-msg">Loading orders...</p>
+                <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
         </div>
 
@@ -3017,7 +3077,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             </div>
 
             <div id="topups-container">
-                <p class="empty-msg">Loading top up requests...</p>
+                <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
         </div>
 
@@ -3076,7 +3136,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             </div>
             <h2 class="title-header" style="margin-top:20px;">Sent History</h2>
             <div id="notif-history-container">
-                <p class="empty-msg">Loading notifications...</p>
+                <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
         </div>
 
@@ -3091,7 +3151,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             </div>
             <h2 class="title-header" style="margin-top:20px;">Current Messages</h2>
             <div id="ticker-list-container">
-                <p class="empty-msg">Loading ticker messages...</p>
+                <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
         </div>
 
@@ -3099,7 +3159,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
         <div id="payment-list" class="page-section">
             <h2 class="title-header"><span>Payment Methods</span> <button class="btn btn-primary" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="openPaymentEditor()">+ Add</button></h2>
             <div id="admin-payment-container">
-                <p class="empty-msg">Loading payment methods...</p>
+                <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
         </div>
 
@@ -3115,7 +3175,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 <input type="text" id="user-search" placeholder="Search users by name, ID, or phone..." autocomplete="off" oninput="renderAdminUsersList()">
             </div>
             <div id="admin-users-container" class="users-grid">
-                <p class="empty-msg">Loading users...</p>
+                <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
         </div>
 
@@ -3294,6 +3354,19 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+
+                <div class="switch-row">
+                    <div>
+                        <span class="switch-label">Auto Price update</span>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Cost always follows the supplier. On = Price is re-set to Cost + margin whenever Cost changes. Off = Price is never touched automatically.</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-game-autoupdate" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <label>Price margin above Cost (%) <span style="font-weight:400;color:var(--text-muted);">(blank = use the global Resync margin; Price never goes below Cost)</span></label>
+                <input type="number" id="edit-game-margin" min="0" max="100" step="0.25" inputmode="decimal" placeholder="Global margin">
 
                 <div class="switch-row">
                     <div>
@@ -4013,6 +4086,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
         // is a harmless no-op), so this just moves the FIRST call from
         // startAdminApp() to here, keyed off the page actually being opened.
         function subscribeTabListeners(pageId) {
+            if (pageId === 'topup-list') fetchWalletTopups();
             if (pageId === 'user-list') ensureUsersLoaded();
             if (pageId === 'notify-list') listenNotifications();
             if (pageId === 'ticker-list') listenAnnouncementsAdmin();
@@ -4022,6 +4096,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             // defer until Settings is actually opened.
             if (pageId === 'settings') {
                 listenSocialLinks();
+                loadReceiptSettings();
             }
         }
         window.subscribeTabListeners = subscribeTabListeners;
@@ -9254,14 +9329,18 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             lossFixInFlight = true;
             try {
                 for (const [gameId, g] of Object.entries(GAMES || {})) {
+                    if (g && g.autoUpdate === false) continue; // auto Price switched off for this game: leave its Price alone
                     const packages = g.packages || [];
                     let changed = false;
+                    const ownMargin = (g.autoPriceMarginPct === null || g.autoPriceMarginPct === undefined || g.autoPriceMarginPct === '') ? NaN : Number(g.autoPriceMarginPct);
+                    const lossMarkup = (!isNaN(ownMargin) && ownMargin > 0) ? ownMargin : LOSS_MARGIN_MARKUP_PCT;
                     const updated = packages.map(p => {
                         const cost = Number(p.cost) || 0;
                         const price = Number(p.price) || 0;
                         if (cost <= 0 || price <= 0) return p; // margin meaningless without both set
                         if (price > cost) return p; // already above cost — not a loss
-                        const newPrice = roundUpToPriceTier(price * (1 + LOSS_MARGIN_MARKUP_PCT / 100));
+                        if (ownMargin === 0 && price === cost) return p; // this game is deliberately priced at cost
+                        const newPrice = roundUpToPriceTier(price * (1 + lossMarkup / 100));
                         if (newPrice === price) return p;
                         changed = true;
                         return { ...p, price: newPrice };
@@ -10408,16 +10487,15 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
         // occasionally 6% for smaller packages — never below 5%, never
         // above 7%. Manually typing into Price or Cost by hand is never
         // touched by this — it only fires on a live cost sync.
-        const AUTO_PRICE_MARGIN_PCT = 5;
+        const AUTO_PRICE_MARGIN_PCT = 3; // used whenever no % is entered; an entered % always wins
 
+        // Rounds UP only (never down), tiered: under 10,000 -> multiples of 10; 10,000-59,999 -> 50; 60,000+ -> 100.
         function autoPriceForCost(cost, marginPct = AUTO_PRICE_MARGIN_PCT) {
             if (!cost || cost <= 0) return 0;
-            const rawTarget = cost * (1 + marginPct / 100); // exact target margin above cost
-            const hardCeiling = cost * (1 + (marginPct + 2) / 100); // margin must never drift past target + 2pp
-            const step = 50; // round up to a clean 50-MMK grid (…00 / …50 endings, no odd …90-style prices)
-            let price = Math.ceil(rawTarget / step) * step;
-            if (price > hardCeiling) price = Math.ceil(rawTarget); // step rounding would overshoot (tiny Cost values) — fall back to the exact target price instead
-            return price;
+            marginPct = Math.max(0, Number(marginPct) || 0); // Price is never set below Cost
+            const raw = cost * (1 + marginPct / 100);
+            const step = raw >= 60000 ? 100 : raw >= 10000 ? 50 : 10;
+            return Math.ceil(raw / step) * step;
         }
 
         // Resync margin (%) — set with the − / + stepper next to the Resync button
@@ -10439,6 +10517,11 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             }, 700);
         }
         function stepResyncMargin(d) { setResyncMargin(resyncMarginPct + d * 0.25); }
+        // Margin for the game open in the editor: its own "Price margin" box when filled, else the global Resync margin.
+        function editorMarginPct() {
+            const v = parseFloat((document.getElementById('edit-game-margin') || {}).value);
+            return (!isNaN(v) && v >= 0 && v <= 100) ? v : resyncMarginPct;
+        }
         window.setResyncMargin = setResyncMargin;
         window.stepResyncMargin = stepResyncMargin;
         setResyncMargin(resyncMarginPct);
@@ -10461,14 +10544,15 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 return;
             }
             const scopeText = useSelected ? `${rows.length} selected package(s)` : 'every package (all tabs)';
-            if (!confirm(`This overwrites Price on ${scopeText} to hold a ${resyncMarginPct}% margin above its current Cost. Continue?`)) return;
+            const marginNow = editorMarginPct();
+            if (!confirm(`This overwrites Price on ${scopeText} to hold a ${marginNow}% margin above its current Cost. Continue?`)) return;
             let changed = 0, skipped = 0;
             rows.forEach(row => {
                 const costInput = row.querySelector('.pkg-cost');
                 const priceInput = row.querySelector('.pkg-price');
                 const cost = Number(costInput.value);
                 if (!cost || cost <= 0) { skipped++; return; }
-                const newPrice = autoPriceForCost(cost, resyncMarginPct);
+                const newPrice = autoPriceForCost(cost, marginNow);
                 if (Number(priceInput.value) === newPrice) return;
                 priceInput.value = newPrice;
                 updatePackageProfit(priceInput);
@@ -10477,7 +10561,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             if (changed === 0) {
                 window.showToast(skipped ? `Already synced — ${skipped} row(s) skipped (no Cost set)` : 'Every price already matches the target margin', 'success');
             } else {
-                window.showToast(`${changed} price(s) re-synced to ${resyncMarginPct}% margin ✓${skipped ? ` (${skipped} skipped — no Cost)` : ''}`, 'success');
+                window.showToast(`${changed} price(s) re-synced to ${marginNow}% margin ✓${skipped ? ` (${skipped} skipped — no Cost)` : ''}`, 'success');
             }
         }
         window.resyncAllPricesToMargin = resyncAllPricesToMargin;
@@ -10590,6 +10674,8 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 document.getElementById('edit-game-app-ios-scheme').value = g.appIosScheme || '';
                 document.getElementById('edit-game-app-ios-store-url').value = g.appIosStoreUrl || '';
                 document.getElementById('edit-game-popular').checked = !!g.popular;
+                document.getElementById('edit-game-autoupdate').checked = g.autoUpdate !== false;
+                document.getElementById('edit-game-margin').value = (g.autoPriceMarginPct === null || g.autoPriceMarginPct === undefined || g.autoPriceMarginPct === '') ? '' : g.autoPriceMarginPct;
                 // Missing field on older games defaults to "required" so nothing changes for them.
                 document.getElementById('edit-game-playerid').checked = g.playerIdRequired !== false;
                 document.getElementById('edit-game-serverid').checked = g.serverIdRequired !== false;
@@ -10688,6 +10774,8 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 document.getElementById('edit-game-app-ios-scheme').value = '';
                 document.getElementById('edit-game-app-ios-store-url').value = '';
                 document.getElementById('edit-game-popular').checked = false;
+                document.getElementById('edit-game-autoupdate').checked = true;
+                document.getElementById('edit-game-margin').value = '';
                 document.getElementById('edit-game-playerid').checked = false;
                 document.getElementById('edit-game-serverid').checked = false;
                 document.getElementById('edit-game-charname').checked = false;
@@ -10887,6 +10975,10 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             const appIosScheme = document.getElementById('edit-game-app-ios-scheme').value.trim();
             const appIosStoreUrl = document.getElementById('edit-game-app-ios-store-url').value.trim();
             const popular = document.getElementById('edit-game-popular').checked;
+            const autoUpdate = document.getElementById('edit-game-autoupdate').checked;
+            const _mRaw = document.getElementById('edit-game-margin').value.trim();
+            const _mNum = parseFloat(_mRaw);
+            const autoPriceMarginPct = (_mRaw === '' || isNaN(_mNum)) ? null : Math.min(100, Math.max(0, Math.round(_mNum * 100) / 100));
             const playerIdRequired = document.getElementById('edit-game-playerid').checked;
             const serverIdRequired = playerIdRequired && document.getElementById('edit-game-serverid').checked;
             const charNameRequired = document.getElementById('edit-game-charname').checked;
@@ -10948,7 +11040,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', appAndroidPackage: appAndroidPackage || '', appAndroidScheme: appAndroidScheme || '', appAndroidStoreUrl: appAndroidStoreUrl || '', appIosScheme: appIosScheme || '', appIosStoreUrl: appIosStoreUrl || '', popular, playerIdRequired, serverIdRequired, charNameRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', appAndroidPackage: appAndroidPackage || '', appAndroidScheme: appAndroidScheme || '', appAndroidStoreUrl: appAndroidStoreUrl || '', appIosScheme: appIosScheme || '', appIosStoreUrl: appIosStoreUrl || '', popular, autoUpdate, autoPriceMarginPct, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -12360,6 +12452,34 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
         // whenever a platform has no uploaded image.
         let editingSocialImageFiles = { facebook: null, telegram: null, tiktok: null };
         let removedSocialImages = { facebook: false, telegram: false, tiktok: false };
+
+        // ---------- Receipt settings (domain shown under the Verified badge) ----------
+        let receiptSettingsLoaded = false;
+        async function loadReceiptSettings() {
+            if (receiptSettingsLoaded) return;
+            try {
+                const snap = await getDoc(doc(db, "settings", "receipt"));
+                const d = snap.exists() ? snap.data() : {};
+                document.getElementById('receipt-domain-input').value = d.domain || '';
+                receiptSettingsLoaded = true;
+            } catch (e) { console.error('Receipt settings load error:', e); }
+        }
+        async function saveReceiptSettings(btn) {
+            const input = document.getElementById('receipt-domain-input');
+            let v = (input.value || '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+            if (v && !/^[a-z0-9.-]+\.[a-z]{2,}(\/[^\s]*)?$/i.test(v)) { window.showToast('Domain မှန်မှန် ရိုက်ပါ (ဥပမာ pcagamestoremm.vercel.app)', 'fail'); return; }
+            btn.disabled = true; const orig = btn.innerText; btn.innerText = 'Saving...';
+            try {
+                await setDoc(doc(db, "settings", "receipt"), { domain: v }, { merge: true });
+                input.value = v;
+                window.showToast(v ? 'Receipt domain saved ✓' : 'Default domain ကို သုံးပါမယ် ✓', 'success');
+            } catch (e) {
+                console.error('Receipt settings save error:', e);
+                window.showToast('Save မအောင်မြင်ပါ', 'fail');
+            } finally { btn.disabled = false; btn.innerText = orig; }
+        }
+        window.saveReceiptSettings = saveReceiptSettings;
+        window.loadReceiptSettings = loadReceiptSettings;
 
         function listenSocialLinks() {
             if (socialListenerAttached) return;
@@ -14464,7 +14584,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 statusEl.style.color = 'var(--accent)';
                 let statusMsg = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`;
 
                 // Check /v1/games/fields for whether this game needs a
                 // server id, and auto-set "Requires Server ID" from the
@@ -14652,7 +14772,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = (updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`)
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`)
                     + (fazerNeedsServerIdField ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
                     + (pendingFazerCardServerMode === 'select'
                         ? `\n✓ Server dropdown detected (${pendingFazerCardServerOptions.length} options).`
@@ -14868,7 +14988,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Product အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} products ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
+                    : `Imported ${addedCount} products ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`;
                 // Same auto-sort as the direct-games import above, so newly
                 // imported voucher rows land smallest-to-largest right away.
                 sortPackageRows();
@@ -14931,7 +15051,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Card အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} cards ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
+                    : `Imported ${addedCount} cards ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`;
                 sortPackageRows();
                 window.showToast('FazerCards gift card catalogue imported ✓', 'success');
             } catch (error) {
@@ -15206,7 +15326,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             // autoPriceForCost above) instead of drifting whenever a live
             // cost sync lands — admin can still overwrite Price by hand
             // afterward if they want a different number.
-            priceInput.value = autoPriceForCost(Number(newCost));
+            priceInput.value = autoPriceForCost(Number(newCost), editorMarginPct());
             btn.style.display = 'none';
             delete btn.dataset.newCost;
 
@@ -15651,7 +15771,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost & Price (~5% margin) filled in automatically; adjust if needed before saving.`;
+                    : `Imported ${addedCount} packages ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`;
                 // Same auto-sort as G2Bulk/FazerCards/Voucher imports above, so
                 // newly-imported denominations land smallest-to-largest too.
                 sortPackageRows();
@@ -16074,6 +16194,8 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             document.getElementById('edit-game-app-ios-scheme').value = base.appIosScheme || '';
             document.getElementById('edit-game-app-ios-store-url').value = base.appIosStoreUrl || '';
             document.getElementById('edit-game-popular').checked = !!base.popular;
+            document.getElementById('edit-game-autoupdate').checked = base.autoUpdate !== false;
+            document.getElementById('edit-game-margin').value = (base.autoPriceMarginPct === null || base.autoPriceMarginPct === undefined || base.autoPriceMarginPct === '') ? '' : base.autoPriceMarginPct;
             document.getElementById('edit-game-playerid').checked = base.playerIdRequired !== false;
             document.getElementById('edit-game-serverid').checked = base.serverIdRequired !== false;
             document.getElementById('edit-game-charname').checked = !!base.charNameRequired;
@@ -16345,7 +16467,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             loadDashboardStats();
             // Cloudflare/Firestore usage: manual Refresh only.
             // Orders are no longer auto-loaded here: they load when the Orders page is opened.
-            fetchWalletTopups();
+            // Wallet top-ups are NOT fetched at startup any more: they load when the Top Up tab is opened (see subscribeTabListeners).
             // listenNotifications/listenAnnouncementsAdmin/listenPaymentMethods
             // used to all fire here unconditionally - each is a
             // full-collection onSnapshot with no query bound, so every one
