@@ -1971,7 +1971,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
     /* ---- bottom bar: 7 equal tabs, docked ---- */
     html .top-nav {
-        display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+        display: grid !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
         left: 0 !important; right: 0 !important; bottom: 0 !important; margin: 0 !important;
         padding: 4px 2px calc(4px + var(--pca-safe-b)) !important; gap: 0 !important;
         border-radius: 0 !important; border: 0 !important; border-top: 1px solid var(--border-glass) !important;
@@ -2205,23 +2205,55 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         --pca-a: 270deg; animation: pcaRingRot 0.9s linear infinite !important;
     }
     .order-stat-card, .admin-card, .stat-chip, .user-grid-card { box-shadow: 0 1px 3px rgba(0,0,0,.12) !important; }
-    /* header + tab bar sit at the top and slide up out of view slowly when scrolling down; they come back on scroll up */
-    :root { --pca-nav-h: 0px; --pca-pop-bottom: calc(var(--pca-safe-b) + 16px); }
+    /* header slides up out of view when scrolling down; the tab bar stays docked at the bottom (floating pill) */
+    :root { --pca-nav-h: 76px; --pca-pop-bottom: calc(var(--pca-safe-b) + 90px); }
     html .header {
         position: sticky !important; top: 0 !important; z-index: 100;
         transition: transform .7s cubic-bezier(.4,0,.2,1) !important; will-change: transform;
     }
     html .top-nav {
-        position: sticky !important; top: var(--pca-hdr-h, 72px) !important; left: auto !important; right: auto !important; bottom: auto !important;
-        z-index: 90; margin: 8px 10px 4px !important; box-shadow: 0 1px 0 var(--border-glass) !important;
-        transition: transform .7s cubic-bezier(.4,0,.2,1) !important; will-change: transform;
+        position: fixed !important; top: auto !important; left: 12px !important; right: 12px !important;
+        bottom: calc(var(--pca-safe-b) + 10px) !important; margin: 0 !important;
+        z-index: 120; box-shadow: 0 -2px 10px -6px rgba(0,0,0,.35) !important;
+        transition: transform .22s ease !important;
     }
-    body.pca-hdr-hidden .header,
-    body.pca-hdr-hidden .top-nav { transform: translate3d(0, calc(-1 * var(--pca-bars-h, 170px)), 0) !important; }
-    body.pca-kb-open .top-nav { transform: none !important; }
-    .app-layout { padding-bottom: 14px !important; }
+    body.pca-hdr-hidden .header { transform: translate3d(0, calc(-100% - 24px), 0) !important; }
+    body.pca-hdr-hidden .top-nav { transform: none !important; }
+    body.pca-kb-open .top-nav { transform: translate3d(0, 180%, 0) !important; }
+    .app-layout { padding-bottom: calc(var(--pca-nav-h) + var(--pca-safe-b) + 14px) !important; }
     .modal-overlay, .dialog-overlay { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
+</style>
+<style id="pca-compact-fix">
+/* Price (package) cards: shorter rows */
+.package-row .pkg-summary { padding: 5px 10px !important; gap: 3px !important; }
+.package-row .pkg-summary-thumb { width: 26px !important; height: 26px !important; border-radius: 7px !important; }
+.package-row .pkg-summary-name { font-size: 13px !important; }
+.package-row .pkg-summary-value { font-size: 13px !important; line-height: 1.15 !important; }
+.package-row .pkg-summary-profit { padding: 1px 6px !important; line-height: 1.2 !important; }
+.package-row .pkg-x-icon { width: 22px !important; height: 22px !important; }
+.package-row .pkg-summary-head, .package-row .pkg-summary-body { min-height: 0 !important; }
+#edit-packages-list { gap: 6px !important; padding: 8px !important; }
+
+/* Log out / Quit confirmation: tidy, compact layout */
+#quit-modal-overlay .modal-body { display: flex !important; flex-direction: column !important; gap: 12px !important; padding-top: 4px; }
+#quit-modal-overlay .quit-word-row { margin: 0; }
+#quit-modal-overlay .quit-word { font-size: 17px; font-weight: 600; }
+#quit-modal-overlay .quit-copy-btn { flex: none !important; width: auto !important; min-height: 34px !important; height: 34px; padding: 4px 12px !important; font-size: 12.5px !important; border-radius: 10px; }
+#quit-modal-overlay #quit-input { width: 100%; min-height: 44px; box-sizing: border-box; margin: 0; }
+#quit-modal-overlay #quit-confirm-btn { width: 100%; margin: 0; }
+
+/* Games page + Edit Game: tabs and action buttons clearly separated */
+html .game-list-tabs { display: grid !important; grid-template-columns: 1fr 1fr; gap: 4px !important; padding: 4px !important; margin: 0 0 16px !important; background: var(--fill-soft); border: 1px solid var(--border-glass); border-radius: 16px; overflow: visible !important; }
+html .game-list-tabs .game-list-tab-btn { background: transparent !important; border: 1px solid transparent !important; box-shadow: none !important; color: var(--text-secondary) !important; opacity: 1 !important; min-height: 40px !important; padding: 8px 6px !important; border-radius: 12px !important; font-size: 12.5px !important; }
+html .game-list-tabs .game-list-tab-btn .ui-icon { stroke: currentColor !important; }
+html .game-list-tabs .game-list-tab-btn.active { background: var(--surface-strong) !important; color: var(--accent) !important; border-color: var(--border-glass) !important; box-shadow: 0 1px 4px rgba(0,0,0,.14) !important; }
+html .game-list-tabs .game-list-tab-btn.active .ui-icon { stroke: var(--accent) !important; }
+html .game-toolbar { margin: 0 0 14px !important; padding: 12px 0 0 !important; border-top: 1px dashed var(--border-dashed, var(--border-glass)); }
+html .game-toolbar .btn { height: 38px !important; min-height: 38px !important; font-size: 12.5px !important; border-radius: 10px !important; }
+html .pkg-actions-row { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-dashed, var(--border-glass)); }
+html #pkg-tab-bar { margin-bottom: 10px; }
+html #edit-packages-list { margin-bottom: 4px; }
 </style>
 
 </head>
@@ -2449,7 +2481,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     <code class="quit-word" id="quit-word">Quit</code>
                     <button type="button" class="btn btn-outline quit-copy-btn" onclick="copyQuitWord()"><svg class="ui-icon" style="width:14px;height:14px;"><use href="#icon-copy"></use></svg> Copy</button>
                 </div>
-                <input type="text" id="quit-input" placeholder="Type Quit" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" oninput="onQuitInput()" onkeydown="if(event.key==='Enter'&&!document.getElementById('quit-confirm-btn').disabled) confirmQuit()">
+                <input type="text" id="quit-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" oninput="onQuitInput()" onkeydown="if(event.key==='Enter'&&!document.getElementById('quit-confirm-btn').disabled) confirmQuit()">
                 <button type="button" class="btn btn-danger" id="quit-confirm-btn" style="width:100%;justify-content:center;" disabled onclick="confirmQuit()">Log out</button>
             </div>
         </div>
@@ -2549,6 +2581,9 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         </div>
         <div class="nav-item" id="group-userlist" onclick="showPage('user-list')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Users</span>
+        </div>
+        <div class="nav-item" id="group-jcplays" onclick="showPage('jcplays')">
+            <svg class="ui-icon"><use href="#icon-key"></use></svg> <span class="nav-label">JCPlays</span>
         </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
             <svg class="ui-icon"><use href="#icon-gear"></use></svg> <span class="nav-label">Setting</span>
@@ -2727,7 +2762,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             <img class="pkg-img-tag" id="social-facebook-img-tag" src="" loading="lazy" decoding="async" style="display:none;">
                             <span class="pkg-img-placeholder" id="social-facebook-img-placeholder">+ Icon</span>
                         </div>
-                        <input type="text" id="social-facebook" placeholder="https://facebook.com/yourpage" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
+                        <input type="text" id="social-facebook" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
                         <input type="file" id="social-facebook-file" accept="image/*" style="display:none;" onchange="previewSocialImage(event,'facebook')">
                     </div>
                     <div style="display:flex;justify-content:flex-end;margin:0 0 12px;">
@@ -2740,7 +2775,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             <img class="pkg-img-tag" id="social-telegram-img-tag" src="" loading="lazy" decoding="async" style="display:none;">
                             <span class="pkg-img-placeholder" id="social-telegram-img-placeholder">+ Icon</span>
                         </div>
-                        <input type="text" id="social-telegram" placeholder="https://t.me/yourchannel" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
+                        <input type="text" id="social-telegram" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
                         <input type="file" id="social-telegram-file" accept="image/*" style="display:none;" onchange="previewSocialImage(event,'telegram')">
                     </div>
                     <div style="display:flex;justify-content:flex-end;margin:0 0 12px;">
@@ -2753,7 +2788,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             <img class="pkg-img-tag" id="social-tiktok-img-tag" src="" loading="lazy" decoding="async" style="display:none;">
                             <span class="pkg-img-placeholder" id="social-tiktok-img-placeholder">+ Icon</span>
                         </div>
-                        <input type="text" id="social-tiktok" placeholder="https://tiktok.com/@yourhandle" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
+                        <input type="text" id="social-tiktok" style="flex:1;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;">
                         <input type="file" id="social-tiktok-file" accept="image/*" style="display:none;" onchange="previewSocialImage(event,'tiktok')">
                     </div>
                     <div style="display:flex;justify-content:flex-end;margin:0 0 12px;">
@@ -2792,7 +2827,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 </div>
                 <div id="admin-broadcast-secret-body" style="display:none;margin-top:12px;">
                     <p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Shared secret between this panel and the pcastore Worker (pcagamestore_bot) — used to authorize customer Telegram DMs (order status updates) and the /admin/broadcast announcement. Pick any long random string; changing it here takes effect immediately, no redeploy needed.</p>
-                    <input type="text" id="admin-broadcast-secret" placeholder="Long random string" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:0 0 14px;font-family:monospace;">
+                    <input type="text" id="admin-broadcast-secret" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:0 0 14px;font-family:monospace;">
                     <button class="btn btn-primary" id="save-admin-broadcast-secret-btn" style="width:100%;" onclick="saveAdminBroadcastSecret()">Save</button>
                 </div>
             </div>
@@ -2800,7 +2835,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <div class="admin-card" id="settings-card-receipt" style="margin-top:14px;">
                 <span style="font-size:15px;font-weight:600;">Receipt</span>
                 <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin:6px 0 10px;">Customer receipt အောက်ဆုံးက Verified badge နဲ့အတူ ပေါ်မယ့် domain။ မထည့်ရင် pcagamestoremm.vercel.app ကို သုံးပါမယ်။</p>
-                <input type="text" id="receipt-domain-input" placeholder="pcagamestoremm.vercel.app" autocapitalize="off" autocomplete="off" style="width:100%;">
+                <input type="text" id="receipt-domain-input" autocapitalize="off" autocomplete="off" style="width:100%;">
                 <button type="button" class="btn btn-primary" id="receipt-domain-save" style="margin-top:10px;width:100%;" onclick="saveReceiptSettings(this)">Save</button>
             </div>
 
@@ -2877,9 +2912,9 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     <!-- Step 1: details -->
                     <div id="add-admin-step-form">
                         <label>Username</label>
-                        <input type="text" id="new-admin-username" placeholder="username" autocapitalize="none" autocorrect="off" autocomplete="off">
+                        <input type="text" id="new-admin-username" autocapitalize="none" autocorrect="off" autocomplete="off">
                         <label style="margin-top:14px;">Temporary Password</label>
-                        <input type="password" id="new-admin-password" placeholder="At least 6 characters" autocomplete="new-password">
+                        <input type="password" id="new-admin-password" autocomplete="new-password">
                         <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">The new admin can sign in with this username/password right away, and should scan the Authenticator QR shown next before sharing it. Access can be changed later from this list.</p>
                         <p id="add-admin-error" class="login-msg-error" style="display:none;"></p>
                     </div>
@@ -3029,7 +3064,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
                 <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="game-search" placeholder="Search games by name or server..." autocomplete="off" oninput="renderAdminGamesList()" onkeydown="if(event.key==='Enter'){ event.preventDefault(); renderAdminGamesList(); }">
+                    <input type="text" id="game-search" autocomplete="off" oninput="renderAdminGamesList()" onkeydown="if(event.key==='Enter'){ event.preventDefault(); renderAdminGamesList(); }">
                 </div>
                 <button type="button" class="search-go-btn" onclick="renderAdminGamesList()" title="Search" aria-label="Search">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -3129,7 +3164,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
 
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="order-search" placeholder="Search by game, customer, phone, player ID, order ID..." autocomplete="off" oninput="renderOrdersList()">
+                <input type="text" id="order-search" autocomplete="off" oninput="renderOrdersList()">
             </div>
             <div class="pca-range-chips" id="order-range-chips">
                 <button type="button" data-r="today" class="active" onclick="setOrderRange('today')">Today</button>
@@ -3179,8 +3214,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             </h2>
 
             <div class="quick-topup-grid">
-                <input type="text" id="manual-topup-uid" placeholder="Customer UID or email" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="window.onManualTopupUidInput && window.onManualTopupUidInput()">
-                <input type="number" id="manual-topup-amount" placeholder="Amount (MMK)" inputmode="numeric">
+                <input type="text" id="manual-topup-uid" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="window.onManualTopupUidInput && window.onManualTopupUidInput()">
+                <input type="number" id="manual-topup-amount" inputmode="numeric">
                 <!-- Live "is this user registered?" result for whatever is typed in the UID/email box -->
                 <div id="manual-topup-user-status" class="topup-user-chip" style="display:none;"></div>
                 <button type="button" class="btn btn-primary" id="manual-topup-submit-btn" onclick="submitManualTopup(this)">Top Up</button>
@@ -3195,7 +3230,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
 
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="topup-search" placeholder="Search by name, UID, phone, or amount..." autocomplete="off" oninput="renderTopupsList()">
+                <input type="text" id="topup-search" autocomplete="off" oninput="renderTopupsList()">
             </div>
             <div class="date-filter-wrap">
                 <button type="button" class="date-filter-trigger" id="topup-date-trigger" onclick="openDateRangeModal('topup')" aria-label="Filter by date">
@@ -3257,14 +3292,14 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 </select>
                 <div id="notif-target-user-wrap" style="display:none;">
                     <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">User ID</label>
-                    <input type="text" id="notif-target-user" placeholder="e.g. guest_ab12cd34" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                    <input type="text" id="notif-target-user" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 </div>
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Title</label>
-                <input type="text" id="notif-title" placeholder="e.g. Server Maintenance" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <input type="text" id="notif-title" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Intro</label>
-                <input type="text" id="notif-intro" placeholder="Short preview shown in the notification list" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <input type="text" id="notif-intro" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Details</label>
-                <textarea id="notif-details" placeholder="Full announcement shown when the user opens the notification..." rows="5" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;font-family:inherit;resize:vertical;"></textarea>
+                <textarea id="notif-details" rows="5" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;font-family:inherit;resize:vertical;"></textarea>
                 <button class="btn btn-primary" id="send-notif-btn" onclick="sendNotification()">Send to All Users</button>
             </div>
             <h2 class="title-header" style="margin-top:20px;">Sent History</h2>
@@ -3279,7 +3314,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <h2 class="title-header">Store Ticker</h2>
             <div class="admin-card">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">New message</label>
-                <input type="text" id="ticker-text" placeholder="e.g. Shop open daily 9AM - 9PM" maxlength="120" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <input type="text" id="ticker-text" maxlength="120" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <button class="btn btn-primary" id="add-ticker-btn" onclick="addAnnouncement()">Add to Ticker</button>
             </div>
             <h2 class="title-header" style="margin-top:20px;">Current Messages</h2>
@@ -3305,7 +3340,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             </h2>
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="user-search" placeholder="Search users by name, ID, or phone..." autocomplete="off" oninput="renderAdminUsersList()">
+                <input type="text" id="user-search" autocomplete="off" oninput="renderAdminUsersList()">
             </div>
             <div id="admin-users-container" class="users-grid">
                 <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
@@ -3362,7 +3397,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
 
                 <h3 class="detail-section-title" style="margin-top:16px;">Deduct From Wallet</h3>
                 <div style="display:flex;gap:8px;">
-                    <input type="number" id="ud-deduct-amount" placeholder="Amount (MMK)" inputmode="numeric" style="flex:1;min-width:0;padding:12px 14px;border:1.5px solid var(--border-dashed);border-radius:10px;font-size:15px;background:var(--surface);color:var(--text-primary);">
+                    <input type="number" id="ud-deduct-amount" inputmode="numeric" style="flex:1;min-width:0;padding:12px 14px;border:1.5px solid var(--border-dashed);border-radius:10px;font-size:15px;background:var(--surface);color:var(--text-primary);">
                     <button class="btn btn-outline" style="flex:0 0 auto;padding:10px 16px;" onclick="deductCurrentUserWallet()">Deduct</button>
                 </div>
 
@@ -3374,7 +3409,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 </div>
 
                 <h3 class="detail-section-title" style="margin-top:16px;">Admin Note</h3>
-                <textarea id="ud-admin-note" placeholder="Private note about this customer (only visible here)..." rows="2" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+                <textarea id="ud-admin-note" rows="2" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
                 <button class="btn btn-outline" style="margin-top:8px;padding:7px 14px;font-size:12px;" onclick="saveUserAdminNote()">Save Note</button>
 
                 <div style="display:flex;gap:8px;margin-top:20px;">
@@ -3442,10 +3477,10 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                         <svg class="ui-icon"><use href="#icon-lock"></use></svg> Unlock to edit
                     </button>
                 </div>
-                <input type="text" id="edit-game-name" placeholder="e.g. Mobile Legends">
+                <input type="text" id="edit-game-name">
 
                 <label>Server / Region <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
-                <input type="text" id="edit-game-server-name" placeholder="e.g. Malaysia Server (leave blank if only one server)">
+                <input type="text" id="edit-game-server-name">
                 <div id="server-variant-thumbs" style="display:none;"></div>
 
                 <label>Game Category</label>
@@ -3453,7 +3488,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 <div class="category-chip-select" id="game-category-select"></div>
 
                 <label>Description <span style="font-weight:400;color:var(--text-muted);">(optional — shown to customers under the game banner)</span></label>
-                <textarea id="edit-game-description" rows="4" placeholder="e.g. Mobile Legends: Bang Bang is a 5v5 MOBA. Diamonds are delivered instantly to your in-game ID after payment is confirmed." style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border-glass);background:var(--fill-soft);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+                <textarea id="edit-game-description" rows="4" style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border-glass);background:var(--fill-soft);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
 
                 <!-- App deep-link fields: purely optional. When set, Store.html
                      shows a "Game ဖွင့်မယ်" button on the game detail page and
@@ -3466,16 +3501,16 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                      this display:none once the feature's back in use. -->
                 <div style="display:none;margin:4px 0 2px;padding:12px;background:var(--fill-soft);border-radius:12px;border:1px solid var(--fill-soft);">
                     <p style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">App Link (optional)</p>
-                    <label style="margin-top:0;">Android Package <span style="font-weight:400;color:var(--text-muted);">(e.g. com.mobile.legends)</span></label>
-                    <input type="text" id="edit-game-app-android-package" placeholder="com.mobile.legends">
+                    <label style="margin-top:0;">Android Package </label>
+                    <input type="text" id="edit-game-app-android-package">
                     <label>Android Scheme <span style="font-weight:400;color:var(--text-muted);">(custom URL scheme, without "://")</span></label>
-                    <input type="text" id="edit-game-app-android-scheme" placeholder="e.g. mlbb">
+                    <input type="text" id="edit-game-app-android-scheme">
                     <label>Android Store URL <span style="font-weight:400;color:var(--text-muted);">(optional — auto-built from package name if blank)</span></label>
-                    <input type="text" id="edit-game-app-android-store-url" placeholder="https://play.google.com/store/apps/details?id=...">
+                    <input type="text" id="edit-game-app-android-store-url">
                     <label>iOS Scheme <span style="font-weight:400;color:var(--text-muted);">(custom URL scheme, without "://")</span></label>
-                    <input type="text" id="edit-game-app-ios-scheme" placeholder="e.g. mlbb">
+                    <input type="text" id="edit-game-app-ios-scheme">
                     <label>iOS Store URL</label>
-                    <input type="text" id="edit-game-app-ios-store-url" placeholder="https://apps.apple.com/app/...">
+                    <input type="text" id="edit-game-app-ios-store-url">
                 </div>
 
                 <div class="switch-row">
@@ -3499,7 +3534,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     </label>
                 </div>
                 <label>Price margin above Cost (%) <span style="font-weight:400;color:var(--text-muted);">(blank = use the global Resync margin; Price never goes below Cost)</span></label>
-                <input type="number" id="edit-game-margin" min="0" max="100" step="0.25" inputmode="decimal" placeholder="Global margin">
+                <input type="number" id="edit-game-margin" min="0" max="100" step="0.25" inputmode="decimal">
 
                 <div class="switch-row">
                     <div>
@@ -3613,7 +3648,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
                         </div>
                         <div style="display:flex;gap:8px;margin-top:6px;">
-                            <input type="text" id="edit-game-jcplays-code" placeholder="or type a custom product code" style="flex:1;" oninput="onJCPlaysCodeTyped()">
+                            <input type="text" id="edit-game-jcplays-code" style="flex:1;" oninput="onJCPlaysCodeTyped()">
                             <button type="button" class="btn btn-outline" id="jcplays-import-btn" style="flex:unset;padding:8px 10px;font-size:12px;" onclick="importJCPlaysCatalogue()">Import</button>
                         </div>
                         <p id="jcplays-denom-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
@@ -3703,7 +3738,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <div class="game-picker-search-wrap" style="display:flex;gap:8px;align-items:center;">
                 <div style="position:relative;flex:1;">
                     <svg viewBox="0 0 24 24" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="game-picker-search" placeholder="Search game name..." autocomplete="off" oninput="filterGamePicker(this.value)" style="width:100%;padding:10px 12px 10px 34px;border:1px solid var(--border-glass);border-radius:12px;font-size:14px;background:var(--bg-subtle-2);color:var(--text-primary);box-sizing:border-box;">
+                    <input type="text" id="game-picker-search" autocomplete="off" oninput="filterGamePicker(this.value)" style="width:100%;padding:10px 12px 10px 34px;border:1px solid var(--border-glass);border-radius:12px;font-size:14px;background:var(--bg-subtle-2);color:var(--text-primary);box-sizing:border-box;">
                 </div>
                 <span id="game-picker-count" style="font-size:12.5px;font-weight:600;color:var(--text-muted);background:var(--fill-soft);padding:9px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0;"></span>
                 <button type="button" class="btn btn-outline" id="game-picker-update-btn" onclick="refreshGamePickerList()" style="flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Update</button>
@@ -3730,7 +3765,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <p id="add-server-picker-hint" style="font-size:12.5px;color:var(--text-muted);margin:-4px 0 12px;">Pick the Direct game to add another server for. It opens a fresh entry with the same Name/Image/Category — name the server, then Import its packages from G2Bulk.</p>
             <div class="game-picker-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="add-server-picker-search" placeholder="Search game name..." autocomplete="off" oninput="filterAddServerPicker(this.value)">
+                <input type="text" id="add-server-picker-search" autocomplete="off" oninput="filterAddServerPicker(this.value)">
             </div>
             <div class="game-picker-grid" id="add-server-picker-grid"></div>
         </div>
@@ -3748,13 +3783,13 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <div class="modal-body">
                 <input type="hidden" id="edit-payment-id">
                 <label>Method Name</label>
-                <input type="text" id="edit-payment-name" placeholder="e.g. KBZ Pay, Wave Pay">
+                <input type="text" id="edit-payment-name">
                 <label>Account Number</label>
-                <input type="text" id="edit-payment-number" placeholder="e.g. 09123456789">
+                <input type="text" id="edit-payment-number">
                 <label>Account Name</label>
-                <input type="text" id="edit-payment-accountname" placeholder="e.g. Mg Mg Aung">
+                <input type="text" id="edit-payment-accountname">
                 <label>Availability Note (shown to customers)</label>
-                <input type="text" id="edit-payment-availability" placeholder="e.g. Reviewed 7:00 AM - 12:00 AM, or Available 24/7">
+                <input type="text" id="edit-payment-availability">
                 <p style="font-size:12px;color:var(--text-secondary);margin-top:-6px;">Shown under this method at checkout so customers know when a receipt will be reviewed. Leave blank to hide.</p>
 
                 <label>Logo Image (optional)</label>
@@ -3806,26 +3841,26 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <div class="modal-body">
 
                 <label>Base URL</label>
-                <input type="text" id="jcplays-base-url" placeholder="https://jcplays.com/smilecoin/api">
+                <input type="text" id="jcplays-base-url">
 
                 <label>Proxy URL <span style="font-weight:400;color:var(--text-muted);">(your Cloudflare Worker's /jcplays-proxy route)</span></label>
-                <input type="text" id="jcplays-proxy-url" placeholder="https://your-worker.workers.dev/jcplays-proxy" autocomplete="off">
+                <input type="text" id="jcplays-proxy-url" autocomplete="off">
                 <p style="font-size:11.5px;color:var(--text-muted);margin-top:-6px;">Required — JCPlays doesn't send CORS headers, so requests can't go straight from this browser to jcplays.com. They're signed and forwarded through this Worker route instead.</p>
 
                 <label>UID</label>
-                <input type="text" id="jcplays-uid" placeholder="e.g. 5b4a2416-5dce-48bf-8a46-138b2e8a020a" autocomplete="off">
+                <input type="text" id="jcplays-uid" autocomplete="off">
 
                 <label>Email</label>
-                <input type="text" id="jcplays-email" placeholder="your account email" autocomplete="off">
+                <input type="text" id="jcplays-email" autocomplete="off">
 
                 <label>M_KEY (API Key)</label>
                 <div class="secret-field-wrap">
-                    <input type="text" id="jcplays-mkey" class="secret-input" placeholder="your_m_key_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <input type="text" id="jcplays-mkey" class="secret-input" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('jcplays-mkey', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
                 <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(points, 0 = off)</span></label>
-                <input type="number" id="jcplays-low-balance-alert" placeholder="e.g. 5000" step="1" min="0" title="Header will show a warning when the smile points balance drops below this amount">
+                <input type="number" id="jcplays-low-balance-alert" step="1" min="0" title="Header will show a warning when the smile points balance drops below this amount">
 
                 <div class="switch-row" style="margin-top:14px;">
                     <span class="switch-label" style="flex:1;font-weight:400;">Enabled — turn off to fully hide JCPlays (nav tab, wallet card, game-link picker) everywhere in the app</span>
@@ -3855,24 +3890,24 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             <div class="modal-body">
                 <label>API Key</label>
                 <div class="secret-field-wrap">
-                    <input type="text" id="g2bulk-api-key" class="secret-input" placeholder="your_api_key_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <input type="text" id="g2bulk-api-key" class="secret-input" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('g2bulk-api-key', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
                 <p id="g2bulk-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
                 <div id="g2bulk-result-grid" style="display:none;"></div>
 
                 <label>USD → MMK Rate</label>
-                <input type="number" id="g2bulk-usd-rate" placeholder="e.g. 4500" step="1">
+                <input type="number" id="g2bulk-usd-rate" step="1">
 
                 <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(USD, 0 = off)</span></label>
-                <input type="number" id="g2bulk-low-balance-alert" placeholder="e.g. 20" step="1" min="0" title="Header will show a warning when the wallet balance drops below this amount">
+                <input type="number" id="g2bulk-low-balance-alert" step="1" min="0" title="Header will show a warning when the wallet balance drops below this amount">
 
                 <label>Webhook URL <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
-                <input type="text" id="g2bulk-webhook-url" placeholder="https://your-worker.workers.dev/g2bulk-webhook" autocomplete="off">
+                <input type="text" id="g2bulk-webhook-url" autocomplete="off">
 
                 <label>Webhook Secret</label>
                 <div class="secret-field-wrap">
-                    <input type="text" id="g2bulk-webhook-secret" class="secret-input" placeholder="your_random_secret_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <input type="text" id="g2bulk-webhook-secret" class="secret-input" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('g2bulk-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
@@ -3903,24 +3938,24 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
 
                 <label>Bot Token</label>
                 <div class="secret-field-wrap">
-                    <input type="text" id="tg-bot-token" class="secret-input" placeholder="123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <input type="text" id="tg-bot-token" class="secret-input" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('tg-bot-token', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
                 <label>Chat ID</label>
-                <input type="text" id="tg-chat-id" placeholder="e.g. 123456789 or -100123456789" autocomplete="off">
+                <input type="text" id="tg-chat-id" autocomplete="off">
 
                 <label style="margin-top:14px;">Webhook URL <span style="font-weight:400;color:var(--text-muted);">(pca-telegram-bot Worker)</span></label>
-                <input type="text" id="tg-webhook-url" placeholder="https://your-worker.workers.dev/telegram-webhook" autocomplete="off">
+                <input type="text" id="tg-webhook-url" autocomplete="off">
 
                 <label>Webhook Secret</label>
                 <div class="secret-field-wrap">
-                    <input type="text" id="tg-webhook-secret" class="secret-input" placeholder="your_random_secret_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
+                    <input type="text" id="tg-webhook-secret" class="secret-input" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
                     <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('tg-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
                 </div>
 
                 <label style="margin-top:14px;">Bot Username <span style="font-weight:400;color:var(--text-muted);">(optional — for the "Open Telegram" link button)</span></label>
-                <input type="text" id="tg-bot-username" placeholder="YourBotName_bot (no @)" autocomplete="off">
+                <input type="text" id="tg-bot-username" autocomplete="off">
 
                 <div class="switch-row" style="margin-top:14px;">
                     <span class="switch-label" style="flex:1;font-weight:400;">Enabled — send new orders to Telegram automatically</span>
@@ -4048,7 +4083,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         const PAGE_TO_NAV_GROUP = {
             'dashboard': 'group-dashboard', 'analytics': 'group-dashboard',
             'order-list': 'group-orders',
-            'g2bulk': 'group-setting', 'jcplays': 'group-setting', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
+            'g2bulk': 'group-setting', 'jcplays': 'group-jcplays', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
             'payment-list': 'group-wallet', 'topup-list': 'group-wallet',
             'user-list': 'group-userlist',
             'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
@@ -7440,7 +7475,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 message: 'The customer will see this order as completed.',
                 confirmText: 'Mark as Success',
                 showNote: true,
-                notePlaceholder: 'Note (optional) — e.g. "Delivered manually, 5 min late"',
+                notePlaceholder: '',
                 onConfirm: (note) => doMarkSuccess(orderId, btnElement, note)
             });
         }
@@ -7474,7 +7509,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 message: 'The customer will need to reorder. This action cannot be undone.',
                 confirmText: 'Mark as Failed',
                 showNote: true,
-                notePlaceholder: 'Reason (optional) — e.g. "Wrong player ID, please recheck and reorder"',
+                notePlaceholder: '',
                 templates: ORDER_REJECT_TEMPLATES,
                 onConfirm: (note) => doMarkFail(orderId, btnElement, note)
             });
@@ -7597,7 +7632,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 message: `Customers will need to reorder. Any wallet-paid orders among these are refunded automatically. This cannot be undone.`,
                 confirmText: `Reject ${ids.length} Order${ids.length > 1 ? 's' : ''}`,
                 showNote: true,
-                notePlaceholder: 'Reason (optional, applied to all selected) — e.g. "Wrong player ID, please recheck and reorder"',
+                notePlaceholder: '',
                 templates: ORDER_REJECT_TEMPLATES,
                 onConfirm: (note) => doBulkReject(ids, note)
             });
@@ -7929,7 +7964,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 message: 'The exact amount will be credited to the customer\'s wallet immediately.',
                 confirmText: 'Confirm & Credit',
                 showNote: true,
-                notePlaceholder: 'Note (optional)',
+                notePlaceholder: '',
                 onConfirm: (note) => doConfirmTopup(id, btnElement, note)
             });
         }
@@ -7955,7 +7990,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 message: 'No amount will be credited. The customer will see this request as rejected.',
                 confirmText: 'Reject',
                 showNote: true,
-                notePlaceholder: 'Reason (optional) — e.g. "Receipt does not match amount"',
+                notePlaceholder: '',
                 templates: ORDER_REJECT_TEMPLATES.filter(t => ['Receipt unclear', 'Wrong amount', 'Payment not found', 'Duplicate order'].includes(t.label)),
                 onConfirm: (note) => doRejectTopup(id, btnElement, note)
             });
@@ -9176,7 +9211,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             window.showActionDialog({
                 type: 'success',
                 title: 'Rename Tab',
-                message: `"${pkgTabLabel(tabId)}" tab ကို နာမည်အသစ်ပေးပါ (ဥပမာ - "Diamond", "UC"):`,
+                message: `"${pkgTabLabel(tabId)}" tab ကို နာမည်အသစ်ပေးပါ:`,
                 confirmText: 'Rename',
                 cancelText: 'Cancel',
                 showNote: true,
@@ -9244,11 +9279,11 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             window.showActionDialog({
                 type: 'success',
                 title: 'New Package Tab',
-                message: 'Name this tab (e.g. "Weekly Pass", "Bundle", "VIP"):',
+                message: 'Name this tab:',
                 confirmText: 'Add Tab',
                 cancelText: 'Cancel',
                 showNote: true,
-                notePlaceholder: 'Tab name',
+                notePlaceholder: '',
                 onConfirm: (note) => {
                     const name = (note || '').trim();
                     if (!name) { window.showToast('Enter a tab name.', 'fail'); return; }
@@ -9456,7 +9491,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                                 <div class="pkg-card-close pkg-x-icon" onclick="collapsePackageRow(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
                             </div>
                             <div class="pkg-row-top">
-                                <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                                <input type="text" class="pkg-amount" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
                             </div>
                             <div class="pkg-row-pair">
                                 <div class="pkg-price-field">
@@ -9499,12 +9534,12 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             <div class="pkg-row-pricing">
                                 <div class="pkg-price-field">
                                     <label>Cost (မသိမ်း — Store မှာ မပြပါ)</label>
-                                    <input type="number" class="pkg-cost" placeholder="0" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                                    <input type="number" class="pkg-cost" value="${cost}" oninput="updatePackageProfit(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
                                     <button type="button" class="pkg-cost-update-btn" style="display:none;" onclick="applyCostUpdate(this)"></button>
                                 </div>
                                 <div class="pkg-price-field">
                                     <label>Price (Store မှာ ပြမည်)</label>
-                                    <input type="number" class="pkg-price" placeholder="0" value="${price}" oninput="updatePackageProfit(this)" onblur="enforceMinPriceMargin(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
+                                    <input type="number" class="pkg-price" value="${price}" oninput="updatePackageProfit(this)" onblur="enforceMinPriceMargin(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
                                 </div>
                                 <div class="pkg-profit-badge" title="Profit margin = (Price − Cost) / Cost">--</div>
                             </div>
@@ -9516,9 +9551,9 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                                     <option value="jcplays" ${resolvedProvider === 'jcplays' ? 'selected' : ''}>JCPlays (Redeem Code)</option>
                                 </select>
                             </div>
-                            <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
-                            <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
-                            <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-g2bulk" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-jcplays" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
+                            <input type="text" class="pkg-voucher-id" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <span class="pkg-stock-badge"></span>
                             <div class="pkg-card-footer">
                                 <button type="button" class="pkg-card-save-btn" onclick="collapsePackageRow(this)">Save</button>
@@ -11961,7 +11996,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 message: `This will remove ${fmtMoney(amount)} from the user's wallet (current balance: ${fmtMoney(currentBalance)}).`,
                 confirmText: 'Deduct',
                 showNote: true,
-                notePlaceholder: 'Reason (optional, for your records)',
+                notePlaceholder: '',
                 onConfirm: async (note) => {
                     const userRef = doc(db, "users", userId);
                     try {
@@ -12084,7 +12119,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         async function saveReceiptSettings(btn) {
             const input = document.getElementById('receipt-domain-input');
             let v = (input.value || '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
-            if (v && !/^[a-z0-9.-]+\.[a-z]{2,}(\/[^\s]*)?$/i.test(v)) { window.showToast('Domain မှန်မှန် ရိုက်ပါ (ဥပမာ pcagamestoremm.vercel.app)', 'fail'); return; }
+            if (v && !/^[a-z0-9.-]+\.[a-z]{2,}(\/[^\s]*)?$/i.test(v)) { window.showToast('Domain မှန်မှန် ရိုက်ပါ', 'fail'); return; }
             btn.disabled = true; const orig = btn.innerText; btn.innerText = 'Saving...';
             try {
                 await setDoc(doc(db, "settings", "receipt"), { domain: v }, { merge: true });
@@ -14742,7 +14777,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const btn = document.getElementById('jcplays-import-btn');
             if (!product) {
                 statusEl.style.color = 'var(--danger-strong)';
-                statusEl.innerText = 'Enter a JCPlays Product Code first (e.g. mobilelegends).';
+                statusEl.innerText = 'Enter a JCPlays Product Code first.';
                 return;
             }
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
@@ -15641,7 +15676,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         'order-list': 'group-orders',
         'game-list': 'group-game', 'game-editor-page': 'group-game',
         'topup-list': 'group-wallet', 'payment-list': 'group-wallet',
-        'g2bulk': 'group-setting', 'jcplays': 'group-setting', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
+        'g2bulk': 'group-setting', 'jcplays': 'group-jcplays', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
         'user-list': 'group-userlist', 'user-detail-page': 'group-userlist',
         'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
     };
@@ -15751,7 +15786,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
     window.pcaOpenMore = openMore; window.pcaCloseMore = closeMore;
     // Tapping a direct tab (Orders / Users) closes any open nav popup
     document.addEventListener('click', function (e) {
-        var t = e.target.closest && e.target.closest('#group-orders, #group-userlist');
+        var t = e.target.closest && e.target.closest('#group-orders, #group-userlist, #group-jcplays');
         if (t) { if (window.closeNavGroupSheet) window.closeNavGroupSheet(); closeMore(); }
     }, true);
 
