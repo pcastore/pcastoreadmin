@@ -4380,7 +4380,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
     <!-- FIREBASE CODE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, Timestamp, collection, getDocs as _fsGetDocs, getDocsFromServer as _fsGetDocsFromServer, getDoc as _fsGetDoc, getCountFromServer as _fsGetCount, addDoc as _fsAddDoc, doc, setDoc as _fsSetDoc, updateDoc as _fsUpdateDoc, deleteDoc as _fsDeleteDoc, deleteField, query, where, orderBy, onSnapshot as _fsOnSnapshot, serverTimestamp, increment, arrayUnion, runTransaction as _fsRunTransaction, writeBatch as _fsWriteBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, Timestamp, collection, getDocs as _fsGetDocs, getDocsFromServer as _fsGetDocsFromServer, getDoc as _fsGetDoc, getDocFromServer as _fsGetDocFromServer, getCountFromServer as _fsGetCount, addDoc as _fsAddDoc, doc, setDoc as _fsSetDoc, updateDoc as _fsUpdateDoc, deleteDoc as _fsDeleteDoc, deleteField, query, where, orderBy, onSnapshot as _fsOnSnapshot, serverTimestamp, increment, arrayUnion, runTransaction as _fsRunTransaction, writeBatch as _fsWriteBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // ---------- Request usage meter: Firestore instrumentation ----------
@@ -12244,6 +12244,19 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // Module-wide cache of the current key/rate so order auto-fulfillment
         // doesn't need to re-read Firestore on every click.
         let G2BULK_SETTINGS = { apiKey: '', usdRate: 4500, webhookUrl: '', webhookSecret: '', enabled: true, lowBalanceAlert: 0 };
+        // true only after the settings doc has really been read from Firestore.
+        let g2bulkLoaded = false;
+        // Shared retry for settings listeners: if a listener errors (e.g. permission-denied
+        // before the admin claims land) it used to stay dead for the whole session, so the
+        // Settings modal showed empty fields. Now: show the error code, refresh claims, re-attach once.
+        function retrySettingsListener(label, error, resetFn, reattachFn) {
+            console.error(label + ' settings listener error:', error);
+            try { window.showToast(label + ' settings load မရပါ: ' + ((error && error.code) || 'error'), 'fail'); } catch (e) {}
+            resetFn();
+            if (window['__retry_' + label]) return;
+            window['__retry_' + label] = true;
+            Promise.resolve(callAdminSyncClaims()).catch(() => {}).then(() => setTimeout(reattachFn, 800));
+        }
 
         // Shows/hides every place a provider ('g2bulk' | 'jcplays') appears in
         // the admin UI when its own Settings modal's "Enabled" toggle is off:
@@ -12277,6 +12290,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         let G2BULK_GAMES_LIST = null;
 
         function openG2BulkModal() {
+            if (!g2bulkListenerAttached) listenG2Bulk();
             document.getElementById('g2bulk-status').style.display = 'none';
             document.getElementById('g2bulk-result-grid').style.display = 'none';
             document.getElementById('g2bulk-modal-overlay').classList.add('show');
@@ -12292,6 +12306,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             if (g2bulkListenerAttached) return;
             g2bulkListenerAttached = true;
             onSnapshot(doc(db, "settings", "g2bulk"), (docSnap) => {
+                g2bulkLoaded = true;
                 const data = docSnap.exists() ? docSnap.data() : {};
                 document.getElementById('g2bulk-api-key').value = data.apiKey || '';
                 document.getElementById('g2bulk-usd-rate').value = data.usdRate || 4500;
@@ -12313,7 +12328,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 applyProviderVisibility('g2bulk', g2bulkEnabled);
                 if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             }, (error) => {
-                console.error("G2Bulk settings listener error:", error);
+                retrySettingsListener('G2Bulk', error, () => { g2bulkListenerAttached = false; g2bulkLoaded = false; }, listenG2Bulk);
             });
         }
 
@@ -12326,6 +12341,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const enabled = document.getElementById('g2bulk-enabled').checked;
             const btn = document.getElementById('save-g2bulk-btn');
             const originalText = btn.innerText;
+
+            if (!g2bulkLoaded && !confirm('Saved settings ကို မဖတ်နိုင်သေးပါ။ ဒီအတိုင်း Save လုပ်ရင် ရှိပြီးသား value တွေ ဖျက်မိနိုင်ပါတယ်။ ဆက်လုပ်မလား?')) return;
 
             if (webhookUrl && !/^https:\/\//i.test(webhookUrl)) {
                 window.showToast('Webhook URL must start with https://', 'fail');
@@ -12341,6 +12358,13 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
 
             try {
                 await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret, lowBalanceAlert, enabled }, { merge: true });
+                try {
+                    const chk = await _fsGetDocFromServer(doc(db, "settings", "g2bulk"));
+                    if (!chk.exists() || (apiKey && chk.data().apiKey !== apiKey)) {
+                        window.showToast('Save လုပ်ပြီးပေမယ့် server မှာ မတွေ့ပါ — ပြန်စစ်ပါ', 'fail');
+                        return;
+                    }
+                } catch (e) { console.error('G2Bulk read-back failed:', e); window.showToast('Server ကပြန်ဖတ်မရပါ: ' + ((e && e.code) || 'error'), 'fail'); return; }
                 // Refresh the public settings/providerFlags mirror so the
                 // Storefront sees the new enabled/disabled state right away.
                 callAdminSyncClaims();
@@ -12348,7 +12372,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 closeG2BulkModal();
             } catch (error) {
                 console.error("Save G2Bulk key error:", error);
-                window.showToast('Failed to save G2Bulk key.', 'fail');
+                window.showToast('Failed to save G2Bulk key: ' + ((error && error.code) || (error && error.message) || 'unknown'), 'fail');
             } finally {
                 btn.disabled = false;
                 btn.innerText = originalText;
@@ -12634,7 +12658,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 // webhook instead. Telegram does not allow polling + webhook at the
                 // same time on one bot, so leave startTelegramPollingOnce() unused.
             }, (error) => {
-                console.error('Telegram settings listener error:', error);
+                retrySettingsListener('Telegram', error, () => { telegramListenerAttached = false; }, listenTelegramBot);
             });
         }
 
@@ -14423,7 +14447,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 applyProviderVisibility('jcplays', jcplaysEnabled);
                 if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
             }, (error) => {
-                console.error("JCPlays settings listener error:", error);
+                retrySettingsListener('JCPlays', error, () => { jcplaysListenerAttached = false; }, listenJCPlays);
             });
         }
 
