@@ -24,222 +24,8 @@
             } catch (e) { /* ignore */ }
         })();
     </script>
-    <script>
-        // ============================================================
-        // Request usage meter (Dashboard → "Request Usage")
-        // Counts what THIS admin panel sends, on THIS device:
-        //   - Firestore reads / writes / deletes / live listeners
-        //     (fed by the wrappers around the Firestore SDK calls in the
-        //      module script below)
-        //   - Cloudflare Worker requests, errors and latency
-        //     (every fetch() to *.workers.dev / *.pages.dev is timed here)
-        // Totals for "today" survive reloads via localStorage; storefront
-        // (customer) traffic is NOT included - use the Firebase Console
-        // Usage tab / Cloudflare Workers analytics for the full picture.
-        // Loaded as a plain script first so the fetch wrapper is in place
-        // before any other code runs.
-        // ============================================================
-        (function () {
-            'use strict';
-            var KEY = 'pca_usage_v1';
-            // Free-tier daily limits used for the progress bars (edit if you're on a paid plan)
-            var QUOTA = { reads: 50000, writes: 20000, cf: 100000 };
-            // Add any custom domain that is routed through Cloudflare, e.g. ['api.mystore.com']
-            var CF_EXTRA_HOSTS = [];
-            var MAX_SOURCES = 60;
-
-            function blank() { return { fs: { r: 0, w: 0, d: 0, src: {} }, cf: { n: 0, f: 0, ms: 0, src: {} } }; }
-            var session = blank(), pending = blank();
-            var listeners = { opened: 0, active: 0 };
-            var cfMax = 0, dirty = false;
-
-            function zeroFs() { return { r: 0, w: 0, d: 0 }; }
-            function zeroCf() { return { n: 0, f: 0, ms: 0 }; }
-            function entry(map, label, zero) {
-                if (!map[label]) {
-                    if (Object.keys(map).length >= MAX_SOURCES) label = 'other';
-                    if (!map[label]) map[label] = zero();
-                }
-                return map[label];
-            }
-
-            function fsBump(kind, count, label) {
-                try {
-                    if (!count) return;
-                    label = label || '?';
-                    [session, pending].forEach(function (st) {
-                        st.fs[kind] += count;
-                        entry(st.fs.src, label, zeroFs)[kind] += count;
-                    });
-                    dirty = true;
-                } catch (e) { /* never break the app for a counter */ }
-            }
-            function cfBump(label, ms, failed) {
-                try {
-                    [session, pending].forEach(function (st) {
-                        st.cf.n++; st.cf.ms += ms; if (failed) st.cf.f++;
-                        var e = entry(st.cf.src, label, zeroCf);
-                        e.n++; e.ms += ms; if (failed) e.f++;
-                    });
-                    if (ms > cfMax) cfMax = ms;
-                    dirty = true;
-                } catch (e) { /* ignore */ }
-            }
-
-            // ---- Cloudflare: time every fetch() that goes to a Worker ----
-            function isCf(u) {
-                try {
-                    var h = new URL(u, location.href).hostname;
-                    return /\.(workers|pages)\.dev$/.test(h) || CF_EXTRA_HOSTS.indexOf(h) !== -1;
-                } catch (e) { return false; }
-            }
-            function cfLabel(u) {
-                var x = new URL(u, location.href);
-                var seg = x.pathname.split('/')[1];
-                return x.hostname.split('.')[0] + (seg ? '/' + seg : '');
-            }
-            var nativeFetch = window.fetch;
-            if (typeof nativeFetch === 'function') {
-                window.fetch = function (input) {
-                    var url = (typeof input === 'string') ? input : ((input && input.url) || String(input));
-                    if (!isCf(url)) return nativeFetch.apply(window, arguments);
-                    var t0 = performance.now(), label = cfLabel(url);
-                    return nativeFetch.apply(window, arguments).then(function (res) {
-                        cfBump(label, performance.now() - t0, !res.ok);
-                        return res;
-                    }, function (err) {
-                        cfBump(label, performance.now() - t0, true);
-                        throw err;
-                    });
-                };
-            }
-
-            // ---- Persistence (today's totals, per device) ----
-            function dayKey() {
-                var d = new Date();
-                return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-            }
-            function load() {
-                try {
-                    var o = JSON.parse(localStorage.getItem(KEY) || 'null');
-                    if (o && o.day === dayKey() && o.data && o.data.fs && o.data.cf) return o.data;
-                } catch (e) { /* ignore */ }
-                return blank();
-            }
-            function addMap(x, y, keys) {
-                var out = {};
-                [x || {}, y || {}].forEach(function (m) {
-                    Object.keys(m).forEach(function (k) {
-                        var e = out[k] || (out[k] = {});
-                        keys.forEach(function (f) { e[f] = (e[f] || 0) + (m[k][f] || 0); });
-                    });
-                });
-                return out;
-            }
-            function merge(a, b) {
-                function add(x, y) { return (x || 0) + (y || 0); }
-                return {
-                    fs: { r: add(a.fs.r, b.fs.r), w: add(a.fs.w, b.fs.w), d: add(a.fs.d, b.fs.d), src: addMap(a.fs.src, b.fs.src, ['r', 'w', 'd']) },
-                    cf: { n: add(a.cf.n, b.cf.n), f: add(a.cf.f, b.cf.f), ms: add(a.cf.ms, b.cf.ms), src: addMap(a.cf.src, b.cf.src, ['n', 'f', 'ms']) }
-                };
-            }
-            function flush() {
-                if (!dirty) return;
-                try {
-                    localStorage.setItem(KEY, JSON.stringify({ day: dayKey(), data: merge(load(), pending) }));
-                    pending = blank();
-                    dirty = false;
-                } catch (e) { /* storage blocked: keep counting in memory */ }
-            }
-
-            // ---- Rendering ----
-            function num(v) { return Number(v || 0).toLocaleString('en-US'); }
-            function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-            function setText(id, t) { var el = document.getElementById(id); if (el && el.textContent !== t) el.textContent = t; }
-            function setBar(id, used, quota) {
-                var el = document.getElementById(id); if (!el) return;
-                var pct = Math.min(100, used / quota * 100);
-                el.style.width = pct + '%';
-                el.classList.toggle('hot', pct >= 80);
-            }
-            function setRows(id, rows, emptyText) {
-                var el = document.getElementById(id); if (!el) return;
-                el.innerHTML = rows.length ? rows.map(function (r) {
-                    return '<div class="usage-top-row"><span class="name">' + esc(r[0]) + '</span><b>' + r[1] + '</b></div>';
-                }).join('') : '<span class="stat-card-sub-text">' + emptyText + '</span>';
-            }
-            function render() {
-                var dash = document.getElementById('dashboard');
-                if (!dash || !dash.classList.contains('active') || !document.getElementById('usage-grid')) return;
-                var v = merge(load(), pending);
-                var writes = v.fs.w + v.fs.d;
-
-                setText('usage-fs-reads', num(v.fs.r));
-                setText('usage-fs-reads-sub', 'session ' + num(session.fs.r));
-                setBar('usage-fs-reads-bar', v.fs.r, QUOTA.reads);
-
-                setText('usage-fs-writes', num(writes));
-                setText('usage-fs-writes-sub', 'session ' + num(session.fs.w + session.fs.d) + (v.fs.d ? ' · ' + num(v.fs.d) + ' deletes' : ''));
-                setBar('usage-fs-writes-bar', writes, QUOTA.writes);
-
-                setText('usage-listeners', num(listeners.active));
-                setText('usage-listeners-sub', num(listeners.opened) + ' opened this session');
-
-                setText('usage-cf-reqs', num(v.cf.n));
-                setText('usage-cf-reqs-sub', 'session ' + num(session.cf.n));
-                setBar('usage-cf-reqs-bar', v.cf.n, QUOTA.cf);
-
-                setText('usage-cf-fail', num(v.cf.f));
-                setText('usage-cf-fail-sub', (v.cf.n ? (v.cf.f / v.cf.n * 100).toFixed(1) : '0') + '% error rate');
-
-                setText('usage-cf-latency', (v.cf.n ? Math.round(v.cf.ms / v.cf.n) : 0) + ' ms');
-                setText('usage-cf-latency-sub', 'slowest ' + Math.round(cfMax) + ' ms (session)');
-
-                var fsRows = Object.keys(v.fs.src).map(function (k) { return [k, v.fs.src[k]]; })
-                    .sort(function (a, b) { return (b[1].r + b[1].w + b[1].d) - (a[1].r + a[1].w + a[1].d); })
-                    .slice(0, 6)
-                    .map(function (r) { return [r[0], 'R ' + num(r[1].r) + ' · W ' + num(r[1].w + r[1].d)]; });
-                setRows('usage-fs-top', fsRows, 'No Firestore activity yet.');
-
-                var cfRows = Object.keys(v.cf.src).map(function (k) { return [k, v.cf.src[k]]; })
-                    .sort(function (a, b) { return b[1].n - a[1].n; })
-                    .slice(0, 6)
-                    .map(function (r) {
-                        var e = r[1];
-                        return [r[0], num(e.n) + ' req · ' + Math.round(e.ms / e.n) + ' ms' + (e.f ? ' · <em>' + num(e.f) + ' failed</em>' : '')];
-                    });
-                setRows('usage-cf-top', cfRows, 'No Worker requests yet.');
-            }
-
-            function reset() {
-                try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
-                session = blank(); pending = blank(); cfMax = 0; dirty = false;
-                render();
-            }
-
-            window.PCAUsage = {
-                fsRead: function (count, label) { fsBump('r', count, label); },
-                fsWrite: function (count, label) { fsBump('w', count, label); },
-                fsDelete: function (count, label) { fsBump('d', count, label); },
-                listenerOpen: function () { listeners.opened++; listeners.active++; },
-                listenerClose: function () { if (listeners.active > 0) listeners.active--; },
-                render: render,
-                reset: reset,
-                // Manual poke for the ↻ Update button - render() already re-runs every
-                // 3s on its own, but flush()+render() here gives an instant repaint on
-                // tap instead of waiting for the next tick, so a manual check feels
-                // immediate rather than "did anything happen?".
-                update: function () { flush(); render(); },
-                snapshot: function () { return merge(load(), pending); }   // handy from the debug console
-            };
-
-            setInterval(function () { flush(); render(); }, 3000);
-            document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); });
-            window.addEventListener('pagehide', flush);
-        })();
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#584790">
+    <meta name="theme-color" content="#2563EB">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -260,9 +46,9 @@
            ============================================================ */
         :root, html[data-theme="light-purple"] {
             --bg-app: #F5F5F8;
-            --mesh-1: rgba(124,58,237,0.11);
+            --mesh-1: rgba(37,99,235,0.11);
             --mesh-2: rgba(15,23,42,0.05);
-            --mesh-3: rgba(124,58,237,0.07);
+            --mesh-3: rgba(37,99,235,0.07);
             --bg-subtle: rgba(255,255,255,0.45);
             --bg-subtle-2: rgba(255,255,255,0.58);
             --surface: rgba(255,255,255,0.7);
@@ -279,21 +65,21 @@
             --border-dashed: rgba(30,30,40,0.25);
             --shadow-soft: 0 8px 30px -8px rgba(30,30,40,0.18);
             --glass-blur: 14px;
-            --accent: #7C3AED;
-            --accent-rgb: 124,58,237;
-            --accent-soft: rgba(124,58,237,0.14);
-            --accent-1: #8B5CF6;
-            --accent-2: #7C3AED;
-            --accent-3: #6D28D9;
-            --header-1: #6A57A3;
-            --header-2: #584790;
-            --header-3: #433572;
+            --accent: #2563EB;
+            --accent-rgb: 37,99,235;
+            --accent-soft: rgba(37,99,235,0.14);
+            --accent-1: #3B82F6;
+            --accent-2: #2563EB;
+            --accent-3: #1D4ED8;
+            --header-1: #3B82F6;
+            --header-2: #2563EB;
+            --header-3: #1D4ED8;
         }
         html[data-theme="dark-purple"] {
-            --bg-app: #0C0B11;
-            --mesh-1: rgba(139,92,246,0.20);
+            --bg-app: #0B0E16;
+            --mesh-1: rgba(59,130,246,0.20);
             --mesh-2: rgba(255,255,255,0.04);
-            --mesh-3: rgba(94,70,168,0.20);
+            --mesh-3: rgba(37,99,235,0.20);
             --surface: rgba(32,32,37,0.62);
             --surface-strong: rgba(38,38,44,0.8);
             --bg-subtle: rgba(255,255,255,0.05);
@@ -310,15 +96,15 @@
             --border-dashed: rgba(255,255,255,0.26);
             --shadow-soft: 0 14px 40px -10px rgba(0,0,0,0.65);
             --glass-blur: 16px;
-            --accent: #A78BFA;
-            --accent-rgb: 139,92,246;
-            --accent-soft: rgba(139,92,246,0.2);
-            --accent-1: #A78BFA;
-            --accent-2: #8B5CF6;
-            --accent-3: #7C3AED;
-            --header-1: #4B3F7A;
-            --header-2: #3E3366;
-            --header-3: #2E2650;
+            --accent: #60A5FA;
+            --accent-rgb: 59,130,246;
+            --accent-soft: rgba(59,130,246,0.2);
+            --accent-1: #60A5FA;
+            --accent-2: #3B82F6;
+            --accent-3: #2563EB;
+            --header-1: #1E3A8A;
+            --header-2: #1E40AF;
+            --header-3: #172554;
         }
 
         html, body { min-height: 100%; }
@@ -613,10 +399,10 @@
         @keyframes live-pulse { 0% { box-shadow: 0 0 0 0 rgba(52,211,153,0.55); } 70% { box-shadow: 0 0 0 6px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
 
         .stats-row { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .stat-chip { background: var(--surface); border: 1px solid var(--border-glass); border-left: 3px solid var(--chip-color, #8B5CF6); border-radius: 14px; padding: 10px 12px; transition: transform 0.15s ease, background 0.15s ease; box-shadow: var(--shadow-soft); }
+        .stat-chip { background: var(--surface); border: 1px solid var(--border-glass); border-left: 3px solid var(--chip-color, #3B82F6); border-radius: 14px; padding: 10px 12px; transition: transform 0.15s ease, background 0.15s ease; box-shadow: var(--shadow-soft); }
         .stat-chip:active { transform: scale(0.97); }
         .stat-chip-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-        .stat-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chip-color, #8B5CF6); flex-shrink: 0; }
+        .stat-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--chip-color, #3B82F6); flex-shrink: 0; }
         .stat-chip h4 { color: var(--text-muted); font-size: 11.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .stat-chip p { font-size: 18px; font-weight: 600; color: var(--text-strong); line-height: 1.15; }
         .stat-chip.span-2 { grid-column: span 2; }
@@ -627,17 +413,6 @@
 
         .dash-section-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 16px 0 8px; }
 
-        /* Request usage meter (Dashboard → Request Usage) */
-        .usage-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
-        @media (min-width: 640px) { .usage-grid { grid-template-columns: repeat(3, 1fr); } }
-        .usage-bar { height: 4px; border-radius: 4px; background: var(--fill-soft); margin-top: 8px; overflow: hidden; }
-        .usage-bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--accent); transition: width 0.4s ease; }
-        .usage-bar i.hot { background: var(--danger); }
-        .usage-top-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary); padding: 7px 0; border-bottom: 1px solid var(--fill-soft); }
-        .usage-top-row:last-child { border-bottom: 0; }
-        .usage-top-row .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .usage-top-row b { color: var(--text-primary); font-weight: 600; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-        .usage-top-row b em { font-style: normal; color: var(--danger); }
 
         /* ============================================================
            REDESIGNED OVERVIEW WIDGETS — image-style stat cards, revenue
@@ -1441,7 +1216,7 @@
         .ng-chev { width: 15px; height: 15px; flex-shrink: 0; stroke: var(--ng-c1, var(--text-muted)); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
         .ng-tile .nav-item-low-balance-dot { top: 50%; right: 34px; transform: translateY(-50%); }
         .ng-tile.ng-c0 { --ng-c1:#3B82F6; --ng-c2:#2563EB; --ng-bg1:rgba(59,130,246,0.20); --ng-bg2:rgba(59,130,246,0.07); --ng-line:rgba(59,130,246,0.40); }
-        .ng-tile.ng-c1 { --ng-c1:#8B5CF6; --ng-c2:#7C3AED; --ng-bg1:rgba(139,92,246,0.20); --ng-bg2:rgba(139,92,246,0.07); --ng-line:rgba(139,92,246,0.40); }
+        .ng-tile.ng-c1 { --ng-c1:#06B6D4; --ng-c2:#0891B2; --ng-bg1:rgba(6,182,212,0.20); --ng-bg2:rgba(6,182,212,0.07); --ng-line:rgba(6,182,212,0.40); }
         .ng-tile.ng-c2 { --ng-c1:#EC4899; --ng-c2:#DB2777; --ng-bg1:rgba(236,72,153,0.20); --ng-bg2:rgba(236,72,153,0.07); --ng-line:rgba(236,72,153,0.40); }
         .ng-tile.ng-c3 { --ng-c1:#10B981; --ng-c2:#059669; --ng-bg1:rgba(16,185,129,0.20); --ng-bg2:rgba(16,185,129,0.07); --ng-line:rgba(16,185,129,0.40); }
         .ng-tile.ng-c4 { --ng-c1:#F59E0B; --ng-c2:#D97706; --ng-bg1:rgba(245,158,11,0.20); --ng-bg2:rgba(245,158,11,0.07); --ng-line:rgba(245,158,11,0.40); }
@@ -1981,6 +1756,118 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
   }).observe(document.documentElement,{childList:true,characterData:true,subtree:true});
 })();
 </script>
+<style id="pca-float-glass">
+/* ==========================================================================
+   Floating glass header + nav, blue accent, popups anchored to the nav bar
+   ========================================================================== */
+:root {
+    --glass-bg: linear-gradient(135deg, rgba(255,255,255,.74), rgba(var(--accent-rgb),.10)), rgba(255,255,255,.35);
+    --glass-border: rgba(255,255,255,.75);
+    --glass-shadow: 0 12px 32px -12px rgba(var(--accent-rgb),.38), 0 2px 8px rgba(15,23,42,.06), inset 0 1px 0 rgba(255,255,255,.95);
+    --glass-filter: blur(24px) saturate(185%);
+    --pca-nav-h: 74px;
+    --pca-pop-bottom: calc(var(--pca-safe-b) + 86px);
+}
+html[data-theme="dark-purple"] {
+    --glass-bg: linear-gradient(135deg, rgba(255,255,255,.09), rgba(var(--accent-rgb),.16)), rgba(18,22,36,.5);
+    --glass-border: rgba(255,255,255,.16);
+    --glass-shadow: 0 14px 34px -12px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.14);
+}
+
+/* ---- Header: detached, rounded, glass ---- */
+html .header {
+    background: var(--glass-bg) !important;
+    -webkit-backdrop-filter: var(--glass-filter) !important; backdrop-filter: var(--glass-filter) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: var(--glass-shadow) !important;
+    border-radius: 22px !important;
+    margin: calc(var(--pca-safe-t) + 8px) 10px 0 !important;
+    top: calc(var(--pca-safe-t) + 8px) !important;
+}
+html .header .logo { color: var(--text-strong) !important; }
+html .header .logo-icon { background: rgba(var(--accent-rgb),.14) !important; border: 1px solid rgba(var(--accent-rgb),.28) !important; color: var(--accent) !important; }
+html .header .logo-icon.has-custom-logo { background: transparent !important; border-color: rgba(var(--accent-rgb),.2) !important; }
+html .header .header-icon { background: rgba(var(--accent-rgb),.12) !important; border: 1px solid rgba(var(--accent-rgb),.22) !important; color: var(--accent) !important; }
+html .header .header-icon .ui-icon, html .header .logo-icon .ui-icon { stroke: var(--accent) !important; }
+html .header #header-clock { background: rgba(var(--accent-rgb),.10) !important; border-color: rgba(var(--accent-rgb),.22) !important; }
+html .header .digital-clock-time { color: var(--accent) !important; }
+html .header #header-clock-date { color: var(--text-secondary) !important; }
+@media (max-width: 899.98px) {
+    html .header { padding: 6px 10px !important; min-height: 56px; }
+    body.pca-hdr-hidden .header { transform: translate3d(0, calc(-100% - var(--pca-safe-t) - 24px), 0) !important; }
+}
+
+/* ---- Bottom nav (phones): floating rounded glass pill ---- */
+@media (max-width: 899.98px) {
+    html .top-nav {
+        left: 12px !important; right: 12px !important;
+        bottom: calc(var(--pca-safe-b) + 10px) !important;
+        padding: 6px !important;
+        border-radius: 26px !important;
+        background: var(--glass-bg) !important;
+        -webkit-backdrop-filter: var(--glass-filter) !important; backdrop-filter: var(--glass-filter) !important;
+        border: 1px solid var(--glass-border) !important;
+        box-shadow: var(--glass-shadow) !important;
+    }
+    body.pca-kb-open .top-nav { transform: translate3d(0, 160%, 0) !important; }
+    html .top-nav .nav-item { color: var(--text-secondary); }
+    html .top-nav .nav-item.active { color: var(--accent) !important; }
+    html .top-nav .nav-item::before { background: rgba(var(--accent-rgb),.16) !important; border: 1px solid rgba(var(--accent-rgb),.18); }
+}
+
+/* ---- Desktop: rounded floating top nav under the header ---- */
+@media (min-width: 900px) {
+    html .top-nav {
+        margin: 8px 12px 0 !important; border-radius: 20px !important; top: 84px !important;
+        background: var(--glass-bg) !important;
+        -webkit-backdrop-filter: var(--glass-filter) !important; backdrop-filter: var(--glass-filter) !important;
+        border: 1px solid var(--glass-border) !important; box-shadow: var(--glass-shadow) !important;
+    }
+}
+
+/* ---- Popups (More + Dashboard/Wallet): float right above the nav bar ---- */
+@media (max-width: 899.98px) {
+    #pca-more-overlay, #nav-group-sheet-overlay {
+        z-index: 110 !important;                 /* below the nav (120) so the nav stays visible */
+        align-items: flex-end !important;
+        background: rgba(15,23,42,.28) !important;
+    }
+    #pca-more-overlay .modal-box, #nav-group-sheet-overlay .modal-box {
+        position: absolute !important;
+        top: auto !important; bottom: var(--pca-pop-bottom) !important;
+        margin: 0 !important; height: auto !important;
+        border-radius: 24px !important;
+        padding: 14px 14px 14px !important;
+        background: var(--glass-bg) !important;
+        -webkit-backdrop-filter: var(--glass-filter) !important; backdrop-filter: var(--glass-filter) !important;
+        border: 1px solid var(--glass-border) !important;
+        box-shadow: var(--glass-shadow) !important;
+        overflow: visible !important;
+        max-height: calc(100dvh - var(--pca-pop-bottom) - var(--pca-safe-t) - 24px) !important;
+        transform-origin: var(--caret-x, 50%) 100% !important;
+        transform: translateY(14px) scale(.95) !important; opacity: 0;
+        transition: transform .22s var(--pca-ease), opacity .18s ease !important;
+    }
+    #pca-more-overlay.show .modal-box, #nav-group-sheet-overlay.show .modal-box { transform: none !important; opacity: 1; }
+    #pca-more-overlay .modal-box { left: auto !important; right: 12px !important; width: min(560px, calc(100vw - 24px)) !important; max-width: none !important; }
+    #nav-group-sheet-overlay .modal-box { left: var(--ng-left, 12px) !important; right: auto !important; width: min(300px, calc(100vw - 24px)) !important; max-width: none !important; }
+    #pca-more-overlay .modal-body { overflow-y: auto; max-height: calc(100dvh - var(--pca-pop-bottom) - var(--pca-safe-t) - 110px); }
+    /* caret pointing down at the tapped tab (replaces the grab handle) */
+    #pca-more-overlay .modal-box::before, #nav-group-sheet-overlay .modal-box::before {
+        content: '' !important; position: absolute !important; display: block !important;
+        top: auto !important; bottom: -8px !important; left: calc(var(--caret-x, 50%) - 8px) !important;
+        width: 16px !important; height: 16px !important; margin: 0 !important; align-self: auto !important;
+        background: var(--glass-bg) !important;
+        -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter);
+        border: 0 !important; border-right: 1px solid var(--glass-border) !important; border-bottom: 1px solid var(--glass-border) !important;
+        border-radius: 0 0 5px 0 !important; box-shadow: none !important;
+        transform: rotate(45deg) !important; clip-path: none;
+    }
+    .pca-more-tile { background: rgba(var(--accent-rgb),.07) !important; border-color: rgba(var(--accent-rgb),.16) !important; }
+    .pca-more-tile.is-current { background: rgba(var(--accent-rgb),.18) !important; }
+}
+
+</style>
 </head>
 <body>
 
@@ -2343,7 +2230,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 <div class="stat-card">
                     <div class="stat-card-top">
                         <span class="stat-card-label">Today's Orders</span>
-                        <div class="stat-card-icon" style="background:#8B5CF6;"><svg class="ui-icon"><use href="#icon-cart"></use></svg></div>
+                        <div class="stat-card-icon" style="background:#3B82F6;"><svg class="ui-icon"><use href="#icon-cart"></use></svg></div>
                     </div>
                     <div class="stat-card-value" id="stat-today">...</div>
                     <div class="stat-card-sub" id="stat-orders-delta-wrap"><span class="stat-card-sub-text">vs. yesterday</span></div>
@@ -2440,109 +2327,6 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 </div>
             </div>
 
-            <!-- REQUEST USAGE — how many Firestore operations and Cloudflare Worker
-                 requests this admin panel is making (today, this device). Fed by
-                 window.PCAUsage (head script + Firestore wrappers in the module script). -->
-            <div class="dash-section-label" style="display:flex;align-items:center;justify-content:space-between;">
-                <span>Request Usage · Today</span>
-                <div style="display:flex;gap:6px;">
-                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.PCAUsage && window.PCAUsage.update && window.PCAUsage.update(); var b=this; var t=b.textContent; b.textContent='✓ Updated'; setTimeout(function(){ b.textContent=t; }, 900);">↻ Update</button>
-                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.PCAUsage && window.PCAUsage.reset()">Reset</button>
-                </div>
-            </div>
-            <div class="usage-grid" id="usage-grid">
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <span class="stat-card-label">Firestore Reads</span>
-                        <div class="stat-card-icon" style="background:#F59E0B;"><svg class="ui-icon"><use href="#icon-download"></use></svg></div>
-                    </div>
-                    <div class="stat-card-value" id="usage-fs-reads">0</div>
-                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-fs-reads-sub">session 0</span></div>
-                    <div class="usage-bar"><i id="usage-fs-reads-bar"></i></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <span class="stat-card-label">Firestore Writes</span>
-                        <div class="stat-card-icon" style="background:#8B5CF6;"><svg class="ui-icon"><use href="#icon-send"></use></svg></div>
-                    </div>
-                    <div class="stat-card-value" id="usage-fs-writes">0</div>
-                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-fs-writes-sub">session 0</span></div>
-                    <div class="usage-bar"><i id="usage-fs-writes-bar"></i></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <span class="stat-card-label">Live Listeners</span>
-                        <div class="stat-card-icon" style="background:#0EA5E9;"><svg class="ui-icon"><use href="#icon-zap"></use></svg></div>
-                    </div>
-                    <div class="stat-card-value" id="usage-listeners">0</div>
-                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-listeners-sub">0 opened this session</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <span class="stat-card-label">Worker Requests</span>
-                        <div class="stat-card-icon" style="background:#F6821F;"><svg class="ui-icon"><use href="#icon-trending-up"></use></svg></div>
-                    </div>
-                    <div class="stat-card-value" id="usage-cf-reqs">0</div>
-                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-cf-reqs-sub">session 0</span></div>
-                    <div class="usage-bar"><i id="usage-cf-reqs-bar"></i></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <span class="stat-card-label">Worker Failed</span>
-                        <div class="stat-card-icon" style="background:var(--danger);"><svg class="ui-icon"><use href="#icon-warning"></use></svg></div>
-                    </div>
-                    <div class="stat-card-value" id="usage-cf-fail">0</div>
-                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-cf-fail-sub">0% error rate</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <span class="stat-card-label">Worker Latency</span>
-                        <div class="stat-card-icon" style="background:#10B981;"><svg class="ui-icon"><use href="#icon-clock"></use></svg></div>
-                    </div>
-                    <div class="stat-card-value" id="usage-cf-latency">0 ms</div>
-                    <div class="stat-card-sub"><span class="stat-card-sub-text" id="usage-cf-latency-sub">slowest 0 ms (session)</span></div>
-                </div>
-            </div>
-            <div class="dashboard-charts-row">
-                <div class="chart-card">
-                    <div class="chart-card-head"><div><h4>Firestore by collection</h4></div><span class="chart-card-tag">R = reads · W = writes</span></div>
-                    <div id="usage-fs-top"><span class="stat-card-sub-text">No Firestore activity yet.</span></div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-card-head"><div><h4>Cloudflare by route</h4></div><span class="chart-card-tag">Workers</span></div>
-                    <div id="usage-cf-top"><span class="stat-card-sub-text">No Worker requests yet.</span></div>
-                </div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-card-head">
-                    <div>
-                        <h4>Cloudflare · all traffic today</h4>
-                        <div class="chart-card-total" id="cf-real-sub">Tap Refresh to load</div>
-                    </div>
-                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.loadCloudflareUsage && window.loadCloudflareUsage(true)">Refresh</button>
-                </div>
-                <div class="stat-card-value" id="cf-real-total">—</div>
-                <div class="usage-bar"><i id="cf-real-bar"></i></div>
-                <div id="cf-real-scripts" style="margin-top:8px;"></div>
-            </div>
-            <!-- Firestore, whole project (storefront + Worker + every admin device) from
-                 Google Cloud Monitoring via the Worker's /firestore-usage route. -->
-            <div class="chart-card">
-                <div class="chart-card-head">
-                    <div>
-                        <h4>Firestore · all traffic today</h4>
-                        <div class="chart-card-total" id="fs-real-sub">Tap Refresh to load</div>
-                    </div>
-                    <button class="btn btn-outline" style="flex:unset; padding: 3px 10px; font-size:11px;" onclick="window.loadFirestoreUsage && window.loadFirestoreUsage(true)">Refresh</button>
-                </div>
-                <div class="usage-top-row"><span class="name">Reads</span><b id="fs-real-reads">—</b></div>
-                <div class="usage-bar"><i id="fs-real-reads-bar"></i></div>
-                <div class="usage-top-row"><span class="name">Writes</span><b id="fs-real-writes">—</b></div>
-                <div class="usage-bar"><i id="fs-real-writes-bar"></i></div>
-                <div class="usage-top-row"><span class="name">Deletes</span><b id="fs-real-deletes">—</b></div>
-                <div class="usage-bar"><i id="fs-real-deletes-bar"></i></div>
-            </div>
-            <p class="stat-card-sub-text" style="line-height:1.5;">The cards and lists above count only what this admin panel sends from this device today (local time), and Firestore reads are estimated from what the SDK delivers. The "Cloudflare · all traffic" card is the real account-wide total from Cloudflare Analytics (UTC day, storefront included; bar = 100K free-plan limit). For exact Firestore totals see Firebase Console → Usage.</p>
         </div>
 
         <!-- API BALANCE PAGE — provider balances in MMK (USD x saved rate) + top spenders.
@@ -2558,7 +2342,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                 <div class="stat-card">
                     <div class="stat-card-top">
                         <span class="stat-card-label">G2Bulk</span>
-                        <div class="stat-card-icon" style="background:#7C3AED;"><svg class="ui-icon" style="color:#fff;"><use href="#icon-g2bulk"></use></svg></div>
+                        <div class="stat-card-icon" style="background:#2563EB;"><svg class="ui-icon" style="color:#fff;"><use href="#icon-g2bulk"></use></svg></div>
                     </div>
                     <div class="stat-card-value" id="an-g2bulk-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
@@ -2853,7 +2637,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             </div>
 
             <div class="api-doc-card">
-                <div class="api-doc-icon" style="background:#7C3AED;"><svg class="ui-icon" style="stroke:#fff;color:#fff;"><use href="#icon-g2bulk"></use></svg></div>
+                <div class="api-doc-icon" style="background:#2563EB;"><svg class="ui-icon" style="stroke:#fff;color:#fff;"><use href="#icon-g2bulk"></use></svg></div>
                 <div class="api-doc-info">
                     <span class="api-doc-title">G2Bulk API Key</span>
                 </div>
@@ -2879,9 +2663,9 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             <div class="api-doc-card">
                 <div class="api-doc-icon" style="background:#E67E22;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-camera"></use></svg></div>
                 <div class="api-doc-info">
-                    <span class="api-doc-title">ImgBB API Key</span>
+                    <span class="api-doc-title">Image Storage</span>
                 </div>
-                <span class="api-doc-static-key">Server-side (Worker)</span>
+                <span class="api-doc-static-key">Cloudflare D1</span>
             </div>
         </div>
 
@@ -3948,9 +3732,9 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
     <script>
         // ---------- Theme switcher (Liquid Glass) ----------
         const ADMIN_THEMES = [
-            { id: 'auto',         label: 'Auto',         sub: 'White by day, Dark Purple by night', icon: 'icon-clock', swatch: ['#F5F5F8', '#7C3AED', '#0C0B11'] },
-            { id: 'light-purple', label: 'White Purple', sub: 'Soft white & muted purple',          icon: 'icon-moon', swatch: ['#F5F5F8', '#7C3AED', '#ffffff'] },
-            { id: 'dark-purple',  label: 'Dark Purple',  sub: 'Charcoal & violet accent',           icon: 'icon-moon', swatch: ['#0C0B11', '#8B5CF6', '#202025'] },
+            { id: 'auto',         label: 'Auto',         sub: 'White by day, Dark Blue by night', icon: 'icon-clock', swatch: ['#F5F5F8', '#2563EB', '#0C0B11'] },
+            { id: 'light-purple', label: 'White Blue', sub: 'Soft white & blue',          icon: 'icon-moon', swatch: ['#F5F5F8', '#2563EB', '#ffffff'] },
+            { id: 'dark-purple',  label: 'Dark Blue',  sub: 'Charcoal & blue accent',           icon: 'icon-moon', swatch: ['#0C0B11', '#3B82F6', '#202025'] },
         ];
 
         // "auto": Light 7AM-7PM / Dark otherwise (see window.pcaAutoTheme in <head>).
@@ -4068,7 +3852,6 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             window.scrollTo(0,0);
             if ((pageId === 'dashboard' || pageId === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
             if (pageId === 'analytics' && window.renderAnalytics) window.renderAnalytics();
-            if (pageId === 'dashboard' && window.PCAUsage) window.PCAUsage.render();
             // Cloudflare/Firestore usage no longer auto-loads (saves Worker requests); use the Refresh buttons.
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             if (['order-list', 'analytics', 'user-list'].includes(pageId) && window.ensureOrdersLoaded) window.ensureOrdersLoaded();
@@ -4163,16 +3946,28 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             const margin = 12;
             const cx = r.left + r.width / 2;
             const left = Math.max(margin, Math.min(cx - w / 2, window.innerWidth - w - margin));
-            box.style.left = left + 'px';
-            box.style.top = (r.bottom + 12) + 'px';
-            box.style.setProperty('--caret-x', Math.max(20, Math.min(cx - left, w - 20)) + 'px');
+            box.style.setProperty('--ng-left', left + 'px');
+            box.style.setProperty('--caret-x', Math.max(22, Math.min(cx - left, w - 22)) + 'px');
+            if (window.innerWidth >= 900) {
+                // desktop: drops down under the tab
+                box.style.left = left + 'px';
+                box.style.top = (r.bottom + 12) + 'px';
+            } else {
+                // phone: floats just above the bottom nav bar
+                box.style.left = ''; box.style.top = '';
+            }
         }
         function openNavGroupSheet(groupKey) {
+            const ov = document.getElementById('nav-group-sheet-overlay');
+            if (ov.classList.contains('show') && window.__ngOpenKey === groupKey) { closeNavGroupSheet(); return; }
+            if (window.pcaCloseMore) window.pcaCloseMore();
+            window.__ngOpenKey = groupKey;
             renderNavGroupSheet(groupKey);
             positionNavGroupSheet(groupKey);
-            document.getElementById('nav-group-sheet-overlay').classList.add('show');
+            ov.classList.add('show');
         }
         function closeNavGroupSheet() {
+            window.__ngOpenKey = null;
             document.getElementById('nav-group-sheet-overlay').classList.remove('show');
         }
         window.openNavGroupSheet = openNavGroupSheet;
@@ -4411,7 +4206,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
         // below keep the ORIGINAL names (getDoc, setDoc, onSnapshot, ...) so every
         // existing call site - here and in the earlier script via window.* - is
         // counted without any other code changing. Behaviour is identical; each
-        // wrapper just reports to window.PCAUsage (defined in <head>) afterwards.
+        // wrapper is now a no-op (usage meter removed).
         const _usage = window.PCAUsage || { fsRead() {}, fsWrite() {}, fsDelete() {}, listenerOpen() {}, listenerClose() {} };
 
         // "orders", "settings/presence", "users/notifications" - top-level collection
@@ -4714,10 +4509,10 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             appId: "1:666629360027:web:23dcf1dc1f9ebeb86cb93e"
         };
 
-        // Free image hosting for game/admin photos (no Firebase Storage / Blaze
-        // plan needed). Uploads go through the imgbb-functions Cloudflare Worker
-        // instead of calling api.imgbb.com directly, so the ImgBB API key stays
-        // server-side (same pattern as store.html) instead of sitting in this file.
+        // Image hosting for game/admin photos: Cloudflare D1 via the image Worker
+        // (no imgbb, no Firebase Storage / Blaze plan). Same request/response
+        // contract as before ({success, data:{url}}), so nothing else changes.
+        // If you deploy the Worker under a new name, change this URL only.
         const IMGBB_UPLOAD_URL = 'https://imgbb-functions.pca-game-store.workers.dev';
 
         // gamestore-auth-worker: the customer-facing pcagamestore_bot Worker
@@ -4884,97 +4679,6 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
             }
         }
 
-        // ---------- Cloudflare account-wide usage (Dashboard → Request Usage) ----------
-        // Asks the telegram-order Worker's /cf-usage route (see cf-usage-route.js) for today's
-        // real request/error totals from Cloudflare Analytics - every Worker, storefront
-        // traffic included. Sent with the admin's Firebase ID token; the Cloudflare API token
-        // stays inside the Worker. Cached 5 min client-side (+60 s at the Worker's edge), so
-        // opening the Dashboard repeatedly doesn't spam it; Refresh forces a fetch.
-        let cfRealFetchedAt = 0, cfRealInFlight = false;
-        async function loadCloudflareUsage(force) {
-            const totalEl = document.getElementById('cf-real-total');
-            const subEl = document.getElementById('cf-real-sub');
-            const barEl = document.getElementById('cf-real-bar');
-            const listEl = document.getElementById('cf-real-scripts');
-            if (!totalEl || !subEl || cfRealInFlight || !auth.currentUser) return;
-            if (!force && cfRealFetchedAt && Date.now() - cfRealFetchedAt < 5 * 60 * 1000) return;
-            cfRealInFlight = true;
-            subEl.textContent = 'Loading…';
-            try {
-                const token = await auth.currentUser.getIdToken();
-                const res = await fetch(`${ADMIN_SYNC_WORKER_URL}/cf-usage`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                const data = await res.json().catch(() => null);
-                if (res.status === 404) { subEl.textContent = 'The /cf-usage route isn\'t deployed on the Worker yet.'; return; }
-                if (res.status === 401) { subEl.textContent = 'Not authorised - sign in again, or run Sync Claims so your account has the admin claim.'; return; }
-                if (!data || !data.ok) { subEl.textContent = (data && data.error) || ('Worker returned HTTP ' + res.status); return; }
-
-                const fmt = (n) => Number(n || 0).toLocaleString('en-US');
-                const limit = data.dailyLimit || 100000;
-                const used = data.total.requests || 0;
-                totalEl.textContent = fmt(used) + ' requests';
-                const pct = Math.min(100, used / limit * 100);
-                if (barEl) { barEl.style.width = pct + '%'; barEl.classList.toggle('hot', pct >= 80); }
-                const errRate = used ? (data.total.errors / used * 100).toFixed(1) : '0';
-                subEl.textContent = `${fmt(data.total.errors)} errors (${errRate}%) · ${pct.toFixed(1)}% of ${fmt(limit)}/day · updated ${new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-                if (listEl) {
-                    listEl.innerHTML = (data.scripts || []).slice(0, 8).map(sc =>
-                        `<div class="usage-top-row"><span class="name">${escapeHtml(sc.name)}</span><b>${fmt(sc.requests)} req${sc.errors ? ` · <em>${fmt(sc.errors)} err</em>` : ''}</b></div>`
-                    ).join('') || '<span class="stat-card-sub-text">No Worker requests recorded yet today.</span>';
-                }
-                cfRealFetchedAt = Date.now();
-            } catch (e) {
-                console.error('loadCloudflareUsage error:', e);
-                subEl.textContent = 'Could not reach the Worker.';
-            } finally {
-                cfRealInFlight = false;
-            }
-        }
-        window.loadCloudflareUsage = loadCloudflareUsage;
-
-        // ---------- Firestore project-wide usage (Dashboard → Firestore · all traffic) ----------
-        // Asks the Worker's /firestore-usage route (Google Cloud Monitoring) for today's real
-        // reads / writes / deletes across the whole project - storefront, the Worker's cron and
-        // every admin device - which the per-device counter above can't see. "Today" runs from
-        // 00:00 Pacific time, the moment Firestore's free-tier quota resets. Cloud Monitoring
-        // lags a few minutes behind real time. Cached 5 min client-side (+60 s at the Worker).
-        let fsRealFetchedAt = 0, fsRealInFlight = false;
-        async function loadFirestoreUsage(force) {
-            const subEl = document.getElementById('fs-real-sub');
-            if (!subEl || fsRealInFlight || !auth.currentUser) return;
-            if (!force && fsRealFetchedAt && Date.now() - fsRealFetchedAt < 5 * 60 * 1000) return;
-            fsRealInFlight = true;
-            subEl.textContent = 'Loading…';
-            try {
-                const token = await auth.currentUser.getIdToken();
-                const res = await fetch(`${ADMIN_SYNC_WORKER_URL}/firestore-usage`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                const data = await res.json().catch(() => null);
-                if (res.status === 404) { subEl.textContent = 'The /firestore-usage route isn\'t deployed on the Worker yet.'; return; }
-                if (res.status === 401) { subEl.textContent = 'Not authorised - sign in again, or run Sync Claims so your account has the admin claim.'; return; }
-                if (!data || !data.ok) { subEl.textContent = (data && (data.hint || data.error)) || ('Worker returned HTTP ' + res.status); return; }
-
-                const fmt = (n) => Number(n || 0).toLocaleString('en-US');
-                const rows = [
-                    ['reads', data.reads, data.limits.reads],
-                    ['writes', data.writes, data.limits.writes],
-                    ['deletes', data.deletes, data.limits.deletes]
-                ];
-                rows.forEach(([key, used, limit]) => {
-                    const valEl = document.getElementById('fs-real-' + key);
-                    const barEl = document.getElementById('fs-real-' + key + '-bar');
-                    const pct = Math.min(100, (used || 0) / limit * 100);
-                    if (valEl) valEl.textContent = `${fmt(used)} · ${pct.toFixed(1)}% of ${fmt(limit)}`;
-                    if (barEl) { barEl.style.width = pct + '%'; barEl.classList.toggle('hot', pct >= 80); }
-                });
-                subEl.textContent = `whole project since 00:00 Pacific · updated ${new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-                fsRealFetchedAt = Date.now();
-            } catch (e) {
-                console.error('loadFirestoreUsage error:', e);
-                subEl.textContent = 'Could not reach the Worker.';
-            } finally {
-                fsRealInFlight = false;
-            }
-        }
-        window.loadFirestoreUsage = loadFirestoreUsage;
 
         const app = initializeApp(firebaseConfig);
         // Using initializeFirestore (not the plain getFirestore) so we can pass
@@ -6455,7 +6159,15 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                     // are handled server-side by the Cloudflare Worker (see git history) - not here.
                 } catch (error) {
                     console.error("Data Fetch Error: ", error);
-                    if (!ordersLoadedAt) ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.</p>';
+                    // Rules need the {admin:true} custom claim in the ID token. If this device's token has none
+                    // yet (never synced / expired), ask the Worker to set it, refresh the token and retry once.
+                    if (error && error.code === 'permission-denied' && !window.__claimRetryOrders) {
+                        window.__claimRetryOrders = true;
+                        try { await callAdminSyncClaims(); } catch (e) { /* ignore */ }
+                        setTimeout(() => fetchOrders(silent, true), 400);
+                        return;
+                    }
+                    if (!ordersLoadedAt) ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.<br><small>' + String((error && (error.code || error.name)) || 'error').replace(/</g,'&lt;') + ' — ' + String((error && error.message) || '').slice(0, 160).replace(/</g,'&lt;') + '</small></p>';
                     else window.showToast('Could not refresh orders.', 'fail');
                 } finally {
                     ordersLoadPromise = null;
@@ -11999,8 +11711,14 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
                     if (silent !== true && window.showToast) window.showToast('Users updated ✓');
                 } catch (error) {
                     console.error("Users fetch error:", error);
+                    if (error && error.code === 'permission-denied' && !window.__claimRetryUsers) {
+                        window.__claimRetryUsers = true;
+                        try { await callAdminSyncClaims(); } catch (e) { /* ignore */ }
+                        setTimeout(() => fetchUsers(silent, true), 400);
+                        return;
+                    }
                     if (!usersLoadedAt) {
-                        document.getElementById('admin-users-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load users. <a href="#" onclick="fetchUsers();return false;" style="color:inherit;text-decoration:underline;">Retry</a></p>';
+                        document.getElementById('admin-users-container').innerHTML = '<p class="empty-msg" style="color:red;">Could not load users (' + String((error && (error.code || error.name)) || 'error').replace(/</g,'&lt;') + ': ' + String((error && error.message) || '').slice(0, 140).replace(/</g,'&lt;') + '). <a href="#" onclick="fetchUsers();return false;" style="color:inherit;text-decoration:underline;">Retry</a></p>';
                     } else if (window.showToast) window.showToast('Could not refresh users.', 'fail');
                 } finally {
                     usersLoadPromise = null;
@@ -16705,7 +16423,16 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
         document.body.appendChild(moreOverlay);
     }
     function openMore() {
+        if (moreOverlay && moreOverlay.classList.contains('show')) { closeMore(); return; }
+        if (window.closeNavGroupSheet) window.closeNavGroupSheet();
         buildMore();
+        try {
+            var mb = moreOverlay.querySelector('.modal-box'), tab = document.getElementById('group-more');
+            if (mb && tab && window.innerWidth < 900) {
+                var tr = tab.getBoundingClientRect(), cx = tr.left + tr.width / 2;
+                mb.style.setProperty('--caret-x', Math.max(22, Math.min(cx - mb.offsetLeft, mb.offsetWidth - 22)) + 'px');
+            }
+        } catch (e) { /* ignore */ }
         requestAnimationFrame(function () { requestAnimationFrame(function () { moreOverlay.classList.add('show'); lockCheck(); }); });
     }
     function closeMore() {
@@ -16713,6 +16440,11 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
         moreOverlay.classList.remove('show'); lockCheck();
     }
     window.pcaOpenMore = openMore; window.pcaCloseMore = closeMore;
+    // Tapping a direct tab (Orders / Users) closes any open nav popup
+    document.addEventListener('click', function (e) {
+        var t = e.target.closest && e.target.closest('#group-orders, #group-userlist');
+        if (t) { if (window.closeNavGroupSheet) window.closeNavGroupSheet(); closeMore(); }
+    }, true);
 
     /* ---- 3. Badges: new orders on the Orders tab; low balance on More ------- */
     var badge = $('nav-orders-badge');
