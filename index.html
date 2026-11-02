@@ -12801,6 +12801,39 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // still pass forceRefresh=true (the default) so those always fetch live.
         const BALANCE_REFRESH_THROTTLE_MS = 3 * 60 * 1000;
         let g2bulkBalanceLastFetchedAt = 0;
+        // Balance must not depend on the settings listener having fired yet: pull the saved
+        // key straight from the server when it isn't loaded (retrying once after a claims sync).
+        let g2bulkSettingsPulled = false;
+        async function pullG2BulkSettings() {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const snap = await _fsGetDocFromServer(doc(db, "settings", "g2bulk"));
+                    const data = snap.exists() ? snap.data() : {};
+                    if (!snap.exists()) {
+                        // doc missing on the server: create it (merge, so nothing is overwritten)
+                        try {
+                            await setDoc(doc(db, "settings", "g2bulk"), { apiKey: '', usdRate: 4500, webhookUrl: '', webhookSecret: '', lowBalanceAlert: 0, enabled: true }, { merge: true });
+                            window.__g2bulkCreated = 'created empty doc OK';
+                        } catch (we) { window.__g2bulkCreated = 'create FAILED: ' + ((we && we.code) || 'error'); }
+                    }
+                    G2BULK_SETTINGS = {
+                        apiKey: data.apiKey || '',
+                        usdRate: Number(data.usdRate) || 4500,
+                        webhookUrl: (data.webhookUrl || '').trim(),
+                        webhookSecret: (data.webhookSecret || '').trim(),
+                        enabled: data.enabled !== false,
+                        lowBalanceAlert: Number(data.lowBalanceAlert) || 0
+                    };
+                    g2bulkSettingsPulled = true;
+                    window.__g2bulkPullInfo = snap.exists() ? ('server doc fields: ' + (Object.keys(data).join(', ') || 'none')) : ('server doc was missing; ' + (window.__g2bulkCreated || ''));
+                    return null;
+                } catch (e) {
+                    if (attempt === 0 && e && e.code === 'permission-denied') { await callAdminSyncClaims(); continue; }
+                    return (e && e.code) || 'error';
+                }
+            }
+            return 'permission-denied';
+        }
         async function refreshG2BulkBalance(forceRefresh = true) {
             // Mirrors the balance onto every display el that exists on the page
             // right now (the G2Bulk tab's own display, plus the Dashboard's
@@ -12812,9 +12845,19 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             if (displayEls.length === 0 && !anEl) return;
             if (!forceRefresh && (Date.now() - g2bulkBalanceLastFetchedAt) < BALANCE_REFRESH_THROTTLE_MS) return;
             const anSet = (t, c) => { if (anEl) { anEl.innerText = t; anEl.style.color = c; } };
+            if (!G2BULK_SETTINGS.apiKey && !g2bulkSettingsPulled) {
+                displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+                const pullErr = await pullG2BulkSettings();
+                if (pullErr) {
+                    displayEls.forEach(el => { el.innerText = 'Settings load error: ' + pullErr; el.style.color = 'var(--danger-strong)'; });
+                    anSet('Settings load error: ' + pullErr, 'var(--danger-strong)');
+                    return;
+                }
+            }
             if (!G2BULK_SETTINGS.apiKey) {
-                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = 'var(--text-muted)'; });
-                anSet('No key set', 'var(--text-muted)');
+                const noKeyTxt = 'No key set' + (window.__g2bulkPullInfo ? ' (' + window.__g2bulkPullInfo + ')' : '');
+                displayEls.forEach(el => { el.innerText = noKeyTxt; el.style.color = 'var(--text-muted)'; });
+                anSet(noKeyTxt, 'var(--text-muted)');
                 return;
             }
             const originalText = btn ? btn.innerText : '';
@@ -14588,6 +14631,37 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // Same throttle pattern as refreshG2BulkBalance() above - see its
         // comment for why.
         let jcplaysBalanceLastFetchedAt = 0;
+        let jcplaysSettingsPulled = false;
+        async function pullJCPlaysSettings() {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const snap = await _fsGetDocFromServer(doc(db, "settings", "jcplays"));
+                    const data = snap.exists() ? snap.data() : {};
+                    if (!snap.exists()) {
+                        try {
+                            await setDoc(doc(db, "settings", "jcplays"), { baseUrl: 'https://jcplays.com/smilecoin/api', proxyUrl: '', uid: '', email: '', mKey: '', lowBalanceAlert: 0, enabled: true }, { merge: true });
+                            window.__jcplaysCreated = 'created empty doc OK';
+                        } catch (we) { window.__jcplaysCreated = 'create FAILED: ' + ((we && we.code) || 'error'); }
+                    }
+                    JCPLAYS_SETTINGS = {
+                        baseUrl: data.baseUrl || 'https://jcplays.com/smilecoin/api',
+                        proxyUrl: data.proxyUrl || '',
+                        uid: data.uid || '',
+                        email: data.email || '',
+                        mKey: data.mKey || '',
+                        enabled: data.enabled !== false,
+                        lowBalanceAlert: Number(data.lowBalanceAlert) || 0
+                    };
+                    jcplaysSettingsPulled = true;
+                    window.__jcplaysPullInfo = snap.exists() ? ('server doc fields: ' + (Object.keys(data).join(', ') || 'none')) : ('server doc was missing; ' + (window.__jcplaysCreated || ''));
+                    return null;
+                } catch (e) {
+                    if (attempt === 0 && e && e.code === 'permission-denied') { await callAdminSyncClaims(); continue; }
+                    return (e && e.code) || 'error';
+                }
+            }
+            return 'permission-denied';
+        }
         async function refreshJCPlaysBalance(forceRefresh = true) {
             // Mirrors the balance onto every display el that exists right now
             // (the JCPlays tab's own display, plus the Dashboard's wallet card).
@@ -14597,9 +14671,19 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             if (displayEls.length === 0 && !anEl) return;
             if (!forceRefresh && (Date.now() - jcplaysBalanceLastFetchedAt) < BALANCE_REFRESH_THROTTLE_MS) return;
             const anSet = (t, c) => { if (anEl) { anEl.innerText = t; anEl.style.color = c; } };
+            if ((!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) && !jcplaysSettingsPulled) {
+                displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+                const pullErr = await pullJCPlaysSettings();
+                if (pullErr) {
+                    displayEls.forEach(el => { el.innerText = 'Settings load error: ' + pullErr; el.style.color = 'var(--danger-strong)'; });
+                    anSet('Settings load error: ' + pullErr, 'var(--danger-strong)');
+                    return;
+                }
+            }
             if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) {
-                displayEls.forEach(el => { el.innerText = 'No credentials set'; el.style.color = 'var(--text-muted)'; });
-                anSet('No credentials set', 'var(--text-muted)');
+                const noCredTxt = 'No credentials set' + (window.__jcplaysPullInfo ? ' (' + window.__jcplaysPullInfo + ')' : '');
+                displayEls.forEach(el => { el.innerText = noCredTxt; el.style.color = 'var(--text-muted)'; });
+                anSet(noCredTxt, 'var(--text-muted)');
                 return;
             }
             const originalText = btn ? btn.innerText : '';
