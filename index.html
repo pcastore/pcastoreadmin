@@ -3869,6 +3869,7 @@ html #edit-packages-list { margin-bottom: 4px; }
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+                <p id="jcplays-load-state" style="font-size:12px;margin:6px 0 0;display:none;word-break:break-word;"></p>
                 <p id="jcplays-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
             </div>
             <div class="modal-footer">
@@ -14531,46 +14532,108 @@ html #edit-packages-list { margin-bottom: 4px; }
             return data;
         }
 
-        function openJCPlaysModal() {
-            document.getElementById('jcplays-status').style.display = 'none';
-            document.getElementById('jcplays-modal-overlay').classList.add('show');
+        let jcplaysRetryCount = 0, jcplaysFallbackTimer = null;
+        function setJCPlaysLoadState(text, ok) {
+            const el = document.getElementById('jcplays-load-state');
+            if (!el) return;
+            el.textContent = text || '';
+            el.style.color = ok ? 'var(--success, #15A24A)' : 'var(--danger, #E11D2E)';
+            el.style.display = text ? 'block' : 'none';
         }
-        window.openJCPlaysModal = openJCPlaysModal;
-
-        function closeJCPlaysModal() {
-            document.getElementById('jcplays-modal-overlay').classList.remove('show');
+        function describeJCPlaysDoc(data) {
+            return 'UID ' + (data.uid ? 'ရှိ' : 'မရှိ') + ', Email ' + (data.email ? 'ရှိ' : 'မရှိ') + ', M_KEY ' + (data.mKey ? 'ရှိ' : 'မရှိ');
         }
-        window.closeJCPlaysModal = closeJCPlaysModal;
-
-        function listenJCPlays() {
-            if (jcplaysListenerAttached) return;
-            jcplaysListenerAttached = true;
-            onSnapshot(doc(db, "settings", "jcplays"), (docSnap) => {
-                window.__jcplaysLoaded = true;
-                const data = docSnap.exists() ? docSnap.data() : {};
+        // Fills the form + runtime settings. Inputs are left alone while the admin
+        // is typing in the modal, so a late snapshot can never wipe what they typed.
+        function applyJCPlaysData(data) {
+            if (!window.__jcplaysDirty) {
                 document.getElementById('jcplays-base-url').value = data.baseUrl || 'https://jcplays.com/smilecoin/api';
                 document.getElementById('jcplays-proxy-url').value = data.proxyUrl || '';
                 document.getElementById('jcplays-uid').value = data.uid || '';
                 document.getElementById('jcplays-email').value = data.email || '';
                 document.getElementById('jcplays-mkey').value = data.mKey || '';
                 document.getElementById('jcplays-low-balance-alert').value = data.lowBalanceAlert || '';
-                // Field may not exist yet on older saved docs — default to on so
-                // existing setups keep working exactly as before this toggle existed.
-                const jcplaysEnabled = data.enabled !== false;
-                document.getElementById('jcplays-enabled').checked = jcplaysEnabled;
-                JCPLAYS_SETTINGS = {
-                    baseUrl: data.baseUrl || 'https://jcplays.com/smilecoin/api',
-                    proxyUrl: data.proxyUrl || '',
-                    uid: data.uid || '',
-                    email: data.email || '',
-                    mKey: data.mKey || '',
-                    enabled: jcplaysEnabled,
-                    lowBalanceAlert: Number(data.lowBalanceAlert) || 0
-                };
-                applyProviderVisibility('jcplays', jcplaysEnabled);
-                if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
-            }, (error) => {
-                retrySettingsListener('JCPlays', error, () => { jcplaysListenerAttached = false; window.__jcplaysLoaded = false; }, listenJCPlays);
+                document.getElementById('jcplays-enabled').checked = data.enabled !== false;
+            }
+            // Field may not exist yet on older saved docs — default to on so
+            // existing setups keep working exactly as before this toggle existed.
+            const jcplaysEnabled = data.enabled !== false;
+            JCPLAYS_SETTINGS = {
+                baseUrl: data.baseUrl || 'https://jcplays.com/smilecoin/api',
+                proxyUrl: data.proxyUrl || '',
+                uid: data.uid || '',
+                email: data.email || '',
+                mKey: data.mKey || '',
+                enabled: jcplaysEnabled,
+                lowBalanceAlert: Number(data.lowBalanceAlert) || 0
+            };
+            applyProviderVisibility('jcplays', jcplaysEnabled);
+            if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
+        }
+        // Direct server read (no live listener): used when the listener has not
+        // delivered anything, e.g. blocked until admin claims are synced.
+        async function loadJCPlaysFromServer(applyToForm = true) {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const snap = await _fsGetDocFromServer(doc(db, "settings", "jcplays"));
+                    window.__jcplaysLoaded = true;
+                    const data = snap.exists() ? snap.data() : {};
+                    if (applyToForm) {
+                        applyJCPlaysData(data);
+                        setJCPlaysLoadState('Server မှ ဖတ်ပြီး: ' + describeJCPlaysDoc(data) + (snap.exists() ? '' : ' (doc မရှိသေး)'), snap.exists());
+                    }
+                    return true;
+                } catch (e) {
+                    const code = (e && e.code) || 'error';
+                    if (attempt === 0 && code === 'permission-denied') { await callAdminSyncClaims(); continue; }
+                    setJCPlaysLoadState('Server က ဖတ်မရပါ: ' + code, false);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function openJCPlaysModal() {
+            document.getElementById('jcplays-status').style.display = 'none';
+            document.getElementById('jcplays-modal-overlay').classList.add('show');
+            if (!window.__jcplaysLoaded) loadJCPlaysFromServer();
+        }
+        window.openJCPlaysModal = openJCPlaysModal;
+
+        function closeJCPlaysModal() {
+            window.__jcplaysDirty = false;
+            document.getElementById('jcplays-modal-overlay').classList.remove('show');
+        }
+        window.closeJCPlaysModal = closeJCPlaysModal;
+        (function () {
+            const ov = document.getElementById('jcplays-modal-overlay');
+            if (ov) ov.addEventListener('input', () => { window.__jcplaysDirty = true; });
+        })();
+
+        function listenJCPlays() {
+            if (jcplaysListenerAttached) return;
+            jcplaysListenerAttached = true;
+            clearTimeout(jcplaysFallbackTimer);
+            jcplaysFallbackTimer = setTimeout(() => { if (!window.__jcplaysLoaded) loadJCPlaysFromServer(); }, 5000);
+            onSnapshot(doc(db, "settings", "jcplays"), (docSnap) => {
+                // A cache-only "missing" answer is not the real server state: wait for the server.
+                if (docSnap.metadata.fromCache && !docSnap.exists()) return;
+                window.__jcplaysLoaded = true;
+                jcplaysRetryCount = 0;
+                const data = docSnap.exists() ? docSnap.data() : {};
+                applyJCPlaysData(data);
+                setJCPlaysLoadState('Server မှ ဖတ်ပြီး: ' + describeJCPlaysDoc(data) + (docSnap.exists() ? '' : ' (doc မရှိသေး)'), docSnap.exists());
+            }, async (error) => {
+                console.error('JCPlays settings listener error:', error);
+                const code = (error && error.code) || 'error';
+                window.__jcplaysLoaded = false;
+                jcplaysListenerAttached = false;
+                setJCPlaysLoadState('Settings load မရပါ: ' + code, false);
+                try { window.showToast('JCPlays settings load မရပါ: ' + code, 'fail'); } catch (e) {}
+                if (jcplaysRetryCount++ < 5) {
+                    if (code === 'permission-denied') { try { await callAdminSyncClaims(); } catch (e) {} }
+                    setTimeout(listenJCPlays, 1500 * jcplaysRetryCount);
+                }
             });
         }
 
@@ -14584,7 +14647,7 @@ html #edit-packages-list { margin-bottom: 4px; }
             const enabled = document.getElementById('jcplays-enabled').checked;
             const btn = document.getElementById('save-jcplays-btn');
             const originalText = btn.innerText;
-            if (!window.__jcplaysLoaded && !confirm('Saved settings ကို မဖတ်နိုင်သေးပါ။ ဒီအတိုင်း Save လုပ်ရင် ရှိပြီးသား value တွေ ဖျက်မိနိုင်ပါတယ်။ ဆက်လုပ်မလား?')) return;
+            if (!window.__jcplaysLoaded && !(await loadJCPlaysFromServer(false)) && !confirm('Saved settings ကို မဖတ်နိုင်သေးပါ။ ဒီအတိုင်း Save လုပ်ရင် ရှိပြီးသား value တွေ ဖျက်မိနိုင်ပါတယ်။ ဆက်လုပ်မလား?')) return;
             btn.disabled = true;
             btn.innerText = 'Saving...';
 
@@ -14598,6 +14661,7 @@ html #edit-packages-list { margin-bottom: 4px; }
                     }
                 } catch (e) { console.error('JCPlays read-back failed:', e); window.showToast('Server ကပြန်ဖတ်မရပါ: ' + ((e && e.code) || 'error'), 'fail'); return; }
                 callAdminSyncClaims();
+                window.__jcplaysDirty = false;
                 window.showToast('JCPlays credentials saved!', 'success');
                 closeJCPlaysModal();
             } catch (error) {
