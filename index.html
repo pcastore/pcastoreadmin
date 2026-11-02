@@ -785,7 +785,7 @@
         .modal-body > * { flex-shrink: 0; }
         .modal-body label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
         .modal-body input[type="text"], .modal-body input[type="number"], .modal-body input[type="password"] { padding: 10px; border: 1px solid var(--border-glass); background: var(--bg-subtle-2); color: var(--text-primary); border-radius: 12px; font-size: 14px; }
-        /* Soft-lock style for the Game Name field once FazerCards' region
+        /* Soft-lock style for the Game Name field once a region
            split ("Free Fire (BD)" -> Name "Free Fire" + Server "BD") has
            filled it in — greyed out + readonly so a stray edit can't break
            the name-matching the store's server-variant grouping relies on.
@@ -2766,7 +2766,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     <svg class="ui-icon" id="autoprice-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
                 </div>
                 <div id="autoprice-body" style="display:none;margin-top:12px;">
-                    <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Worker က ၄ နာရီခြားတစ်ခါ (Yangon 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00) G2Bulk / JCPlays / Voucher / FazerCards ရဲ့ Cost ကို auto update လုပ်ပေးပါတယ်။ Game အားလုံးကို တစ်ပြိုင်တည်းမလုပ်ဘဲ cron tick တစ်ခုစီမှာ အနည်းငယ်ချင်း ခွဲလုပ်ပြီး request limit (50) ထဲမှာပဲနေပါတယ်။ Store မှာတင်ထားတဲ့ game တွေထဲက Cost ပြောင်းသွားတဲ့ package ရဲ့ Price ကိုပါ Resync margin % (ဒဿမ 1.25 စသဖြင့် ရ) အတိုင်း auto ပြန်ချိန်ပေးပါတယ်။ Telegram ကို cycle တစ်ခုကို summary တစ်ခါပဲ ပို့ပါတယ်။</p>
+                    <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Worker က ၄ နာရီခြားတစ်ခါ (Yangon 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00) G2Bulk / JCPlays / Voucher ရဲ့ Cost ကို auto update လုပ်ပေးပါတယ်။ Game အားလုံးကို တစ်ပြိုင်တည်းမလုပ်ဘဲ cron tick တစ်ခုစီမှာ အနည်းငယ်ချင်း ခွဲလုပ်ပြီး request limit (50) ထဲမှာပဲနေပါတယ်။ Store မှာတင်ထားတဲ့ game တွေထဲက Cost ပြောင်းသွားတဲ့ package ရဲ့ Price ကိုပါ Resync margin % (ဒဿမ 1.25 စသဖြင့် ရ) အတိုင်း auto ပြန်ချိန်ပေးပါတယ်။ Telegram ကို cycle တစ်ခုကို summary တစ်ခါပဲ ပို့ပါတယ်။</p>
                     <button type="button" class="btn btn-outline" id="cost-diag-btn" style="width:100%;margin-top:10px;" onclick="runCostDiagnostics(this)">Check why costs aren't updating</button>
                     <div id="cost-diag-result" style="margin-top:10px;"></div>
                 </div>
@@ -3524,7 +3524,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     <p style="font-size:11px;font-weight: 600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Auto-Fulfillment (optional)</p>
 
                     <!-- Split into two clearly separate groups so Direct
-                         (player-ID top-up: G2Bulk, FazerCards, Manual) never
+                         (player-ID top-up: G2Bulk, Manual) never
                          visually mixes with Voucher/Redeem-code (no player
                          ID: JCPlays, G2Bulk Vouchers, Manual) - mirrors the
                          Direct/Voucher split already used for game & server
@@ -3593,54 +3593,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                         <p id="voucher-import-status" style="font-size:11px;color:var(--text-muted);margin-top:6px;white-space:pre-wrap;"></p>
                     </div>
 
-                    <!-- FazerCards Game Top-ups: GET /api/v2/topups → GET
-                         /api/v2/topups/offers?category_id=... → POST
-                         /api/v2/topups/order. Player ID validation (where
-                         supported) is admin-side only via /topups/validate-id —
-                         see the note on placeFazerCardOrder for why the public
-                         store never calls FazerCards directly. Not every
-                         FazerCards category supports validate-id (and the
-                         customer-facing check goes through our own Worker,
-                         which can itself be down) - the G2Bulk ID-Check Code
-                         field below lets the store fall back to G2Bulk's
-                         public checkPlayerId (same game, different provider)
-                         purely to show the player's name; the order itself
-                         still fulfills through FazerCards regardless. -->
-                    <div id="fazercard-fulfill-section" style="display:none;margin-top:10px;">
-                        <label style="margin-top:0;">FazerCards Game</label>
-                        <input type="hidden" id="edit-game-fazercard-category" value="">
-                        <div class="picker-btn" id="fazercard-picker-btn" onclick="openGamePicker('fazercard')">
-                            <div class="picker-btn-thumb" id="fazercard-picker-thumb"></div>
-                            <span class="picker-btn-label muted" id="fazercard-picker-display">-- Not linked (manual fulfillment) --</span>
-                            <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
-                        </div>
-                        <p id="fazercard-import-status" style="font-size:11px;color:var(--text-muted);margin-top:-4px;white-space:pre-wrap;"></p>
-                        <label style="margin-top:10px;">G2Bulk ID-Check Code <span style="font-weight:400;color:var(--text-muted);">(optional fallback)</span></label>
-                        <input type="text" id="edit-game-g2bulk-idcheck-code" placeholder="e.g. mobile-legends" style="text-transform:none;">
-                        <p style="font-size:11px;color:var(--text-muted);margin-top:-4px;">FazerCards ID check ခ်လုပ်မရရင် (unsupported or down) ဒီ G2Bulk code ကို အသုံးပြုပြီး player name ကိုပဲ ပြပေးမယ် — order ကတော့ FazerCards ကနေပဲ ဆက်ဆောင်ရွက်ပါမယ်။</p>
-                    </div>
-
-                    <!-- FazerCards Gift Cards: a separate part of FazerCards'
-                         catalog (GET /api/v2/giftcards → GET
-                         /api/v2/giftcards/cards?category_id=... → POST
-                         /api/v2/giftcards/order) from the Game Top-ups
-                         section above. No player ID - each card/offer is
-                         redeemed as a code, so this lives in the
-                         Voucher/Code group (same as G2Bulk Vouchers &
-                         JCPlays) and every package row shares one
-                         category+card link, mirroring the G2Bulk Voucher
-                         section's pattern exactly. -->
-                    <div id="fazercard-giftcard-fulfill-section" style="display:none;margin-top:10px;">
-                        <label style="margin-top:0;">FazerCards Gift Card Category</label>
-                        <input type="hidden" id="edit-game-fazercard-giftcard-category" value="">
-                        <div class="picker-btn" id="fazercard_giftcard-picker-btn" onclick="openGamePicker('fazercard_giftcard')">
-                            <div class="picker-btn-thumb" id="fazercard_giftcard-picker-thumb"></div>
-                            <span class="picker-btn-label muted" id="fazercard_giftcard-picker-display">-- Not linked (manual fulfillment) --</span>
-                            <svg class="picker-btn-chevron ui-icon"><use href="#icon-chevron-down"></use></svg>
-                        </div>
-                        <button type="button" class="btn btn-outline" id="fazercard-giftcard-import-btn" style="display:none;margin-top:8px;" onclick="importFazerCardGiftCardCatalogue()">Import Cards</button>
-                        <p id="fazercard-giftcard-import-status" style="font-size:11px;color:var(--text-muted);margin-top:6px;white-space:pre-wrap;"></p>
-                    </div>
                 </div>
 
                 <label>Top-up Packages</label>
@@ -3656,8 +3608,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     <!-- Provider import + its own Debug button kept as adjacent pairs, instead of both Debug buttons being separated from the imports they check. -->
                     <button class="btn btn-outline" id="g2bulk-import-btn" onclick="importG2BulkCatalogue()" style="display:none;">Import from G2Bulk</button>
                     <button class="btn btn-outline" id="g2bulk-debug-btn" onclick="debugG2BulkServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ G2Bulk ရဲ့ fields/servers raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
-                    <button class="btn btn-outline" id="fazercard-import-btn" onclick="importFazerCardCatalogue()" style="display:none;">Import from FazerCards</button>
-                    <button class="btn btn-outline" id="fazercard-debug-btn" onclick="debugFazerCardServerCheck()" style="display:none;" title="Import မလုပ်ဘဲ FazerCards ရဲ့ fields raw response ကို စစ်ကြည့်မယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-code"></use></svg> Debug</button>
                 </div>
                 <button class="btn btn-primary" id="pkg-apply-all-cost-btn" onclick="applyAllCostUpdates()" style="display:none;width:100%;justify-content:center;gap:6px;background:#FF9500;"><svg class="ui-icon" style="width:14px;height:14px;stroke:#fff;"><use href="#icon-refresh"></use></svg> <span id="pkg-apply-all-cost-label">Update All Costs</span></button>
                 <p id="pkg-price-check-status" style="font-size:11px;color:var(--text-muted);margin:-4px 0 0;"></p>
@@ -3713,16 +3663,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 </div>
                 <span id="game-picker-count" style="font-size:12.5px;font-weight:600;color:var(--text-muted);background:var(--fill-soft);padding:9px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0;"></span>
                 <button type="button" class="btn btn-outline" id="game-picker-update-btn" onclick="refreshGamePickerList()" style="flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Update</button>
-                <button type="button" class="btn btn-outline" id="game-picker-bulk-toggle-btn" onclick="toggleFazerCardBulkMode()" style="display:none;flex:unset;padding:10px 14px;font-size:13px;white-space:nowrap;">Select Multiple</button>
             </div>
             <div class="game-picker-grid" id="game-picker-grid"></div>
-            <div id="fazercard-bulk-bar" style="display:none;flex-shrink:0;margin-top:10px;padding-top:10px;border-top:1px solid var(--fill-soft);align-items:center;justify-content:space-between;gap:10px;">
-                <span id="fazercard-bulk-count" style="font-size:12.5px;color:var(--text-muted);">0 selected</span>
-                <div style="display:flex;gap:8px;">
-                    <button type="button" class="btn btn-outline" onclick="toggleFazerCardBulkMode()" style="padding:9px 12px;font-size:13px;">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="fazercard-bulk-import-btn" onclick="importSelectedFazerCardGames()" disabled style="padding:9px 14px;font-size:13px;">Import Selected</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -3905,83 +3847,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         </div>
     </div>
 
-    <!-- FazerCards API Settings Modal: API key + optional proxy (in case CORS blocks direct calls) -->
-    <div class="modal-overlay" id="fazercard-modal-overlay" onclick="if(event.target===this) closeFazerCardModal()">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>FazerCards API Key</h3>
-                <div class="modal-close" onclick="closeFazerCardModal()">
-                    <svg class="ui-icon" style="width:18px;height:18px;"><use href="#icon-close"></use></svg>
-                </div>
-            </div>
-            <div class="modal-body">
-                <label>API Key</label>
-                <div class="secret-field-wrap">
-                    <input type="text" id="fazercard-api-key" class="secret-input" placeholder="your_api_key_here" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore="true" data-form-type="other">
-                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('fazercard-api-key', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
-                </div>
-                <p id="fazercard-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:4px;"></p>
-                <div id="fazercard-result-grid" style="display:none;"></div>
-
-                <label>Proxy URL <span style="font-weight:400;color:var(--text-muted);">(optional — only if direct calls get CORS-blocked)</span></label>
-                <input type="text" id="fazercard-proxy-url" placeholder="https://your-worker.workers.dev/fazercard-proxy" autocomplete="off">
-                <p style="font-size:11.5px;color:var(--text-muted);margin-top:-6px;">Leave blank to call api.fzr.cards directly from this browser (like G2Bulk). Only fill this in if Verify Key fails with a network/CORS error — then it needs a Worker route like JCPlays.</p>
-                <label>USD → MMK Rate <span style="font-weight:400;color:var(--text-muted);">(for catalogue import Cost conversion)</span></label>
-                <input type="number" id="fazercard-usd-rate" placeholder="e.g. 4500" step="1">
-
-                <label>Low Balance Alert <span style="font-weight:400;color:var(--text-muted);">(USD, 0 = off)</span></label>
-                <input type="number" id="fazercard-low-balance-alert" placeholder="e.g. 20" step="1" min="0" title="Header will show a warning when the wallet balance drops below this amount">
-
-                <div class="switch-row" style="margin-top:14px;">
-                    <span class="switch-label" style="flex:1;font-weight:400;">Enabled — turn off to fully hide FazerCards (wallet card, game-link picker) everywhere in the app</span>
-                    <label class="toggle-switch" style="flex-shrink:0;">
-                        <input type="checkbox" id="fazercard-enabled" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <!-- Account webhook: PUT/DELETE /api/v2/account/webhook, POST
-                     /api/v2/account/webhook/secret/regenerate, GET
-                     /api/v2/account/webhook/deliveries. FazerCards pushes order/
-                     delivery events here once configured; the HMAC secret is only
-                     ever returned by the API right after creation or a regenerate,
-                     so we never try to read it back — just display whatever the
-                     last regenerate call returned. -->
-                <label style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">Webhook URL <span style="font-weight:400;color:var(--text-muted);">(FazerCards pushes order/delivery events here)</span></label>
-                <input type="text" id="fazercard-webhook-url" placeholder="https://your-worker.workers.dev/fazercard-webhook" autocomplete="off">
-                <div class="switch-row" style="margin-top:8px;">
-                    <span class="switch-label" style="flex:1;font-weight:400;">Webhook enabled</span>
-                    <label class="toggle-switch" style="flex-shrink:0;">
-                        <input type="checkbox" id="fazercard-webhook-enabled">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div style="display:flex;gap:8px;margin-top:8px;">
-                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="save-fazercard-webhook-btn" onclick="saveFazerCardWebhook()">Save Webhook</button>
-                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="delete-fazercard-webhook-btn" onclick="deleteFazerCardWebhook()">Remove Webhook</button>
-                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="check-fazercard-webhook-status-btn" onclick="loadFazerCardWebhookStatus()">Check Live Status</button>
-                </div>
-                <p id="fazercard-webhook-status" style="font-size:12px;color:var(--text-secondary);display:none;margin-top:6px;"></p>
-                <div id="fazercard-webhook-health" style="display:none;margin-top:6px;font-size:12px;color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
-
-                <label style="margin-top:14px;">Webhook HMAC Secret</label>
-                <div class="secret-field-wrap">
-                    <input type="text" id="fazercard-webhook-secret" class="secret-input" placeholder="Regenerate to reveal — only shown once" readonly autocomplete="off">
-                    <button type="button" class="secret-toggle-btn" tabindex="-1" aria-label="Show" onclick="toggleSecretVisibility('fazercard-webhook-secret', this)"><svg class="ui-icon"><use href="#icon-eye"></use></svg></button>
-                </div>
-                <p style="font-size:11.5px;color:var(--text-muted);margin-top:-6px;">Regenerating invalidates the old secret immediately — deliveries signed with it stop verifying.</p>
-                <div style="display:flex;gap:8px;margin-top:8px;">
-                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="regen-fazercard-secret-btn" onclick="regenerateFazerCardWebhookSecret()">Regenerate Secret</button>
-                    <button type="button" class="btn btn-outline" style="flex:unset;padding:8px 14px;font-size:13px;" id="view-fazercard-deliveries-btn" onclick="loadFazerCardWebhookDeliveries()">View Recent Deliveries</button>
-                </div>
-                <div id="fazercard-deliveries-list" style="display:none;margin-top:8px;max-height:180px;overflow-y:auto;font-size:12px;border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" id="verify-fazercard-btn" onclick="verifyFazerCardKey()">Verify Key</button>
-                <button class="btn btn-primary" id="save-fazercard-btn" onclick="saveFazerCardKey()">Save</button>
-            </div>
-        </div>
-    </div>
     <div class="modal-overlay" id="telegram-modal-overlay" onclick="if(event.target===this) closeTelegramBotModal()">
         <div class="modal-box">
             <div class="modal-header">
@@ -6853,24 +6718,15 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     actionButtons = `<button class="btn btn-outline" onclick="checkG2BulkVoucherDeliveryStatus('${orderId}', '${data.g2bulkVoucherPollUrl}')">Check G2Bulk Status (Voucher)</button>
                                       <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
-                } else if (data.status === 'Processing' && data.fazercardOrderId) {
-                    actionButtons = `<button class="btn btn-outline" onclick="checkFazerCardOrderStatus('${orderId}', '${data.fazercardOrderId}')">Check FazerCards Status (${data.fazercardStatus || 'processing'})</button>
-                                      <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
-                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
-                } else if (data.status === 'Processing' && data.fazercardGiftOrderId) {
-                    actionButtons = `<button class="btn btn-outline" onclick="checkFazerCardGiftCardOrderStatus('${orderId}', '${data.fazercardGiftOrderId}')">Check FazerCards Status (${data.fazercardGiftStatus || 'processing'})</button>
-                                      <button class="btn btn-primary" onclick="markSuccess('${orderId}', this)" title="Use this if you've already confirmed delivery yourself and don't want to wait on the API check">Mark Success</button>
-                                      <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Processing') {
                     actionButtons = `<button class="btn btn-primary" onclick="markSuccess('${orderId}', this)">Mark Success</button>
                                       <button class="btn btn-danger" onclick="markFail('${orderId}', this)">Mark Fail</button>`;
                 } else if (data.status === 'Pending') {
                     let startLabel = 'Start Processing';
-                    const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId || data.g2bulkVoucherProductId || (data.fazercardCategoryId && data.fazercardOfferId);
+                    const isAutoLinked = (data.g2bulkGameCode && data.g2bulkCatalogueName) || data.jcplaysProductId || data.g2bulkVoucherProductId;
                     if (data.g2bulkGameCode && data.g2bulkCatalogueName) startLabel = 'Auto-Fulfill via G2Bulk';
                     else if (data.jcplaysProductId) startLabel = 'Get Redeem Code via JCPlays';
                     else if (data.g2bulkVoucherProductId) startLabel = 'Auto-Fulfill via G2Bulk (Voucher)';
-                    else if (data.fazercardCategoryId && data.fazercardOfferId) startLabel = 'Auto-Fulfill via FazerCards';
                     // Auto-linked orders get a manual fallback button too, so if the
                     // API call fails (bad credentials, insufficient balance, JCPlays/
                     // G2Bulk downtime, etc.) the admin isn't stuck retrying the same
@@ -6891,10 +6747,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     // Success/Fail based on whatever G2Bulk actually reports.
                     const recheckBtn = (data.status === 'Fail' && data.g2bulkOrderId)
                         ? `<button class="btn btn-outline" onclick="checkG2BulkOrderStatus('${orderId}')" title="Re-check in case G2Bulk actually finished it after we marked this Fail">Recheck G2Bulk Status</button>`
-                        : (data.status === 'Fail' && data.fazercardOrderId)
-                        ? `<button class="btn btn-outline" onclick="checkFazerCardOrderStatus('${orderId}', '${data.fazercardOrderId}')" title="Re-check in case FazerCards actually finished it after we marked this Fail">Recheck FazerCards Status</button>`
-                        : (data.status === 'Fail' && data.fazercardGiftOrderId)
-                        ? `<button class="btn btn-outline" onclick="checkFazerCardGiftCardOrderStatus('${orderId}', '${data.fazercardGiftOrderId}')" title="Re-check in case FazerCards actually finished it after we marked this Fail">Recheck FazerCards Status</button>`
                         : '';
                     const cleanBtn = data.adminCleared
                         ? `<button class="btn btn-outline" onclick="restoreOrder('${orderId}')" title="Bring this back into the active list">↺ Restore</button>`
@@ -6946,7 +6798,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">In-Game Name</div>
-                                        <div class="od-value">${escapeHtml(data.inGameName || data.fazercardVerifiedName || 'N/A')}</div>
+                                        <div class="od-value">${escapeHtml(data.inGameName || 'N/A')}</div>
                                     </div>
                                     <div class="od-cell">
                                         <div class="od-label">Package Type</div>
@@ -6968,12 +6820,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                                             ? `<span style="color:var(--danger-strong);">No code field recognized</span> <button type="button" class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="copyJCPlaysRedeemCode('${orderId}')">Copy Raw Response</button>`
                                             : `<span style="color:var(--text-muted);">Appears here once fulfilled</span>`}</div>
                                     </div>` : ''}
-                                    ${data.fazercardCategoryId ? `<div class="od-cell span-2" id="fazercard-role-cell-${orderId}">
-                                        <div class="od-label">FazerCards Name Check</div>
-                                        <div class="od-value" id="fazercard-role-value-${orderId}">${data.fazercardVerifiedName
-                                            ? `<span style="color:#28a745;">${escapeHtml(data.fazercardVerifiedName)} ✓ verified</span>`
-                                            : `<button type="button" class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="verifyFazerCardPlayerId('${orderId}', this)">Verify Player ID</button>`}</div>
-                                    </div>` : ''}
                                     <div class="od-cell">
                                         <div class="od-label">Order ID</div>
                                         <div class="od-value mono">${orderId}</div>
@@ -6983,14 +6829,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                                         <div class="od-value mono">${Array.isArray(data.g2bulkSubOrders) && data.g2bulkSubOrders.length > 1
                                             ? data.g2bulkSubOrders.map(s => `#${s.index}: ${s.g2bulkOrderId ? escapeHtml(String(s.g2bulkOrderId)) : 'placing...'}${s.result ? ` (${s.result})` : ''}`).join('<br>')
                                             : escapeHtml(String(data.g2bulkOrderId))}</div>
-                                    </div>` : ''}
-                                    ${data.fazercardOrderId ? `<div class="od-cell">
-                                        <div class="od-label">FazerCards Order ID</div>
-                                        <div class="od-value mono">${data.fazercardOrderId}</div>
-                                    </div>` : ''}
-                                    ${data.fazercardGiftOrderId ? `<div class="od-cell">
-                                        <div class="od-label">FazerCards Gift Card Order ID</div>
-                                        <div class="od-value mono">${data.fazercardGiftOrderId}</div>
                                     </div>` : ''}
                                     <div class="od-cell">
                                         <div class="od-label">Transaction ID</div>
@@ -7055,19 +6893,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // route those through JCPlays auto-fulfillment (see note on placeJCPlaysOrder).
             if (order && order.jcplaysProductId) {
                 return placeJCPlaysOrder(orderId, order, btnElement);
-            }
-            // Orders placed against a FazerCards top-up-linked package carry
-            // fazercardCategoryId + fazercardOfferId - route those through
-            // FazerCards' /topups/order (see note on placeFazerCardOrder).
-            if (order && order.fazercardCategoryId && order.fazercardOfferId) {
-                return placeFazerCardOrder(orderId, order, btnElement);
-            }
-            // Orders placed against a FazerCards Gift Card-linked package
-            // carry fazercardGiftCategoryId + fazercardGiftCardId - route
-            // those through FazerCards' /giftcards/order (code delivery,
-            // no player ID) instead of the top-up order endpoint.
-            if (order && order.fazercardGiftCategoryId && order.fazercardGiftCardId) {
-                return placeFazerCardGiftCardOrder(orderId, order, btnElement);
             }
 
             // btnElement is null when called from the bulk "Confirm Selected" action
@@ -7395,457 +7220,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         }
         window.checkG2BulkOrderStatus = checkG2BulkOrderStatus;
 
-        // ---------- FazerCards auto-fulfillment ----------
-        //
-        // Unlike G2Bulk's checkPlayerId (a genuinely public, unauthenticated
-        // endpoint the STORE can call straight from the customer's browser),
-        // every FazerCards route - including /topups/validate-id - requires
-        // X-API-Key. Calling FazerCards directly from store.html would ship
-        // the reseller's API key to every visitor's browser and let anyone
-        // drain the wallet balance, so the store never talks to FazerCards
-        // directly: it only writes fazercardCategoryId/fazercardOfferId onto
-        // the order doc (see submitOrder in the store), same shape as
-        // G2Bulk's fields. The actual authenticated call - and the wallet
-        // charge - happens here, admin-side only, exactly like placeG2BulkOrder.
-        //
-        // fields: FazerCards' /topups/order needs a `fields` object whose
-        // keys vary per game (almost always player_id, sometimes also a
-        // zone/server key) - importFazerCardCatalogue() stashes the field
-        // keys it saw for the currently-open game onto GAMES[id].fazercardFields
-        // when importing, so this maps order.playerId/order.serverId onto
-        // whatever keys FazerCards actually expects for that category.
-        async function placeFazerCardOrder(orderId, order, btnElement) {
-            if (!FAZERCARD_SETTINGS.enabled) {
-                window.showToast('FazerCards is turned off (Dashboard → FazerCards API Key → Settings). Fulfill this order manually or re-enable it.', 'fail');
-                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
-                return 'error';
-            }
-            if (!FAZERCARD_SETTINGS.apiKey) {
-                window.showToast('Add your FazerCards API key first (Dashboard → FazerCards API Key).', 'fail');
-                return 'error';
-            }
-            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
-
-            const idempotencyKey = order.fazercardIdempotencyKey || crypto.randomUUID();
-            if (!order.fazercardIdempotencyKey) {
-                try {
-                    await updateDoc(doc(db, "orders", orderId), { fazercardIdempotencyKey: idempotencyKey });
-                } catch (error) {
-                    console.error("Save idempotency key error:", error);
-                }
-            }
-
-            // Field keys for this category come from whichever game this
-            // package belongs to (saved at import time); fall back to the
-            // near-universal 'player_id' key if that game hasn't been
-            // re-imported since this field was added.
-            const linkedGame = Object.values(GAMES).find(g => g.fazercardCategoryId === order.fazercardCategoryId);
-            const fieldKeys = (linkedGame && linkedGame.fazercardFields && linkedGame.fazercardFields.length) ? linkedGame.fazercardFields : ['player_id'];
-            const fields = {};
-            fieldKeys.forEach(key => {
-                if (/server|zone/i.test(key)) fields[key] = order.serverId || undefined;
-                else fields[key] = order.playerId || undefined;
-            });
-
-            let data;
-            try {
-                data = await fazercardRequest('/topups/order', {
-                    method: 'POST',
-                    idempotencyKey,
-                    body: { category_id: order.fazercardCategoryId, offer_id: order.fazercardOfferId, fields }
-                });
-            } catch (error) {
-                console.error("FazerCards place order error:", error);
-                window.showToast('FazerCards order failed: ' + error.message, 'fail');
-                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
-                return 'error';
-            }
-
-            const fazercardOrderId = data.order?.id;
-            const fazercardStatus = (data.order?.status || 'processing');
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "Processing",
-                    fazercardOrderId: fazercardOrderId || null,
-                    fazercardStatus
-                });
-                window.showToast('Order placed with FazerCards — checking for completion...', 'success');
-                if (fazercardOrderId) {
-                    pollFazerCardOrder(orderId, fazercardOrderId, 5); // ~5 tries, 4s apart = 20s
-                }
-                return 'processing';
-            } catch (error) {
-                console.error("FazerCards order accepted but saving the result failed:", error);
-                window.showInfoDialog(
-                    'Order Accepted, But Not Saved',
-                    `FazerCards accepted this order${fazercardOrderId ? ' (id: ' + fazercardOrderId + ')' : ''}, but saving that to the order record failed: ${error.message}. Do NOT click Start Processing again for this order — refresh the page instead; if it's still stuck, check the order id directly on the FazerCards dashboard before doing anything else.`
-                );
-                if (btnElement) btnElement.innerText = "Refresh Page";
-                return 'accepted_unsaved';
-            }
-        }
-
-        // Checks FazerCards' order status once and applies it to the local order
-        // doc. silent=true is used by the background auto-poller, same pattern
-        // as checkG2BulkOrderStatus above. FazerCards' public order ids look
-        // like "ord-123" - GET /orders/:orderId returns the full order. The
-        // /topups/order docs describe the lifecycle only as "processing until
-        // completed/refund" (balance is charged immediately, so there may be
-        // no separate 'created' state) - GET /orders/{id}'s own status enum
-        // isn't documented yet, so both 'refund' and 'refunded' are matched
-        // defensively below until that's confirmed.
-        async function checkFazerCardOrderStatus(orderId, fazercardOrderId, silent = false) {
-            if (!FAZERCARD_SETTINGS.apiKey) {
-                if (!silent) window.showToast('Add your FazerCards API key first.', 'fail');
-                return;
-            }
-            try {
-                const data = await fazercardRequest(`/orders/${encodeURIComponent(fazercardOrderId)}`);
-                const status = (data.order?.status || '').toLowerCase();
-
-                if (status === 'completed') {
-                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), fazercardStatus: status });
-                    window.showToast('FazerCards order completed ✓', 'success');
-                    editTelegramOrderMessage(orderId, 'Success');
-                } else if (status === 'failed' || status === 'cancelled' || status === 'refund' || status === 'refunded') {
-                    // /topups/order's docs describe the lifecycle as
-                    // "processing until completed/refund" (that exact
-                    // wording - no confirmed 'failed'/'created' states seen
-                    // yet), but GET /orders/{id}'s own status enum isn't
-                    // documented, so both 'refund' and 'refunded' are
-                    // accepted here rather than guessing which one the API
-                    // actually returns.
-                    await markOrderFailedWithRefund(orderId, { fazercardStatus: status });
-                    if (!silent) window.showToast('FazerCards order failed/refunded.', 'fail');
-                    editTelegramOrderMessage(orderId, 'Fail');
-                } else {
-                    // Skip the write when the status hasn't changed (this runs every 25s per
-                    // Processing order; an identical write is still billed).
-                    const nextFazerStatus = status || 'processing';
-                    const cachedFazer = ORDERS[orderId];
-                    if (!cachedFazer || cachedFazer.fazercardStatus !== nextFazerStatus) {
-                        await updateDoc(doc(db, "orders", orderId), { fazercardStatus: nextFazerStatus });
-                    }
-                    if (!silent) window.showToast('Still processing on FazerCards (' + (status || 'processing') + ')...');
-                }
-                return status;
-            } catch (error) {
-                console.error("FazerCards status check error:", error);
-                if (!silent) window.showToast(error.message || 'Could not reach FazerCards to check status.', 'fail');
-            }
-        }
-        window.checkFazerCardOrderStatus = checkFazerCardOrderStatus;
-
-        // Same short auto-poll burst as pollG2BulkOrder - a few tries a few
-        // seconds apart right after placing, to catch FazerCards' typically
-        // fast (often <1s per the docs) completion without the admin having
-        // to tap "Check Status" themselves for the common case.
-        async function pollFazerCardOrder(orderId, fazercardOrderId, triesLeft) {
-            if (triesLeft <= 0) return;
-            await new Promise(r => setTimeout(r, 4000));
-            const status = await checkFazerCardOrderStatus(orderId, fazercardOrderId, true);
-            if (status !== 'completed' && status !== 'failed' && status !== 'cancelled' && status !== 'refunded') {
-                pollFazerCardOrder(orderId, fazercardOrderId, triesLeft - 1);
-            }
-        }
-
-        // ---------- FazerCards Gift Cards auto-fulfillment ----------
-        // POST /api/v2/giftcards/order {category_id, card_id, quantity} - no
-        // player ID/fields object like /topups/order needs, since this is a
-        // straight code purchase. quantity must be 1-100 per the docs -
-        // clamped client-side below so a bad package value can't 400 the
-        // order. Idempotency-Key header works the same way as
-        // placeFazerCardOrder above (safe retries). Docs confirm the 200
-        // body is `{ok, order: {...}}` and that a completed order's codes
-        // live under `order.cards` - the other fallbacks below (`data.cards`,
-        // `codes`, `items`) are kept only as a safety net in case a live
-        // response ever deviates from the documented shape; if that happens
-        // this saves the order as Processing with the raw response logged to
-        // the console instead of silently mis-marking it Success.
-        async function placeFazerCardGiftCardOrder(orderId, order, btnElement) {
-            if (!FAZERCARD_SETTINGS.enabled) {
-                window.showToast('FazerCards is turned off (Dashboard → FazerCards API Key → Settings). Fulfill this order manually or re-enable it.', 'fail');
-                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
-                return 'error';
-            }
-            if (!FAZERCARD_SETTINGS.apiKey) {
-                window.showToast('Add your FazerCards API key first (Dashboard → FazerCards API Key).', 'fail');
-                return 'error';
-            }
-            if (btnElement) { btnElement.innerText = "Placing order..."; btnElement.disabled = true; }
-
-            const idempotencyKey = order.fazercardGiftIdempotencyKey || crypto.randomUUID();
-            if (!order.fazercardGiftIdempotencyKey) {
-                try {
-                    await updateDoc(doc(db, "orders", orderId), { fazercardGiftIdempotencyKey: idempotencyKey });
-                } catch (error) {
-                    console.error("Save idempotency key error:", error);
-                }
-            }
-
-            // Docs: quantity must be 1-100. Clamp here so a bad/missing
-            // package quantity can't get rejected with a 400 at order time.
-            const quantity = Math.min(100, Math.max(1, Number(order.quantity) || 1));
-
-            let data;
-            try {
-                data = await fazercardRequest('/giftcards/order', {
-                    method: 'POST',
-                    idempotencyKey,
-                    body: { category_id: order.fazercardGiftCategoryId, card_id: order.fazercardGiftCardId, quantity }
-                });
-            } catch (error) {
-                console.error("FazerCards gift card order error:", error);
-                window.showToast('FazerCards order failed: ' + error.message, 'fail');
-                if (btnElement) { btnElement.innerText = "Start Processing"; btnElement.disabled = false; }
-                return 'error';
-            }
-
-            console.log('[FazerCards] gift card order response:', data);
-            const orderObj = data.order || data;
-            const status = (orderObj.status || (Array.isArray(orderObj.cards) || Array.isArray(data.cards) || Array.isArray(data.codes) ? 'completed' : 'processing'));
-            // order.cards is the documented shape - checked first, with the
-            // other keys kept only as a fallback (see comment above).
-            const codes = (orderObj.cards || data.cards || orderObj.codes || data.codes || data.items || [])
-                .map(c => (typeof c === 'string' ? c : (c.code || c.pin || c.serial || JSON.stringify(c))));
-            const fazercardGiftOrderId = orderObj.id || data.order_id || null;
-
-            if (status === 'completed' || status === 'COMPLETED' || codes.length) {
-                try {
-                    await updateDoc(doc(db, "orders", orderId), {
-                        status: "Success",
-                        confirmedAt: serverTimestamp(),
-                        fazercardGiftOrderId,
-                        deliveredCodes: codes
-                    });
-                    window.showToast('Gift card delivered ✓', 'success');
-                    editTelegramOrderMessage(orderId, 'Success');
-                    return 'success';
-                } catch (error) {
-                    console.error("FazerCards gift card order completed but saving failed:", error);
-                    window.showInfoDialog('Order Completed, But Not Saved', `FazerCards delivered this${fazercardGiftOrderId ? ' (id: ' + fazercardGiftOrderId + ')' : ''}, but saving the codes to the order record failed: ${error.message}. Refresh the page — do not click again; check the order id directly on the FazerCards dashboard first.`);
-                    return 'accepted_unsaved';
-                }
-            }
-
-            // No codes back yet and no recognizable "completed" status - save
-            // what we got as Processing so the admin can see the raw id/status
-            // and re-check manually, rather than guessing at a poll shape the
-            // docs didn't show.
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "Processing",
-                    fazercardGiftOrderId,
-                    fazercardGiftStatus: orderObj.status || 'unknown'
-                });
-                window.showToast('FazerCards accepted the order — check the console/FazerCards dashboard for the code.', 'success');
-                if (fazercardGiftOrderId) pollFazerCardGiftCardOrder(orderId, fazercardGiftOrderId, 5); // ~5 tries, 4s apart = 20s
-                return 'processing';
-            } catch (error) {
-                console.error("FazerCards gift card order accepted but saving failed:", error);
-                window.showInfoDialog('Order Accepted, But Not Saved', `FazerCards accepted this order${fazercardGiftOrderId ? ' (id: ' + fazercardGiftOrderId + ')' : ''}, but saving that failed: ${error.message}. Refresh the page instead of clicking again.`);
-                if (btnElement) btnElement.innerText = "Refresh Page";
-                return 'accepted_unsaved';
-            }
-        }
-
-        // Mirrors checkFazerCardOrderStatus/pollFazerCardOrder above, for gift
-        // card orders - same GET /orders/{orderId} endpoint (shared across
-        // both FazerCards order types), but reads codes out of order.cards on
-        // completion since gift cards deliver a code instead of a top-up
-        // confirmation. The same failed/cancelled/refund/refunded set from
-        // the top-up flow is treated as terminal failure here too, since the
-        // gift card docs don't spell out their own status enum either.
-        async function checkFazerCardGiftCardOrderStatus(orderId, fazercardGiftOrderId, silent = false) {
-            if (!FAZERCARD_SETTINGS.apiKey) {
-                if (!silent) window.showToast('Add your FazerCards API key first.', 'fail');
-                return;
-            }
-            try {
-                const data = await fazercardRequest(`/orders/${encodeURIComponent(fazercardGiftOrderId)}`);
-                const orderObj = data.order || data;
-                const status = (orderObj.status || '').toLowerCase();
-                const codes = (orderObj.cards || data.cards || orderObj.codes || data.codes || [])
-                    .map(c => (typeof c === 'string' ? c : (c.code || c.pin || c.serial || JSON.stringify(c))));
-
-                if (status === 'completed' || codes.length) {
-                    await updateDoc(doc(db, "orders", orderId), { status: "Success", confirmedAt: serverTimestamp(), fazercardGiftStatus: status || 'completed', deliveredCodes: codes });
-                    window.showToast('Gift card delivered ✓', 'success');
-                    editTelegramOrderMessage(orderId, 'Success');
-                } else if (status === 'failed' || status === 'cancelled' || status === 'refund' || status === 'refunded') {
-                    await markOrderFailedWithRefund(orderId, { fazercardGiftStatus: status });
-                    if (!silent) window.showToast('FazerCards gift card order failed/refunded.', 'fail');
-                    editTelegramOrderMessage(orderId, 'Fail');
-                } else {
-                    await updateDoc(doc(db, "orders", orderId), { fazercardGiftStatus: status || 'processing' });
-                    if (!silent) window.showToast('Still processing on FazerCards (' + (status || 'processing') + ')...');
-                }
-                return status;
-            } catch (error) {
-                console.error("FazerCards gift card status check error:", error);
-                if (!silent) window.showToast(error.message || 'Could not reach FazerCards to check status.', 'fail');
-            }
-        }
-        window.checkFazerCardGiftCardOrderStatus = checkFazerCardGiftCardOrderStatus;
-
-        async function pollFazerCardGiftCardOrder(orderId, fazercardGiftOrderId, triesLeft) {
-            if (triesLeft <= 0) return;
-            await new Promise(r => setTimeout(r, 4000));
-            const status = await checkFazerCardGiftCardOrderStatus(orderId, fazercardGiftOrderId, true);
-            if (status !== 'completed' && status !== 'failed' && status !== 'cancelled' && status !== 'refunded') {
-                pollFazerCardGiftCardOrder(orderId, fazercardGiftOrderId, triesLeft - 1);
-            }
-        }
-
-        // Background auto-sync, same fallback role as autoPollG2BulkOrders -
-        // quietly re-checks every "Processing" order with a fazercardOrderId
-        // every AUTO_POLL_INTERVAL_MS (60 s, see below) in case a tab
-        // was closed mid-poll or a webhook (not yet wired for FazerCards) was
-        // missed.
-        // Background status auto-polls (G2Bulk / FazerCard). Webhooks are the primary path;
-        // these are only a safety net, so 60 s is plenty (was 25 s).
         const AUTO_POLL_INTERVAL_MS = 60 * 1000;
-        let fazercardAutoPollRunning = false;
-        async function autoPollFazerCardOrders() {
-            if (document.hidden || fazercardAutoPollRunning || !FAZERCARD_SETTINGS.apiKey) return;
-            const pending = Object.values(ORDERS).filter(o => o.status === 'Processing' && o.fazercardOrderId);
-            if (pending.length === 0) return;
-            fazercardAutoPollRunning = true;
-            try {
-                for (const order of pending) {
-                    await checkFazerCardOrderStatus(order.id, order.fazercardOrderId, true);
-                    await new Promise(r => setTimeout(r, 600)); // stagger calls, don't hammer FazerCards' API
-                }
-            } finally {
-                fazercardAutoPollRunning = false;
-            }
-        }
-        setInterval(autoPollFazerCardOrders, AUTO_POLL_INTERVAL_MS);
-
-        // Calls FazerCards' /topups/validate-id to confirm the Player/Server ID
-        // resolves to a real in-game account and shows the admin the actual
-        // in-game name before they commit to Start Processing (advisory
-        // only - doesn't block manual fulfillment). Only meaningful for
-        // categories FazerCards supports validation for; an unsupported
-        // category just returns valid:false.
-        // Uses the same per-game fazercardFields key mapping as
-        // placeFazerCardOrder, and saves a successful result onto the order
-        // doc (fazercardVerifiedName) so it isn't re-checked on every render.
-        // GET /topups/validate-id: the list of categories that support ID
-        // validation, each with its own `fields` array. POST /topups/validate-id's
-        // docs say its `fields` body must match "that game's fields" -
-        // referring back to this list, which may not be identical to the
-        // order-time fields from /topups/offers (e.g. validate-id might only
-        // need player_id while ordering also needs a server_id). Cached by
-        // category_id so verifyFazerCardPlayerId can look up the right keys
-        // instead of assuming the order fields apply here too.
-        let FAZERCARD_VALIDATEID_FIELDS = null;
-        async function fetchFazerCardValidateIdFields() {
-            if (FAZERCARD_VALIDATEID_FIELDS) return FAZERCARD_VALIDATEID_FIELDS;
-            FAZERCARD_VALIDATEID_FIELDS = new Map();
-            try {
-                const data = await fazercardRequest('/topups/validate-id');
-                (data.items || []).forEach(item => {
-                    FAZERCARD_VALIDATEID_FIELDS.set(item.category_id, (item.fields || []).map(f => f.key));
-                });
-            } catch (error) {
-                console.error("FazerCards GET /topups/validate-id error:", error);
-                // leave the Map empty - callers fall back to order fields
-            }
-            return FAZERCARD_VALIDATEID_FIELDS;
-        }
-
-        async function verifyFazerCardPlayerId(orderId, btnElement) {
-            const order = ORDERS[orderId];
-            if (!order || !order.fazercardCategoryId) {
-                window.showToast('This order is not linked to a FazerCards category.', 'fail');
-                return;
-            }
-            if (!order.playerId) {
-                window.showToast('This order has no Player ID to verify.', 'fail');
-                return;
-            }
-            const valueEl = document.getElementById(`fazercard-role-value-${orderId}`);
-            const originalText = btnElement ? btnElement.innerText : '';
-            if (btnElement) { btnElement.disabled = true; btnElement.innerText = 'Checking...'; }
-
-            // Prefer validate-id's own field list for this category; fall back
-            // to the order-time fields (then 'player_id') if this category
-            // isn't in the validate-id list at all (unsupported) or the fetch
-            // failed.
-            const validateIdFields = await fetchFazerCardValidateIdFields();
-            const linkedGame = Object.values(GAMES).find(g => g.fazercardCategoryId === order.fazercardCategoryId);
-            const fieldKeys = validateIdFields.get(order.fazercardCategoryId)
-                || ((linkedGame && linkedGame.fazercardFields && linkedGame.fazercardFields.length) ? linkedGame.fazercardFields : ['player_id']);
-            const fields = {};
-            fieldKeys.forEach(key => {
-                if (/server|zone/i.test(key)) fields[key] = order.serverId || undefined;
-                else fields[key] = order.playerId || undefined;
-            });
-
-            // Try FazerCards' own validate-id first (only if we have a key to
-            // call it with) - not every category supports it, and our own
-            // Worker/API key setup can itself be down, so a failure here
-            // isn't necessarily a bad ID. Falls through to the G2Bulk
-            // fallback below rather than giving up immediately.
-            let playerName = null;
-            if (FAZERCARD_SETTINGS.apiKey) {
-                try {
-                    const data = await fazercardRequest('/topups/validate-id', {
-                        method: 'POST',
-                        body: { category_id: order.fazercardCategoryId, fields }
-                    });
-                    if (data.valid && data.player_name) playerName = data.player_name;
-                } catch (error) {
-                    console.error("FazerCards validate-id error:", error);
-                }
-            }
-
-            // Fallback: same game, checked via G2Bulk's public checkPlayerId
-            // instead - admin set this up (Game editor → G2Bulk ID-Check Code)
-            // specifically for categories FazerCards can't verify, or for
-            // whenever the FazerCards check above didn't come back. This is
-            // informational only - the order still fulfills through
-            // FazerCards regardless of which provider resolved the name.
-            if (!playerName && linkedGame && linkedGame.g2bulkIdCheckCode) {
-                try {
-                    const res = await fetch('https://api.g2bulk.com/v1/games/checkPlayerId', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ game: linkedGame.g2bulkIdCheckCode, user_id: order.playerId, server_id: order.serverId || undefined })
-                    });
-                    const data = await res.json();
-                    if (res.ok && data.valid === 'valid' && data.name) playerName = data.name;
-                } catch (error) {
-                    console.error("G2Bulk fallback checkPlayerId error:", error);
-                }
-            }
-
-            if (!playerName) {
-                window.showInfoDialog(
-                    'Player ID Verification Failed',
-                    `Could not find an account for this Player ID${order.serverId ? '/Server ID' : ''} via FazerCards${linkedGame && linkedGame.g2bulkIdCheckCode ? ' or the G2Bulk fallback' : ''}. Double-check with the customer before processing this order.`
-                );
-                if (btnElement) { btnElement.disabled = false; btnElement.innerText = originalText; }
-                return;
-            }
-
-            try {
-                await updateDoc(doc(db, "orders", orderId), { fazercardVerifiedName: playerName });
-                order.fazercardVerifiedName = playerName;
-                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(playerName)} ✓ verified</span>`;
-                window.showToast('Player ID verified ✓', 'success');
-            } catch (error) {
-                console.error("Save fazercardVerifiedName error:", error);
-                // Verification itself succeeded — show it locally even though
-                // saving the result failed, so the admin isn't blocked from
-                // seeing it (it'll just re-prompt "Verify" next render).
-                if (valueEl) valueEl.innerHTML = `<span style="color:#28a745;">${escapeHtml(playerName)} ✓ verified</span> <span style="color:var(--text-muted);font-size:11px;">(not saved)</span>`;
-                window.showToast('Verified, but failed to save: ' + error.message, 'fail');
-            }
-        }
-        window.verifyFazerCardPlayerId = verifyFazerCardPlayerId;
-
         // ---------- Background auto-sync for orders sent to G2Bulk (fallback) ----------
         // Every ~25s (while this admin panel tab is open), quietly re-checks every
         // order that's still "Processing" and has a g2bulkOrderId against G2Bulk's
@@ -8336,8 +7711,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // them - including mid-scroll/mid-touch, which is what caused the
         // catching/stutter feeling here specifically (this tab had no
         // debounce or touch guard at all, unlike Orders/Games). This now
-        // matters even more with FazerCards crypto top-ups, which can touch
-        // this same collection every few seconds while a payment is polled.
+        // matters even more when the collection updates frequently.
         let topupsRenderScheduled = null;
         function renderTopupsList() {
             const container = document.getElementById('topups-container');
@@ -8401,7 +7775,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             ${walletThumb}
                             <div class="oc-info">
                                 <span class="oc-game-name">+${Number(t.amount || 0).toLocaleString()} MMK</span>
-                                <p class="oc-meta">${esc(t.userName || t.userId || 'Guest')} &middot; ${esc(t.paymentMethod || 'N/A')}${t.fazercardPaymentId ? ' &middot; <span style="color:var(--accent);">Auto-verified</span>' : ''}</p>
+                                <p class="oc-meta">${esc(t.userName || t.userId || 'Guest')} &middot; ${esc(t.paymentMethod || 'N/A')}</p>
                             </div>
                             <div class="oc-status">
                                 <span class="badge ${badgeClass}">${statusBadgeHtml(badgeClass, orderStatusLabel(t.status))}</span>
@@ -9301,7 +8675,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const seen = new Set();
             const names = [];
             Object.values(GAMES).forEach(g => {
-                const isVoucher = g.fulfillProvider === 'g2bulk_voucher' || g.fulfillProvider === 'fazercard_giftcard';
+                const isVoucher = g.fulfillProvider === 'g2bulk_voucher';
                 if (gameListTab === 'voucher' ? !isVoucher : isVoucher) return;
                 const n = (g.name || '').trim();
                 const key = n.toLowerCase();
@@ -9336,7 +8710,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // other in the list instead of being scattered.
             const ids = Object.keys(GAMES).filter(id => {
                 const g = GAMES[id];
-                const isVoucher = g.fulfillProvider === 'g2bulk_voucher' || g.fulfillProvider === 'fazercard_giftcard';
+                const isVoucher = g.fulfillProvider === 'g2bulk_voucher';
                 if (gameListTab === 'voucher' ? !isVoucher : isVoucher) return false;
                 if (!searchTerm) return true;
                 return (g.name || '').toLowerCase().includes(searchTerm) || (g.serverName || '').toLowerCase().includes(searchTerm);
@@ -9535,7 +8909,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 const total = Object.keys(GAMES || {}).length;
                 let direct = 0, voucher = 0;
                 Object.values(GAMES || {}).forEach(g => {
-                    if (g && (g.fulfillProvider === 'g2bulk_voucher' || g.fulfillProvider === 'fazercard_giftcard')) voucher++; else direct++;
+                    if (g && (g.fulfillProvider === 'g2bulk_voucher')) voucher++; else direct++;
                 });
                 const t = new Date().toLocaleTimeString();
                 el.textContent = `🔧 project: ${firebaseConfig.projectId} | source: ${source} | total: ${total} (Direct ${direct} / Voucher ${voucher}) | ${t}` + (extra ? ` | ${extra}` : '');
@@ -9961,7 +9335,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             } catch (e) {}
             return '';
         }
-        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null, badge = '') {
+        function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', _unusedA = '', _unusedB = '', provider = null, badge = '') {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
             // name: a leading number ("100 Diamonds") → Currency, a plain name
@@ -9972,8 +9346,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 tab = type;
             }
             // Auto-Fulfill Provider is per-package, not tied to whichever
-            // outer tab happens to be open (see the "mixing G2Bulk +
-            // FazerCards in one game" fix) — an explicit provider argument
+            // outer tab happens to be open (see the "mixing providers
+            // in one game" fix) — an explicit provider argument
             // (used by each Import function) always wins; otherwise it's
             // inferred from whichever ID field actually has a saved value,
             // falling back to the currently open tab for a brand new row
@@ -9981,8 +9355,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // for anything else (including while the Vouchers tab is open,
             // since vouchers use their own separate voucherId field below).
             const resolvedProvider = provider
-                || (g2bulkName ? 'g2bulk' : jcplaysProductId ? 'jcplays' : fazercardOfferId ? 'fazercard'
-                    : (['g2bulk', 'jcplays', 'fazercard'].includes(currentFulfillProvider) ? currentFulfillProvider : 'manual'));
+                || (g2bulkName ? 'g2bulk' : jcplaysProductId ? 'jcplays'
+                    : (['g2bulk', 'jcplays'].includes(currentFulfillProvider) ? currentFulfillProvider : 'manual'));
             const resolvedTab = tab || currentPkgTab;
             // A tab we haven't seen yet on this game (e.g. loaded from saved
             // data) gets auto-registered as a custom tab so it shows in the bar.
@@ -10101,8 +9475,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-jcplays" placeholder="JCPlays Product ID" value="${jcplaysProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <input type="text" class="pkg-voucher-id" placeholder="G2Bulk product ID" value="${voucherProductId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
-                            <input type="text" class="pkg-fazercard" placeholder="FazerCards offer_id" value="${fazercardOfferId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
-                            <input type="text" class="pkg-fazercard-giftcard-id" placeholder="FazerCards card_id" value="${fazercardGiftCardId}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
                             <span class="pkg-stock-badge"></span>
                             <div class="pkg-card-footer">
                                 <button type="button" class="pkg-card-save-btn" onclick="collapsePackageRow(this)">Save</button>
@@ -10122,40 +9494,33 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // Shows/hides each package row's provider-specific ID field based on
         // that row's OWN "Auto-Fulfill" select — not the outer tab bar —
         // since a single game can now mix providers across its packages
-        // (e.g. some via G2Bulk, others via FazerCards). The one exception
+        // (e.g. some via G2Bulk, others via JCPlays). The one exception
         // is Vouchers: that's still a whole-game "kind" switch (a
         // completely different catalogue/import flow), so while the
         // Vouchers tab is open every row falls back to the single shared
         // voucherId field instead, exactly as before.
         function refreshPackageRowProviderVisibility() {
-            // Vouchers and FazerCards Gift Cards are both whole-game "kind"
-            // switches (a single shared id field on every row) rather than
-            // a per-row provider choice - see the note above.
+            // Vouchers are a whole-game "kind" switch (a single shared id
+            // field on every row) rather than a per-row provider choice -
+            // see the note above.
             const isVoucherGame = currentFulfillProvider === 'g2bulk_voucher';
-            const isFazerGiftGame = currentFulfillProvider === 'fazercard_giftcard';
             document.querySelectorAll('#edit-packages-list .package-row').forEach(row => {
                 const providerRow = row.querySelector('.pkg-provider-row');
                 const g2 = row.querySelector('.pkg-g2bulk');
                 const jc = row.querySelector('.pkg-jcplays');
-                const fc = row.querySelector('.pkg-fazercard');
                 const vc = row.querySelector('.pkg-voucher-id');
-                const fgc = row.querySelector('.pkg-fazercard-giftcard-id');
                 if (!providerRow) return;
-                if (isVoucherGame || isFazerGiftGame) {
+                if (isVoucherGame) {
                     providerRow.style.display = 'none';
                     g2.style.display = 'none';
                     jc.style.display = 'none';
-                    fc.style.display = 'none';
-                    vc.style.display = isVoucherGame ? 'block' : 'none';
-                    fgc.style.display = isFazerGiftGame ? 'block' : 'none';
+                    vc.style.display = 'block';
                 } else {
                     providerRow.style.display = 'flex';
                     vc.style.display = 'none';
-                    fgc.style.display = 'none';
                     const rowProvider = row.querySelector('.pkg-provider').value;
                     g2.style.display = rowProvider === 'g2bulk' ? 'block' : 'none';
                     jc.style.display = rowProvider === 'jcplays' ? 'block' : 'none';
-                    fc.style.display = rowProvider === 'fazercard' ? 'block' : 'none';
                 }
             });
         }
@@ -10571,7 +9936,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // Prefers the leading number in the Currency name ("100 Diamonds" →
         // 100), same as before, since that reads as the denomination at a
         // glance. But G2Bulk is the only provider whose names are reliably
-        // formatted that way - FazerCards offer names, JCPlays SPU names, and
+        // formatted that way - JCPlays SPU names, and
         // voucher titles ("Steam Wallet ($10)") don't start with a number, so
         // those fall back to sorting by the row's actual currency amount
         // (Price if it's set, otherwise Cost) instead of silently landing in
@@ -10935,7 +10300,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     bannerChangeBadge.style.display = 'none';
                 }
 
-                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : (g.g2bulkVoucherCategory ? 'g2bulk_voucher' : (g.fazercardGiftCategoryId ? 'fazercard_giftcard' : (g.fazercardCategoryId ? 'fazercard' : 'manual'))));
+                const initialProvider = g.g2bulkCode ? 'g2bulk' : (g.jcplaysProduct ? 'jcplays' : (g.g2bulkVoucherCategory ? 'g2bulk_voucher' : 'manual'));
                 setFulfillProvider(initialProvider);
                 // Restore custom tabs up front (including any left empty) so they don't
                 // silently disappear on reload - addPackageRow below will also pick up
@@ -10958,7 +10323,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 (g.packages || []).forEach(p => {
                     const savedTab = p.tab || p.type || 'currency';
                     const effectiveTab = ['package', 'currency'].includes(savedTab) ? detectPkgTypeFromName(p.amount) : savedTab;
-                    addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', effectiveTab, effectiveTab, false, p.voucherId || '', p.fazercardOfferId || '', p.fazercardGiftCardId || '', null, p.badge || '');
+                    addPackageRow(p.amount, p.cost || '', p.price, p.g2bulk || '', p.jcplays || '', p.image || '', effectiveTab, effectiveTab, false, p.voucherId || '', '', '', null, p.badge || '');
                 });
                 renderPkgTabBar();
                 switchPackageTab('package');
@@ -10983,16 +10348,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 // message could bleed into the next game's editor too.
                 document.getElementById('voucher-import-status').innerText = '';
                 onVoucherCategoryChange();
-                document.getElementById('edit-game-fazercard-category').value = g.fazercardCategoryId || '';
-                document.getElementById('fazercard-import-status').innerText = '';
-                document.getElementById('edit-game-g2bulk-idcheck-code').value = g.g2bulkIdCheckCode || '';
-                pendingFazerCardFields = Array.isArray(g.fazercardFields) ? g.fazercardFields.slice() : [];
-                pendingFazerCardServerMode = g.fazercardServerMode || null;
-                pendingFazerCardServerOptions = Array.isArray(g.fazercardServerOptions) ? g.fazercardServerOptions.slice() : null;
-                onFazerCardGameChange();
-                document.getElementById('edit-game-fazercard-giftcard-category').value = g.fazercardGiftCategoryId || '';
-                document.getElementById('fazercard-giftcard-import-status').innerText = '';
-                onFazerCardGiftCardCategoryChange();
                 pendingG2BulkServerMode = g.g2bulkServerMode || null;
                 pendingG2BulkServerOptions = Array.isArray(g.g2bulkServerOptions) ? g.g2bulkServerOptions.slice() : null;
                 deleteBtn.style.display = 'block';
@@ -11023,18 +10378,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 document.getElementById('edit-game-voucher-category').value = '';
                 document.getElementById('voucher-import-status').innerText = '';
                 onVoucherCategoryChange();
-                document.getElementById('edit-game-fazercard-category').value = '';
-                document.getElementById('fazercard-import-status').innerText = '';
-                document.getElementById('edit-game-g2bulk-idcheck-code').value = '';
-                pendingFazerCardFields = [];
-                pendingFazerCardServerMode = null;
-                pendingFazerCardServerOptions = null;
-                onFazerCardGameChange();
-                document.getElementById('edit-game-fazercard-giftcard-category').value = '';
-                document.getElementById('fazercard-giftcard-import-status').innerText = '';
                 pendingG2BulkServerMode = null;
                 pendingG2BulkServerOptions = null;
-                onFazerCardGiftCardCategoryChange();
                 setFulfillProvider(gameListTab === 'voucher' ? 'g2bulk_voucher' : 'manual');
                 preview.src = '';
                 preview.style.display = 'none';
@@ -11054,8 +10399,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             refreshPickerButton('g2bulk');
             refreshPickerButton('jcplays');
             refreshPickerButton('voucher');
-            refreshPickerButton('fazercard');
-            refreshPickerButton('fazercard_giftcard');
             onG2BulkGameChange();
             onVoucherCategoryChange();
             document.getElementById('pkg-price-check-status').innerText = '';
@@ -11184,8 +10527,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
 
             // Each provider's link is now saved independently of which tab is
             // currently open — a game can have both a G2Bulk game code and a
-            // FazerCards category linked at once (e.g. Mobile Legends
-            // Diamonds via G2Bulk + a Weekly Pass via FazerCards), since
+            // JCPlays product linked at once, since
             // Auto-Fulfill Provider moved to a per-package choice below.
             // Vouchers stays the one exception: it's still a whole-game kind
             // switch (a different catalogue/import flow entirely), so its
@@ -11194,13 +10536,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const g2bulkCode = document.getElementById('edit-game-g2bulk-code').value;
             const jcplaysProduct = document.getElementById('edit-game-jcplays-code').value.trim();
             const g2bulkVoucherCategory = currentFulfillProvider === 'g2bulk_voucher' ? document.getElementById('edit-game-voucher-category').value : '';
-            const fazercardCategoryId = document.getElementById('edit-game-fazercard-category').value;
-            const fazercardGiftCategoryId = currentFulfillProvider === 'fazercard_giftcard' ? document.getElementById('edit-game-fazercard-giftcard-category').value : '';
-            // Independent of currentFulfillProvider (unlike the codes above) -
-            // only meaningful when fazercard is the provider, but kept even if
-            // the admin is just previewing another tab, since blanking it on
-            // every tab switch would lose it before Save is even pressed.
-            const g2bulkIdCheckCode = document.getElementById('edit-game-g2bulk-idcheck-code').value.trim();
             const category = document.getElementById('edit-game-category').value;
             const description = document.getElementById('edit-game-description').value.trim();
             const appAndroidPackage = document.getElementById('edit-game-app-android-package').value.trim();
@@ -11232,8 +10567,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     g2bulk: rowProvider === 'g2bulk' ? row.querySelector('.pkg-g2bulk').value.trim() : '',
                     jcplays: rowProvider === 'jcplays' ? row.querySelector('.pkg-jcplays').value.trim() : '',
                     voucherId: currentFulfillProvider === 'g2bulk_voucher' ? row.querySelector('.pkg-voucher-id').value.trim() : '',
-                    fazercardOfferId: rowProvider === 'fazercard' ? row.querySelector('.pkg-fazercard').value.trim() : '',
-                    fazercardGiftCardId: currentFulfillProvider === 'fazercard_giftcard' ? row.querySelector('.pkg-fazercard-giftcard-id').value.trim() : '',
                     image: row.querySelector('.pkg-img-preview').dataset.url || '',
                     type: row.querySelector('.pkg-type').value || 'currency',
                     tab: row.dataset.tab || row.querySelector('.pkg-type').value || 'currency',
@@ -11274,7 +10607,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 // currently sit in them - without this, a tab created but left empty (or
                 // emptied out later) would vanish on reload since nothing else in the
                 // saved data would reference it.
-                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', fazercardCategoryId: fazercardCategoryId || '', fazercardFields: fazercardCategoryId ? pendingFazerCardFields.slice() : [], fazercardServerMode: pendingFazerCardServerMode || '', fazercardServerOptions: pendingFazerCardServerOptions || [], g2bulkIdCheckCode: fazercardCategoryId ? (g2bulkIdCheckCode || '') : '', fazercardGiftCategoryId: fazercardGiftCategoryId || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', appAndroidPackage: appAndroidPackage || '', appAndroidScheme: appAndroidScheme || '', appAndroidStoreUrl: appAndroidStoreUrl || '', appIosScheme: appIosScheme || '', appIosStoreUrl: appIosStoreUrl || '', popular, autoUpdate, autoPriceMarginPct, playerIdRequired, serverIdRequired, charNameRequired };
+                const data = { name, serverName: serverName || '', image: imageUrl, banner: bannerUrl || imageUrl, packages, packageTabs: customPkgTabs.slice(), packageTabLabels: { package: builtinPkgTabLabels.package, currency: builtinPkgTabLabels.currency }, g2bulkCode: g2bulkCode || '', jcplaysProduct: jcplaysProduct || '', g2bulkVoucherCategory: g2bulkVoucherCategory || '', g2bulkServerMode: pendingG2BulkServerMode || '', g2bulkServerOptions: pendingG2BulkServerOptions || [], fulfillProvider: currentFulfillProvider, category: category || '', description: description || '', appAndroidPackage: appAndroidPackage || '', appAndroidScheme: appAndroidScheme || '', appAndroidStoreUrl: appAndroidStoreUrl || '', appIosScheme: appIosScheme || '', appIosStoreUrl: appIosStoreUrl || '', popular, autoUpdate, autoPriceMarginPct, playerIdRequired, serverIdRequired, charNameRequired };
 
                 if (gameId) {
                     await updateDoc(doc(db, "games", gameId), data);
@@ -12304,7 +11637,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                             <div class="od-grid">
                                 <div class="od-cell">
                                     <div class="od-label">In-Game Name</div>
-                                    <div class="od-value">${escapeHtml(o.inGameName || o.fazercardVerifiedName || 'N/A')}</div>
+                                    <div class="od-value">${escapeHtml(o.inGameName || 'N/A')}</div>
                                 </div>
                                 <div class="od-cell">
                                     <div class="od-label">Package Type</div>
@@ -13023,338 +12356,11 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         }
         window.saveG2BulkKey = saveG2BulkKey;
 
-        // ---------- FazerCards API Key ----------
-        // https://reseller.fazercards.com/en/docs — base https://api.fzr.cards/api/v2,
-        // auth via X-API-Key. Unlike G2Bulk, we don't yet know if this host sends
-        // CORS headers for browser calls, so requests go through fazercardRequest()
-        // below, which calls api.fzr.cards directly unless a Proxy URL is set in
-        // Settings (same escape hatch as JCPLAYS_SETTINGS.proxyUrl) - fill that in
-        // only if Verify Key fails with a network/CORS error.
-        let fazercardListenerAttached = false;
-        let FAZERCARD_SETTINGS = { apiKey: '', proxyUrl: '', enabled: false, lowBalanceAlert: 0, usdRate: 4500 };
-        const FAZERCARD_BASE_URL = 'https://api.fzr.cards/api/v2';
-
-        function openFazerCardModal() {
-            document.getElementById('fazercard-status').style.display = 'none';
-            document.getElementById('fazercard-result-grid').style.display = 'none';
-            document.getElementById('fazercard-webhook-status').style.display = 'none';
-            document.getElementById('fazercard-deliveries-list').style.display = 'none';
-            document.getElementById('fazercard-webhook-secret').value = '';
-            document.getElementById('fazercard-modal-overlay').classList.add('show');
-        }
-        window.openFazerCardModal = openFazerCardModal;
-
-        function closeFazerCardModal() {
-            document.getElementById('fazercard-modal-overlay').classList.remove('show');
-        }
-        window.closeFazerCardModal = closeFazerCardModal;
-
-        function listenFazerCard() {
-            return; // FazerCards removed: only G2Bulk and JCPlays are used
-            if (fazercardListenerAttached) return;
-            fazercardListenerAttached = true;
-            onSnapshot(doc(db, "settings", "fazercard"), (docSnap) => {
-                const data = docSnap.exists() ? docSnap.data() : {};
-                document.getElementById('fazercard-api-key').value = data.apiKey || '';
-                document.getElementById('fazercard-proxy-url').value = data.proxyUrl || '';
-                document.getElementById('fazercard-low-balance-alert').value = data.lowBalanceAlert || '';
-                document.getElementById('fazercard-usd-rate').value = data.usdRate || '';
-                document.getElementById('fazercard-webhook-url').value = data.webhookUrl || '';
-                document.getElementById('fazercard-webhook-enabled').checked = !!data.webhookEnabled;
-                const fazercardEnabled = data.enabled !== false;
-                document.getElementById('fazercard-enabled').checked = fazercardEnabled;
-                FAZERCARD_SETTINGS = {
-                    apiKey: data.apiKey || '',
-                    proxyUrl: (data.proxyUrl || '').trim(),
-                    enabled: fazercardEnabled,
-                    lowBalanceAlert: Number(data.lowBalanceAlert) || 0,
-                    usdRate: Number(data.usdRate) || 4500
-                };
-                applyProviderVisibility('fazercard', fazercardEnabled);
-            }, (error) => {
-                console.error("FazerCards settings listener error:", error);
-            });
-        }
-
-        async function saveFazerCardKey() {
-            const apiKey = document.getElementById('fazercard-api-key').value.trim();
-            const proxyUrl = document.getElementById('fazercard-proxy-url').value.trim();
-            const lowBalanceAlert = Number(document.getElementById('fazercard-low-balance-alert').value) || 0;
-            const usdRate = Number(document.getElementById('fazercard-usd-rate').value) || 0;
-            const enabled = document.getElementById('fazercard-enabled').checked;
-            const btn = document.getElementById('save-fazercard-btn');
-            const originalText = btn.innerText;
-
-            if (proxyUrl && !/^https:\/\//i.test(proxyUrl)) {
-                window.showToast('Proxy URL must start with https://', 'fail');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = 'Saving...';
-
-            try {
-                await setDoc(doc(db, "settings", "fazercard"), { apiKey, proxyUrl, lowBalanceAlert, usdRate, enabled }, { merge: true });
-                callAdminSyncClaims();
-                window.showToast('FazerCards key saved!', 'success');
-                closeFazerCardModal();
-            } catch (error) {
-                console.error("Save FazerCards key error:", error);
-                window.showToast('Failed to save FazerCards key.', 'fail');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.saveFazerCardKey = saveFazerCardKey;
-
-        // Core request helper for every FazerCards call (catalogue browsing, order
-        // placement, balance checks). GET requests pass params as a query string;
-        // everything else sends a JSON body. Routes through proxyUrl (as a
-        // ?path=/api/v2/... wrapper) when one is configured, exactly like
-        // jcplaysRequest routes through JCPLAYS_SETTINGS.proxyUrl.
-        async function fazercardRequest(path, { method = 'GET', params = null, body = null, settings, idempotencyKey = null } = {}) {
-            const s = settings || FAZERCARD_SETTINGS;
-            if (!s.apiKey) {
-                throw new Error('Add your FazerCards API key first (Settings → FazerCards).');
-            }
-            let url = s.proxyUrl
-                ? `${s.proxyUrl}?path=${encodeURIComponent('/api/v2' + path)}`
-                : `${FAZERCARD_BASE_URL}${path}`;
-            if (params) {
-                const qs = new URLSearchParams(params).toString();
-                url += (url.includes('?') ? '&' : '?') + qs;
-            }
-            const res = await fetch(url, {
-                method,
-                headers: {
-                    'X-API-Key': s.apiKey,
-                    ...(body ? { 'Content-Type': 'application/json' } : {}),
-                    ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {})
-                },
-                body: body ? JSON.stringify(body) : undefined
-            });
-            const data = await res.json();
-            if (!data.ok) {
-                // 403 responses can include a blockReason (e.g. region/IP
-                // block) - surface it alongside the generic error instead of
-                // just a bare "Forbidden" so the admin can actually act on it.
-                let message = data.error || `FazerCards request failed (HTTP ${res.status})`;
-                if (data.blockReason) message += ` (${data.blockReason})`;
-                // 409 means the Idempotency-Key was already used with a
-                // different request body - make that explicit rather than
-                // leaving the admin to guess why a retry is being rejected.
-                if (res.status === 409) message = `Duplicate request: ${message} — this order was likely already placed with the same Idempotency-Key.`;
-                throw new Error(message);
-            }
-            return data;
-        }
-
-        // ---------- FazerCards Account webhook (PUT/GET/DELETE /account/webhook,
-        // POST /account/webhook/secret/regenerate, GET /account/webhook/deliveries) ----------
-        async function loadFazerCardWebhookStatus() {
-            const healthEl = document.getElementById('fazercard-webhook-health');
-            const btn = document.getElementById('check-fazercard-webhook-status-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = 'Checking...';
-            healthEl.style.display = 'block';
-            healthEl.innerText = 'Checking live status with FazerCards...';
-            try {
-                const data = await fazercardRequest('/account/webhook', { settings: FAZERCARD_SETTINGS });
-                const wh = data.webhook;
-                if (!wh || !wh.url) {
-                    healthEl.innerText = 'No webhook configured on FazerCards\' side.';
-                    return;
-                }
-                const fails = wh.consecutive_failures || 0;
-                const lastSuccess = wh.last_success_at ? new Date(wh.last_success_at).toLocaleString() : 'never';
-                const lastFailure = wh.last_failure_at ? new Date(wh.last_failure_at).toLocaleString() : 'never';
-                healthEl.innerHTML = `
-                    <div><b>Enabled:</b> ${wh.enabled ? 'Yes' : 'No'}</div>
-                    <div><b>Consecutive failures:</b> <span style="color:${fails > 0 ? 'var(--fail)' : 'inherit'}">${fails}</span></div>
-                    <div><b>Last success:</b> ${lastSuccess}</div>
-                    <div><b>Last failure:</b> ${lastFailure}${wh.last_failure_reason ? ' — ' + wh.last_failure_reason : ''}</div>
-                `;
-            } catch (error) {
-                console.error("FazerCards webhook status error:", error);
-                healthEl.innerText = error.message || 'Could not reach FazerCards to check webhook status.';
-            } finally {
-                btn.disabled = false; btn.innerText = originalText;
-            }
-        }
-        window.loadFazerCardWebhookStatus = loadFazerCardWebhookStatus;
-
-        async function saveFazerCardWebhook() {
-            const url = document.getElementById('fazercard-webhook-url').value.trim();
-            const enabled = document.getElementById('fazercard-webhook-enabled').checked;
-            const statusEl = document.getElementById('fazercard-webhook-status');
-            const btn = document.getElementById('save-fazercard-webhook-btn');
-            if (!url) { window.showToast('Enter a webhook URL first.', 'fail'); return; }
-            if (!/^https:\/\//i.test(url)) { window.showToast('Webhook URL must start with https://', 'fail'); return; }
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = 'Saving...';
-            statusEl.style.display = 'block';
-            statusEl.style.color = 'var(--text-secondary)';
-            statusEl.innerText = 'Saving webhook...';
-            try {
-                await fazercardRequest('/account/webhook', { method: 'PUT', body: { url, enabled }, settings: FAZERCARD_SETTINGS });
-                await setDoc(doc(db, "settings", "fazercard"), { webhookUrl: url, webhookEnabled: enabled }, { merge: true });
-                statusEl.innerText = 'Webhook saved ✓ (secret is only shown right after creation or a regenerate — use the button below if you need it)';
-                statusEl.style.color = 'var(--accent)';
-                window.showToast('FazerCards webhook saved!', 'success');
-            } catch (error) {
-                console.error("FazerCards webhook save error:", error);
-                statusEl.innerText = error.message || 'Failed to save webhook.';
-                statusEl.style.color = 'var(--fail)';
-            } finally {
-                btn.disabled = false; btn.innerText = originalText;
-            }
-        }
-        window.saveFazerCardWebhook = saveFazerCardWebhook;
-
-        async function deleteFazerCardWebhook() {
-            if (!confirm('Remove the FazerCards webhook? Deliveries stop immediately.')) return;
-            const btn = document.getElementById('delete-fazercard-webhook-btn');
-            const statusEl = document.getElementById('fazercard-webhook-status');
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = 'Removing...';
-            try {
-                await fazercardRequest('/account/webhook', { method: 'DELETE', settings: FAZERCARD_SETTINGS });
-                await setDoc(doc(db, "settings", "fazercard"), { webhookUrl: '', webhookEnabled: false }, { merge: true });
-                document.getElementById('fazercard-webhook-url').value = '';
-                document.getElementById('fazercard-webhook-enabled').checked = false;
-                document.getElementById('fazercard-webhook-secret').value = '';
-                statusEl.style.display = 'block';
-                statusEl.innerText = 'Webhook removed.';
-                statusEl.style.color = 'var(--text-secondary)';
-                window.showToast('FazerCards webhook removed.', 'success');
-            } catch (error) {
-                console.error("FazerCards webhook delete error:", error);
-                window.showToast(error.message || 'Failed to remove webhook.', 'fail');
-            } finally {
-                btn.disabled = false; btn.innerText = originalText;
-            }
-        }
-        window.deleteFazerCardWebhook = deleteFazerCardWebhook;
-
-        async function regenerateFazerCardWebhookSecret() {
-            if (!confirm('Regenerate the HMAC secret? The old one stops working immediately — make sure nothing else still depends on it before confirming.')) return;
-            const btn = document.getElementById('regen-fazercard-secret-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = 'Rotating...';
-            try {
-                const data = await fazercardRequest('/account/webhook/secret/regenerate', { method: 'POST', settings: FAZERCARD_SETTINGS });
-                document.getElementById('fazercard-webhook-secret').value = data.secret || '';
-                window.showToast('New secret generated — copy it now, it will not be shown again.', 'success');
-            } catch (error) {
-                console.error("FazerCards webhook secret regenerate error:", error);
-                window.showToast(error.message || 'Failed to regenerate secret.', 'fail');
-            } finally {
-                btn.disabled = false; btn.innerText = originalText;
-            }
-        }
-        window.regenerateFazerCardWebhookSecret = regenerateFazerCardWebhookSecret;
-
-        async function loadFazerCardWebhookDeliveries() {
-            const listEl = document.getElementById('fazercard-deliveries-list');
-            const btn = document.getElementById('view-fazercard-deliveries-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = 'Loading...';
-            listEl.style.display = 'block';
-            listEl.innerHTML = '<span style="color:var(--text-muted);">Loading recent deliveries...</span>';
-            try {
-                const data = await fazercardRequest('/account/webhook/deliveries', { settings: FAZERCARD_SETTINGS });
-                const deliveries = data.deliveries || [];
-                if (deliveries.length === 0) {
-                    listEl.innerHTML = '<span style="color:var(--text-muted);">No deliveries yet.</span>';
-                } else {
-                    listEl.innerHTML = deliveries.slice(0, 50).map(d => `
-                        <div style="padding:6px 0;border-bottom:1px solid var(--border);">
-                            <b>${d.event || '-'}</b> — ${d.status || '-'}${d.response_status != null ? ` (HTTP ${d.response_status})` : ''}<br>
-                            <span style="color:var(--text-muted);">${d.created_at || ''} · attempt ${d.attempt ?? '-'}${d.next_retry_at ? ` · retry ${d.next_retry_at}` : ''}</span>
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error("FazerCards webhook deliveries error:", error);
-                listEl.innerHTML = `<span style="color:var(--fail);">${error.message || 'Failed to load deliveries.'}</span>`;
-            } finally {
-                btn.disabled = false; btn.innerText = originalText;
-            }
-        }
-        window.loadFazerCardWebhookDeliveries = loadFazerCardWebhookDeliveries;
-
-        async function verifyFazerCardKey() {
-            const apiKey = document.getElementById('fazercard-api-key').value.trim();
-            const proxyUrl = document.getElementById('fazercard-proxy-url').value.trim();
-            const statusEl = document.getElementById('fazercard-status');
-            const gridEl = document.getElementById('fazercard-result-grid');
-            if (!apiKey) {
-                window.showToast('Enter a key first.', 'fail');
-                return;
-            }
-            const btn = document.getElementById('verify-fazercard-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Checking...';
-            statusEl.style.display = 'block';
-            statusEl.style.color = 'var(--text-secondary)';
-            gridEl.style.display = 'none';
-            statusEl.innerText = 'Checking key...';
-
-            try {
-                const [me, bal] = await Promise.all([
-                    fazercardRequest('/me', { settings: { apiKey, proxyUrl } }),
-                    fazercardRequest('/balance', { settings: { apiKey, proxyUrl } })
-                ]);
-                statusEl.innerText = 'Key valid ✓';
-                statusEl.style.color = 'var(--accent)';
-                gridEl.style.display = 'block';
-                gridEl.className = 'details-grid';
-                gridEl.innerHTML = `
-                    <div class="details-grid-item"><span>Balance</span><b>$${Number(bal.balance || 0).toLocaleString()}</b></div>
-                    <div class="details-grid-item"><span>Plan</span><b>${me.plan || '-'}</b></div>
-                    <div class="details-grid-item full" style="grid-column:1/-1;"><span>Login</span><b>${me.login || '-'}</b></div>
-                `;
-            } catch (error) {
-                console.error("Verify FazerCards key error:", error);
-                statusEl.innerText = (proxyUrl ? '' : '(no Proxy URL set — trying a direct call) ') + (error.message || 'Verification failed.');
-                statusEl.style.color = 'var(--fail)';
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.verifyFazerCardKey = verifyFazerCardKey;
-
-        // Balance refresh for the saved FazerCards key (mirrors refreshG2BulkBalance /
-        // refreshJCPlaysBalance) - used by the API Balance page.
-        async function refreshFazerCardBalance() {
-            const displayEls = [document.getElementById('an-fazercard-balance-display')].filter(Boolean);
-            if (displayEls.length === 0) return;
-            if (!FAZERCARD_SETTINGS.apiKey) {
-                displayEls.forEach(el => { el.innerText = 'No key set'; el.style.color = 'var(--text-muted)'; });
-                return;
-            }
-            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
-            try {
-                const bal = await fazercardRequest('/balance', { settings: FAZERCARD_SETTINGS });
-                const balanceNum = Number(bal.balance) || 0;
-                const text = Math.round(balanceNum * (FAZERCARD_SETTINGS.usdRate || 4500)).toLocaleString() + ' MMK';
-                displayEls.forEach(el => { el.innerText = text; el.style.color = 'var(--accent)'; });
-            } catch (error) {
-                console.error("FazerCards balance error:", error);
-                displayEls.forEach(el => { el.innerText = 'Error: ' + error.message; el.style.color = 'var(--danger-strong)'; });
-            }
-        }
-        window.refreshFazerCardBalance = refreshFazerCardBalance;
-
         // Combined refresher for the "API Balance" page - fires all
         // provider balance checks in parallel.
         function refreshAllApiBalances() {
             if (window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
-            if (window.refreshFazerCardBalance) window.refreshFazerCardBalance();
         }
         window.refreshAllApiBalances = refreshAllApiBalances;
 
@@ -13936,10 +12942,10 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             return JCPLAYS_PRODUCTS_LIST;
         }
 
-        // Neither JCPlays' /product nor FazerCards' /topups return a cover
+        // JCPlays' /product doesn't return a cover
         // image for their games (unlike G2Bulk's /v1/games) — so instead of
         // always falling back to colored initials, borrow G2Bulk's real
-        // cover image for any JCPlays/FazerCards entry whose name matches a
+        // cover image for any JCPlays entry whose name matches a
         // G2Bulk game closely enough. Purely a display nicety: matching is
         // name-based (these three catalogues share no common game ID) and
         // never affects which code actually gets linked/saved.
@@ -14016,43 +13022,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             return items.map(item => item.image ? item : { ...item, image: imageForGameName(item.name) });
         }
 
-        // ---------- FazerCards game top-up catalogue import ----------
-        // GET /api/v2/topups?include_ui=1 returns a real cover image per
-        // category (`imageurl`) - without include_ui it's just
-        // { category_id, name } with nothing to show, which is why this used
-        // to fall back to a borrowed G2Bulk image (see attachG2BulkImages
-        // above) by name match. That fallback stays in place for the rare
-        // category FazerCards itself has no image for.
-        // A server/zone field FazerCards marks as a fixed list (not
-        // free-text) should render as a dropdown, same as G2Bulk -
-        // but the exact key FazerCards uses for the options array isn't
-        // nailed down publicly, so this checks the common shapes
-        // (options/values/choices) defensively and returns null (free-text
-        // fallback) if none match, rather than guessing wrong silently.
-        // Shared by the single-game and bulk FazerCards importers below.
-        function detectFazerCardServerDropdown(fieldDefs) {
-            const serverField = (fieldDefs || []).find(f => /server|zone/i.test(f.key || ''));
-            const optionsRaw = serverField && (serverField.options || serverField.values || serverField.choices);
-            if (!serverField || !Array.isArray(optionsRaw) || optionsRaw.length === 0) return { mode: null, options: null };
-            return {
-                mode: 'select',
-                options: optionsRaw.map(o =>
-                    (o && typeof o === 'object') ? { label: o.label || o.name || o.value, value: o.value != null ? o.value : o.label } : { label: String(o), value: String(o) }
-                )
-            };
-        }
-        let FAZERCARD_TOPUPS_LIST = null;
-        let pendingFazerCardFields = [];
-        // FazerCards: GET /topups/offers returns a `fields` array where each
-        // field carries {key, label, type} (and, for a fixed-list field, an
-        // options-style array under a provider-defined key - schema not
-        // nailed down publicly, see the OpenAPI spec linked from FazerCards'
-        // docs). Previously only `key` was kept (pendingFazerCardFields), so
-        // any select-type field silently degraded to free-text - this pair
-        // captures the rest so a server/zone field that FazerCards marks as
-        // a fixed list can render as a dropdown too, same as G2Bulk.
-        let pendingFazerCardServerMode = null;
-        let pendingFazerCardServerOptions = null;
         // G2Bulk: POST /v1/games/fields (body {game}) returns which fields a
         // game needs (e.g. ["userid","serverid"]); POST /v1/games/servers
         // returns the server list for games that have one, or a 403 meaning
@@ -14064,66 +13033,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // to render a select for it without extra changes.
         let pendingG2BulkServerMode = null;
         let pendingG2BulkServerOptions = null;
-        async function fetchFazerCardTopupsList(forceRefresh = false) {
-            if (FAZERCARD_TOPUPS_LIST && !forceRefresh) return FAZERCARD_TOPUPS_LIST;
-            // /api/v2/topups is cursor-paginated (NOT offset/page): each response's
-            // meta.next_cursor feeds the next request's `cursor` param, and
-            // meta.has_more tells us when to stop. Using the max limit (500)
-            // keeps the number of round trips as low as possible. `limit` caps
-            // items per page, not the account's total category count - a
-            // smaller total (e.g. 316) than the limit just means everything
-            // fit on the first page.
-            const allItems = [];
-            let cursor = null;
-            let hasMore = true;
-            let guard = 0; // safety cap in case the API ever misreports has_more
-            while (hasMore && guard < 50) {
-                guard++;
-                const params = { limit: 500, include_ui: 1 };
-                if (cursor) params.cursor = cursor;
-                const data = await fazercardRequest('/topups', { params });
-                allItems.push(...(data.items || []));
-                console.log(`[FazerCards] page ${guard}: got ${data.items ? data.items.length : 0} items, meta =`, data.meta);
-                hasMore = !!(data.meta && data.meta.has_more);
-                cursor = data.meta ? data.meta.next_cursor : null;
-                if (!cursor) hasMore = false; // no cursor to continue with
-            }
-            console.log(`[FazerCards] finished after ${guard} page(s), total items: ${allItems.length}`);
-            FAZERCARD_TOPUPS_LIST = await attachG2BulkImages(allItems.map(g => ({ code: g.category_id, name: g.name, image: g.imageurl || '' })));
-            return FAZERCARD_TOPUPS_LIST;
-        }
-
-
-        // ---------- FazerCards Gift Cards ----------
-        // A separate FazerCards catalog from the Game Top-ups list above -
-        // GET /api/v2/giftcards (cursor-paginated, same shape as /topups)
-        // lists gift card categories; GET /api/v2/giftcards/cards?category_id=...
-        // lists that category's redeemable-code offers (card_id/name/price_usd/
-        // stock/min-max qty); POST /api/v2/giftcards/order{category_id,card_id,
-        // quantity} delivers the code(s) - no player ID involved, so this is a
-        // Voucher/Code-group provider, not a Direct one. Mirrors
-        // fetchFazerCardTopupsList exactly, just against /giftcards.
-        let FAZERCARD_GIFTCARD_CATEGORIES_LIST = null;
-        async function fetchFazerCardGiftCardCategories(forceRefresh = false) {
-            if (FAZERCARD_GIFTCARD_CATEGORIES_LIST && !forceRefresh) return FAZERCARD_GIFTCARD_CATEGORIES_LIST;
-            const allItems = [];
-            let cursor = null;
-            let hasMore = true;
-            let guard = 0;
-            while (hasMore && guard < 50) {
-                guard++;
-                const params = { limit: 500, include_ui: 1 };
-                if (cursor) params.cursor = cursor;
-                const data = await fazercardRequest('/giftcards', { params });
-                allItems.push(...(data.items || []));
-                hasMore = !!(data.meta && data.meta.has_more);
-                cursor = data.meta ? data.meta.next_cursor : null;
-                if (!cursor) hasMore = false;
-            }
-            FAZERCARD_GIFTCARD_CATEGORIES_LIST = await attachG2BulkImages(allItems.map(g => ({ code: g.category_id, name: g.name, image: g.imageurl || '' })));
-            return FAZERCARD_GIFTCARD_CATEGORIES_LIST;
-        }
-
         // ---------- Game Category (Moba / Battle Royale / Survival / Fun / Creative) ----------
         // Shown as an icon+color chip-select in the game editor, and used by the
         // Store app to power its category filter chips on the Home page. The Store
@@ -14228,20 +13137,14 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             document.getElementById('g2bulk-fulfill-section').style.display = provider === 'g2bulk' ? 'block' : 'none';
             document.getElementById('jcplays-fulfill-section').style.display = provider === 'jcplays' ? 'block' : 'none';
             document.getElementById('g2bulk-voucher-fulfill-section').style.display = provider === 'g2bulk_voucher' ? 'block' : 'none';
-            document.getElementById('fazercard-fulfill-section').style.display = provider === 'fazercard' ? 'block' : 'none';
             document.getElementById('requires-charname-row').style.display = provider === 'g2bulk' ? '' : 'none';
-            document.getElementById('fazercard-giftcard-fulfill-section').style.display = provider === 'fazercard_giftcard' ? 'block' : 'none';
             // Package rows no longer follow this tab (each has its own
             // Auto-Fulfill Provider select now) — this tab only decides
             // which game-level link section is visible below, and which
             // provider a brand-new row defaults to. See
             // refreshPackageRowProviderVisibility for the per-row logic.
             refreshPackageRowProviderVisibility();
-            document.getElementById('fazercard-import-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
-            document.getElementById('fazercard-debug-btn').style.display = (provider === 'fazercard' && document.getElementById('edit-game-fazercard-category').value) ? 'block' : 'none';
             if (provider === 'g2bulk_voucher') { refreshPickerButton('voucher'); onVoucherCategoryChange(); }
-            if (provider === 'fazercard') { refreshPickerButton('fazercard'); }
-            if (provider === 'fazercard_giftcard') { refreshPickerButton('fazercard_giftcard'); onFazerCardGiftCardCategoryChange(); }
         }
         window.setFulfillProvider = setFulfillProvider;
 
@@ -14249,7 +13152,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // page ("Direct Games" vs "Gift Card & Vouchers", tracked in
         // gameListTab) the admin had open when they hit "+ Add" / "Edit" -
         // so a Direct-side game never gets offered JCPlays/Vouchers and a
-        // Voucher-side game never gets offered G2Bulk/FazerCards. Manual
+        // Voucher-side game never gets offered G2Bulk. Manual
         // stays available on both sides.
         function refreshFulfillGroupVisibility() {
             const isVoucherSide = gameListTab === 'voucher';
@@ -14261,17 +13164,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const code = document.getElementById('edit-game-g2bulk-code').value;
             document.getElementById('g2bulk-import-btn').style.display = code ? 'block' : 'none';
             document.getElementById('g2bulk-debug-btn').style.display = code ? 'block' : 'none';
-        }
-
-        function onFazerCardGameChange() {
-            const code = document.getElementById('edit-game-fazercard-category').value;
-            document.getElementById('fazercard-import-btn').style.display = code ? 'block' : 'none';
-            document.getElementById('fazercard-debug-btn').style.display = code ? 'block' : 'none';
-        }
-
-        function onFazerCardGiftCardCategoryChange() {
-            const categoryId = document.getElementById('edit-game-fazercard-giftcard-category').value;
-            document.getElementById('fazercard-giftcard-import-btn').style.display = categoryId ? '' : 'none';
         }
 
         // ---------- Shared Game Picker (grid with images + search) ----------
@@ -14315,16 +13207,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             { code: 'smilecoinph', name: 'SmileCoin (Philippines)' }
         ];
 
-        // Bulk-add state for the FazerCards picker only - lets the admin tick
-        // several catalogue entries (e.g. every "Free Fire (XX)" region) and
-        // import them as separate new games in one go, each with its own
-        // imported packages (see importSelectedFazerCardGames below), instead
-        // of repeating Add New Game -> pick -> import -> save per region.
-        // Only offered when the picker is opened for a brand-new game (no
-        // edit-game-id yet) - see loadGamePickerList.
-        let fazerCardBulkMode = false;
-        let fazerCardBulkSelected = new Set();
-
         let gamePickerProvider = null;     // 'g2bulk' | 'jcplays'
         let gamePickerSubtab = 'direct';   // 'direct' | 'voucher' — only meaningful when provider === 'g2bulk'
         let gamePickerItems = [];          // [{code, name, image?, count?}] for the active provider/subtab
@@ -14335,13 +13217,11 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // just switch on one string instead of re-deriving this each time.
         function gamePickerKind() {
             if (gamePickerProvider === 'g2bulk' && gamePickerSubtab === 'voucher') return 'voucher';
-            return gamePickerProvider; // 'g2bulk' (direct) | 'jcplays' | 'fazercard'
+            return gamePickerProvider; // 'g2bulk' (direct) | 'jcplays'
         }
         function gamePickerFieldId(kind) {
             if (kind === 'g2bulk') return 'edit-game-g2bulk-code';
             if (kind === 'voucher') return 'edit-game-voucher-category';
-            if (kind === 'fazercard') return 'edit-game-fazercard-category';
-            if (kind === 'fazercard_giftcard') return 'edit-game-fazercard-giftcard-category';
             return 'edit-game-jcplays-code';
         }
 
@@ -14395,8 +13275,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const list = kind === 'g2bulk'
                 ? (G2BULK_GAMES_LIST || []).map(g => ({ code: g.code, name: g.name, image: g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : '' }))
                 : kind === 'voucher' ? voucherPickerItems()
-                : kind === 'fazercard' ? (FAZERCARD_TOPUPS_LIST || [])
-                : kind === 'fazercard_giftcard' ? (FAZERCARD_GIFTCARD_CATEGORIES_LIST || [])
                 : (JCPLAYS_PRODUCTS_LIST || []);
             const match = list.find(g => g.code === code);
 
@@ -14423,8 +13301,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         function gamePickerTitleFor(kind) {
             if (kind === 'g2bulk') return 'Choose G2Bulk Game';
             if (kind === 'voucher') return 'Choose Voucher Category';
-            if (kind === 'fazercard') return 'Choose FazerCards Game';
-            if (kind === 'fazercard_giftcard') return 'Choose FazerCards Gift Card Category';
             return 'Choose JCPlays Game';
         }
 
@@ -14464,18 +13340,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             document.getElementById('game-picker-modal-overlay').classList.add('show');
             document.getElementById('game-picker-update-btn').style.display = 'block';
 
-            // Bulk add only makes sense for FazerCards, and only while
-            // creating a brand-new game (an existing game is already tied to
-            // one category - bulk-creating siblings from inside its editor
-            // would be confusing). Always starts closed on a fresh open.
-            fazerCardBulkMode = false;
-            fazerCardBulkSelected = new Set();
-            document.getElementById('fazercard-bulk-bar').style.display = 'none';
-            const bulkToggleBtn = document.getElementById('game-picker-bulk-toggle-btn');
-            const isNewGame = !document.getElementById('edit-game-id').value;
-            bulkToggleBtn.style.display = (kind === 'fazercard' && isNewGame) ? 'block' : 'none';
-            bulkToggleBtn.innerText = 'Select Multiple';
-
             if (kind === 'g2bulk') {
                 fetchG2BulkGamesList()
                     .then(games => {
@@ -14500,26 +13364,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                         console.error("Load G2Bulk categories error:", error);
                         document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Couldn\'t load voucher categories. Close and try again.</p>';
                     });
-            } else if (kind === 'fazercard') {
-                fetchFazerCardTopupsList()
-                    .then(items => {
-                        gamePickerItems = items;
-                        renderGamePickerGrid('');
-                    })
-                    .catch(error => {
-                        console.error("Load FazerCards topups list error:", error);
-                        document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-empty-msg">Couldn\'t load FazerCards\' game list. Close and try again.</p>';
-                    });
-            } else if (kind === 'fazercard_giftcard') {
-                fetchFazerCardGiftCardCategories()
-                    .then(items => {
-                        gamePickerItems = items;
-                        renderGamePickerGrid('');
-                    })
-                    .catch(error => {
-                        console.error("Load FazerCards gift card categories error:", error);
-                        document.getElementById('game-picker-grid').innerHTML = `<p class="game-picker-empty-msg">Couldn't load FazerCards' gift card categories: ${escapeHtml(error.message)}</p>`;
-                    });
             } else {
                 fetchJCPlaysProductsList()
                     .then(items => {
@@ -14539,7 +13383,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // immediately, instead of only after a full page reload.
         function refreshGamePickerList() {
             const kind = gamePickerKind();
-            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'fazercard' && kind !== 'fazercard_giftcard' && kind !== 'jcplays') return;
+            if (kind !== 'g2bulk' && kind !== 'voucher' && kind !== 'jcplays') return;
             const btn = document.getElementById('game-picker-update-btn');
             const originalText = btn.innerText;
             btn.disabled = true;
@@ -14554,10 +13398,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                         image: g.image_url ? (/^https?:\/\//.test(g.image_url) ? g.image_url : 'https://api.g2bulk.com' + g.image_url) : ''
                     }));
                 })
-                : kind === 'fazercard'
-                ? fetchFazerCardTopupsList(true).then(items => { gamePickerItems = items; })
-                : kind === 'fazercard_giftcard'
-                ? fetchFazerCardGiftCardCategories(true).then(items => { gamePickerItems = items; })
                 : kind === 'jcplays'
                 ? fetchJCPlaysProductsList(true).then(items => { gamePickerItems = items; })
                 : fetchG2BulkCategoriesList(true).then(() => { gamePickerItems = voucherPickerItems(); });
@@ -14565,7 +13405,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             refreshPromise
                 .then(() => {
                     renderGamePickerGrid(document.getElementById('game-picker-search').value);
-                    window.showToast((kind === 'fazercard' || kind === 'fazercard_giftcard' ? 'FazerCards' : kind === 'jcplays' ? 'JCPlays' : 'G2Bulk') + ' list refreshed ✓', 'success');
+                    window.showToast((kind === 'jcplays' ? 'JCPlays' : 'G2Bulk') + ' list refreshed ✓', 'success');
                 })
                 .catch(error => {
                     console.error("Refresh game picker list error:", error);
@@ -14590,13 +13430,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const q = (term || '').trim().toLowerCase();
             const filtered = q ? gamePickerItems.filter(g => g.name.toLowerCase().includes(q)) : gamePickerItems;
             const currentCode = document.getElementById(gamePickerFieldId(gamePickerKind())).value;
-            const bulk = fazerCardBulkMode && gamePickerKind() === 'fazercard';
 
-            // In bulk mode there's no single "current" link to highlight and
-            // no "Not linked" option (bulk add only ever creates new games),
-            // so skip that card entirely and render a checkbox on every tile
-            // instead of the usual single-select border.
-            let html = bulk ? '' : `<div class="game-picker-card unlink-card${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">
+            let html = `<div class="game-picker-card unlink-card${currentCode === '' ? ' selected' : ''}" data-code="" data-name="">
                 <div class="game-picker-thumb"><svg class="ui-icon" style="width:20px;height:20px;"><use href="#icon-close"></use></svg></div>
                 <span>Not linked</span>
             </div>`;
@@ -14605,9 +13440,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 html += `<div class="game-picker-empty-msg">No games match "${escapeHtml(term)}"</div>`;
             } else {
                 html += filtered.map(g => `
-                    <div class="game-picker-card${bulk ? ' bulk-pickable' + (fazerCardBulkSelected.has(g.code) ? ' bulk-selected' : '') : (currentCode === g.code ? ' selected' : '')}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">
+                    <div class="game-picker-card${currentCode === g.code ? ' selected' : ''}" data-code="${escapeHtml(g.code)}" data-name="${escapeHtml(g.name)}">
                         <div class="game-picker-thumb" style="${g.image ? '' : `background:${pickerColorFor(g.name)}`}">${pickerThumbHtml(g) || escapeHtml(pickerInitials(g.name))}</div>
-                        ${bulk ? `<div class="game-picker-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>` : ''}
                         <span>${escapeHtml(g.name)}${typeof g.count === 'number' ? ` <span style="opacity:.6;">(${g.count})</span>` : ''}</span>
                     </div>`).join('');
             }
@@ -14620,44 +13454,8 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         document.getElementById('game-picker-grid').addEventListener('click', (e) => {
             const card = e.target.closest('.game-picker-card');
             if (!card) return;
-            if (fazerCardBulkMode && gamePickerKind() === 'fazercard') {
-                toggleFazerCardBulkSelection(card);
-                return;
-            }
             selectGamePickerItem(card.dataset.code || '', card.dataset.name || '');
         });
-
-        // Flips one card's checkbox state in place (no full grid re-render,
-        // so the scroll position holds on a long catalogue like FazerCards'
-        // 300+ regions) and keeps the footer's count/button in sync.
-        function toggleFazerCardBulkSelection(card) {
-            const code = card.dataset.code || '';
-            if (!code) return;
-            if (fazerCardBulkSelected.has(code)) {
-                fazerCardBulkSelected.delete(code);
-                card.classList.remove('bulk-selected');
-            } else {
-                fazerCardBulkSelected.add(code);
-                card.classList.add('bulk-selected');
-            }
-            const n = fazerCardBulkSelected.size;
-            document.getElementById('fazercard-bulk-count').innerText = n === 1 ? '1 selected' : `${n} selected`;
-            document.getElementById('fazercard-bulk-import-btn').disabled = n === 0;
-        }
-
-        // Toggles the FazerCards picker between its normal single-pick mode
-        // and bulk-select mode (checkboxes + an "Import Selected" footer).
-        function toggleFazerCardBulkMode() {
-            fazerCardBulkMode = !fazerCardBulkMode;
-            fazerCardBulkSelected = new Set();
-            document.getElementById('game-picker-bulk-toggle-btn').innerText = fazerCardBulkMode ? 'Cancel Multiple' : 'Select Multiple';
-            document.getElementById('fazercard-bulk-bar').style.display = fazerCardBulkMode ? 'flex' : 'none';
-            document.getElementById('fazercard-bulk-count').innerText = '0 selected';
-            document.getElementById('fazercard-bulk-import-btn').disabled = true;
-            renderGamePickerGrid(document.getElementById('game-picker-search').value);
-        }
-        window.toggleFazerCardBulkMode = toggleFazerCardBulkMode;
-
         function selectGamePickerItem(code, name) {
             const kind = gamePickerKind();
             const codeEl = document.getElementById(gamePickerFieldId(kind));
@@ -14668,28 +13466,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // never overwritten.
             const nameInput = document.getElementById('edit-game-name');
             const serverNameInput = document.getElementById('edit-game-server-name');
-            // FazerCards' catalogue names region/server variants of the same
-            // game as separate items with the region in parentheses - e.g.
-            // "Free Fire (BD)", "Free Fire (MY/SG)". Splitting that into
-            // Game Name "Free Fire" + Server Name "BD"/"MY/SG" (instead of
-            // dumping the whole "Free Fire (BD)" string into Game Name) lets
-            // these line up with the existing server-variant grouping (same
-            // Game Name -> shown as one card in the store, servers picked
-            // inside) instead of each region becoming its own separate game
-            // card. Only applies when both fields are still empty, same
-            // don't-overwrite rule as the plain fill below.
-            const regionMatch = kind === 'fazercard' && name ? name.match(/^(.*?)\s*\(([^)]+)\)\s*$/) : null;
-            if (code && regionMatch && !nameInput.value.trim() && serverNameInput && !serverNameInput.value.trim()) {
-                nameInput.value = regionMatch[1].trim();
-                serverNameInput.value = regionMatch[2].trim();
-                // Soft-lock: the split above only works because Game Name
-                // exactly matches every sibling region's split name — an
-                // accidental retype here would silently break the store's
-                // server-variant grouping for this game, so lock it as
-                // readonly right after the auto-fill (unlock button stays
-                // available for a deliberate manual change).
-                lockGameNameField();
-            } else if (code && !nameInput.value.trim()) {
+            if (code && !nameInput.value.trim()) {
                 nameInput.value = name;
             }
 
@@ -14697,7 +13474,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // the same "fill it in for you" treatment as the name field
             // above — but only when no image has been set yet, so an admin's
             // own uploaded photo is never overwritten.
-            if ((kind === 'g2bulk' || kind === 'voucher' || kind === 'fazercard_giftcard') && code) {
+            if ((kind === 'g2bulk' || kind === 'voucher') && code) {
                 const match = gamePickerItems.find(g => g.code === code);
                 const preview = document.getElementById('edit-game-preview');
                 if (match && match.image && preview.style.display !== 'block') {
@@ -14713,8 +13490,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             refreshPickerButton(kind);
             if (kind === 'g2bulk') onG2BulkGameChange();
             if (kind === 'voucher') onVoucherCategoryChange();
-            if (kind === 'fazercard') onFazerCardGameChange();
-            if (kind === 'fazercard_giftcard') onFazerCardGiftCardCategoryChange();
             // Whichever subtab the pick was made from, make sure the outer
             // fulfillment-provider tab bar matches it - so the right section
             // (and its own picker button) is showing once the modal closes,
@@ -14843,7 +13618,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 // Check /v1/games/fields for whether this game needs a
                 // server id, and auto-set "Requires Server ID" from the
                 // answer instead of leaving it to the admin - same
-                // on-when-needed/off-when-not behavior as the FazerCards
+                // on-when-needed/off-when-not behavior as the other provider
                 // import above.
                 try {
                     const fieldsRes = await fetch('https://api.g2bulk.com/v1/games/fields', {
@@ -14921,240 +13696,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             }
         }
         window.importG2BulkCatalogue = importG2BulkCatalogue;
-
-        // Debug-only check: calls FazerCards' /topups/offers for whatever
-        // category is currently linked and dumps the raw fields array (the
-        // part that decides free-text vs dropdown) into the status
-        // paragraph, without touching the package list the way a full
-        // import does.
-        async function debugFazerCardServerCheck() {
-            const categoryId = document.getElementById('edit-game-fazercard-category').value;
-            if (!categoryId) return;
-            const statusEl = document.getElementById('fazercard-import-status');
-            const btn = document.getElementById('fazercard-debug-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Checking...';
-            statusEl.style.color = 'var(--text-muted)';
-            statusEl.innerText = 'Checking FazerCards API for "' + categoryId + '"...';
-            try {
-                const data = await fazercardRequest('/topups/offers', { params: { category_id: categoryId } });
-                console.log('[Debug] FazerCards /topups/offers:', data);
-                const dropdown = detectFazerCardServerDropdown(data.fields || []);
-                statusEl.style.color = 'var(--accent)';
-                statusEl.innerText = `fields → ${JSON.stringify(data.fields || [], null, 2)}\n\nDetected: ${dropdown.mode === 'select' ? `dropdown (${dropdown.options.length} options)` : 'free-text (no fixed list found)'}`;
-            } catch (error) {
-                console.error('[Debug] FazerCards server check error:', error);
-                statusEl.style.color = 'var(--danger-strong)';
-                statusEl.innerText = 'Debug check failed: ' + error.message;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.debugFazerCardServerCheck = debugFazerCardServerCheck;
-
-        // Fetches the live FazerCards offers for the selected game top-up
-        // category and pre-fills the packages list, converted to MMK using
-        // the saved FazerCards USD rate — same re-import-safe matching (by
-        // offer_id this time) as importG2BulkCatalogue above.
-        async function importFazerCardCatalogue() {
-            const categoryId = document.getElementById('edit-game-fazercard-category').value;
-            if (!categoryId) return;
-            const statusEl = document.getElementById('fazercard-import-status');
-            const btn = document.getElementById('fazercard-import-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Importing...';
-            statusEl.innerText = '';
-
-            try {
-                const data = await fazercardRequest('/topups/offers', { params: { category_id: categoryId } });
-                const rate = FAZERCARD_SETTINGS.usdRate || 4500;
-                const offers = data.offers || [];
-
-                const rowByOfferId = new Map();
-                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
-                    const key = row.querySelector('.pkg-fazercard').value.trim();
-                    if (key) rowByOfferId.set(key, row);
-                });
-
-                let updatedCount = 0, addedCount = 0; const newItems = [];
-                offers.forEach(o => {
-                    const cost = Math.round(Number(o.price_usd) * rate);
-                    const existingRow = rowByOfferId.get(o.offer_id);
-                    if (existingRow) {
-                        const costInput = existingRow.querySelector('.pkg-cost');
-                        costInput.value = cost;
-                        updatePackageProfit(costInput);
-                        updatedCount++;
-                    } else {
-                        newItems.push({ name: o.name, price: autoPriceForCost(cost), args: [o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', o.offer_id] });
-                    }
-                });
-                addedCount = await addImportedRows(newItems, 'packages');
-
-                // The fields FazerCards needs at order time (e.g. player_id,
-                // sometimes zone_id/server_id too) come back on the offers
-                // response, not per-package - stash them so saveGame can
-                // persist them onto the game doc as fazercardFields, which
-                // placeFazerCardOrder (admin-side) reads at order time.
-                const fazerFieldDefs = data.fields || [];
-                pendingFazerCardFields = fazerFieldDefs.map(f => f.key);
-                console.log('FazerCards /topups/offers fields for', categoryId, ':', fazerFieldDefs);
-
-                const fazerDropdown = detectFazerCardServerDropdown(fazerFieldDefs);
-                pendingFazerCardServerMode = fazerDropdown.mode;
-                pendingFazerCardServerOptions = fazerDropdown.options;
-
-                // Auto-set "Requires Server ID" straight from those fields
-                // instead of leaving it to the admin to notice and flip
-                // manually - on when FazerCards actually asks for a
-                // server/zone value for this game, off when it doesn't. Same
-                // regex + same bidirectional set as the bulk importer
-                // (runFazerCardBulkImport) below, so single-game and bulk
-                // imports behave identically.
-                const fazerNeedsServerIdField = pendingFazerCardFields.some(k => /server|zone/i.test(k));
-                // Same fix as G2Bulk's import above - Requires Player ID was
-                // never auto-enabled here, so the Requires Server ID row
-                // (hidden until Player ID is on) never actually became
-                // visible after this ran.
-                document.getElementById('edit-game-playerid').checked = true;
-                onPlayerIdRequiredToggle();
-                document.getElementById('edit-game-serverid').checked = fazerNeedsServerIdField;
-
-                statusEl.style.color = 'var(--accent)';
-                statusEl.innerText = (updatedCount
-                    ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} packages ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`)
-                    + (fazerNeedsServerIdField ? '\n✓ "Requires Server ID" auto-enabled for this game.' : '\n✓ "Requires Server ID" auto-disabled — this game doesn\'t need it.')
-                    + (pendingFazerCardServerMode === 'select'
-                        ? `\n✓ Server dropdown detected (${pendingFazerCardServerOptions.length} options).`
-                        : (fazerNeedsServerIdField ? '\nℹ No fixed server list found for this field — Server ID stays free-text (check console log for the raw field shape).' : ''));
-                sortPackageRows();
-                window.showToast('FazerCards catalogue imported ✓', 'success');
-            } catch (error) {
-                console.error("Import FazerCards catalogue error:", error);
-                statusEl.style.color = 'var(--danger-strong)';
-                statusEl.innerText = 'Import failed: ' + error.message;
-                window.showToast('Failed to import catalogue.', 'fail');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.importFazerCardCatalogue = importFazerCardCatalogue;
-
-        // FazerCards names region/server variants of the same game as
-        // separate catalogue items with the region in parentheses - e.g.
-        // "Free Fire (BD)". Splits that into { gameName: "Free Fire",
-        // serverName: "BD" } so bulk-imported games line up with the
-        // existing server-variant grouping; returns null when the name has
-        // no trailing "(...)" to split. Same regex as the single-pick flow
-        // in selectGamePickerItem, pulled out so the bulk importer can use
-        // it too.
-        function splitFazerCardRegionName(name) {
-            const m = (name || '').match(/^(.*?)\s*\(([^)]+)\)\s*$/);
-            return m ? { gameName: m[1].trim(), serverName: m[2].trim() } : null;
-        }
-
-        // Confirms and kicks off a bulk import for every FazerCards
-        // catalogue entry currently ticked in the picker (see
-        // toggleFazerCardBulkMode / toggleFazerCardBulkSelection). Skips any
-        // selection already linked to an existing game so re-running this
-        // after a partial manual add never creates a duplicate.
-        function importSelectedFazerCardGames() {
-            if (fazerCardBulkSelected.size === 0) return;
-            const items = gamePickerItems.filter(g => fazerCardBulkSelected.has(g.code));
-            const alreadyLinked = new Set(Object.values(GAMES).map(g => g.fazercardCategoryId).filter(Boolean));
-            const toImport = items.filter(g => !alreadyLinked.has(g.code));
-            const skippedLinked = items.length - toImport.length;
-
-            if (toImport.length === 0) {
-                window.showToast('All selected games are already linked.', 'fail');
-                return;
-            }
-
-            window.showActionDialog({
-                type: 'warning',
-                title: `Import ${toImport.length} Game${toImport.length === 1 ? '' : 's'}?`,
-                message: `Each becomes its own new game with packages imported from FazerCards at cost (no markup yet, no price cards shared between them) — set Price and check each game's image before it goes live.${skippedLinked ? ` ${skippedLinked} already-linked selection${skippedLinked === 1 ? '' : 's'} will be skipped.` : ''}`,
-                confirmText: 'Import',
-                onConfirm: () => runFazerCardBulkImport(toImport)
-            });
-        }
-        window.importSelectedFazerCardGames = importSelectedFazerCardGames;
-
-        // Creates one new "games" doc per selected FazerCards catalogue
-        // entry, each with its own freshly-imported packages (Price defaults
-        // to Cost, same as the single-game importFazerCardCatalogue above) -
-        // sequential with a short stagger so it doesn't hammer FazerCards'
-        // API, and each game's packages stay in that game's own doc so nothing
-        // gets mixed between games.
-        async function runFazerCardBulkImport(items) {
-            const btn = document.getElementById('fazercard-bulk-import-btn');
-            const countEl = document.getElementById('fazercard-bulk-count');
-            btn.disabled = true;
-            const rate = FAZERCARD_SETTINGS.usdRate || 4500;
-            let added = 0, failed = 0;
-            const failedNames = [];
-
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                countEl.innerText = `Importing ${i + 1}/${items.length}: ${item.name}`;
-                try {
-                    const data = await fazercardRequest('/topups/offers', { params: { category_id: item.code } });
-                    const offers = data.offers || [];
-                    if (offers.length === 0) { failed++; failedNames.push(item.name + ' (no offers)'); continue; }
-                    if (!item.image) { failed++; failedNames.push(item.name + ' (no image)'); continue; }
-
-                    const packages = offers.map(o => {
-                        const cost = Math.round(Number(o.price_usd) * rate);
-                        return { amount: o.name, cost, price: cost, g2bulk: '', jcplays: '', voucherId: '', fazercardOfferId: o.offer_id, image: '', type: 'currency', tab: 'currency' };
-                    });
-                    const fieldKeys = (data.fields || []).map(f => f.key);
-                    const fazerDropdown = detectFazerCardServerDropdown(data.fields || []);
-                    const split = splitFazerCardRegionName(item.name);
-
-                    const gameData = {
-                        name: split ? split.gameName : item.name,
-                        serverName: split ? split.serverName : '',
-                        image: item.image,
-                        banner: item.image,
-                        packages,
-                        packageTabs: [],
-                        packageTabLabels: { package: 'Package', currency: 'Currency' },
-                        g2bulkCode: '', jcplaysProduct: '', g2bulkVoucherCategory: '',
-                        fazercardCategoryId: item.code,
-                        fazercardFields: fieldKeys,
-                        fazercardServerMode: fazerDropdown.mode || '',
-                        fazercardServerOptions: fazerDropdown.options || [],
-                        g2bulkIdCheckCode: '',
-                        fulfillProvider: 'fazercard',
-                        category: '', description: '', popular: false,
-                        playerIdRequired: true,
-                        serverIdRequired: fieldKeys.some(k => /server|zone/i.test(k))
-                    };
-
-                    await addDoc(collection(db, "games"), gameData);
-                    added++;
-                } catch (error) {
-                    console.error('Bulk FazerCards import error for', item.name, error);
-                    failed++;
-                    failedNames.push(item.name);
-                }
-                await new Promise(r => setTimeout(r, 400)); // stagger calls, don't hammer FazerCards' API
-            }
-
-            countEl.innerText = `${added} imported${failed ? `, ${failed} failed` : ''}`;
-            window.showToast(`Imported ${added} game${added === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''} ✓`, (failed && !added) ? 'fail' : 'success');
-            if (failedNames.length) console.warn('FazerCards bulk import failures:', failedNames);
-
-            fazerCardBulkSelected = new Set();
-            toggleFazerCardBulkMode();
-            closeGamePicker();
-            if (added > 0) closeGameEditor();
-        }
 
         // ---------- G2Bulk Giftcards & Vouchers import ----------
         // Separate part of G2Bulk's catalog from the Games list above:
@@ -15259,66 +13800,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             }
         }
         window.importG2BulkVoucherCatalogue = importG2BulkVoucherCatalogue;
-
-        // Fetches the live card/offer list for the selected FazerCards Gift
-        // Card category and pre-fills package rows - mirrors
-        // importG2BulkVoucherCatalogue above exactly, just sourced from
-        // GET /api/v2/giftcards/cards?category_id=... instead of G2Bulk's
-        // category endpoint. Matched by card_id on re-import (only Cost is
-        // refreshed); unmatched cards get appended as new rows.
-        async function importFazerCardGiftCardCatalogue() {
-            const categoryId = document.getElementById('edit-game-fazercard-giftcard-category').value;
-            if (!categoryId) return;
-            const statusEl = document.getElementById('fazercard-giftcard-import-status');
-            const btn = document.getElementById('fazercard-giftcard-import-btn');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Importing...';
-            statusEl.innerText = '';
-
-            try {
-                const data = await fazercardRequest('/giftcards/cards', { params: { category_id: categoryId } });
-                const rate = FAZERCARD_SETTINGS.usdRate || 4500;
-                const offers = data.offers || [];
-
-                const rowByCardId = new Map();
-                Array.from(document.querySelectorAll('#edit-packages-list .package-row')).forEach(row => {
-                    const key = row.querySelector('.pkg-fazercard-giftcard-id').value.trim();
-                    if (key) rowByCardId.set(key, row);
-                });
-
-                let updatedCount = 0, addedCount = 0; const newItems = [];
-                offers.forEach(o => {
-                    const cost = Math.round(Number(o.price_usd) * rate);
-                    const existingRow = rowByCardId.get(o.card_id);
-                    if (existingRow) {
-                        const costInput = existingRow.querySelector('.pkg-cost');
-                        costInput.value = cost;
-                        updatePackageProfit(costInput);
-                        updatedCount++;
-                    } else {
-                        newItems.push({ name: o.name, price: autoPriceForCost(cost), args: [o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', '', o.card_id] });
-                    }
-                });
-                addedCount = await addImportedRows(newItems, 'cards');
-
-                statusEl.style.color = 'var(--accent)';
-                statusEl.innerText = updatedCount
-                    ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Card အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
-                    : `Imported ${addedCount} cards ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`;
-                sortPackageRows();
-                window.showToast('FazerCards gift card catalogue imported ✓', 'success');
-            } catch (error) {
-                console.error("Import FazerCards gift card catalogue error:", error);
-                statusEl.style.color = 'var(--danger-strong)';
-                statusEl.innerText = 'Import failed: ' + error.message;
-                window.showToast('Failed to import catalogue.', 'fail');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        }
-        window.importFazerCardGiftCardCatalogue = importFazerCardGiftCardCatalogue;
 
         // ---------- Voucher live stock auto-refresh (admin editor) ----------
         // Mirrors the customer-side "X left" badge in Store.html: pulls each
@@ -15635,7 +14116,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     off.length ? `${off.length} game(s) have Auto Update OFF (skipped by auto sync): ${off.slice(0, 8).map(g => g.name + (g.serverName ? ' · ' + g.serverName : '')).join(', ')}${off.length > 8 ? '…' : ''}` : 'All games have Auto Update ON.');
                 const rate = G2BULK_SETTINGS.usdRate || 4500;
                 const isVoucher = g => g.fulfillProvider === 'g2bulk_voucher';
-                const isFazer = g => g.fulfillProvider === 'fazercard_giftcard' || g.fulfillProvider === 'fazercard' || g.fazercardCategoryId || g.fazercardGiftCategoryId;
                 const nm = g => g.name + (g.serverName ? ' · ' + g.serverName : '');
 
                 // --- G2Bulk (direct top-up) ---
@@ -15717,9 +14197,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                     add(fail ? 'bad' : 'ok', `JCPlays (${Math.min(SAMPLE, jc.length)} of ${jc.length} sampled)`,
                         (fail ? `${fail} request(s) FAILED — ${firstErr}. ` : 'Provider answered OK. ') + (ok ? `${stale} of ${linked} linked Cost(s) differ from live price.` : ''));
                 }
-
-                const fz = games.filter(isFazer);
-                if (fz.length) add('info', 'FazerCards', `${fz.length} linked game(s) — not tested from this page.`);
 
                 // --- verdict ---
                 let verdict, vstate;
@@ -16159,7 +14636,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 statusEl.innerText = updatedCount
                     ? `Cost ${updatedCount} ခု update လုပ်ပြီး, Package အသစ် ${addedCount} ခု ထည့်ပြီးပါပြီ ✓ — Price/Image/နေရာ မပြောင်းလဲပါ။`
                     : `Imported ${addedCount} packages ✓ — Cost & Price (~3% margin) filled in automatically; adjust if needed before saving.`;
-                // Same auto-sort as G2Bulk/FazerCards/Voucher imports above, so
+                // Same auto-sort as G2Bulk/Voucher imports above, so
                 // newly-imported denominations land smallest-to-largest too.
                 sortPackageRows();
                 window.showToast('JCPlays denominations imported ✓', 'success');
@@ -16492,7 +14969,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const wantVoucher = gameListTab === 'voucher';
             const seen = new Map(); // game name -> one representative doc for its basics
             Object.values(GAMES || {}).forEach(g => {
-                const isVoucher = g.fulfillProvider === 'g2bulk_voucher' || g.fulfillProvider === 'fazercard_giftcard';
+                const isVoucher = g.fulfillProvider === 'g2bulk_voucher';
                 if (isVoucher !== wantVoucher) return;
                 if (!seen.has(g.name)) seen.set(g.name, g);
             });
@@ -16568,7 +15045,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // that default logic changes later.
             setFulfillProvider(wantVoucher ? 'g2bulk_voucher' : 'manual');
             document.getElementById('edit-game-name').value = base.name || '';
-            // Same soft-lock as the FazerCards region split: this flow only
+            // Same soft-lock as a region split: this flow only
             // works if Game Name matches the base game exactly, so lock it
             // right after pre-filling to prevent an accidental retype.
             lockGameNameField();
@@ -16878,7 +15355,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // than its own settings page depends on, so it can't wait for a
             // page-open the way the ones above can:
             //   - listenBranding    -> header logo, rendered on every page
-            //   - listenG2Bulk/listenJCPlays/listenFazerCard
+            //   - listenG2Bulk/listenJCPlays
             //                       -> auto-fulfillment reads these caches
             //                          from Order List/Game Editor, not just
             //                          from each provider's own settings page
@@ -16967,13 +15444,12 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 if (!document.hidden) sendAdminHeartbeat();
             });
         }
-        // The 3 order-status auto-pollers above skip their work while the
+        // The order-status auto-pollers above skip their work while the
         // panel is backgrounded (document.hidden) so a phone switching apps
         // doesn't keep quietly burning CPU/network every 25s. Catch up once
         // immediately on returning instead of waiting for the next tick.
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) return;
-            autoPollFazerCardOrders();
             autoPollG2BulkOrders();
         });
     </script>
