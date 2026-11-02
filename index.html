@@ -2254,6 +2254,15 @@ html .game-toolbar .btn { height: 38px !important; min-height: 38px !important; 
 html .pkg-actions-row { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-dashed, var(--border-glass)); }
 html #pkg-tab-bar { margin-bottom: 10px; }
 html #edit-packages-list { margin-bottom: 4px; }
+
+/* Package row: the up / number / down column was 3 x 40px (global touch-target min-height), stretching every card to ~107px */
+html .package-row .pkg-order-col { width: 28px; }
+html .package-row .pkg-move-btn { flex: none !important; height: 20px !important; min-height: 0 !important; padding: 0 !important; }
+html .package-row .pkg-drag-handle { flex: none !important; min-height: 0 !important; padding: 2px 0 !important; }
+html .package-row .pkg-row-fields, html .package-row .pkg-summary { min-height: 0 !important; }
+html .package-row .pkg-summary { justify-content: center; }
+/* Edit Game footer (Delete / Save Game) must clear the bottom tab bar */
+html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-nav-h, 76px) + var(--pca-safe-b, 0px) + 24px) !important; }
 </style>
 
 </head>
