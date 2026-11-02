@@ -1723,6 +1723,18 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
 .pca-grid-table td,.pca-grid-table th{border:1px solid var(--border,#d6d9de);padding:7px 10px;text-align:left;vertical-align:top;word-break:break-word}
 .pca-grid-table td:first-child,.pca-grid-table th{width:38%;font-weight:600;color:var(--text-secondary,#5b606a);background:var(--surface-alt,#f4f4f6)}
 .pca-grid-table tr:nth-child(even) td:last-child{background:rgba(127,127,127,.05)}
+/* Game list: one row per game */
+.game-row-list{display:flex;flex-direction:column;gap:8px}
+.game-row{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 8px 8px 10px;border-radius:14px;cursor:pointer;background:var(--surface-strong,var(--surface));border:1px solid var(--border-glass);-webkit-tap-highlight-color:transparent}
+.game-row:active{background:var(--fill-soft)}
+.game-row-img{width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--bg-subtle)}
+.game-row-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.game-row-name{font-size:14.5px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-row-sub{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-row-del{width:38px;height:38px;min-height:0 !important;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:var(--danger);cursor:pointer;padding:0}
+.game-row-del .ui-icon{width:18px;height:18px;stroke:var(--danger)}
+.game-row-del:active{background:var(--fill-soft)}
+.game-row-chev{width:16px;height:16px;flex-shrink:0;color:var(--text-muted);stroke:var(--text-muted)}
 </style>
 <script id="pca-spin-js">
 /* Any button whose text turns into "Saving..." / "Updating..." / "Checking..." etc. shows a spinner instead. */
@@ -1867,6 +1879,108 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
     .pca-more-tile.is-current { background: rgba(var(--accent-rgb),.18) !important; }
 }
 
+</style>
+<style id="pca-tidy">
+/* ==========================================================================
+   Tidy + fast pass (loaded last, wins over earlier layers)
+   - bottom bar = 7 equal normal tabs (no "More" grid page)
+   - no backdrop-filter / heavy shadows / infinite animations on phones
+   - tabs and buttons share one size
+   ========================================================================== */
+:root { --glass-filter: blur(12px); }
+
+/* Segmented tab rows instead of big icon grids (Game list, User detail) */
+.game-list-tabs, .udp-tabs {
+    display: flex !important; flex-direction: row; gap: 6px; padding: 6px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.game-list-tabs::-webkit-scrollbar, .udp-tabs::-webkit-scrollbar { display: none; }
+.game-list-tab-btn, .udp-tab {
+    flex: 1 0 auto; display: inline-flex !important; flex-direction: row !important; align-items: center; justify-content: center;
+    gap: 6px !important; min-height: 42px; padding: 8px 14px !important; border-radius: 12px !important;
+    font-size: 13px !important; line-height: 1.2 !important; white-space: nowrap !important;
+}
+.game-list-tab-btn .ui-icon, .udp-tab .ui-icon { width: 18px !important; height: 18px !important; }
+
+@media (max-width: 899.98px) {
+    :root { --pca-nav-h: 58px; --pca-pop-bottom: calc(var(--pca-safe-b) + 66px); }
+
+    /* ---- no blur anywhere on phones (this was the main source of jank) ---- */
+    html .header, html .top-nav, .modal-box, .dialog-box, .od-card, .modal-overlay, .dialog-overlay,
+    #pca-more-overlay .modal-box, #nav-group-sheet-overlay .modal-box, #nav-group-sheet-overlay .modal-box::before,
+    #toast, .login-box, .admin-card, .stat-chip, .user-grid-card {
+        -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    }
+    .header-flame, .header-flame *, .clock-colon, .live-dot, .login-mesh, .login-mesh * { animation: none !important; }
+
+    /* ---- header: solid, light shadow ---- */
+    html .header {
+        background: var(--surface-strong) !important;
+        box-shadow: 0 1px 0 var(--border-glass) !important;
+        border-radius: 18px !important;
+    }
+
+    /* ---- bottom bar: 7 equal tabs, docked ---- */
+    html .top-nav {
+        display: grid !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        left: 0 !important; right: 0 !important; bottom: 0 !important; margin: 0 !important;
+        padding: 4px 2px calc(4px + var(--pca-safe-b)) !important; gap: 0 !important;
+        border-radius: 0 !important; border: 0 !important; border-top: 1px solid var(--border-glass) !important;
+        background: var(--surface-strong) !important; box-shadow: none !important;
+    }
+    #group-game, #group-api, #group-setting, #group-orders, #group-userlist, #group-wallet, #group-dashboard { display: flex !important; }
+    #group-more { display: none !important; }
+    html .top-nav .nav-item {
+        min-height: 50px !important; height: 50px; padding: 6px 0 3px !important; gap: 3px !important;
+        justify-content: center; align-items: center; flex-direction: column;
+        font-size: 10px !important; border-radius: 12px !important; overflow: hidden;
+        transition: color .15s ease !important;
+    }
+    html .top-nav .nav-item:active { transform: none; background: var(--fill-soft) !important; }
+    html .top-nav .nav-item .ui-icon { width: 22px !important; height: 22px !important; transition: none !important; transform: none !important; }
+    html .top-nav .nav-item .nav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.1; }
+    html .top-nav .nav-item .nav-label[data-short] { font-size: 0 !important; }
+    html .top-nav .nav-item .nav-label[data-short]::after { content: attr(data-short); font-size: 10px; }
+    html .top-nav .nav-item::before { top: 3px; width: 40px; height: 28px; border-radius: 14px; transform: translateX(-50%) !important; transition: opacity .15s ease !important; }
+    html .top-nav .nav-item.active::before { opacity: 1; }
+    html .top-nav .nav-item .nav-item-low-balance-dot { top: 6px; right: calc(50% - 16px); }
+    .nav-badge { left: calc(50% + 4px); }
+    body.pca-kb-open .top-nav { transform: translate3d(0, 110%, 0) !important; }
+    .app-layout { padding-bottom: calc(var(--pca-nav-h) + var(--pca-safe-b) + 14px) !important; }
+    .order-bulk-bar.show, .order-bulk-bar.active, .order-bulk-bar[style*="flex"] { bottom: calc(var(--pca-nav-h) + var(--pca-safe-b) + 8px) !important; }
+
+    /* ---- nav popover: opaque list, short fade ---- */
+    #nav-group-sheet-overlay { background: rgba(15,23,42,.3) !important; }
+    #nav-group-sheet-overlay .modal-box {
+        background: var(--pca-sheet) !important; box-shadow: 0 8px 24px -8px rgba(0,0,0,.35) !important;
+        border-radius: 18px !important; padding: 12px !important;
+        transform: translateY(8px) !important; transition: transform .16s ease, opacity .14s ease !important;
+    }
+    #nav-group-sheet-overlay .modal-box::before { background: var(--pca-sheet) !important; }
+    #nav-group-sheet-overlay.show .modal-box { transform: none !important; }
+    #nav-group-sheet-list { gap: 8px !important; }
+    .ng-tile { min-height: 48px; padding: 8px 12px 8px 8px !important; border-radius: 12px !important; }
+    .ng-tile:active { transform: none; }
+
+    /* ---- sheets: cheaper open/close ---- */
+    .modal-box { transition: transform .2s ease !important; }
+    .od-card { animation-duration: .18s !important; }
+    .page-section { animation-duration: .12s !important; }
+
+    /* ---- one button size ---- */
+    .btn:not(.pca-keep-size) {
+        min-height: 44px; padding: 10px 14px !important; font-size: 14px !important; line-height: 1.2;
+        border-radius: 12px; box-sizing: border-box;
+    }
+    .btn:not(.pca-keep-size):active { transform: none; filter: brightness(.95); }
+    .modal-close, .od-card-close, .header .header-icon { width: 40px !important; height: 40px !important; }
+
+    /* cheaper cards: no big shadows on long lists */
+    .admin-card, .stat-chip, .user-grid-card { box-shadow: none !important; border: 1px solid var(--border-glass); }
+}
+@media (min-width: 900px) {
+    #group-more { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -2179,7 +2293,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
     <!-- Top Navigation (sits under the header) -->
     <nav class="top-nav" id="admin-top-nav">
         <div class="nav-item active" id="group-dashboard" onclick="openNavGroupSheet('dashboard')">
-            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> <span class="nav-label">Dashboard</span>
+            <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> <span class="nav-label" data-short="Home">Dashboard</span>
         </div>
         <div class="nav-item" id="group-orders" onclick="showPage('order-list')">
             <svg class="ui-icon"><use href="#icon-cart"></use></svg> <span class="nav-label">Orders</span>
@@ -2200,11 +2314,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
             <svg class="ui-icon"><use href="#icon-gear"></use></svg> <span class="nav-label">Setting</span>
-        </div>
-        <!-- Phones only (hidden on desktop by CSS): Game, API and Setting live behind this tab -->
-        <div class="nav-item" id="group-more" role="button" onclick="pcaOpenMore()">
-            <svg class="ui-icon"><use href="#icon-grid"></use></svg> <span class="nav-label">More</span>
-            <span class="nav-item-low-balance-dot" id="more-nav-low-dot"></span>
         </div>
     </nav>
 
@@ -2470,6 +2579,8 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 </div>
                 <div id="autoprice-body" style="display:none;margin-top:12px;">
                     <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Worker က ၄ နာရီခြားတစ်ခါ (Yangon 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00) G2Bulk / JCPlays / Voucher / FazerCards ရဲ့ Cost ကို auto update လုပ်ပေးပါတယ်။ Game အားလုံးကို တစ်ပြိုင်တည်းမလုပ်ဘဲ cron tick တစ်ခုစီမှာ အနည်းငယ်ချင်း ခွဲလုပ်ပြီး request limit (50) ထဲမှာပဲနေပါတယ်။ Store မှာတင်ထားတဲ့ game တွေထဲက Cost ပြောင်းသွားတဲ့ package ရဲ့ Price ကိုပါ Resync margin % (ဒဿမ 1.25 စသဖြင့် ရ) အတိုင်း auto ပြန်ချိန်ပေးပါတယ်။ Telegram ကို cycle တစ်ခုကို summary တစ်ခါပဲ ပို့ပါတယ်။</p>
+                    <button type="button" class="btn btn-outline" id="cost-diag-btn" style="width:100%;margin-top:10px;" onclick="runCostDiagnostics(this)">Check why costs aren't updating</button>
+                    <div id="cost-diag-result" style="margin-top:10px;"></div>
                 </div>
             </div>
 
@@ -8924,7 +9035,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         function showGamesSkeleton(container) {
             container = container || document.getElementById('admin-games-container');
             if (!container) return;
-            container.innerHTML = '<div class="game-image-grid">' + '<div class="game-skel-tile"></div>'.repeat(12) + '</div>';
+            container.innerHTML = '<div class="pca-skel-wrap">' + '<div class="pca-skel-row"></div>'.repeat(8) + '</div>';
         }
         function renderAdminGamesListImpl() {
             const container = document.getElementById('admin-games-container');
@@ -8969,16 +9080,24 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 });
             })();
 
-            container.innerHTML = `<div class="game-image-grid">` + visibleIds.map(id => {
+            // Row list: tap a row to go straight into that game's page; the
+            // trash button on the right deletes (with the usual confirm dialog).
+            container.innerHTML = `<div class="game-row-list">` + visibleIds.map(id => {
                 const g = GAMES[id];
                 const variantCount = nameCounts[g.name] || 1;
-                const countBadge = variantCount > 1
-                    ? `<span class="game-variant-count-badge" title="${variantCount} server/region variants">${variantCount}</span>`
-                    : '';
+                const showVariants = !gameListEditMode && variantCount > 1;
+                const sub = showVariants
+                    ? `${variantCount} servers`
+                    : (g.serverName ? `🌐 ${escapeHtml(g.serverName)}` : `${(g.packages || []).length} packages`);
                 return `
-                    <div class="game-image-tile" id="game-card-${id}" onclick="openGameActionSheet('${id}')">
-                        ${countBadge}
-                        <img src="${g.image}" loading="lazy" decoding="async" alt="${escapeHtml(g.name)}">
+                    <div class="game-row" id="game-card-${id}" role="button" onclick="openGameEditor('${id}')">
+                        <img class="game-row-img" src="${escapeHtml(g.image || '')}" loading="lazy" decoding="async" alt="">
+                        <div class="game-row-info">
+                            <span class="game-row-name">${escapeHtml(g.name)}</span>
+                            <span class="game-row-sub">${sub}</span>
+                        </div>
+                        <button type="button" class="game-row-del pca-keep-size" aria-label="Delete" onclick="event.stopPropagation(); deleteGame('${id}')"><svg class="ui-icon"><use href="#icon-trash"></use></svg></button>
+                        <svg class="ui-icon game-row-chev"><use href="#icon-chevron-right"></use></svg>
                     </div>
                 `;
             }).join('') + `</div>`;
@@ -9018,6 +9137,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             if (id) deleteGame(id);
         }
         window.deleteGameFromSheet = deleteGameFromSheet;
+        window.deleteGame = (id) => deleteGame(id);
 
         // ---------- Auto-fix loss-making packages (Price <= Cost) ----------
         // Separate from the live-cost scan above (that one only reacts when the
@@ -13639,6 +13759,19 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             return div.innerHTML;
         }
 
+        // Null-safe escape used by the order / user / top-up list renderers.
+        // (Was referenced but never defined -> ReferenceError -> lists stuck on skeleton.)
+        function esc(v) {
+            if (v === null || v === undefined) return '';
+            return escapeHtml(String(v));
+        }
+
+        // Small verified badge shown next to users who linked a Google account.
+        function googleVerifiedBadgeHTML(u) {
+            if (!u || !u.googleEmail) return '';
+            return '<svg class="ui-icon" style="width:14px;height:14px;vertical-align:-2px;color:#1d9bf0;" title="Google verified"><use href="#icon-verified-blue"></use></svg>';
+        }
+
         // Small leading icon shown inside a status badge, matching each of the
         // 4 status colors used across Orders/Top Ups/Users (badge-pending =
         // static dashed ring "queued" look, badge-processing = pie/progress
@@ -15073,6 +15206,139 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         }
         window.applyAllCostUpdates = applyAllCostUpdates;
 
+        // ---------- Cost-update diagnostics (Settings -> Auto Cost Update) ----------
+        // The automatic cost sync runs inside the Cloudflare Worker (cron), so this
+        // page can't see it directly. Instead this asks each provider for its LIVE
+        // price right now (sampling a few linked games each) and compares that with
+        // the Cost saved in Firestore. That separates the two possible causes:
+        //   - provider call fails / not configured  -> provider side is the blocker
+        //   - provider answers, saved Cost is older -> the Worker cron isn't applying it
+        //   - provider answers, Cost matches        -> nothing to update
+        async function runCostDiagnostics(btn) {
+            const out = document.getElementById('cost-diag-result');
+            if (!out) return;
+            btn.disabled = true;
+            const label = btn.innerText; btn.innerText = 'Checking…';
+            out.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Checking providers…</p>';
+            const rows = [];
+            const add = (state, title, detail) => rows.push({ state, title, detail });
+            const SAMPLE = 5;
+            let providerOk = 0, providerFail = 0, staleTotal = 0, linkedTotal = 0;
+            try {
+                const games = Object.entries(GAMES || {}).map(([id, g]) => ({ id, ...g }));
+                if (!games.length) { add('warn', 'Games', 'Games list is empty / not loaded yet — open the Game tab first.'); throw 0; }
+                const off = games.filter(g => g.autoUpdate === false);
+                add(off.length ? 'warn' : 'ok', 'Per-game Auto Update switch',
+                    off.length ? `${off.length} game(s) have Auto Update OFF (skipped by auto sync): ${off.slice(0, 8).map(g => g.name + (g.serverName ? ' · ' + g.serverName : '')).join(', ')}${off.length > 8 ? '…' : ''}` : 'All games have Auto Update ON.');
+                const rate = G2BULK_SETTINGS.usdRate || 4500;
+                const isVoucher = g => g.fulfillProvider === 'g2bulk_voucher';
+                const isFazer = g => g.fulfillProvider === 'fazercard_giftcard' || g.fulfillProvider === 'fazercard' || g.fazercardCategoryId || g.fazercardGiftCategoryId;
+                const nm = g => g.name + (g.serverName ? ' · ' + g.serverName : '');
+
+                // --- G2Bulk (direct top-up) ---
+                const g2 = games.filter(g => g.g2bulkCode && !isVoucher(g));
+                if (!g2.length) add('info', 'G2Bulk', 'No G2Bulk-linked games.');
+                else if (G2BULK_SETTINGS.enabled === false) add('warn', 'G2Bulk', 'G2Bulk is switched OFF in its settings.');
+                else {
+                    let ok = 0, fail = 0, stale = 0, linked = 0, firstErr = '';
+                    const staleNames = [];
+                    for (const g of g2.slice(0, SAMPLE)) {
+                        try {
+                            const res = await fetch(`https://api.g2bulk.com/v1/games/${encodeURIComponent(g.g2bulkCode)}/catalogue`);
+                            const data = await res.json();
+                            if (!data.success) throw new Error(data.message || 'success=false');
+                            const live = new Map((data.catalogues || []).map(c => [c.name, Math.round(c.amount * rate)]));
+                            ok++;
+                            let s = 0;
+                            (g.packages || []).forEach(p => {
+                                if (!p.g2bulk || !live.has(p.g2bulk)) return;
+                                linked++;
+                                if (live.get(p.g2bulk) !== (Number(p.cost) || 0)) s++;
+                            });
+                            if (s) { stale += s; staleNames.push(`${nm(g)} (${s})`); }
+                        } catch (e) { fail++; if (!firstErr) firstErr = nm(g) + ': ' + (e.message || e); }
+                    }
+                    providerOk += ok; providerFail += fail; staleTotal += stale; linkedTotal += linked;
+                    add(fail ? 'bad' : 'ok', `G2Bulk (${Math.min(SAMPLE, g2.length)} of ${g2.length} games sampled)`,
+                        (fail ? `${fail} request(s) FAILED — ${firstErr}. ` : 'Provider answered OK. ') +
+                        (ok ? `${stale} of ${linked} linked package Cost(s) differ from live price${staleNames.length ? ': ' + staleNames.join(', ') : ''}.` : ''));
+                }
+
+                // --- G2Bulk vouchers ---
+                const gv = games.filter(g => isVoucher(g) && g.g2bulkVoucherCategory);
+                if (!gv.length) add('info', 'G2Bulk vouchers', 'No voucher games linked.');
+                else {
+                    let ok = 0, fail = 0, stale = 0, linked = 0, firstErr = '';
+                    for (const g of gv.slice(0, SAMPLE)) {
+                        try {
+                            const data = await fetchG2BulkCategoryLive(g.g2bulkVoucherCategory);
+                            if (!data || !data.success) throw new Error((data && data.message) || 'success=false');
+                            const products = data.products || (data.category ? data.category.products : []) || [];
+                            const live = new Map(products.map(p => [String(p.id), Math.round(p.unit_price * rate)]));
+                            ok++;
+                            (g.packages || []).forEach(p => {
+                                const k = String(p.voucherId || '');
+                                if (!k || !live.has(k)) return;
+                                linked++;
+                                if (live.get(k) !== (Number(p.cost) || 0)) stale++;
+                            });
+                        } catch (e) { fail++; if (!firstErr) firstErr = nm(g) + ': ' + (e.message || e); }
+                    }
+                    providerOk += ok; providerFail += fail; staleTotal += stale; linkedTotal += linked;
+                    add(fail ? 'bad' : 'ok', `G2Bulk vouchers (${Math.min(SAMPLE, gv.length)} of ${gv.length} sampled)`,
+                        (fail ? `${fail} request(s) FAILED — ${firstErr}. ` : 'Provider answered OK. ') + (ok ? `${stale} of ${linked} linked Cost(s) differ from live price.` : ''));
+                }
+
+                // --- JCPlays ---
+                const jc = games.filter(g => g.jcplaysProduct);
+                if (!jc.length) add('info', 'JCPlays', 'No JCPlays-linked games.');
+                else if (JCPLAYS_SETTINGS.enabled === false) add('warn', 'JCPlays', 'JCPlays is switched OFF in its settings.');
+                else if (!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey || !JCPLAYS_SETTINGS.proxyUrl) {
+                    add('bad', 'JCPlays', 'Credentials or Proxy URL missing in JCPlays settings.'); providerFail++;
+                } else {
+                    let ok = 0, fail = 0, stale = 0, linked = 0, firstErr = '';
+                    for (const g of jc.slice(0, SAMPLE)) {
+                        try {
+                            const data = await jcplaysRequest('productlist', { product: g.jcplaysProduct });
+                            if (data.status !== 200) throw new Error(data.message || `status ${data.status}`);
+                            const live = new Map(((data.data && data.data.product) || []).map(r => [String(r.id), Math.round(Number(r.price) * rate)]));
+                            ok++;
+                            (g.packages || []).forEach(p => {
+                                if (!p.jcplays || !live.has(String(p.jcplays))) return;
+                                linked++;
+                                if (live.get(String(p.jcplays)) !== (Number(p.cost) || 0)) stale++;
+                            });
+                        } catch (e) { fail++; if (!firstErr) firstErr = nm(g) + ': ' + (e.message || e); }
+                    }
+                    providerOk += ok; providerFail += fail; staleTotal += stale; linkedTotal += linked;
+                    add(fail ? 'bad' : 'ok', `JCPlays (${Math.min(SAMPLE, jc.length)} of ${jc.length} sampled)`,
+                        (fail ? `${fail} request(s) FAILED — ${firstErr}. ` : 'Provider answered OK. ') + (ok ? `${stale} of ${linked} linked Cost(s) differ from live price.` : ''));
+                }
+
+                const fz = games.filter(isFazer);
+                if (fz.length) add('info', 'FazerCards', `${fz.length} linked game(s) — not tested from this page.`);
+
+                // --- verdict ---
+                let verdict, vstate;
+                if (providerFail && !providerOk) { vstate = 'bad'; verdict = 'Provider calls are failing → the provider side (API / key / proxy) is what blocks cost updates.'; }
+                else if (providerFail) { vstate = 'warn'; verdict = 'Some provider calls failed (see above) — those providers can\'t be updated until they respond.'; }
+                else if (providerOk && staleTotal > 0) { vstate = 'warn'; verdict = `Providers answer fine and ${staleTotal} saved Cost(s) are out of date → the provider is NOT the problem. The automatic sync (Cloudflare Worker cron) hasn't applied them yet: check the Worker cron/logs, or that game's Auto Update switch. (It updates in small batches per tick, so a few may simply be waiting their turn.)`; }
+                else if (providerOk) { vstate = 'ok'; verdict = 'Providers answer fine and the sampled Costs already match live prices → nothing is blocked; there was just nothing to update.'; }
+                else { vstate = 'warn'; verdict = 'No provider could be tested (no linked games).'; }
+                rows.push({ state: vstate, title: 'Result', detail: verdict, verdict: true });
+            } catch (e) {
+                if (e) { console.error('Cost diagnostics error:', e); add('bad', 'Diagnostics error', String(e.message || e)); }
+            }
+            const color = { ok: '#00A843', bad: '#E60000', warn: '#C25400', info: 'var(--text-muted)' };
+            const mark = { ok: '✓', bad: '✕', warn: '!', info: '•' };
+            out.innerHTML = rows.map(r => `<div style="display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--border-glass);${r.verdict ? 'font-weight:600;' : ''}">` +
+                `<span style="color:${color[r.state]};font-weight:700;width:14px;flex-shrink:0;">${mark[r.state]}</span>` +
+                `<div style="min-width:0;font-size:12.5px;line-height:1.5;"><div style="font-weight:600;color:var(--text-primary);">${escapeHtml(r.title)}</div>` +
+                `<div style="color:${r.verdict ? color[r.state] : 'var(--text-secondary)'};overflow-wrap:anywhere;">${escapeHtml(r.detail)}</div></div></div>`).join('');
+            btn.disabled = false; btn.innerText = label;
+        }
+        window.runCostDiagnostics = runCostDiagnostics;
+
         // Copies every package's Currency (amount) + Price as plain text,
         // one per line, deliberately leaving Cost out since that's wholesale
         // and never meant to leave this panel. Handy for pasting a full
@@ -16342,7 +16608,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         if (syncing) return; syncing = true;
         var page = document.querySelector('.page-section.active');
         var id = page ? page.id : 'dashboard';
-        var target = isMobile() ? (MOBILE_TAB[id] || 'group-more') : (DESKTOP_TAB[id] || null);
+        var target = DESKTOP_TAB[id] || null;
         document.querySelectorAll('#admin-top-nav .nav-item').forEach(function (n) {
             n.classList.toggle('active', n.id === target);
         });
