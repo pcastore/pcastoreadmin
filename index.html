@@ -636,7 +636,7 @@
         .badge-processing { background: rgba(56,189,248,0.16); color: #0369A1; }
         .badge-success { background: rgba(52,211,153,0.16); color: #047857; }
         .badge-danger { background: rgba(251,113,133,0.16); color: #BE123C; }
-        /* Static dashed ring for the "Draft" badge (Pending, before it enters
+        /* Static dashed ring for the "Pending" badge (before it enters
            Processing/In-progress) — same look as the spinner above, minus
            the rotation, since a draft/queued order isn't actively moving yet. */
         .badge-dashed-circle { flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%; border: 1.8px dashed currentColor; }
@@ -1416,6 +1416,55 @@
         .game-toolbar { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
         .game-toolbar .btn { min-height: 38px !important; padding: 7px 4px !important; font-size: 11.5px !important; gap: 4px !important; border-radius: 11px !important; white-space: normal !important; line-height: 1.15; text-align: center; }
         .game-toolbar .btn .ui-icon { width: 15px !important; height: 15px !important; }
+        /* Games toolbar v3: every button the same size, distinct colours */
+        .game-toolbar { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; }
+        .game-toolbar .btn { height: 44px !important; min-height: 44px !important; padding: 0 8px !important; font-size: 13px !important; font-weight: 600; gap: 6px !important; border-radius: 12px !important; white-space: nowrap !important; flex: none; width: 100%; box-sizing: border-box; line-height: 1; border: 1px solid transparent; box-shadow: none !important; }
+        .game-toolbar .btn span { overflow: hidden; text-overflow: ellipsis; }
+        .game-toolbar .btn .ui-icon { width: 17px !important; height: 17px !important; }
+        .game-toolbar .gt-update { background: linear-gradient(135deg,#3B82F6,#1D4ED8) !important; color: #fff !important; }
+        .game-toolbar .gt-add { background: linear-gradient(135deg,#22C55E,#15803D) !important; color: #fff !important; }
+        .game-toolbar .gt-update .ui-icon, .game-toolbar .gt-add .ui-icon { stroke: #fff !important; }
+        .game-toolbar .gt-edit, .game-toolbar .gt-neutral { background: var(--fill-soft) !important; color: var(--text-primary) !important; border-color: var(--border-glass); }
+        .game-toolbar .gt-edit.gt-on { background: linear-gradient(135deg,#F59E0B,#D97706) !important; color: #fff !important; border-color: transparent; }
+        .game-toolbar .gt-edit.gt-on .ui-icon { stroke: #fff !important; }
+        .game-toolbar:not(.edit-on) .gt-edit-only { display: none !important; }
+        /* ===== Motion: things used to pop in abruptly, now ease in ===== */
+        @keyframes pcaFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pcaFadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes pcaRiseIn { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+        @keyframes pcaRowIn { from { opacity: 0; transform: translateY(-10px) scale(.97); } to { opacity: 1; transform: none; } }
+        @keyframes pcaCardIn { from { opacity: 0; transform: translateY(24px) scale(.95); } to { opacity: 1; transform: none; } }
+        @keyframes pcaCardOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(16px) scale(.96); } }
+        @keyframes pcaDropIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+        .game-toolbar.edit-on .gt-edit-only { animation: pcaRiseIn .32s cubic-bezier(.2,.8,.2,1) both; }
+        .game-toolbar.edit-on .gt-edit-only:nth-of-type(5) { animation-delay: .05s; }
+        .game-toolbar.edit-on .gt-edit-only:nth-of-type(6) { animation-delay: .1s; }
+        .package-row.editing .pkg-card-overlay { animation: pcaFadeIn .22s ease both; }
+        .package-row.editing .pkg-card { animation: pcaCardIn .3s cubic-bezier(.2,.8,.2,1) both; }
+        .package-row.editing.closing .pkg-card-overlay { animation: pcaFadeOut .2s ease both; pointer-events: none; }
+        .package-row.editing.closing .pkg-card { animation: pcaCardOut .2s ease both; }
+        .package-row.pkg-new { animation: pcaRowIn .34s cubic-bezier(.2,.8,.2,1) both; }
+        .package-row.pkg-removing { transition: opacity .26s ease, transform .3s ease, max-height .32s ease .06s, margin-bottom .32s ease .06s, border-width .2s ease .1s; opacity: 0; transform: translateX(46px) scale(.94); max-height: 0 !important; margin-bottom: calc(-1 * var(--pkg-gap, 0px)) !important; border-width: 0; pointer-events: none; }
+        [id$="-body"], .pkg-tab-empty-msg, .pkg-import-item { animation: pcaDropIn .28s cubic-bezier(.2,.8,.2,1) both; }
+        #admin-accounts-list > * { animation: pcaRiseIn .3s ease both; }
+        /* Package card: Tab + Badge side by side */
+        .pkg-row-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .pkg-row-pair select { width: 100%; padding: 8px; border: 1px solid var(--fill-soft); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--text-primary); min-width: 0; }
+        /* Import: new packages popup (+ choose tab) */
+        .pkg-import-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+        .pkg-import-tab { border: 1px solid var(--border-glass); background: var(--fill-soft); color: var(--text-primary); border-radius: 999px; padding: 0 13px; font-size: 12.5px; font-weight: 600; min-height: 34px !important; height: 34px; transition: background .18s, color .18s, transform .18s; }
+        .pkg-import-tab:active { transform: scale(.95); }
+        .pkg-import-tab.active { background: var(--accent); color: #fff; border-color: transparent; }
+        .pkg-import-sub { font-size: 11.5px; color: var(--text-muted); margin: 0 0 4px 2px; font-weight: 600; }
+        .pkg-import-selectall { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin: 0 2px 6px; }
+        .pkg-import-list { overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; min-height: 0; max-height: 40vh; }
+        .pkg-import-item { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 12px; background: var(--fill-soft); font-size: 13px; }
+        .pkg-import-item input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--accent); }
+        .pkg-import-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+        .pkg-import-price { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+        .pkg-import-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; }
+        .pkg-import-actions .btn { height: 44px; }
+        .pkg-import-add { background: linear-gradient(135deg,#22C55E,#15803D) !important; color: #fff !important; border: none; }
         @keyframes pcaShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .game-skel-tile { aspect-ratio: 1 / 1; border-radius: 16px; background: linear-gradient(90deg, var(--fill-soft) 25%, rgba(127,127,127,0.18) 50%, var(--fill-soft) 75%); background-size: 200% 100%; animation: pcaShimmer 1.3s linear infinite; }
     </style>
@@ -1557,8 +1606,8 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
 
     /* 3. Page content */
     .content-area { padding: 12px 14px; }
-    .page-section { animation: pcaPageIn .16s ease-out; }
-    @keyframes pcaPageIn { from { opacity: 0; } to { opacity: 1; } }
+    .page-section { animation: pcaPageIn .26s cubic-bezier(.2,.8,.2,1); }
+    @keyframes pcaPageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     .title-header { font-size: 18px; position: relative; }
     /* long lists were each fading/sliding in on scroll - that is what made scrolling feel heavy */
     .scroll-reveal, .scroll-reveal.revealed { opacity: 1 !important; transform: none !important; transition: none !important; }
@@ -1739,7 +1788,7 @@ html.pca-modal-open, html.pca-modal-open body { overflow: hidden; }
 <script id="pca-spin-js">
 /* Any button whose text turns into "Saving..." / "Updating..." / "Checking..." etc. shows a spinner instead. */
 (function(){
-  var RE=/^\s*(Saving|Updating|Checking|Sending|Loading|Syncing|Processing|Verifying|Deleting|Refreshing|Fetching|Importing|Resyncing|Approving|Rejecting|Confirming|Cancelling|Uploading)\b[^]{0,40}?(\.\.\.|\u2026)\s*$/i;
+  var RE=/^\s*(Saving|Updating|Checking|Sending|Loading|Syncing|Processing|Verifying|Deleting|Refreshing|Fetching|Importing|Resyncing|Approving|Rejecting|Confirming|Cancelling|Uploading|Signing in|Starting|Creating|Generating|Exporting|Removing|Publishing|Adding|Moving|Applying|Connecting|Testing|Restoring|Resetting|Linking|Unlinking|Cleaning|Marking|Working)\b[^]{0,40}?(\.\.\.|\u2026)\s*$/i;
   var busy=false;
   function fix(btn){
     if(!btn||btn.tagName!=='BUTTON')return;
@@ -1922,7 +1971,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
     /* ---- bottom bar: 7 equal tabs, docked ---- */
     html .top-nav {
-        display: grid !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
         left: 0 !important; right: 0 !important; bottom: 0 !important; margin: 0 !important;
         padding: 4px 2px calc(4px + var(--pca-safe-b)) !important; gap: 0 !important;
         border-radius: 0 !important; border: 0 !important; border-top: 1px solid var(--border-glass) !important;
@@ -1981,6 +2030,155 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 @media (min-width: 900px) {
     #group-more { display: none !important; }
 }
+</style>
+<style id="pca-final">
+/* ==========================================================================
+   Final pass (loaded last): vivid colour + floating "solid glass" nav
+   ========================================================================== */
+:root, html[data-theme] {
+    --accent: #1F6BFF; --accent-rgb: 31,107,255; --accent-soft: rgba(31,107,255,.16);
+    --accent-1: #4C8DFF; --accent-2: #1F6BFF; --accent-3: #1445D6;
+    --mesh-1: rgba(76,141,255,.34); --mesh-2: rgba(168,85,247,.16); --mesh-3: rgba(14,165,233,.26);
+    --nav-glass: linear-gradient(180deg, rgba(255,255,255,.92), rgba(238,244,255,.86));
+    --nav-glass-border: rgba(255,255,255,.9);
+    --nav-glass-shadow: 0 14px 34px -10px rgba(31,107,255,.45), 0 4px 12px rgba(15,23,42,.10), inset 0 1px 0 #fff;
+}
+html[data-theme="dark-purple"] {
+    --accent: #6AA8FF; --accent-rgb: 90,150,255; --accent-soft: rgba(90,150,255,.24);
+    --accent-1: #6AA8FF; --accent-2: #3F7DFF; --accent-3: #2A5BE0;
+    --mesh-1: rgba(63,125,255,.34); --mesh-2: rgba(168,85,247,.18); --mesh-3: rgba(14,165,233,.26);
+    --nav-glass: linear-gradient(180deg, rgba(38,44,64,.90), rgba(22,26,42,.88));
+    --nav-glass-border: rgba(255,255,255,.18);
+    --nav-glass-shadow: 0 16px 36px -10px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+/* richer status badges */
+.badge-pending    { background: rgba(245,158,11,.20); color: #B45309; }
+.badge-processing { background: rgba(14,165,233,.20); color: #0369A1; }
+.badge-success    { background: rgba(16,185,129,.20); color: #047857; }
+.badge-danger     { background: rgba(244,63,94,.18);  color: #BE123C; }
+html[data-theme="dark-purple"] .badge-pending    { color: #FCD34D; }
+html[data-theme="dark-purple"] .badge-processing { color: #7DD3FC; }
+html[data-theme="dark-purple"] .badge-success    { color: #6EE7B7; }
+html[data-theme="dark-purple"] .badge-danger     { color: #FDA4AF; }
+.order-stat-card { box-shadow: 0 10px 24px -10px rgba(15,23,42,.45); }
+.stat-chip { border-left-width: 4px; }
+
+/* ---- Phones: floating solid-glass pill ---- */
+@media (max-width: 899.98px) {
+    :root { --pca-nav-h: 76px; --pca-pop-bottom: calc(var(--pca-safe-b) + 90px); }
+    html .top-nav {
+        left: 12px !important; right: 12px !important;
+        bottom: calc(var(--pca-safe-b) + 10px) !important;
+        margin: 0 !important; padding: 6px !important; gap: 2px !important;
+        border-radius: 28px !important;
+        border: 1px solid var(--nav-glass-border) !important;
+        background: var(--nav-glass) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important; backdrop-filter: blur(20px) saturate(180%) !important;
+        box-shadow: var(--nav-glass-shadow) !important;
+    }
+    html .top-nav .nav-item { height: 48px; min-height: 48px !important; border-radius: 20px !important; color: var(--text-secondary); }
+    html .top-nav .nav-item::before { display: none; }
+    html .top-nav .nav-item.active {
+        color: #fff !important;
+        background: linear-gradient(135deg, var(--accent-1), var(--accent-3)) !important;
+        box-shadow: 0 8px 18px -6px rgba(var(--accent-rgb), .75), inset 0 1px 0 rgba(255,255,255,.35) !important;
+    }
+    html .top-nav .nav-item.active .ui-icon { stroke: #fff !important; }
+    body.pca-kb-open .top-nav { transform: translate3d(0, 180%, 0) !important; }
+    .order-bulk-bar.show, .order-bulk-bar.active, .order-bulk-bar[style*="flex"] { bottom: calc(var(--pca-nav-h) + var(--pca-safe-b) + 8px) !important; }
+
+    /* nav popups: same solid glass, floating above the bar */
+    #nav-group-sheet-overlay .modal-box, #pca-more-overlay .modal-box {
+        background: var(--nav-glass) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important; backdrop-filter: blur(20px) saturate(180%) !important;
+        border: 1px solid var(--nav-glass-border) !important;
+        box-shadow: var(--nav-glass-shadow) !important;
+        border-radius: 24px !important;
+        bottom: var(--pca-pop-bottom) !important;
+    }
+    #nav-group-sheet-overlay .modal-box::before, #pca-more-overlay .modal-box::before { background: var(--nav-glass) !important; }
+}
+
+/* ---- Desktop: floating glass bar under the header ---- */
+@media (min-width: 900px) {
+    html .top-nav {
+        background: var(--nav-glass) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important; backdrop-filter: blur(20px) saturate(180%) !important;
+        border: 1px solid var(--nav-glass-border) !important; box-shadow: var(--nav-glass-shadow) !important;
+    }
+    html .top-nav .nav-item.active {
+        color: #fff !important; background: linear-gradient(135deg, var(--accent-1), var(--accent-3)) !important;
+        border-bottom-color: transparent !important;
+    }
+    html .top-nav .nav-item.active .ui-icon { stroke: #fff !important; }
+}
+
+</style>
+<style id="pca-final2">
+/* ==========================================================================
+   Pass 2: ring spinner, refined icons, compact buttons, range chips
+   ========================================================================== */
+@property --pca-a { syntax: '<angle>'; inherits: false; initial-value: 40deg; }
+@keyframes pcaRingRot { to { transform: rotate(360deg); } }
+@keyframes pcaRingArc { 0% { --pca-a: 24deg; } 50% { --pca-a: 290deg; } 100% { --pca-a: 24deg; } }
+
+/* one ring spinner everywhere: the arc grows and shrinks while it turns */
+.pca-spin, .btn.is-loading::after {
+    --pca-t: 2.4px;
+    display: inline-block; box-sizing: border-box; width: 16px; height: 16px; border: 0 !important; border-radius: 50%;
+    background: conic-gradient(currentColor var(--pca-a, 90deg), transparent 0);
+    -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - var(--pca-t) - .4px), #000 calc(100% - var(--pca-t)));
+            mask-image: radial-gradient(farthest-side, transparent calc(100% - var(--pca-t) - .4px), #000 calc(100% - var(--pca-t)));
+    vertical-align: -3px; opacity: 1;
+    animation: pcaRingRot 1.3s linear infinite, pcaRingArc 1.3s ease-in-out infinite;
+}
+.btn.is-loading::after { content: ''; width: 16px; height: 16px; }
+.pca-spin-sm { width: 12px; height: 12px; --pca-t: 2px; vertical-align: -2px; }
+.pca-spin-lg { width: 28px; height: 28px; --pca-t: 3px; }
+
+/* login: spinner while waiting (also replaces the spinning tick on Confirm / Verify) */
+.lg-btn:disabled::after, .lg-btn.lg-ok:disabled::after, .lg-btn.lg-ghost:disabled::after {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: conic-gradient(#fff var(--pca-a, 90deg), transparent 0);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3.2px), #000 calc(100% - 2.8px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 3.2px), #000 calc(100% - 2.8px));
+    animation: pcaRingRot 1.3s linear infinite, pcaRingArc 1.3s ease-in-out infinite;
+}
+.lg-btn.lg-ghost:disabled::after { background: conic-gradient(var(--lg-brass-deep) var(--pca-a, 90deg), transparent 0); }
+.lg-btn .pca-spin { display: none; }
+
+/* icons: slightly lighter stroke, tint follows the icon colour */
+.ui-icon { stroke-width: 1.8; --ico-fill: currentColor; }
+.header .header-icon .ui-icon, .ng-ico .ui-icon, .udp-tab.active .ui-icon,
+html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
+.game-row-del .ui-icon { --ico-fill: var(--danger); }
+
+/* compact buttons */
+@media (max-width: 899.98px) {
+    .btn:not(.pca-keep-size) { min-height: 38px !important; padding: 8px 14px !important; font-size: 13.5px !important; border-radius: 11px !important; }
+}
+.title-header .btn, .obb-actions .btn, .pkg-actions-row .btn, .dash-section-label .btn {
+    min-height: 34px !important; padding: 6px 12px !important; font-size: 12.5px !important; font-weight: 600 !important; border-radius: 10px !important; flex: 0 0 auto !important;
+}
+.title-header { gap: 8px; }
+.title-header > span { gap: 6px !important; }
+.title-header .btn svg, .title-header .btn .ui-icon { width: 14px !important; height: 14px !important; }
+.modal-footer .btn, .modal-body > .btn { min-height: 40px; }
+
+/* range chips (Orders) */
+.pca-range-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin: 0 0 10px; padding: 2px 0; }
+.pca-range-chips::-webkit-scrollbar { display: none; }
+.pca-range-chips button {
+    flex: 0 0 auto; border: 1px solid var(--border-glass); background: var(--surface-strong); color: var(--text-secondary);
+    border-radius: 999px; padding: 6px 14px; font: 600 12.5px/1.2 inherit; font-family: inherit; cursor: pointer;
+}
+.pca-range-chips button.active { background: linear-gradient(135deg, var(--accent-1), var(--accent-3)); color: #fff; border-color: transparent; box-shadow: 0 6px 14px -6px rgba(var(--accent-rgb), .7); }
+
+/* stat numbers shimmer while the first read is in flight */
+.order-stat-grid.pca-loading .val { color: transparent !important; position: relative; }
+.order-stat-grid.pca-loading .val::after { content: ''; position: absolute; left: 0; top: 2px; width: 34px; height: 20px; border-radius: 6px; background: rgba(255,255,255,.35); animation: pcaShimmer 1.2s linear infinite; }
+.pca-skel-row { background: linear-gradient(90deg, var(--fill-soft) 25%, rgba(255,255,255,.55) 50%, var(--fill-soft) 75%); background-size: 200% 100%; }
 </style>
 </head>
 <body>
@@ -2085,58 +2283,58 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
     </script>
 
     <svg style="display: none;">
-        <symbol id="icon-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></symbol>
-        <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
-        <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
-        <symbol id="icon-eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a20.4 20.4 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></symbol>
-        <symbol id="icon-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></symbol>
-        <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></symbol>
-        <symbol id="icon-gamepad" viewBox="0 0 24 24"><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z"></path><path d="M6.7 10.7v3.2M5.1 12.3h3.2"></path><circle cx="15.9" cy="11.1" r="0.6" fill="currentColor"></circle><circle cx="18.3" cy="13.5" r="0.6" fill="currentColor"></circle></symbol>
-        <symbol id="icon-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></symbol>
-        <symbol id="icon-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></symbol>
-        <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></symbol>
-        <symbol id="icon-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></symbol>
-        <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></symbol>
-        <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
-        <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></symbol>
-        <symbol id="icon-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></symbol>
-        <symbol id="icon-megaphone" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></symbol>
-        <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path></symbol>
-        <symbol id="icon-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></symbol>
-        <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></symbol>
-        <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></symbol>
-        <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></symbol>
-        <symbol id="icon-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></symbol>
-        <symbol id="icon-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></symbol>
+        <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+        <symbol id="icon-shield" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M12 21.5c5-2.2 8-5.6 8-10V5.8L12 2.5 4 5.8v5.7c0 4.4 3 7.8 8 10z"></path><path d="M12 21.5c5-2.2 8-5.6 8-10V5.8L12 2.5 4 5.8v5.7c0 4.4 3 7.8 8 10z"></path><path d="M8.7 11.9l2.3 2.3 4.3-4.5"></path></symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+        <symbol id="icon-eye-off" viewBox="0 0 24 24"><path d="M17.9 17.9A10.7 10.7 0 0 1 12 19.5C5.6 19.5 2 12.5 2 12.5a18.6 18.6 0 0 1 4.6-5.4M9.9 5.7A10 10 0 0 1 12 5.5c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2"></path><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"></path><path d="M3 3l18 18"></path></symbol>
+        <symbol id="icon-pie" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M12 2.5v9.5h9.5A9.5 9.5 0 0 0 12 2.5z"></path><path d="M12 2.5a9.5 9.5 0 1 0 9.5 9.5H12V2.5z"></path></symbol>
+        <symbol id="icon-list" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12"></path><circle cx="4.5" cy="6" r="1.2" style="fill:currentColor;stroke:none"></circle><circle cx="4.5" cy="12" r="1.2" style="fill:currentColor;stroke:none"></circle><circle cx="4.5" cy="18" r="1.2" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-gamepad" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z"></path><path d="M6.2 7.5h11.6a4.3 4.3 0 0 1 4.27 4.85l-.62 4.9a2.55 2.55 0 0 1-4.55 1.2L15.3 16.4H8.7l-1.6 2.05a2.55 2.55 0 0 1-4.55-1.2l-.62-4.9A4.3 4.3 0 0 1 6.2 7.5z"></path><path d="M7 10.4v3.4M5.3 12.1h3.4"></path><circle cx="15.8" cy="11" r="0.9" style="fill:currentColor;stroke:none"></circle><circle cx="18.2" cy="13.4" r="0.9" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-gift" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M4 12h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7z"></path><path d="M4 12h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7z"></path><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="3" y="8" width="18" height="4" rx="1.2"></rect><rect x="3" y="8" width="18" height="4" rx="1.2"></rect><path d="M12 8v13"></path><path d="M12 8C10.5 8 7.5 7.5 7.5 5.5a2 2 0 0 1 4-.2L12 8zm0 0c1.5 0 4.5-.5 4.5-2.5a2 2 0 0 0-4-.2L12 8z"></path></symbol>
+        <symbol id="icon-cart" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M6 7h15.5l-1.5 7.2a2 2 0 0 1-2 1.6H9.7a2 2 0 0 1-2-1.6L6 7z"></path><path d="M2.5 3h2.4l2.7 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21.5 7H6"></path><circle cx="10" cy="20.5" r="1.4" style="fill:currentColor;stroke:none"></circle><circle cx="17.5" cy="20.5" r="1.4" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="9" cy="8" r="3.5"></circle><circle cx="9" cy="8" r="3.5"></circle><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M2.5 20v-.5A5.5 5.5 0 0 1 8 14h2a5.5 5.5 0 0 1 5.5 5.5v.5z"></path><path d="M2.5 20v-.5A5.5 5.5 0 0 1 8 14h2a5.5 5.5 0 0 1 5.5 5.5v.5"></path><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18.5 14.3a5.5 5.5 0 0 1 3 5.2v.5"></path></symbol>
+        <symbol id="icon-log-out" viewBox="0 0 24 24"><path d="M9.5 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3.5"></path><path d="M16 8l4 4-4 4M20 12H9.5"></path></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+        <symbol id="icon-bell" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M6 9a6 6 0 0 1 12 0c0 5.5 2 7 2 7H4s2-1.5 2-7z"></path><path d="M6 9a6 6 0 0 1 12 0c0 5.5 2 7 2 7H4s2-1.5 2-7z"></path><path d="M10 19.5a2.2 2.2 0 0 0 4 0"></path></symbol>
+        <symbol id="icon-send" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M21 3L3 10.2l7 3 3 7L21 3z"></path><path d="M21 3L3 10.2l7 3 3 7L21 3z"></path><path d="M10 13.2L21 3"></path></symbol>
+        <symbol id="icon-megaphone" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M3 10v4a1 1 0 0 0 1 1h3l8 4.5v-15L7 9H4a1 1 0 0 0-1 1z"></path><path d="M3 10v4a1 1 0 0 0 1 1h3l8 4.5v-15L7 9H4a1 1 0 0 0-1 1z"></path><path d="M18.6 8.4a5 5 0 0 1 0 7.2"></path><path d="M7 15l1.2 4.5h2.4L9.8 16.5"></path></symbol>
+        <symbol id="icon-wallet" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="3" y="6" width="18" height="14" rx="3.2"></rect><rect x="3" y="6" width="18" height="14" rx="3.2"></rect><path d="M17 6V5a2 2 0 0 0-2.4-2L5.5 5"></path><path d="M21 11.5h-4a2.25 2.25 0 0 0 0 4.5h4"></path><circle cx="16.8" cy="13.75" r="0.8" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7H6z"></path><path d="M6 7l.9 12.1A2 2 0 0 0 8.9 21h6.2a2 2 0 0 0 2-1.9L18 7H6z"></path><path d="M4 7h16M9 7V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v2M10 11v6M14 11v6"></path></symbol>
+        <symbol id="icon-camera" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M3 9a2 2 0 0 1 2-2h2.2l1.3-2h7l1.3 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"></path><path d="M3 9a2 2 0 0 1 2-2h2.2l1.3-2h7l1.3 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"></path><circle cx="12" cy="13" r="3.6"></circle></symbol>
+        <symbol id="icon-warning" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M10.3 3.9L2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M10.3 3.9L2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9.5v4M12 17h.01"></path></symbol>
+        <symbol id="icon-info" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="9.5"></circle><path d="M12 11v5M12 8h.01"></path></symbol>
+        <symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"></path></symbol>
+        <symbol id="icon-zap" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M13 2.5L4.5 13.5H11l-1 8 8.5-11H12l1-8z"></path><path d="M13 2.5L4.5 13.5H11l-1 8 8.5-11H12l1-8z"></path></symbol>
         <symbol id="icon-g2bulk" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2"></circle><text x="12" y="16.3" text-anchor="middle" font-size="11.5" font-weight="800" fill="currentColor" stroke="none" font-family="'Poppins', Arial, sans-serif">G</text></symbol>
-        <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
-        <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></symbol>
-        <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
+        <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"></path></symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M4 20l1-4.2L16.6 4.2a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L8.2 19 4 20z"></path><path d="M4 20l1-4.2L16.6 4.2a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L8.2 19 4 20z"></path><path d="M14.5 6.3l3.2 3.2M12.5 20H20"></path></symbol>
+        <symbol id="icon-copy" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="9" y="9" width="12" height="12" rx="2.5"></rect><rect x="9" y="9" width="12" height="12" rx="2.5"></rect><path d="M5.5 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v.5"></path></symbol>
         <symbol id="icon-grip" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="9" cy="5" r="1.6"></circle><circle cx="15" cy="5" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="19" r="1.6"></circle><circle cx="15" cy="19" r="1.6"></circle></symbol>
-        <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></symbol>
-        <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></symbol>
-        <symbol id="icon-bar-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></symbol>
-        <symbol id="icon-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></symbol>
-        <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="3" x2="12" y2="4.5"></line><line x1="12" y1="19.5" x2="12" y2="21"></line><line x1="3" y1="12" x2="4.5" y2="12"></line><line x1="19.5" y1="12" x2="21" y2="12"></line><polyline points="12 7 12 12.5 16 15"></polyline></symbol>
-        <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></symbol>
-        <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
-        <symbol id="icon-trending-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></symbol>
-        <symbol id="icon-key" viewBox="0 0 24 24"><path d="M21 2l-9.6 9.6"></path><circle cx="7.5" cy="16.5" r="5.5"></circle><path d="M15.5 7.5l2 2M18 5l2 2"></path></symbol>
-        <symbol id="icon-verified-blue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="7.5 12.5 10.5 15.5 16.5 9.5"></polyline></symbol>
-        <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></symbol>
-        <symbol id="icon-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></symbol>
-        <symbol id="icon-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></symbol>
-        <symbol id="icon-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></symbol>
-        <symbol id="icon-feather" viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></symbol>
-        <symbol id="icon-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></symbol>
-        <symbol id="icon-plug" viewBox="0 0 24 24"><path d="M9 2v4"></path><path d="M15 2v4"></path><path d="M6 8h12a1 1 0 0 1 1 1v3a7 7 0 0 1-7 7h0a7 7 0 0 1-7-7V9a1 1 0 0 1 1-1z"></path><path d="M12 19v3"></path></symbol>
-        <symbol id="icon-telegram" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></symbol>
-        <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></symbol>
-        <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2h2.3c2.6 0 4.7-2.1 4.7-4.7C22 5.9 17.5 2 12 2z"></path><circle cx="7" cy="10.5" r="1.4"></circle><circle cx="12" cy="7.5" r="1.4"></circle><circle cx="16.5" cy="10.5" r="1.4"></circle><circle cx="9.5" cy="15.5" r="1.4"></circle></symbol>
-        <symbol id="icon-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></symbol>
-        <symbol id="icon-sort" viewBox="0 0 24 24"><line x1="6" y1="4" x2="6" y2="20"></line><polyline points="3 7 6 4 9 7"></polyline><line x1="18" y1="20" x2="18" y2="4"></line><polyline points="15 17 18 20 21 17"></polyline></symbol>
-        <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol>
-        <symbol id="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
+        <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3.5v11M7.5 10.5l4.5 4.5 4.5-4.5M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16"></path></symbol>
+        <symbol id="icon-file-text" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"></path><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"></path><path d="M14 3v5h5M9 13h6M9 17h6"></path></symbol>
+        <symbol id="icon-bar-chart" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="4" y="12" width="4" height="8" rx="1.2"></rect><rect x="4" y="12" width="4" height="8" rx="1.2"></rect><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="10" y="5" width="4" height="15" rx="1.2"></rect><rect x="10" y="5" width="4" height="15" rx="1.2"></rect><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="16" y="9" width="4" height="11" rx="1.2"></rect><rect x="16" y="9" width="4" height="11" rx="1.2"></rect></symbol>
+        <symbol id="icon-dollar" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="9.5"></circle><path d="M14.9 9.3c-.4-.9-1.4-1.5-2.9-1.5-1.6 0-2.8.8-2.8 2.1s1.1 1.8 2.8 2.1 2.9.8 2.9 2.2c0 1.4-1.3 2.2-2.9 2.2-1.5 0-2.6-.6-3-1.6M12 6v1.8M12 16.2V18"></path></symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="9.5"></circle><path d="M12 7v5l3.2 2"></path></symbol>
+        <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="9.5"></circle><path d="M9 9l6 6M15 9l-6 6"></path></symbol>
+        <symbol id="icon-calendar" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="3.5" y="5" width="17" height="15.5" rx="3.2"></rect><rect x="3.5" y="5" width="17" height="15.5" rx="3.2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></symbol>
+        <symbol id="icon-trending-up" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"></path></symbol>
+        <symbol id="icon-key" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="8" cy="15" r="4.5"></circle><circle cx="8" cy="15" r="4.5"></circle><path d="M11.2 11.8L20 3M16.5 6.5L19 9M14 9l2 2"></path></symbol>
+        <symbol id="icon-verified-blue" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="9.5"></circle><path d="M7.9 12.3l2.8 2.8 5.4-5.6"></path></symbol>
+        <symbol id="icon-grid" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="3.5" y="3.5" width="7" height="7" rx="2.2"></rect><rect x="3.5" y="3.5" width="7" height="7" rx="2.2"></rect><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="13.5" y="3.5" width="7" height="7" rx="2.2"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"></rect><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="13.5" y="13.5" width="7" height="7" rx="2.2"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"></rect><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="3.5" y="13.5" width="7" height="7" rx="2.2"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"></rect></symbol>
+        <symbol id="icon-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"></circle><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="5.5"></circle><circle cx="12" cy="12" r="5.5"></circle><circle cx="12" cy="12" r="1.6" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-compass" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="9.5"></circle><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M15.8 8.2l-2 5.6-5.6 2 2-5.6 5.6-2z"></path><path d="M15.8 8.2l-2 5.6-5.6 2 2-5.6 5.6-2z"></path></symbol>
+        <symbol id="icon-smile" viewBox="0 0 24 24"><circle style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" cx="12" cy="12" r="9.5"></circle><circle cx="12" cy="12" r="9.5"></circle><path d="M8.5 14.3a4.2 4.2 0 0 0 7 0"></path><circle cx="9" cy="9.6" r="1" style="fill:currentColor;stroke:none"></circle><circle cx="15" cy="9.6" r="1" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-feather" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M20.2 12.2a6 6 0 0 0-8.5-8.5L5 10.5V19h8.5z"></path><path d="M20.2 12.2a6 6 0 0 0-8.5-8.5L5 10.5V19h8.5z"></path><path d="M16 8L2.5 21.5M17 15H9"></path></symbol>
+        <symbol id="icon-code" viewBox="0 0 24 24"><path d="M8.5 7l-5 5 5 5M15.5 7l5 5-5 5M13.5 5l-3 14"></path></symbol>
+        <symbol id="icon-plug" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M6 8h12a1 1 0 0 1 1 1v3a7 7 0 0 1-14 0V9a1 1 0 0 1 1-1z"></path><path d="M6 8h12a1 1 0 0 1 1 1v3a7 7 0 0 1-14 0V9a1 1 0 0 1 1-1z"></path><path d="M9 2.5V8M15 2.5V8M12 19v2.5"></path></symbol>
+        <symbol id="icon-telegram" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M21 3L3 10.2l7 3 3 7L21 3z"></path><path d="M21 3L3 10.2l7 3 3 7L21 3z"></path><path d="M10 13.2L21 3"></path></symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.7 6.7 0 0 0 10.7 10.7z"></path><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.7 6.7 0 0 0 10.7 10.7z"></path></symbol>
+        <symbol id="icon-palette" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M12 2.5a9.5 9.5 0 1 0 0 19c1 0 1.9-.8 1.9-1.9 0-.5-.2-.9-.5-1.2-.3-.4-.5-.7-.5-1.2 0-1 .8-1.9 1.9-1.9h2.2c2.4 0 4.5-2 4.5-4.5C21.5 6.3 17.2 2.5 12 2.5z"></path><path d="M12 2.5a9.5 9.5 0 1 0 0 19c1 0 1.9-.8 1.9-1.9 0-.5-.2-.9-.5-1.2-.3-.4-.5-.7-.5-1.2 0-1 .8-1.9 1.9-1.9h2.2c2.4 0 4.5-2 4.5-4.5C21.5 6.3 17.2 2.5 12 2.5z"></path><circle cx="7.2" cy="11" r="1.2" style="fill:currentColor;stroke:none"></circle><circle cx="10.2" cy="7.2" r="1.2" style="fill:currentColor;stroke:none"></circle><circle cx="15" cy="7.8" r="1.2" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3l1.7-1.8M20 20v-4.5h-4.5"></path></symbol>
+        <symbol id="icon-sort" viewBox="0 0 24 24"><path d="M7 4v16M3.5 7.5L7 4l3.5 3.5M17 20V4M13.5 16.5L17 20l3.5-3.5"></path></symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="4.5" y="10.5" width="15" height="10" rx="2.8"></rect><rect x="4.5" y="10.5" width="15" height="10" rx="2.8"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path><circle cx="12" cy="15.5" r="1.3" style="fill:currentColor;stroke:none"></circle></symbol>
+        <symbol id="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
     </svg>
 
     <div id="toast" role="status" aria-live="polite"><span class="toast-icon-circle" id="toast-icon-circle"><svg class="ui-icon" id="toast-icon" style="color:#fff;"><use id="toast-icon-use" href="#icon-check"></use></svg></span> <span id="toast-msg">Action Completed!</span><svg class="ui-icon toast-close" onclick="dismissToast()"><use href="#icon-close"></use></svg></div>
@@ -2305,15 +2503,12 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         <div class="nav-item" id="group-wallet" onclick="openNavGroupSheet('wallet')">
             <svg class="ui-icon"><use href="#icon-wallet"></use></svg> <span class="nav-label">Wallet</span>
         </div>
-        <div class="nav-item" id="group-api" onclick="openNavGroupSheet('api')">
-            <svg class="ui-icon"><use href="#icon-plug"></use></svg> <span class="nav-label">API</span>
-            <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
-        </div>
         <div class="nav-item" id="group-userlist" onclick="showPage('user-list')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Users</span>
         </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
             <svg class="ui-icon"><use href="#icon-gear"></use></svg> <span class="nav-label">Setting</span>
+            <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
     </nav>
 
@@ -2403,20 +2598,20 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
             <div class="dash-section-label">Live Order Status</div>
             <div class="stats-row" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
-                <div class="stat-chip" style="--chip-color:#FBBF24;">
+                <div class="stat-chip" style="--chip-color:#F59E0B;">
                     <div class="stat-chip-top"><span class="stat-chip-dot"></span><h4>Pending</h4></div>
                     <p class="js-stat-pending">...</p>
                 </div>
-                <div class="stat-chip" style="--chip-color:#38BDF8;">
-                    <div class="stat-chip-top"><span class="stat-chip-dot"></span><h4>Processing</h4></div>
+                <div class="stat-chip" style="--chip-color:#0EA5E9;">
+                    <div class="stat-chip-top"><span class="stat-chip-dot"></span><h4>In-progress</h4></div>
                     <p class="js-stat-processing">...</p>
                 </div>
-                <div class="stat-chip" style="--chip-color:#34D399;">
-                    <div class="stat-chip-top"><span class="stat-chip-dot"></span><h4>Success</h4></div>
+                <div class="stat-chip" style="--chip-color:#10B981;">
+                    <div class="stat-chip-top"><span class="stat-chip-dot"></span><h4>Completed</h4></div>
                     <p class="js-stat-completed">...</p>
                 </div>
-                <div class="stat-chip" style="--chip-color:#FB7185;">
-                    <div class="stat-chip-top"><span class="stat-chip-dot"></span><h4>Fail</h4></div>
+                <div class="stat-chip" style="--chip-color:#F43F5E;">
+                    <div class="stat-chip-top"><span class="stat-chip-dot"></span><h4>Failed</h4></div>
                     <p class="js-stat-fail">...</p>
                 </div>
             </div>
@@ -2454,13 +2649,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                         <div class="stat-card-icon" style="background:#2563EB;"><svg class="ui-icon" style="color:#fff;"><use href="#icon-g2bulk"></use></svg></div>
                     </div>
                     <div class="stat-card-value" id="an-g2bulk-balance-display" style="color:var(--accent);font-size:17px;">—</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <span class="stat-card-label">FazerCards</span>
-                        <div class="stat-card-icon" style="background:#2563EB;"><svg class="ui-icon"><use href="#icon-key"></use></svg></div>
-                    </div>
-                    <div class="stat-card-value" id="an-fazercard-balance-display" style="color:var(--accent);font-size:17px;">—</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-card-top">
@@ -2584,28 +2772,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 </div>
             </div>
 
-            <!-- Admin Accounts: list every admin (username, email, 2FA status,
-                 last login) plus a count, and a way to add a new admin. Full
-                 -->
-            <div class="admin-card" style="margin-top:14px;" id="admin-accounts-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAdminAccounts()">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-users"></use></svg>
-                        <span style="font-size:15px;font-weight: 600;">Admin Accounts</span>
-                        <span id="admin-accounts-count" style="font-size:11.5px;font-weight: 700;padding:2px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);">0</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <button class="btn btn-primary" id="add-admin-btn" style="flex:unset;padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="event.stopPropagation();openAddAdminModal()">+ Add Admin</button>
-                        <svg class="ui-icon" id="admin-accounts-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;flex-shrink:0;"><use href="#icon-chevron-down"></use></svg>
-                    </div>
-                </div>
-                <div id="admin-accounts-body" style="display:none;margin-top:12px;">
-                    <div id="admin-accounts-list">
-                        <p class="empty-msg">Loading admins...</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Dangerous Zone: sign-out lives here now (not in the header). -->
             <div class="admin-card dz-card" id="settings-card-danger" style="margin-top:14px;">
                 <div class="dz-title">Dangerous Zone</div>
@@ -2620,6 +2786,35 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- ADMIN PROFILE PAGE (separate from General settings; Setting > Admin) -->
+        <div id="admin-accounts" class="page-section">
+            <h2 class="title-header">
+                <span>Admin Profile</span>
+            </h2>
+            <!-- Admin Accounts: list every admin (username, email, 2FA status,
+                 last login) plus a count, and a way to add a new admin. Full
+                 -->
+            <div class="admin-card" style="margin-top:0;" id="admin-accounts-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <svg class="ui-icon" style="width:18px;height:18px;color:var(--text-secondary);"><use href="#icon-users"></use></svg>
+                        <span style="font-size:15px;font-weight: 600;">Admin Accounts</span>
+                        <span id="admin-accounts-count" style="font-size:11.5px;font-weight: 700;padding:2px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);">0</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button class="btn btn-primary" id="add-admin-btn" style="flex:unset;padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="event.stopPropagation();openAddAdminModal()">+ Add Admin</button>
+                        <svg class="ui-icon" id="admin-accounts-chevron" style="display:none;"><use href="#icon-chevron-down"></use></svg>
+                    </div>
+                </div>
+                <div id="admin-accounts-body" style="display:block;margin-top:12px;">
+                    <div id="admin-accounts-list">
+                        <p class="empty-msg">Loading admins...</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Add Admin Modal: create a new admin login (username + temp
@@ -2764,14 +2959,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             </div>
 
             <div class="api-doc-card">
-                <div class="api-doc-icon" style="background:#2563EB;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-key"></use></svg></div>
-                <div class="api-doc-info">
-                    <span class="api-doc-title">FazerCards API Key</span>
-                </div>
-                <button class="btn btn-outline api-doc-btn" onclick="openFazerCardModal()">Settings</button>
-            </div>
-
-            <div class="api-doc-card">
                 <div class="api-doc-icon" style="background:#E67E22;"><svg class="ui-icon" style="stroke:#fff;"><use href="#icon-camera"></use></svg></div>
                 <div class="api-doc-info">
                     <span class="api-doc-title">Image Storage</span>
@@ -2787,13 +2974,13 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 <button type="button" class="game-list-tab-btn active" id="game-list-tab-direct" onclick="showGameListTab('direct')"><svg class="ui-icon"><use href="#icon-gamepad"></use></svg><span>Direct Games</span></button>
                 <button type="button" class="game-list-tab-btn" id="game-list-tab-voucher" onclick="showGameListTab('voucher')"><svg class="ui-icon"><use href="#icon-gift"></use></svg><span>Gift Card & Vouchers</span></button>
             </div>
-            <div class="game-toolbar">
-                <button class="btn btn-primary" style="flex:unset;" onclick="window.refreshGames && window.refreshGames()"><svg class="ui-icon"><use href="#icon-refresh"></use></svg><span>Update</span></button>
-                <button class="btn btn-outline" onclick="openGameReorder()"><svg class="ui-icon"><use href="#icon-sort"></use></svg><span>Reorder</span></button>
-                <button class="btn btn-outline" onclick="openAddServerPicker()"><svg class="ui-icon"><use href="#icon-plus"></use></svg><span>Add Server</span></button>
-                <button class="btn btn-outline" onclick="copyAllGameNames()"><svg class="ui-icon"><use href="#icon-copy"></use></svg><span>Copy Names</span></button>
-                <button type="button" class="btn btn-outline" id="game-edit-mode-btn" onclick="toggleGameListEditMode()"><svg class="ui-icon"><use href="#icon-edit"></use></svg><span>Edit Mode: Off</span></button>
-                <button class="btn btn-primary" onclick="openGameEditor()"><svg class="ui-icon"><use href="#icon-plus"></use></svg><span>Add</span></button>
+            <div class="game-toolbar" id="game-toolbar">
+                <button class="btn gt-update" onclick="window.refreshGames && window.refreshGames()"><svg class="ui-icon"><use href="#icon-refresh"></use></svg><span>Update</span></button>
+                <button type="button" class="btn gt-edit" id="game-edit-mode-btn" onclick="toggleGameListEditMode()"><svg class="ui-icon"><use href="#icon-edit"></use></svg><span>Edit: Off</span></button>
+                <button class="btn gt-add" onclick="openGameEditor()"><svg class="ui-icon"><use href="#icon-plus"></use></svg><span>Add</span></button>
+                <button class="btn gt-neutral gt-edit-only" onclick="openGameReorder()"><svg class="ui-icon"><use href="#icon-sort"></use></svg><span>Reorder</span></button>
+                <button class="btn gt-neutral gt-edit-only" onclick="openAddServerPicker()"><svg class="ui-icon"><use href="#icon-plus"></use></svg><span>Add Server</span></button>
+                <button class="btn gt-neutral gt-edit-only" onclick="copyAllGameNames()"><svg class="ui-icon"><use href="#icon-copy"></use></svg><span>Copy Names</span></button>
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
                 <div class="admin-search-wrap" style="flex:1; margin-bottom:0;">
@@ -2867,7 +3054,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 <span>Active Orders</span>
                 <span style="display:flex;gap:6px;flex-wrap:wrap;">
                     <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="exportOrdersCSV()"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-download"></use></svg> Export CSV</button>
-                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="cleanAllCompletedOrders()" title="Hide all Success/Fail orders from this list">Clean Completed</button>
+                    <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="cleanAllCompletedOrders()" title="Hide all Completed/Failed orders from this list">Clean Completed</button>
                     <button class="btn btn-outline" id="toggle-cleaned-btn" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="toggleShowCleanedOrders(); this.innerText = showCleanedOrders ? 'Show Active' : 'Show Cleaned';">Show Cleaned</button>
                     <button class="btn btn-primary" style="flex:unset; padding: 10px 20px; font-size:15px; font-weight:600;" onclick="fetchOrders(false, true)">↻ Update</button>
                 </span>
@@ -2875,19 +3062,19 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
             <div class="order-stat-grid">
                 <div class="order-stat-card" style="background:linear-gradient(135deg,var(--accent-1),var(--accent-3));">
-                    <h5>New orders</h5>
+                    <h5>Pending orders</h5>
                     <div class="val js-stat-pending">...</div>
                     <div class="sub"><span class="sub-label">Awaiting acceptance</span></div>
                 </div>
-                <div class="order-stat-card" style="background:linear-gradient(135deg,#FB923C,#EA580C);">
-                    <h5>Processing orders</h5>
+                <div class="order-stat-card" style="background:linear-gradient(135deg,#38BDF8,#0284C7);">
+                    <h5>In-progress orders</h5>
                     <div class="val js-stat-processing">...</div>
                     <div class="sub"><span class="sub-label">Being fulfilled</span></div>
                 </div>
                 <div class="order-stat-card" style="background:linear-gradient(135deg,#34D399,#059669);">
-                    <h5>Delivered orders</h5>
+                    <h5>Completed orders</h5>
                     <div class="val js-stat-completed">...</div>
-                    <div class="sub"><span class="sub-label">Completed</span></div>
+                    <div class="sub"><span class="sub-label">Delivered</span></div>
                 </div>
                 <div class="order-stat-card" style="background:linear-gradient(135deg,#FB7185,#E11D48);">
                     <h5>Failed orders</h5>
@@ -2899,6 +3086,13 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             <div class="admin-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="order-search" placeholder="Search by game, customer, phone, player ID, order ID..." autocomplete="off" oninput="renderOrdersList()">
+            </div>
+            <div class="pca-range-chips" id="order-range-chips">
+                <button type="button" data-r="today" class="active" onclick="setOrderRange('today')">Today</button>
+                <button type="button" data-r="yesterday" onclick="setOrderRange('yesterday')">Yesterday</button>
+                <button type="button" data-r="7d" onclick="setOrderRange('7d')">7 days</button>
+                <button type="button" data-r="30d" onclick="setOrderRange('30d')">30 days</button>
+                <button type="button" data-r="all" onclick="setOrderRange('all')">All</button>
             </div>
             <div class="date-filter-wrap">
                 <button type="button" class="date-filter-trigger" id="order-date-trigger" onclick="openDateRangeModal('order')" aria-label="Filter by date">
@@ -2950,7 +3144,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
             <div class="pkg-type-tabs" id="topup-status-tabs" style="margin-bottom:14px;">
                 <button type="button" class="pkg-type-tab active" data-status="Pending" onclick="switchTopupTab('Pending')">Pending</button>
-                <button type="button" class="pkg-type-tab" data-status="Processing" onclick="switchTopupTab('Processing')">Processing</button>
+                <button type="button" class="pkg-type-tab" data-status="Processing" onclick="switchTopupTab('Processing')">In-progress</button>
                 <button type="button" class="pkg-type-tab" data-status="Completed" onclick="switchTopupTab('Completed')">Completed</button>
                 <button type="button" class="pkg-type-tab" data-status="Rejected" onclick="switchTopupTab('Rejected')">Rejected</button>
             </div>
@@ -3130,9 +3324,9 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
                 <div class="details-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px;">
                     <div class="details-grid-item" style="padding:8px;"><span>Pending</span><b id="ud-count-pending">0</b></div>
-                    <div class="details-grid-item" style="padding:8px;"><span>Processing</span><b id="ud-count-processing">0</b></div>
-                    <div class="details-grid-item" style="padding:8px;"><span>Success</span><b id="ud-count-success">0</b></div>
-                    <div class="details-grid-item" style="padding:8px;"><span>Fail</span><b id="ud-count-fail">0</b></div>
+                    <div class="details-grid-item" style="padding:8px;"><span>In-progress</span><b id="ud-count-processing">0</b></div>
+                    <div class="details-grid-item" style="padding:8px;"><span>Completed</span><b id="ud-count-success">0</b></div>
+                    <div class="details-grid-item" style="padding:8px;"><span>Failed</span><b id="ud-count-fail">0</b></div>
                 </div>
 
                 <h3 class="detail-section-title" style="margin-top:16px;">Admin Note</h3>
@@ -3343,7 +3537,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                             <p class="fulfill-group-label">Direct (needs Player ID)</p>
                             <div class="pkg-type-tabs">
                                 <button type="button" class="pkg-type-tab" data-provider="g2bulk" onclick="setFulfillProvider('g2bulk')">G2Bulk</button>
-                                <button type="button" class="pkg-type-tab" data-provider="fazercard" onclick="setFulfillProvider('fazercard')">FazerCards</button>
                                 <button type="button" class="pkg-type-tab active" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
                             </div>
                         </div>
@@ -3352,7 +3545,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                             <div class="pkg-type-tabs">
                                 <button type="button" class="pkg-type-tab" data-provider="g2bulk_voucher" onclick="setFulfillProvider('g2bulk_voucher')">Vouchers</button>
                                 <button type="button" class="pkg-type-tab" data-provider="jcplays" onclick="setFulfillProvider('jcplays')">JCPlays (Code)</button>
-                                <button type="button" class="pkg-type-tab" data-provider="fazercard_giftcard" onclick="setFulfillProvider('fazercard_giftcard')">Gift Cards (FazerCards)</button>
                                 <button type="button" class="pkg-type-tab" data-provider="manual" onclick="setFulfillProvider('manual')">Manual</button>
                             </div>
                         </div>
@@ -3456,7 +3648,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 <div id="edit-packages-list"></div>
                 <p class="pkg-tab-empty-msg" id="pkg-tab-empty-msg" style="display:none;">No packages in this tab yet — tap "+ Add Package" to add one.</p>
                 <div class="pkg-actions-row">
-                    <button class="btn btn-outline" onclick="addPackageRow()">+ Add Package</button>
+                    <button class="btn btn-outline" onclick="addPackageRow(); pcaAnimNewRows(-1)">+ Add Package</button>
                     <button class="btn btn-outline" id="pkg-select-toggle-btn" onclick="togglePkgSelectMode()" title="Card တွေကို ရွေးပြီး Image / Resync ကို ရွေးထားတာတွေပေါ်ပဲ သုံးမယ်"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-check"></use></svg> Select</button>
                     <button class="btn btn-outline" onclick="copyAllPackagesText()" title="Copy every row in the current tab only"><svg class="ui-icon" style="width:13px;height:13px;"><use href="#icon-copy"></use></svg> Copy Tab</button>
                     <!-- Resync: margin % is set with the − / + stepper (no fixed 5%). -->
@@ -3947,7 +4139,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         const PAGE_TO_NAV_GROUP = {
             'dashboard': 'group-dashboard', 'analytics': 'group-dashboard',
             'order-list': 'group-orders',
-            'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
+            'g2bulk': 'group-setting', 'jcplays': 'group-setting', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
             'payment-list': 'group-wallet', 'topup-list': 'group-wallet',
             'user-list': 'group-userlist',
             'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
@@ -3965,7 +4157,9 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             if (pageId === 'analytics' && window.renderAnalytics) window.renderAnalytics();
             // Cloudflare/Firestore usage no longer auto-loads (saves Worker requests); use the Refresh buttons.
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
-            if (['order-list', 'analytics', 'user-list'].includes(pageId) && window.ensureOrdersLoaded) window.ensureOrdersLoaded();
+            if (['analytics', 'user-list'].includes(pageId) && window.ensureOrdersLoaded) window.ensureOrdersLoaded();
+            if (pageId === 'order-list' && window.openOrdersPage) window.openOrdersPage();
+            if (window.ensurePageData) window.ensurePageData(pageId);
             if (pageId === 'dashboard' && window.ordersAreLoaded && !window.ordersAreLoaded() && window.showToast) window.showToast('Order stats load when you open Orders');
             subscribeTabListeners(pageId);
         }
@@ -3995,6 +4189,19 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         }
         window.subscribeTabListeners = subscribeTabListeners;
 
+        // ---------- Lazy data: nothing below is read at login ----------
+        // Games (full collection) and the provider settings docs are fetched the first
+        // time a page that actually uses them is opened.
+        const PAGES_NEED_GAMES = ['order-list', 'game-list', 'game-editor-page', 'analytics', 'topup-list'];
+        const PAGES_NEED_PROVIDERS = ['order-list', 'game-list', 'game-editor-page', 'g2bulk', 'jcplays', 'api-docs', 'analytics', 'settings', 'topup-list'];
+        function ensurePageData(pageId) {
+            try {
+                if (PAGES_NEED_GAMES.includes(pageId) && !gamesLoadedAt && !gamesLoadPromise) loadGames(true);
+                if (PAGES_NEED_PROVIDERS.includes(pageId)) { listenG2Bulk(); listenJCPlays(); }
+            } catch (e) { console.error('ensurePageData', e); }
+        }
+        window.ensurePageData = ensurePageData;
+
         // ---------- Grouped Top-Nav Picker Sheet ----------
         // Each group icon in .top-nav bundles several pages that used to be
         // separate top-level icons. Tapping the icon renders this list (reusing
@@ -4013,13 +4220,12 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 { label: 'Payment', icon: '#icon-wallet', run: () => showPage('payment-list') },
                 { label: 'Top Up', icon: '#icon-wallet', run: () => showPage('topup-list') }
             ]},
-            api: { title: 'API', items: [
-                { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
-                { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
-                { label: 'API Keys', icon: '#icon-plug', run: () => showPage('api-docs') }
-            ]},
             setting: { title: 'Setting', items: [
                 { label: 'General', icon: '#icon-gear', run: () => showPage('settings') },
+                { label: 'Admin', icon: '#icon-users', run: () => showPage('admin-accounts') },
+                { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
+                { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
+                { label: 'API Keys', icon: '#icon-plug', run: () => showPage('api-docs') },
                 { label: 'Notify', icon: '#icon-bell', run: () => showPage('notify-list') },
                 { label: 'Ticker', icon: '#icon-megaphone', run: () => showPage('ticker-list') }
             ]}
@@ -4621,10 +4827,33 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         };
 
         // Image hosting for game/admin photos: Cloudflare D1 via the image Worker
-        // (no imgbb, no Firebase Storage / Blaze plan). Same request/response
+        // (no Firebase Storage / Blaze plan). Same request/response
         // contract as before ({success, data:{url}}), so nothing else changes.
         // If you deploy the Worker under a new name, change this URL only.
-        const IMGBB_UPLOAD_URL = 'https://imgbb-functions.pca-game-store.workers.dev';
+        const IMAGE_UPLOAD_URL = 'https://imgbb-functions.pca-game-store.workers.dev';
+
+        // Single entry point for every photo upload (game images, banners,
+        // logos, payment QR, admin avatars). Any provider-specific wording that
+        // might come back from the Worker (e.g. "ImgBB not available") is
+        // replaced with a plain message so admins never see a retired service name.
+        async function postImageToWorker(blob, fallbackMsg) {
+            const fail = (raw) => {
+                const t = String(raw || '').trim();
+                if (!t || /imgbb|not available|unavailable|api key|failed to fetch|networkerror|unexpected token|<!doctype/i.test(t)) return new Error(fallbackMsg || 'Image upload failed. Please try again.');
+                return new Error(t);
+            };
+            const form = new FormData();
+            form.append('image', blob);
+            let res, data;
+            try {
+                res = await fetch(IMAGE_UPLOAD_URL, { method: 'POST', body: form });
+                data = await res.json();
+            } catch (e) {
+                throw fail(e && e.message);
+            }
+            if (!res.ok || !data || !data.success || !data.data || !data.data.url) throw fail(data && data.error && data.error.message);
+            return data.data.url;
+        }
 
         // gamestore-auth-worker: the customer-facing pcagamestore_bot Worker
         // (separate from ADMIN_SYNC_WORKER_URL below, which is the admin/order
@@ -4876,16 +5105,11 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         }
 
         // Lightweight avatar upload for admin accounts - no status element
-        // dependency (unlike uploadImageToImgBB above, which requires one),
+        // dependency (unlike uploadImage above, which requires one),
         // since this fires straight from a small circle in the accounts list.
-        async function uploadAdminAvatarToImgBB(file) {
+        async function uploadAdminAvatar(file) {
             const compressed = await compressImageFile(file, { maxDim: 400, quality: 0.85 });
-            const form = new FormData();
-            form.append('image', compressed);
-            const res = await fetch(IMGBB_UPLOAD_URL, { method: 'POST', body: form });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error?.message || 'Avatar upload failed');
-            return data.data.url;
+            return postImageToWorker(compressed, 'Avatar upload failed. Please try again.');
         }
 
         // Each admin's own photo, stored on their adminUsernames/{username}
@@ -4897,7 +5121,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             const circle = document.getElementById('admin-avatar-' + username);
             if (circle) circle.style.opacity = '0.5';
             try {
-                const avatarUrl = await uploadAdminAvatarToImgBB(file);
+                const avatarUrl = await uploadAdminAvatar(file);
                 await setDoc(doc(db, "adminUsernames", username), { avatarUrl }, { merge: true });
                 window.showToast('Avatar updated ✓', 'success');
             } catch (error) {
@@ -6236,17 +6460,30 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             clearTimeout(_ordersRenderTimer);
             _ordersRenderTimer = setTimeout(() => { try { renderOrdersDependents(); } catch (e) { console.error(e); } }, 80);
         }
-        function fetchOrders(silent, forceFresh) {
-            if (ordersLoadPromise) return ordersLoadPromise;
+        // Orders are read for a WINDOW, not the whole collection. ordersFromMs is the
+        // start of what is currently in ORDERS: null = nothing loaded, 0 = everything,
+        // otherwise only orders with timestamp >= that moment. The Orders page opens on
+        // "Today"; widening the filter (Yesterday / 7 days / All / calendar) reads more.
+        let ordersFromMs = null, ordersLoadFromMs = null;
+        function todayStartMs() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+        function ordersCovers(fromMs) { return !!ordersLoadedAt && ordersFromMs !== null && ordersFromMs <= fromMs; }
+        function fetchOrders(silent, forceFresh, fromMs) {
+            if (fromMs === undefined) fromMs = (ordersFromMs !== null ? ordersFromMs : todayStartMs());
+            if (ordersLoadPromise) {
+                if (ordersLoadFromMs !== null && ordersLoadFromMs <= fromMs) return ordersLoadPromise;
+                return ordersLoadPromise.then(() => (forceFresh === true || !ordersCovers(fromMs)) ? fetchOrders(silent, forceFresh, fromMs) : undefined);
+            }
+            ordersLoadFromMs = fromMs;
             ordersLoadPromise = (async () => {
                 try {
                     // First load of the session: paint the on-device copy instantly. If it is
                     // younger than the TTL no Firestore read happens at all; otherwise a real
                     // read still runs right after and repaints. Refresh always forces a read.
-                    if (forceFresh !== true && !ordersLoadedAt) {
+                    if (forceFresh !== true && !ordersLoadedAt && fromMs === 0) {
                         const cached = await pcCacheGet('orders');
                         if (cached && Object.keys(cached.data).length > 0) {
                             ORDERS = cached.data;
+                            ordersFromMs = 0;
                             ordersLoadedAt = cached.ts;
                             renderOrdersDependents();
                             // ORDERS_REVALIDATE_ON_OPEN: always re-read in the background right
@@ -6255,16 +6492,23 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                             silent = true;
                         }
                     }
-                    const querySnapshot = await getDocs(query(collection(db, "orders")));
+                    const ordersQuery = fromMs > 0
+                        ? query(collection(db, "orders"), where("timestamp", ">=", Timestamp.fromMillis(fromMs)))
+                        : query(collection(db, "orders"));
+                    const querySnapshot = await getDocs(ordersQuery);
                     const newOrders = {};
                     querySnapshot.forEach(docSnap => { newOrders[docSnap.id] = { id: docSnap.id, ...docSnap.data() }; });
                     ORDERS = newOrders;
+                    ordersFromMs = fromMs;
                     ordersLoadedAt = Date.now();
-                    pcCachePut('orders', ordersLoadedAt, ORDERS);
+                    if (fromMs === 0) pcCachePut('orders', ordersLoadedAt, ORDERS);
                     renderOrdersDependents();
-                    checkOrdersAutoDelete(newOrders);
-                    checkOrderDay20Notice(newOrders);
-                    maybePromptArchiveBackfill();
+                    // Housekeeping jobs need the full collection; they only run after a full read.
+                    if (fromMs === 0) {
+                        checkOrdersAutoDelete(newOrders);
+                        checkOrderDay20Notice(newOrders);
+                        maybePromptArchiveBackfill();
+                    }
                     if (silent !== true) window.showToast('Orders updated ✓');
                     // NOTE: Telegram push for new Pending orders and wallet-order auto-fulfillment
                     // are handled server-side by the Cloudflare Worker (see git history) - not here.
@@ -6275,7 +6519,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                     if (error && error.code === 'permission-denied' && !window.__claimRetryOrders) {
                         window.__claimRetryOrders = true;
                         try { await callAdminSyncClaims(); } catch (e) { /* ignore */ }
-                        setTimeout(() => fetchOrders(silent, true), 400);
+                        setTimeout(() => fetchOrders(silent, true, fromMs), 400);
                         return;
                     }
                     if (!ordersLoadedAt) ordersContainer.innerHTML = '<p class="empty-msg" style="color:red;">Error connecting to server.<br><small>' + String((error && (error.code || error.name)) || 'error').replace(/</g,'&lt;') + ' — ' + String((error && error.message) || '').slice(0, 160).replace(/</g,'&lt;') + '</small></p>';
@@ -6286,13 +6530,58 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             })();
             return ordersLoadPromise;
         }
-        function ensureOrdersLoaded() { if (!ordersLoadedAt) fetchOrders(true); }
-        // For scheduled jobs (midnight summary, archive send) that must never run on an empty cache.
+        // Pages that need every order (Analytics, User List) read the full set - only when opened.
+        function ensureOrdersLoaded() { if (!ordersCovers(0)) fetchOrders(true, false, 0); }
+        // For scheduled jobs (midnight summary, archive send) that must never run on a partial/empty cache.
         async function loadOrdersIfStale(maxAgeMs) {
-            if (ordersLoadedAt && Date.now() - ordersLoadedAt < maxAgeMs) return true;
-            await fetchOrders(true);
-            return !!ordersLoadedAt && Date.now() - ordersLoadedAt < maxAgeMs;
+            if (ordersCovers(0) && Date.now() - ordersLoadedAt < maxAgeMs) return true;
+            await fetchOrders(true, true, 0);
+            return ordersCovers(0) && Date.now() - ordersLoadedAt < maxAgeMs;
         }
+
+        // ---- Orders page range chips: Today / Yesterday / 7 days / 30 days / All ----
+        let orderRangeKey = null;
+        function orderRangeDates(key) {
+            const t = new Date(); t.setHours(0, 0, 0, 0);
+            const back = (n) => { const d = new Date(t); d.setDate(d.getDate() - n); return d; };
+            if (key === 'today') return [t, t];
+            if (key === 'yesterday') return [back(1), back(1)];
+            if (key === '7d') return [back(6), t];
+            if (key === '30d') return [back(29), t];
+            return [null, null];
+        }
+        function syncOrderRangeChips() {
+            document.querySelectorAll('#order-range-chips button').forEach(b => b.classList.toggle('active', b.dataset.r === orderRangeKey));
+        }
+        async function applyOrderWindow() {
+            const fromStr = document.getElementById('order-date-from')?.value || '';
+            const fromMs = fromStr ? new Date(fromStr + 'T00:00:00').getTime() : 0;
+            const grid = document.querySelector('#order-list .order-stat-grid');
+            if (!ordersCovers(fromMs)) {
+                ordersContainer.innerHTML = ORDERS_SKELETON_HTML;
+                if (grid) grid.classList.add('pca-loading');
+                try { await fetchOrders(true, false, fromMs); } finally { if (grid) grid.classList.remove('pca-loading'); }
+            }
+            renderOrdersList();
+        }
+        function setOrderRange(key) {
+            orderRangeKey = key;
+            const [a, b] = orderRangeDates(key);
+            const from = document.getElementById('order-date-from'), to = document.getElementById('order-date-to');
+            if (from) from.value = a ? ymdLocal(a) : '';
+            if (to) to.value = b ? ymdLocal(b) : '';
+            updateDateTriggerLabel('order');
+            syncOrderRangeChips();
+            return applyOrderWindow();
+        }
+        window.setOrderRange = setOrderRange;
+        // Called whenever the Orders page opens: first time it defaults to Today.
+        function openOrdersPage() {
+            if (orderRangeKey === null) { setOrderRange('today'); return; }
+            applyOrderWindow();
+        }
+        window.openOrdersPage = openOrdersPage;
+        const ORDERS_SKELETON_HTML = '<div class="pca-skel-wrap">' + '<div class="pca-skel-row"></div>'.repeat(5) + '</div>';
         window.ensureOrdersLoaded = ensureOrdersLoaded;
         window.ordersAreLoaded = () => !!ordersLoadedAt;
 
@@ -6451,7 +6740,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             if (toInput) toInput.value = calRangeEnd ? ymdLocal(calRangeEnd) : (calRangeStart ? ymdLocal(calRangeStart) : '');
             updateDateTriggerLabel(calRangeContext);
             closeDateRangeModal();
-            if (calRangeContext === 'order') renderOrdersList();
+            if (calRangeContext === 'order') { orderRangeKey = 'custom'; syncOrderRangeChips(); applyOrderWindow(); }
             else if (calRangeContext === 'topup') renderTopupsList();
         }
         function calClear() {
@@ -6546,7 +6835,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
                 const badgeClassByStatus = { Pending: 'badge-pending', Processing: 'badge-processing', Success: 'badge-success', Fail: 'badge-danger' };
                 const badgeClass = badgeClassByStatus[data.status] || 'badge-pending';
-                const statusColorByStatus = { Pending: '#FBBF24', Processing: '#38BDF8', Success: '#34D399', Fail: '#FB7185' };
+                const statusColorByStatus = { Pending: '#F59E0B', Processing: '#0EA5E9', Success: '#10B981', Fail: '#F43F5E' };
                 const statusColor = statusColorByStatus[data.status] || '#FBBF24';
                 const gameImg = findGameImage(data.game);
 
@@ -6744,7 +7033,8 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             if (from) from.value = '';
             if (to) to.value = '';
             updateDateTriggerLabel('order');
-            renderOrdersList();
+            orderRangeKey = 'all'; syncOrderRangeChips();
+            applyOrderWindow();
         }
         window.clearOrderDateRange = clearOrderDateRange;
 
@@ -6786,7 +7076,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
             try {
                 await updateDoc(doc(db, "orders", orderId), { status: "Processing" });
-                window.showToast("Order moved to Processing.", 'success');
+                window.showToast("Order moved to In-progress.", 'success');
                 return 'processing';
             } catch (error) {
                 console.error("Update Error: ", error);
@@ -8171,7 +8461,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             btnElement.disabled = true;
             try {
                 await updateDoc(doc(db, "walletTopups", id), { status: "Processing" });
-                window.showToast("Moved to Processing.", 'success');
+                window.showToast("Moved to In-progress.", 'success');
                 editTelegramWalletTopupMessage(id, 'Processing');
             } catch (error) {
                 console.error("setTopupProcessing error:", error);
@@ -8922,7 +9212,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         let editingBannerImageFile = null;
         // Set when a G2Bulk game link auto-fills the Game Image from G2Bulk's own
         // cover image (already hosted, so saveGame() uses this URL directly
-        // instead of re-uploading to ImgBB). Cleared the moment the admin picks
+        // instead of re-uploading). Cleared the moment the admin picks
         // their own file, so a manual upload always wins.
         let editingImageRemoteUrl = null;
         let editingPaymentImageFile = null;
@@ -8964,10 +9254,11 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         function toggleGameListEditMode() {
             gameListEditMode = !gameListEditMode;
             const btn = document.getElementById('game-edit-mode-btn');
+            const bar = document.getElementById('game-toolbar');
+            if (bar) bar.classList.toggle('edit-on', gameListEditMode);
             if (btn) {
-                btn.innerHTML = `<svg class="ui-icon"><use href="#icon-edit"></use></svg><span>Edit Mode: ${gameListEditMode ? 'On' : 'Off'}</span>`;
-                btn.classList.toggle('btn-primary', gameListEditMode);
-                btn.classList.toggle('btn-outline', !gameListEditMode);
+                btn.innerHTML = `<svg class="ui-icon"><use href="#icon-edit"></use></svg><span>Edit: ${gameListEditMode ? 'On' : 'Off'}</span>`;
+                btn.classList.toggle('gt-on', gameListEditMode);
             }
             renderAdminGamesList();
         }
@@ -9516,8 +9807,12 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             let visibleCount = 0;
             rows.forEach(row => {
                 const match = row.dataset.tab === currentPkgTab;
+                const wasHidden = row.style.display === 'none';
                 row.style.display = match ? '' : 'none';
-                if (match) visibleCount++;
+                if (match) {
+                    if (wasHidden && visibleCount < 10) pcaAnimRow(row, visibleCount * 35);
+                    visibleCount++;
+                }
             });
             document.getElementById('pkg-tab-empty-msg').style.display = visibleCount === 0 ? 'block' : 'none';
             renumberPackageRows();
@@ -9565,6 +9860,107 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         }
         window.removeCustomPkgTab = removeCustomPkgTab;
 
+        // Plays the soft "slide in" on a package row (used for new rows and tab switches).
+        function pcaAnimRow(row, delay) {
+            row.classList.remove('pkg-new');
+            void row.offsetWidth;
+            row.style.animationDelay = (delay || 0) + 'ms';
+            row.classList.add('pkg-new');
+            setTimeout(() => { row.classList.remove('pkg-new'); row.style.animationDelay = ''; }, 420 + (delay || 0));
+        }
+        function pcaAnimNewRows(n) {
+            const rows = Array.from(document.querySelectorAll('#edit-packages-list .package-row')).filter(r => r.style.display !== 'none');
+            const take = n < 0 ? 1 : n;
+            rows.slice(-take).forEach((r, i) => pcaAnimRow(r, Math.min(i, 8) * 45));
+        }
+        window.pcaAnimNewRows = pcaAnimNewRows;
+
+        // Same package-row args as addPackageRow; t = chosen tab id ('__auto' keeps auto-detect).
+        function addPkgRowIn(args, t) {
+            const a = args.slice();
+            if (t && t !== '__auto') { a[6] = t; a[7] = t; a[8] = false; }
+            return addPackageRow(...a);
+        }
+
+        // One popup for imports: lists ONLY packages that aren't in the game yet,
+        // and lets the admin pick which tab they go into - in the same step.
+        function pickNewPackages(items, noun) {
+            return new Promise(resolve => {
+                if (!items.length) { resolve({ items: [], tab: null }); return; }
+                const old = document.getElementById('pkg-import-overlay');
+                if (old) old.remove();
+                const tabs = ['currency', 'package', ...customPkgTabs];
+                let chosen = tabs.includes(currentPkgTab) ? currentPkgTab : 'currency';
+                const ov = document.createElement('div');
+                ov.className = 'modal-overlay';
+                ov.id = 'pkg-import-overlay';
+                ov.style.zIndex = '520';
+                ov.innerHTML = `<div class="modal-box">
+                    <div class="modal-header"><h3>New ${escapeHtml(noun)} (${items.length})</h3>
+                        <div class="modal-close" role="button" aria-label="Close"><svg class="ui-icon" style="width:16px;"><use href="#icon-close"></use></svg></div></div>
+                    <p class="pkg-import-sub">Add to tab</p>
+                    <div class="pkg-import-tabs">${['__auto', ...tabs].map(t => `<button type="button" class="pkg-import-tab ${t === chosen ? 'active' : ''}" data-tab="${escapeHtml(t)}">${t === '__auto' ? 'Auto' : escapeHtml(pkgTabLabel(t))}</button>`).join('')}</div>
+                    <label class="pkg-import-selectall"><span><input type="checkbox" id="pkg-import-all" checked style="width:18px;height:18px;vertical-align:middle;margin-right:8px;accent-color:var(--accent);">Select all</span><span id="pkg-import-count"></span></label>
+                    <div class="pkg-import-list">${items.map((it, i) => `<label class="pkg-import-item" style="animation-delay:${Math.min(i, 10) * 25}ms"><input type="checkbox" checked data-i="${i}"><span class="pkg-import-name">${escapeHtml(String(it.name))}</span><span class="pkg-import-price">${Number(it.price || 0).toLocaleString()} MMK</span></label>`).join('')}</div>
+                    <div class="pkg-import-actions"><button type="button" class="btn btn-outline" id="pkg-import-skip">Skip</button><button type="button" class="btn pkg-import-add" id="pkg-import-ok">Add</button></div>
+                </div>`;
+                document.body.appendChild(ov);
+                const boxes = () => Array.from(ov.querySelectorAll('.pkg-import-item input'));
+                const refresh = () => {
+                    const n = boxes().filter(b => b.checked).length;
+                    ov.querySelector('#pkg-import-count').textContent = n + ' / ' + items.length;
+                    ov.querySelector('#pkg-import-ok').textContent = n ? ('Add ' + n) : 'Add';
+                    ov.querySelector('#pkg-import-ok').disabled = !n;
+                    ov.querySelector('#pkg-import-all').checked = n === items.length;
+                };
+                let done = false;
+                const close = (result) => {
+                    if (done) return; done = true;
+                    ov.classList.remove('show');
+                    setTimeout(() => ov.remove(), 280);
+                    resolve(result);
+                };
+                ov.addEventListener('click', (e) => {
+                    const tabBtn = e.target.closest('.pkg-import-tab');
+                    if (tabBtn) {
+                        chosen = tabBtn.dataset.tab;
+                        ov.querySelectorAll('.pkg-import-tab').forEach(b => b.classList.toggle('active', b === tabBtn));
+                        return;
+                    }
+                    if (e.target === ov || e.target.closest('.modal-close') || e.target.id === 'pkg-import-skip') { close({ items: [], tab: null }); return; }
+                    if (e.target.id === 'pkg-import-ok') {
+                        const picked = boxes().filter(b => b.checked).map(b => items[+b.dataset.i]);
+                        close({ items: picked, tab: chosen });
+                    }
+                });
+                ov.addEventListener('change', (e) => {
+                    if (e.target.id === 'pkg-import-all') boxes().forEach(b => { b.checked = e.target.checked; });
+                    refresh();
+                });
+                refresh();
+                requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('show')));
+            });
+        }
+        async function addImportedRows(newItems, noun) {
+            const p = await pickNewPackages(newItems, noun);
+            p.items.forEach(it => addPkgRowIn(it.args, p.tab));
+            if (p.items.length) {
+                if (p.tab && p.tab !== '__auto') switchPackageTab(p.tab);
+                pcaAnimNewRows(p.items.length);
+            }
+            return p.items.length;
+        }
+
+        // Package cards with no image of their own fall back to the game's image.
+        function pkgFallbackImage() {
+            try {
+                const gid = (document.getElementById('edit-game-id') || {}).value;
+                if (gid && typeof GAMES !== 'undefined' && GAMES[gid] && GAMES[gid].image) return GAMES[gid].image;
+                const pv = document.getElementById('edit-game-preview');
+                if (pv && pv.style.display !== 'none' && pv.getAttribute('src')) return pv.getAttribute('src');
+            } catch (e) {}
+            return '';
+        }
         function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', fazercardOfferId = '', fazercardGiftCardId = '', provider = null, badge = '') {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
@@ -9615,8 +10011,8 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                             <div class="pkg-summary-label">
                                 <span class="pkg-sel-box"></span>
                                 <div class="pkg-summary-thumb">
-                                    <img class="pkg-summary-thumb-img" src="${image}" loading="lazy" decoding="async" style="${image ? '' : 'display:none;'}">
-                                    <span class="pkg-summary-thumb-placeholder" style="${image ? 'display:none;' : ''}">+</span>
+                                    <img class="pkg-summary-thumb-img" src="${image || pkgFallbackImage()}" loading="lazy" decoding="async" style="${(image || pkgFallbackImage()) ? '' : 'display:none;'}">
+                                    <span class="pkg-summary-thumb-placeholder" style="${(image || pkgFallbackImage()) ? 'display:none;' : ''}">+</span>
                                 </div>
                                 <span class="pkg-summary-name">${amount || 'Unnamed package'}</span>
                                 <span class="pkg-summary-badge-tag" style="${badge === 'top' || badge === 'hot' ? '' : 'display:none;'}padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;color:#fff;background:${badge === 'top' ? 'linear-gradient(135deg,#FFC93C,#FF9800)' : 'linear-gradient(135deg,#FF8A65,#FF3D57)'};">⭐${badge === 'top' ? 'TOP' : 'HOT'}</span>
@@ -9644,9 +10040,19 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                             <div class="pkg-row-top">
                                 <input type="text" class="pkg-amount" placeholder="e.g. 100 Diamonds" value="${amount}" style="flex:1;min-width:0;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;">
                             </div>
-                            <div class="pkg-price-field">
-                                <label>Tab (ဒီ package ကို ထားမည့် tab)</label>
-                                <select class="pkg-tab-select" onchange="movePackageToTab(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;background:var(--surface);"></select>
+                            <div class="pkg-row-pair">
+                                <div class="pkg-price-field">
+                                    <label>Tab</label>
+                                    <select class="pkg-tab-select" onchange="movePackageToTab(this)"></select>
+                                </div>
+                                <div class="pkg-price-field">
+                                    <label>Badge</label>
+                                    <select class="pkg-badge" onchange="updatePkgSummaryBadge(this)">
+                                    <option value="" ${badge !== 'top' && badge !== 'hot' ? 'selected' : ''}>None</option>
+                                    <option value="top" ${badge === 'top' ? 'selected' : ''}>⭐ TOP</option>
+                                    <option value="hot" ${badge === 'hot' ? 'selected' : ''}>⭐ HOT</option>
+                                </select>
+                                </div>
                             </div>
                             <div class="pkg-row-media">
                                 <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
@@ -9672,14 +10078,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                                     <div class="pkg-img-remove" onclick="removePackageImage(this)" style="${image ? '' : 'display:none;'}">Remove img</div>
                                 </div>
                             </div>
-                            <div class="pkg-price-field">
-                                <label>Badge (Store ကတ်ပေါ်မှာ ⭐ tag ပြမည်)</label>
-                                <select class="pkg-badge" onchange="updatePkgSummaryBadge(this)" style="width:100%;padding:8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:13px;background:var(--surface);">
-                                    <option value="" ${badge !== 'top' && badge !== 'hot' ? 'selected' : ''}>None</option>
-                                    <option value="top" ${badge === 'top' ? 'selected' : ''}>⭐ TOP</option>
-                                    <option value="hot" ${badge === 'hot' ? 'selected' : ''}>⭐ HOT</option>
-                                </select>
-                            </div>
                             <div class="pkg-row-pricing">
                                 <div class="pkg-price-field">
                                     <label>Cost (မသိမ်း — Store မှာ မပြပါ)</label>
@@ -9698,7 +10096,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                                     <option value="manual" ${resolvedProvider === 'manual' ? 'selected' : ''}>Manual (no auto-fulfill)</option>
                                     <option value="g2bulk" ${resolvedProvider === 'g2bulk' ? 'selected' : ''}>G2Bulk</option>
                                     <option value="jcplays" ${resolvedProvider === 'jcplays' ? 'selected' : ''}>JCPlays (Redeem Code)</option>
-                                    <option value="fazercard" ${resolvedProvider === 'fazercard' ? 'selected' : ''}>FazerCards</option>
                                 </select>
                             </div>
                             <input type="text" class="pkg-g2bulk" placeholder="G2Bulk catalogue name" value="${g2bulkName}" style="padding:7px 8px;border:1px solid var(--fill-soft);border-radius:6px;font-size:12px;color:var(--text-secondary);display:none;">
@@ -9764,7 +10161,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         }
         window.refreshPackageRowProviderVisibility = refreshPackageRowProviderVisibility;
 
-        // Uploads a package's card image to ImgBB the moment it's picked, showing
+        // Uploads a package's card image the moment it's picked, showing
         // an instant local preview while the real upload happens in the
         // background. The final hosted URL lands in the preview box's
         // data-url attribute, which saveGame() reads when building `packages`.
@@ -9787,7 +10184,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
             wrap.classList.add('uploading');
             try {
-                const url = await uploadPackageImageToImgBB(file);
+                const url = await uploadPackageImage(file);
                 wrap.dataset.url = url;
                 imgTag.src = url;
                 removeLink.style.display = 'block';
@@ -9804,17 +10201,12 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         }
         window.handlePackageImageSelect = handlePackageImageSelect;
 
-        // Same ImgBB upload as uploadImageToImgBB(), but without a fixed status
+        // Same upload as uploadImage(), but without a fixed status
         // element ID — package rows are created dynamically so there's no single
         // #id to write status text into.
-        async function uploadPackageImageToImgBB(file) {
+        async function uploadPackageImage(file) {
             const compressed = await compressImageFile(file);
-            const form = new FormData();
-            form.append('image', compressed);
-            const res = await fetch(IMGBB_UPLOAD_URL, { method: 'POST', body: form });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error?.message || 'Upload failed');
-            return data.data.url;
+            return postImageToWorker(compressed);
         }
 
         function removePackageImage(linkEl) {
@@ -9908,8 +10300,9 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
             const thumbImg = row.querySelector('.pkg-summary-thumb-img');
             const thumbPlaceholder = row.querySelector('.pkg-summary-thumb-placeholder');
-            if (image) {
-                thumbImg.src = image;
+            const thumbSrc = image || pkgFallbackImage();
+            if (thumbSrc) {
+                thumbImg.src = thumbSrc;
                 thumbImg.style.display = 'block';
                 thumbPlaceholder.style.display = 'none';
             } else {
@@ -9969,8 +10362,12 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         // saveGame() reads, so "closing" and "saving" are the same action here.
         function collapsePackageRow(el) {
             const row = el.closest('.package-row');
+            if (row.classList.contains('closing')) return;
             syncPkgSummary(row);
-            row.classList.remove('editing');
+            row.classList.add('closing');
+            setTimeout(() => { row.classList.remove('editing', 'closing'); pcaFinishCollapse(row); }, 210);
+        }
+        function pcaFinishCollapse(row) {
             const hostModal = row.closest('.modal-box');
             // Only drop the modal's own transform-cancel once no other package
             // card in it is still open (there's normally just one at a time,
@@ -10033,14 +10430,21 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
 
         // Removes a package row (called from the × button) and refreshes order numbers.
         function removePackageRow(el) {
-            el.closest('.package-row').remove();
-            renumberPackageRows();
-            // Deleting a row changes that tab's package count (and can empty
-            // it out entirely), so the tab bar has to redraw right away —
-            // otherwise the badge/empty-state stays stale until the admin
-            // happens to switch tabs, which is what re-renders it.
-            renderPkgTabBar();
-            applyPackageTabFilter();
+            const row = el.closest('.package-row');
+            if (!row || row.classList.contains('pkg-removing')) return;
+            const gap = parseFloat(getComputedStyle(row.parentElement).rowGap) || 0;
+            row.style.setProperty('--pkg-gap', gap + 'px');
+            row.style.maxHeight = row.offsetHeight + 'px';
+            void row.offsetHeight; // lock the start height so max-height can animate
+            row.classList.add('pkg-removing');
+            setTimeout(() => {
+                row.remove();
+                renumberPackageRows();
+                // Deleting a row changes that tab's package count (and can empty
+                // it out entirely), so the tab bar has to redraw right away.
+                renderPkgTabBar();
+                applyPackageTabFilter();
+            }, 380);
         }
         window.removePackageRow = removePackageRow;
 
@@ -10271,7 +10675,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             const oldText = btn.innerText;
             btn.disabled = true; btn.innerText = 'Uploading...';
             try {
-                const url = await uploadPackageImageToImgBB(file);
+                const url = await uploadPackageImage(file);
                 rows.forEach(row => {
                     const wrap = row.querySelector('.pkg-img-preview');
                     wrap.dataset.url = url;
@@ -10321,12 +10725,12 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         // touched by this — it only fires on a live cost sync.
         const AUTO_PRICE_MARGIN_PCT = 3; // used whenever no % is entered; an entered % always wins
 
-        // Rounds UP only (never down), tiered: under 10,000 -> multiples of 10; 10,000-59,999 -> 50; 60,000+ -> 100.
+        // Rounds UP only (never down), tiered: under 10,000 -> multiples of 10; 10,000 and above -> multiples of 100.
         function autoPriceForCost(cost, marginPct = AUTO_PRICE_MARGIN_PCT) {
             if (!cost || cost <= 0) return 0;
             marginPct = Math.max(0, Number(marginPct) || 0); // Price is never set below Cost
             const raw = cost * (1 + marginPct / 100);
-            const step = raw >= 60000 ? 100 : raw >= 10000 ? 50 : 10;
+            const step = raw >= 10000 ? 100 : 10;
             return Math.ceil(raw / step) * step;
         }
 
@@ -10680,7 +11084,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         }
 
         // Resizes + re-encodes an image file entirely in the browser (canvas)
-        // before it's sent to ImgBB, so a raw 3-5MB phone photo turns into a
+        // before it's uploaded, so a raw 3-5MB phone photo turns into a
         // ~20-60KB file instead. maxDim caps the longest side (package/game
         // icons are only ever shown small, so anything above ~800px is wasted
         // bytes); quality is JPEG quality 0-1. Falls back to the original file
@@ -10720,9 +11124,9 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             }
         }
 
-        // Uploads a phone photo to a free image host (ImgBB) and resolves with its direct URL.
+        // Uploads a phone photo to the image Worker and resolves with its direct URL.
         // No Firebase Storage / Blaze plan involved.
-        async function uploadImageToImgBB(file, statusElId = 'upload-status') {
+        async function uploadImage(file, statusElId = 'upload-status') {
             const statusEl = document.getElementById(statusElId);
             statusEl.style.display = 'block';
             statusEl.innerText = 'Compressing photo...';
@@ -10730,18 +11134,16 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             const compressed = await compressImageFile(file);
             statusEl.innerText = 'Uploading photo...';
 
-            const form = new FormData();
-            form.append('image', compressed);
-
-            const res = await fetch(IMGBB_UPLOAD_URL, {
-                method: 'POST',
-                body: form
-            });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error?.message || 'Upload failed');
+            let url;
+            try {
+                url = await postImageToWorker(compressed);
+            } catch (e) {
+                statusEl.innerText = e.message;
+                throw e;
+            }
 
             statusEl.innerText = 'Photo uploaded ✓';
-            return data.data.url;
+            return url;
         }
 
         function previewPaymentImage(e) {
@@ -10851,7 +11253,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 let bannerUrl = (gameId && GAMES[gameId]) ? (GAMES[gameId].banner || '') : '';
 
                 if (editingImageFile) {
-                    imageUrl = await uploadImageToImgBB(editingImageFile, 'upload-status');
+                    imageUrl = await uploadImage(editingImageFile, 'upload-status');
                 } else if (editingImageRemoteUrl) {
                     imageUrl = editingImageRemoteUrl;
                 }
@@ -10864,7 +11266,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 }
 
                 if (editingBannerImageFile) {
-                    bannerUrl = await uploadImageToImgBB(editingBannerImageFile, 'banner-upload-status');
+                    bannerUrl = await uploadImage(editingBannerImageFile, 'banner-upload-status');
                 }
 
                 // No dedicated banner set? Reuse the game image so the detail page never shows a blank banner.
@@ -12349,7 +12751,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             });
         }
 
-        // Local preview only - the actual ImgBB upload happens in
+        // Local preview only - the actual upload happens in
         // saveSocialLinks(), same lazy-upload pattern as the game/payment
         // image pickers so a discarded edit never wastes an upload.
         function previewSocialImage(e, platform) {
@@ -12393,7 +12795,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                 const data = { facebook, telegram, tiktok };
                 for (const platform of ['facebook', 'telegram', 'tiktok']) {
                     if (editingSocialImageFiles[platform]) {
-                        data[`${platform}Image`] = await uploadImageToImgBB(editingSocialImageFiles[platform], 'social-upload-status');
+                        data[`${platform}Image`] = await uploadImage(editingSocialImageFiles[platform], 'social-upload-status');
                     } else if (removedSocialImages[platform]) {
                         data[`${platform}Image`] = '';
                     }
@@ -12490,7 +12892,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             btn.innerText = 'Saving...';
 
             try {
-                const logoUrl = await uploadImageToImgBB(editingLogoImageFile, 'logo-upload-status');
+                const logoUrl = await uploadImage(editingLogoImageFile, 'logo-upload-status');
                 await setDoc(doc(db, "settings", "branding"), { logoUrl }, { merge: true });
                 window.showToast('Store logo updated!', 'success');
                 editingLogoImageFile = null;
@@ -12629,7 +13031,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         // Settings (same escape hatch as JCPLAYS_SETTINGS.proxyUrl) - fill that in
         // only if Verify Key fails with a network/CORS error.
         let fazercardListenerAttached = false;
-        let FAZERCARD_SETTINGS = { apiKey: '', proxyUrl: '', enabled: true, lowBalanceAlert: 0, usdRate: 4500 };
+        let FAZERCARD_SETTINGS = { apiKey: '', proxyUrl: '', enabled: false, lowBalanceAlert: 0, usdRate: 4500 };
         const FAZERCARD_BASE_URL = 'https://api.fzr.cards/api/v2';
 
         function openFazerCardModal() {
@@ -12648,6 +13050,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         window.closeFazerCardModal = closeFazerCardModal;
 
         function listenFazerCard() {
+            return; // FazerCards removed: only G2Bulk and JCPlays are used
             if (fazercardListenerAttached) return;
             fazercardListenerAttached = true;
             onSnapshot(doc(db, "settings", "fazercard"), (docSnap) => {
@@ -13778,8 +14181,8 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         // icon, badge-success = check circle, badge-danger = x circle).
         function statusBadgeIcon(badgeClass) {
             switch (badgeClass) {
-                case 'badge-pending': return '<span class="badge-dashed-circle"></span>';
-                case 'badge-processing': return '<svg class="ui-icon"><use href="#icon-pie"></use></svg>';
+                case 'badge-pending': return '<svg class="ui-icon"><use href="#icon-clock"></use></svg>';
+                case 'badge-processing': return '<span class="pca-spin pca-spin-sm"></span>';
                 case 'badge-success': return '<svg class="ui-icon"><use href="#icon-verified-blue"></use></svg>';
                 case 'badge-danger': return '<svg class="ui-icon"><use href="#icon-x-circle"></use></svg>';
                 default: return '';
@@ -13796,12 +14199,12 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         // Display-only relabeling of order/top-up status badges (internal
         // status values like "Pending"/"Success"/"Fail" are untouched — only
         // what's shown in the badge text changes). Positions map 1:1 to the
-        // 4 badge colors: pending→Draft (queued, sits right before it enters
+        // 4 badge colors: pending→Pending (queued, sits right before it enters
         // Processing/In-progress), processing→In-progress, success-class
         // (Success/Approved/Completed)→Completed, danger-class
         // (Fail/Rejected)→Failed.
         const ORDER_STATUS_DISPLAY_LABELS = {
-            Pending: 'Draft',
+            Pending: 'Pending',
             Processing: 'In-progress',
             Success: 'Completed',
             Approved: 'Completed',
@@ -14417,7 +14820,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                     if (key) rowByG2BulkName.set(key, row);
                 });
 
-                let updatedCount = 0, addedCount = 0;
+                let updatedCount = 0, addedCount = 0; const newItems = [];
                 catalogues.forEach(c => {
                     const cost = Math.round(c.amount * rate);
                     const existingRow = rowByG2BulkName.get(c.name);
@@ -14427,10 +14830,10 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(c.name, cost, autoPriceForCost(cost), c.name, '', '', 'currency', null, true);
-                        addedCount++;
+                        newItems.push({ name: c.name, price: autoPriceForCost(cost), args: [c.name, cost, autoPriceForCost(cost), c.name, '', '', 'currency', null, true] });
                     }
                 });
+                addedCount = await addImportedRows(newItems, 'packages');
 
                 statusEl.style.color = 'var(--accent)';
                 let statusMsg = updatedCount
@@ -14576,7 +14979,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                     if (key) rowByOfferId.set(key, row);
                 });
 
-                let updatedCount = 0, addedCount = 0;
+                let updatedCount = 0, addedCount = 0; const newItems = [];
                 offers.forEach(o => {
                     const cost = Math.round(Number(o.price_usd) * rate);
                     const existingRow = rowByOfferId.get(o.offer_id);
@@ -14586,10 +14989,10 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', o.offer_id);
-                        addedCount++;
+                        newItems.push({ name: o.name, price: autoPriceForCost(cost), args: [o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', o.offer_id] });
                     }
                 });
+                addedCount = await addImportedRows(newItems, 'packages');
 
                 // The fields FazerCards needs at order time (e.g. player_id,
                 // sometimes zone_id/server_id too) come back on the offers
@@ -14819,7 +15222,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                     if (key) rowByVoucherId.set(key, row);
                 });
 
-                let updatedCount = 0, addedCount = 0;
+                let updatedCount = 0, addedCount = 0; const newItems = [];
                 products.forEach(p => {
                     const cost = Math.round(p.unit_price * rate);
                     const idStr = String(p.id);
@@ -14831,10 +15234,10 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                         updatedCount++;
                     } else {
                         const label = p.face_value ? `${p.title} ($${p.face_value})` : p.title;
-                        addPackageRow(label, cost, autoPriceForCost(cost), '', '', p.image_url || '', 'currency', null, false, idStr);
-                        addedCount++;
+                        newItems.push({ name: label, price: autoPriceForCost(cost), args: [label, cost, autoPriceForCost(cost), '', '', p.image_url || '', 'currency', null, false, idStr] });
                     }
                 });
+                addedCount = await addImportedRows(newItems, 'products');
 
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
@@ -14884,7 +15287,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                     if (key) rowByCardId.set(key, row);
                 });
 
-                let updatedCount = 0, addedCount = 0;
+                let updatedCount = 0, addedCount = 0; const newItems = [];
                 offers.forEach(o => {
                     const cost = Math.round(Number(o.price_usd) * rate);
                     const existingRow = rowByCardId.get(o.card_id);
@@ -14894,10 +15297,10 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', '', o.card_id);
-                        addedCount++;
+                        newItems.push({ name: o.name, price: autoPriceForCost(cost), args: [o.name, cost, autoPriceForCost(cost), '', '', '', 'currency', null, true, '', '', o.card_id] });
                     }
                 });
+                addedCount = await addImportedRows(newItems, 'cards');
 
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
@@ -15737,7 +16140,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                     if (key) rowByJcplaysId.set(key, row);
                 });
 
-                let updatedCount = 0, addedCount = 0;
+                let updatedCount = 0, addedCount = 0; const newItems = [];
                 rows.forEach(r => {
                     const cost = Math.round(Number(r.price) * rate);
                     const existingRow = rowByJcplaysId.get(String(r.id));
@@ -15747,10 +16150,10 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
                         updatePackageProfit(costInput);
                         updatedCount++;
                     } else {
-                        addPackageRow(r.spu, cost, autoPriceForCost(cost), '', String(r.id), '', 'currency', null, true);
-                        addedCount++;
+                        newItems.push({ name: r.spu, price: autoPriceForCost(cost), args: [r.spu, cost, autoPriceForCost(cost), '', String(r.id), '', 'currency', null, true] });
                     }
                 });
+                addedCount = await addImportedRows(newItems, 'packages');
 
                 statusEl.style.color = 'var(--accent)';
                 statusEl.innerText = updatedCount
@@ -15980,11 +16383,11 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             try {
                 let imageUrl = (paymentId && PAYMENT_METHODS[paymentId]) ? (PAYMENT_METHODS[paymentId].image || '') : '';
                 if (editingPaymentImageFile) {
-                    imageUrl = await uploadImageToImgBB(editingPaymentImageFile, 'payment-upload-status');
+                    imageUrl = await uploadImage(editingPaymentImageFile, 'payment-upload-status');
                 }
                 let qrImageUrl = (paymentId && PAYMENT_METHODS[paymentId]) ? (PAYMENT_METHODS[paymentId].qrImage || '') : '';
                 if (editingPaymentQrImageFile) {
-                    qrImageUrl = await uploadImageToImgBB(editingPaymentQrImageFile, 'payment-qr-upload-status');
+                    qrImageUrl = await uploadImage(editingPaymentQrImageFile, 'payment-qr-upload-status');
                 }
 
                 const data = { name, number, accountName, availabilityNote, image: imageUrl, qrImage: qrImageUrl };
@@ -16447,7 +16850,8 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         // once an authenticated admin has actually signed in (see the auth
         // gate above) — nothing here runs against Firestore before that.
         function startAdminApp() {
-            listenGames(); // first, so the Games list isn't queued behind other startup reads
+            // Login reads almost nothing now: games + provider settings load when a page that
+            // needs them is opened (see ensurePageData). Orders load for "Today" only.
             loadDashboardStats();
             // Cloudflare/Firestore usage: manual Refresh only.
             // Orders are no longer auto-loaded here: they load when the Orders page is opened.
@@ -16489,9 +16893,6 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             //                          effect immediately, on whatever page
             //                          that admin currently has open
             listenBranding();
-            listenG2Bulk();
-            listenJCPlays();
-            listenFazerCard();
             listenTelegramBot();
             listenAdminBroadcastSecret();
             listenAdminAccounts();
@@ -16599,7 +17000,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         'order-list': 'group-orders',
         'game-list': 'group-game', 'game-editor-page': 'group-game',
         'topup-list': 'group-wallet', 'payment-list': 'group-wallet',
-        'g2bulk': 'group-api', 'jcplays': 'group-api', 'api-docs': 'group-api',
+        'g2bulk': 'group-setting', 'jcplays': 'group-setting', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
         'user-list': 'group-userlist', 'user-detail-page': 'group-userlist',
         'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
     };
@@ -16642,6 +17043,7 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
             ]},
             { title: 'Settings', items: [
                 { label: 'General', icon: 'icon-gear', page: 'settings', run: function () { W.showPage('settings'); } },
+                { label: 'Admin', icon: 'icon-users', page: 'admin-accounts', run: function () { W.showPage('admin-accounts'); } },
                 { label: 'Notify', icon: 'icon-bell', page: 'notify-list', run: function () { W.showPage('notify-list'); } },
                 { label: 'Ticker', icon: 'icon-megaphone', page: 'ticker-list', run: function () { W.showPage('ticker-list'); } }
             ]},
