@@ -2180,6 +2180,50 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
 .order-stat-grid.pca-loading .val::after { content: ''; position: absolute; left: 0; top: 2px; width: 34px; height: 20px; border-radius: 6px; background: rgba(255,255,255,.35); animation: pcaShimmer 1.2s linear infinite; }
 .pca-skel-row { background: linear-gradient(90deg, var(--fill-soft) 25%, rgba(255,255,255,.55) 50%, var(--fill-soft) 75%); background-size: 200% 100%; }
 </style>
+<style id="pca-perf2">
+/* ==========================================================================
+   Perf + nav pass (loaded last)
+   - no backdrop-filter blur on phones (nav pill + popups were re-enabled later and caused jank)
+   - flat page background on phones (no full-screen fixed gradient repaint)
+   - cheaper spinner on phones (only rotates; no animated custom property)
+   - header + desktop tab bar no longer follow the scroll
+   ========================================================================== */
+@media (min-width: 900px) {
+    html .header { position: relative !important; top: auto !important; will-change: auto !important; transform: none !important; }
+    body.pca-hdr-hidden .header { transform: none !important; }
+    html .top-nav { position: relative !important; top: auto !important; }
+}
+@media (max-width: 899.98px) {
+    html .top-nav,
+    #nav-group-sheet-overlay .modal-box, #pca-more-overlay .modal-box {
+        -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+        background: var(--surface-strong) !important;
+    }
+    html .top-nav { box-shadow: 0 -2px 10px -6px rgba(0,0,0,.35) !important; }
+    body::before { display: none !important; }
+    .pca-spin, .btn.is-loading::after, .lg-btn:disabled::after {
+        --pca-a: 270deg; animation: pcaRingRot 0.9s linear infinite !important;
+    }
+    .order-stat-card, .admin-card, .stat-chip, .user-grid-card { box-shadow: 0 1px 3px rgba(0,0,0,.12) !important; }
+    /* header + tab bar sit at the top and slide up out of view slowly when scrolling down; they come back on scroll up */
+    :root { --pca-nav-h: 0px; --pca-pop-bottom: calc(var(--pca-safe-b) + 16px); }
+    html .header {
+        position: sticky !important; top: 0 !important; z-index: 100;
+        transition: transform .7s cubic-bezier(.4,0,.2,1) !important; will-change: transform;
+    }
+    html .top-nav {
+        position: sticky !important; top: var(--pca-hdr-h, 72px) !important; left: auto !important; right: auto !important; bottom: auto !important;
+        z-index: 90; margin: 8px 10px 4px !important; box-shadow: 0 1px 0 var(--border-glass) !important;
+        transition: transform .7s cubic-bezier(.4,0,.2,1) !important; will-change: transform;
+    }
+    body.pca-hdr-hidden .header,
+    body.pca-hdr-hidden .top-nav { transform: translate3d(0, calc(-1 * var(--pca-bars-h, 170px)), 0) !important; }
+    body.pca-kb-open .top-nav { transform: none !important; }
+    .app-layout { padding-bottom: 14px !important; }
+    .modal-overlay, .dialog-overlay { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+</style>
+
 </head>
 <body>
 
@@ -4058,7 +4102,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
         // Games (full collection) and the provider settings docs are fetched the first
         // time a page that actually uses them is opened.
         const PAGES_NEED_GAMES = ['order-list', 'game-list', 'game-editor-page', 'analytics', 'topup-list'];
-        const PAGES_NEED_PROVIDERS = ['order-list', 'game-list', 'game-editor-page', 'g2bulk', 'jcplays', 'api-docs', 'analytics', 'settings', 'topup-list'];
+        const PAGES_NEED_PROVIDERS = ['dashboard', 'order-list', 'game-list', 'game-editor-page', 'g2bulk', 'jcplays', 'api-docs', 'analytics', 'settings', 'topup-list'];
         function ensurePageData(pageId) {
             try {
                 if (PAGES_NEED_GAMES.includes(pageId) && !gamesLoadedAt && !gamesLoadPromise) loadGames(true);
@@ -14424,6 +14468,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             if (jcplaysListenerAttached) return;
             jcplaysListenerAttached = true;
             onSnapshot(doc(db, "settings", "jcplays"), (docSnap) => {
+                window.__jcplaysLoaded = true;
                 const data = docSnap.exists() ? docSnap.data() : {};
                 document.getElementById('jcplays-base-url').value = data.baseUrl || 'https://jcplays.com/smilecoin/api';
                 document.getElementById('jcplays-proxy-url').value = data.proxyUrl || '';
@@ -14447,7 +14492,7 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
                 applyProviderVisibility('jcplays', jcplaysEnabled);
                 if (window.refreshJCPlaysBalance) window.refreshJCPlaysBalance();
             }, (error) => {
-                retrySettingsListener('JCPlays', error, () => { jcplaysListenerAttached = false; }, listenJCPlays);
+                retrySettingsListener('JCPlays', error, () => { jcplaysListenerAttached = false; window.__jcplaysLoaded = false; }, listenJCPlays);
             });
         }
 
@@ -14461,17 +14506,25 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             const enabled = document.getElementById('jcplays-enabled').checked;
             const btn = document.getElementById('save-jcplays-btn');
             const originalText = btn.innerText;
+            if (!window.__jcplaysLoaded && !confirm('Saved settings ကို မဖတ်နိုင်သေးပါ။ ဒီအတိုင်း Save လုပ်ရင် ရှိပြီးသား value တွေ ဖျက်မိနိုင်ပါတယ်။ ဆက်လုပ်မလား?')) return;
             btn.disabled = true;
             btn.innerText = 'Saving...';
 
             try {
                 await setDoc(doc(db, "settings", "jcplays"), { baseUrl, proxyUrl, uid, email, mKey, lowBalanceAlert, enabled }, { merge: true });
+                try {
+                    const chk = await _fsGetDocFromServer(doc(db, "settings", "jcplays"));
+                    if (!chk.exists() || (mKey && chk.data().mKey !== mKey)) {
+                        window.showToast('Save လုပ်ပြီးပေမယ့် server မှာ မတွေ့ပါ — ပြန်စစ်ပါ', 'fail');
+                        return;
+                    }
+                } catch (e) { console.error('JCPlays read-back failed:', e); window.showToast('Server ကပြန်ဖတ်မရပါ: ' + ((e && e.code) || 'error'), 'fail'); return; }
                 callAdminSyncClaims();
                 window.showToast('JCPlays credentials saved!', 'success');
                 closeJCPlaysModal();
             } catch (error) {
                 console.error("Save JCPlays credentials error:", error);
-                window.showToast('Failed to save JCPlays credentials.', 'fail');
+                window.showToast('Failed to save JCPlays credentials: ' + ((error && error.code) || (error && error.message) || 'unknown'), 'fail');
             } finally {
                 btn.disabled = false;
                 btn.innerText = originalText;
@@ -15354,6 +15407,10 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
             // Login reads almost nothing now: games + provider settings load when a page that
             // needs them is opened (see ensurePageData). Orders load for "Today" only.
             loadDashboardStats();
+            // Dashboard is the landing page and shows the provider wallet balances, which need
+            // the saved keys - so load provider settings now (2 small doc reads) instead of
+            // waiting until the API / G2Bulk tab is opened.
+            try { if (window.ensurePageData) window.ensurePageData('dashboard'); } catch (e) { console.error(e); }
             // Cloudflare/Firestore usage: manual Refresh only.
             // Orders are no longer auto-loaded here: they load when the Orders page is opened.
             // Wallet top-ups are NOT fetched at startup any more: they load when the Top Up tab is opened (see subscribeTabListeners).
@@ -15719,6 +15776,27 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
     }
     new MutationObserver(syncThemeColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     syncThemeColor();
+})();
+</script>
+<script id="pca-bars-vars">
+/* measures header + tab bar so the slide-away distance and sticky offset are exact */
+(function () {
+    function px(v) { return parseFloat(v) || 0; }
+    function measure() {
+        var h = document.querySelector('.header'), n = document.querySelector('.top-nav');
+        if (!h || !n) return;
+        var hs = getComputedStyle(h), ns = getComputedStyle(n);
+        var hTotal = h.offsetHeight + px(hs.marginTop) + px(hs.marginBottom);
+        var nTotal = n.offsetHeight + px(ns.marginTop) + px(ns.marginBottom);
+        var root = document.documentElement.style;
+        root.setProperty('--pca-hdr-h', (h.offsetHeight + px(hs.marginTop)) + 'px');
+        root.setProperty('--pca-bars-h', (hTotal + nTotal + 12) + 'px');
+    }
+    window.addEventListener('load', measure);
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    if (document.readyState !== 'loading') measure(); else document.addEventListener('DOMContentLoaded', measure);
+    setTimeout(measure, 800); setTimeout(measure, 2500);
 })();
 </script>
 </body>
