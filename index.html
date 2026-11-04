@@ -59,9 +59,9 @@
             --text-strong: #09090B;
             --text-secondary: #55585E;
             --text-muted: #8A8D93;
-            --danger: #B83A4B;
-            --danger-strong: #8F2B3A;
-            --danger-soft: rgba(184,58,75,0.12);
+            --danger: #E0243A;
+            --danger-strong: #C41E32;
+            --danger-soft: rgba(224,36,58,0.12);
             --border-dashed: rgba(30,30,40,0.25);
             --shadow-soft: 0 8px 30px -8px rgba(30,30,40,0.18);
             --glass-blur: 14px;
@@ -90,9 +90,9 @@
             --text-strong: #FFFFFF;
             --text-secondary: rgba(242,242,244,0.62);
             --text-muted: rgba(242,242,244,0.4);
-            --danger: #E8788A;
-            --danger-strong: #F6C4CC;
-            --danger-soft: rgba(232,120,138,0.16);
+            --danger: #FF5468;
+            --danger-strong: #FF8A98;
+            --danger-soft: rgba(255,84,104,0.18);
             --border-dashed: rgba(255,255,255,0.26);
             --shadow-soft: 0 14px 40px -10px rgba(0,0,0,0.65);
             --glass-blur: 16px;
@@ -273,7 +273,7 @@
         }
         .lg-btn:active { transform: translateY(1px); }
         .lg-btn:disabled { opacity: 0.6; cursor: default; box-shadow: none; --lg-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M21 12a9 9 0 1 1-6.2-8.55'/%3E%3C/svg%3E"); }
-        .lg-btn:disabled::after { animation: lgSpin 0.9s linear infinite; }
+        
         .lg-btn.lg-ok { --lg-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E"); }
         .lg-btn.lg-ghost {
             --lg-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E");
@@ -1928,11 +1928,16 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
     .pca-more-tile.is-current { background: rgba(var(--accent-rgb),.18) !important; }
 }
 
+        .nt-tabs { display:flex; gap:6px; padding:6px; margin-bottom:12px; background:var(--fill-soft); border-radius:14px; }
+        .nt-tab { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:40px; border:0; border-radius:10px; background:transparent; color:var(--text-secondary); font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; }
+        .nt-tab .ui-icon { width:16px; height:16px; }
+        .nt-tab.active { background:var(--accent); color:#fff; }
+        .pkg-img-preview[data-url=""] .pkg-img-tag { opacity: .6; }
 </style>
 <style id="pca-tidy">
 /* ==========================================================================
    Tidy + fast pass (loaded last, wins over earlier layers)
-   - bottom bar = 7 equal normal tabs (no "More" grid page)
+   - bottom bar = 6 equal normal tabs (no "More" grid page)
    - no backdrop-filter / heavy shadows / infinite animations on phones
    - tabs and buttons share one size
    ========================================================================== */
@@ -1969,9 +1974,9 @@ html .header #header-clock-date { color: var(--text-secondary) !important; }
         border-radius: 18px !important;
     }
 
-    /* ---- bottom bar: 7 equal tabs, docked ---- */
+    /* ---- bottom bar: 6 equal tabs, docked ---- */
     html .top-nav {
-        display: grid !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
         left: 0 !important; right: 0 !important; bottom: 0 !important; margin: 0 !important;
         padding: 4px 2px calc(4px + var(--pca-safe-b)) !important; gap: 0 !important;
         border-radius: 0 !important; border: 0 !important; border-top: 1px solid var(--border-glass) !important;
@@ -2123,30 +2128,42 @@ html[data-theme="dark-purple"] .badge-danger     { color: #FDA4AF; }
 @keyframes pcaRingRot { to { transform: rotate(360deg); } }
 @keyframes pcaRingArc { 0% { --pca-a: 24deg; } 50% { --pca-a: 290deg; } 100% { --pca-a: 24deg; } }
 
-/* one ring spinner everywhere: the arc grows and shrinks while it turns */
-.pca-spin, .btn.is-loading::after {
-    --pca-t: 2.4px;
-    display: inline-block; box-sizing: border-box; width: 16px; height: 16px; border: 0 !important; border-radius: 50%;
-    background: conic-gradient(currentColor var(--pca-a, 90deg), transparent 0);
-    -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - var(--pca-t) - .4px), #000 calc(100% - var(--pca-t)));
-            mask-image: radial-gradient(farthest-side, transparent calc(100% - var(--pca-t) - .4px), #000 calc(100% - var(--pca-t)));
-    vertical-align: -3px; opacity: 1;
-    animation: pcaRingRot 1.3s linear infinite, pcaRingArc 1.3s ease-in-out infinite;
+/* one loader everywhere: 4 small bouncing dots (green, red, blue, yellow) */
+@property --pd1 { syntax: '<length>'; inherits: false; initial-value: 6px; }
+@property --pd2 { syntax: '<length>'; inherits: false; initial-value: 6px; }
+@property --pd3 { syntax: '<length>'; inherits: false; initial-value: 6px; }
+@property --pd4 { syntax: '<length>'; inherits: false; initial-value: 6px; }
+@keyframes pcaDot1 { 0%, 60%, 100% { --pd1: 6px; } 30% { --pd1: 0px; } }
+@keyframes pcaDot2 { 0%, 60%, 100% { --pd2: 6px; } 30% { --pd2: 0px; } }
+@keyframes pcaDot3 { 0%, 60%, 100% { --pd3: 6px; } 30% { --pd3: 0px; } }
+@keyframes pcaDot4 { 0%, 60%, 100% { --pd4: 6px; } 30% { --pd4: 0px; } }
+.pca-spin, .btn.is-loading::after, .lg-btn:disabled::after {
+    display: inline-block; box-sizing: border-box; width: 33px; height: 12px; border: 0 !important; border-radius: 0 !important;
+    -webkit-mask: none !important; mask: none !important; vertical-align: -2px; opacity: 1 !important;
+    background:
+        radial-gradient(circle closest-side, #22C55E 90%, transparent 100%) 0 var(--pd1) / 6px 6px no-repeat,
+        radial-gradient(circle closest-side, #EF4444 90%, transparent 100%) 9px var(--pd2) / 6px 6px no-repeat,
+        radial-gradient(circle closest-side, #3B82F6 90%, transparent 100%) 18px var(--pd3) / 6px 6px no-repeat,
+        radial-gradient(circle closest-side, #FACC15 90%, transparent 100%) 27px var(--pd4) / 6px 6px no-repeat !important;
+    animation: pcaDot1 .9s ease-in-out infinite, pcaDot2 .9s ease-in-out .12s infinite, pcaDot3 .9s ease-in-out .24s infinite, pcaDot4 .9s ease-in-out .36s infinite !important;
 }
-.btn.is-loading::after { content: ''; width: 16px; height: 16px; }
-.pca-spin-sm { width: 12px; height: 12px; --pca-t: 2px; vertical-align: -2px; }
-.pca-spin-lg { width: 28px; height: 28px; --pca-t: 3px; }
+.btn.is-loading::after { content: ''; }
+.pca-spin-sm { transform: scale(.7); transform-origin: left center; margin-right: -9px; vertical-align: -2px; }
+.pca-spin-lg { transform: scale(1.5); transform-origin: center; margin: 0 8px; }
 
-/* login: spinner while waiting (also replaces the spinning tick on Confirm / Verify) */
-.lg-btn:disabled::after, .lg-btn.lg-ok:disabled::after, .lg-btn.lg-ghost:disabled::after {
-    width: 24px; height: 24px; border-radius: 50%;
-    background: conic-gradient(#fff var(--pca-a, 90deg), transparent 0);
-    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3.2px), #000 calc(100% - 2.8px));
-            mask: radial-gradient(farthest-side, transparent calc(100% - 3.2px), #000 calc(100% - 2.8px));
-    animation: pcaRingRot 1.3s linear infinite, pcaRingArc 1.3s ease-in-out infinite;
-}
-.lg-btn.lg-ghost:disabled::after { background: conic-gradient(var(--lg-brass-deep) var(--pca-a, 90deg), transparent 0); }
+/* login: 4 bouncing dots on a light button while waiting (replaces the spinning tick) */
+.lg-btn:disabled { opacity: 1 !important; background: #fff !important; border: 1px solid rgba(0,0,0,.08) !important; }
+.lg-btn:disabled::after { width: 33px; height: 12px; }
 .lg-btn .pca-spin { display: none; }
+
+/* per-place loaders: ring = status badge, orbit = login/auth, bars = lists, wave = balances/stats, tile = pickers; dots (default) = buttons */
+.pca-spin.pca-spin-ring { width:14px; height:14px; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22%3E%3Cg fill=%22none%22 stroke-width=%226%22 stroke-linecap=%22round%22%3E%3CanimateTransform attributeName=%22transform%22 type=%22rotate%22 from=%220 25 25%22 to=%22360 25 25%22 dur=%221.1s%22 repeatCount=%22indefinite%22/%3E%3Cpath d=%22M28.65 4.32 A21 21 0 0 1 45.68 21.35%22 stroke=%22%2322C55E%22/%3E%3Cpath d=%22M45.68 28.65 A21 21 0 0 1 28.65 45.68%22 stroke=%22%23EF4444%22/%3E%3Cpath d=%22M21.35 45.68 A21 21 0 0 1 4.32 28.65%22 stroke=%22%233B82F6%22/%3E%3Cpath d=%22M4.32 21.35 A21 21 0 0 1 21.35 4.32%22 stroke=%22%23FACC15%22/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat !important; animation: none !important; transform: none; margin: 0; vertical-align: middle; vertical-align:-2px; }
+.pca-spin.pca-spin-orbit { width:30px; height:30px; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22%3E%3Ccircle cx=%2225%22 cy=%2225%22 r=%2218%22 fill=%22none%22 stroke=%22%23888%22 stroke-opacity=%22.25%22 stroke-width=%221.5%22/%3E%3Cg%3E%3CanimateTransform attributeName=%22transform%22 type=%22rotate%22 from=%220 25 25%22 to=%22360 25 25%22 dur=%221.6s%22 repeatCount=%22indefinite%22/%3E%3Ccircle cx=%2225%22 cy=%227%22 r=%225%22 fill=%22%2322C55E%22/%3E%3Ccircle cx=%2243%22 cy=%2225%22 r=%225%22 fill=%22%23EF4444%22/%3E%3Ccircle cx=%2225%22 cy=%2243%22 r=%225%22 fill=%22%233B82F6%22/%3E%3Ccircle cx=%227%22 cy=%2225%22 r=%225%22 fill=%22%23FACC15%22/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat !important; animation: none !important; transform: none; margin: 0; vertical-align: middle;  }
+.pca-spin.pca-spin-bars { width:28px; height:26px; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect x=%224%22 y=%2228%22 width=%226%22 height=%228%22 rx=%223%22 fill=%22%2322C55E%22%3E%3Canimate attributeName=%22height%22 values=%228%3B30%3B8%22 dur=%220.9s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%2228%3B6%3B28%22 dur=%220.9s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3Crect x=%2213%22 y=%2228%22 width=%226%22 height=%228%22 rx=%223%22 fill=%22%23EF4444%22%3E%3Canimate attributeName=%22height%22 values=%228%3B30%3B8%22 dur=%220.9s%22 begin=%220.12s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%2228%3B6%3B28%22 dur=%220.9s%22 begin=%220.12s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3Crect x=%2222%22 y=%2228%22 width=%226%22 height=%228%22 rx=%223%22 fill=%22%233B82F6%22%3E%3Canimate attributeName=%22height%22 values=%228%3B30%3B8%22 dur=%220.9s%22 begin=%220.24s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%2228%3B6%3B28%22 dur=%220.9s%22 begin=%220.24s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3Crect x=%2231%22 y=%2228%22 width=%226%22 height=%228%22 rx=%223%22 fill=%22%23FACC15%22%3E%3Canimate attributeName=%22height%22 values=%228%3B30%3B8%22 dur=%220.9s%22 begin=%220.36s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%2228%3B6%3B28%22 dur=%220.9s%22 begin=%220.36s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3C/svg%3E") center / contain no-repeat !important; animation: none !important; transform: none; margin: 0; vertical-align: middle;  }
+.pca-spin.pca-spin-wave { width:38px; height:15px; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 24%22%3E%3Ccircle cx=%229%22 cy=%2212%22 r=%223%22 fill=%22%2322C55E%22%3E%3Canimate attributeName=%22r%22 values=%223%3B7%3B3%22 dur=%221s%22 repeatCount=%22indefinite%22/%3E%3C/circle%3E%3Ccircle cx=%2223%22 cy=%2212%22 r=%223%22 fill=%22%23EF4444%22%3E%3Canimate attributeName=%22r%22 values=%223%3B7%3B3%22 dur=%221s%22 begin=%220.15s%22 repeatCount=%22indefinite%22/%3E%3C/circle%3E%3Ccircle cx=%2237%22 cy=%2212%22 r=%223%22 fill=%22%233B82F6%22%3E%3Canimate attributeName=%22r%22 values=%223%3B7%3B3%22 dur=%221s%22 begin=%220.3s%22 repeatCount=%22indefinite%22/%3E%3C/circle%3E%3Ccircle cx=%2251%22 cy=%2212%22 r=%223%22 fill=%22%23FACC15%22%3E%3Canimate attributeName=%22r%22 values=%223%3B7%3B3%22 dur=%221s%22 begin=%220.44999999999999996s%22 repeatCount=%22indefinite%22/%3E%3C/circle%3E%3C/svg%3E") center / contain no-repeat !important; animation: none !important; transform: none; margin: 0; vertical-align: middle; vertical-align:-3px; }
+.pca-spin.pca-spin-tile { width:28px; height:28px; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect x=%223%22 y=%223%22 width=%2216%22 height=%2216%22 rx=%224%22 fill=%22%2322C55E%22%3E%3Canimate attributeName=%22width%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22height%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22x%22 values=%223%3B8%3B3%22 dur=%221.2s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%223%3B8%3B3%22 dur=%221.2s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3Crect x=%2221%22 y=%223%22 width=%2216%22 height=%2216%22 rx=%224%22 fill=%22%23EF4444%22%3E%3Canimate attributeName=%22width%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 begin=%220.3s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22height%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 begin=%220.3s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22x%22 values=%2221%3B26%3B21%22 dur=%221.2s%22 begin=%220.3s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%223%3B8%3B3%22 dur=%221.2s%22 begin=%220.3s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3Crect x=%2221%22 y=%2221%22 width=%2216%22 height=%2216%22 rx=%224%22 fill=%22%233B82F6%22%3E%3Canimate attributeName=%22width%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 begin=%220.6s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22height%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 begin=%220.6s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22x%22 values=%2221%3B26%3B21%22 dur=%221.2s%22 begin=%220.6s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%2221%3B26%3B21%22 dur=%221.2s%22 begin=%220.6s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3Crect x=%223%22 y=%2221%22 width=%2216%22 height=%2216%22 rx=%224%22 fill=%22%23FACC15%22%3E%3Canimate attributeName=%22width%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 begin=%220.8999999999999999s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22height%22 values=%2216%3B6%3B16%22 dur=%221.2s%22 begin=%220.8999999999999999s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22x%22 values=%223%3B8%3B3%22 dur=%221.2s%22 begin=%220.8999999999999999s%22 repeatCount=%22indefinite%22/%3E%3Canimate attributeName=%22y%22 values=%2221%3B26%3B21%22 dur=%221.2s%22 begin=%220.8999999999999999s%22 repeatCount=%22indefinite%22/%3E%3C/rect%3E%3C/svg%3E") center / contain no-repeat !important; animation: none !important; transform: none; margin: 0; vertical-align: middle;  }
+.lg-btn:disabled::after { width:30px !important; height:30px !important; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22%3E%3Ccircle cx=%2225%22 cy=%2225%22 r=%2218%22 fill=%22none%22 stroke=%22%23888%22 stroke-opacity=%22.25%22 stroke-width=%221.5%22/%3E%3Cg%3E%3CanimateTransform attributeName=%22transform%22 type=%22rotate%22 from=%220 25 25%22 to=%22360 25 25%22 dur=%221.6s%22 repeatCount=%22indefinite%22/%3E%3Ccircle cx=%2225%22 cy=%227%22 r=%225%22 fill=%22%2322C55E%22/%3E%3Ccircle cx=%2243%22 cy=%2225%22 r=%225%22 fill=%22%23EF4444%22/%3E%3Ccircle cx=%2225%22 cy=%2243%22 r=%225%22 fill=%22%233B82F6%22/%3E%3Ccircle cx=%227%22 cy=%2225%22 r=%225%22 fill=%22%23FACC15%22/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat !important; animation: none !important; }
+.pca-load-box { display:flex; align-items:center; justify-content:center; padding:18px 0; }
 
 /* icons: slightly lighter stroke, tint follows the icon colour */
 .ui-icon { stroke-width: 1.8; --ico-fill: currentColor; }
@@ -2201,9 +2218,6 @@ html .top-nav .nav-item.active .ui-icon { --ico-fill: #fff; }
     }
     html .top-nav { box-shadow: 0 -2px 10px -6px rgba(0,0,0,.35) !important; }
     body::before { display: none !important; }
-    .pca-spin, .btn.is-loading::after, .lg-btn:disabled::after {
-        --pca-a: 270deg; animation: pcaRingRot 0.9s linear infinite !important;
-    }
     .order-stat-card, .admin-card, .stat-chip, .user-grid-card { box-shadow: 0 1px 3px rgba(0,0,0,.12) !important; }
     /* header slides up out of view when scrolling down; the tab bar stays docked at the bottom (floating pill) */
     :root { --pca-nav-h: 76px; --pca-pop-bottom: calc(var(--pca-safe-b) + 90px); }
@@ -2265,6 +2279,101 @@ html .package-row .pkg-summary { justify-content: center; }
 html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-nav-h, 76px) + var(--pca-safe-b, 0px) + 24px) !important; }
 </style>
 
+
+<style id="pca-red-buttons">
+/* Brighter, clearer red buttons (Delete / Log out / Reject / danger tiles) */
+html .btn-danger, html .btn.btn-danger {
+    background-color: #E0243A;
+    background-image: linear-gradient(135deg, #FF5468 0%, #E0243A 55%, #C41E32 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 6px 16px -6px rgba(224,36,58,.6), inset 0 1px 0 rgba(255,255,255,.4);
+}
+html .btn-danger:active { filter: brightness(.95); }
+html .btn-danger[disabled], html .btn-danger:disabled { opacity: .55; }
+html .dz-tile { border-color: rgba(224,36,58,.35); }
+html .dz-tile .dz-ico { background: rgba(224,36,58,.14); }
+html .dz-tile .dz-ico .ui-icon { stroke: var(--danger); }
+html[data-theme="dark-purple"] .dz-tile { border-color: rgba(255,84,104,.4); }
+</style>
+<style id="pca-btn-icons-css">
+button.pca-has-ico { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+button.pca-has-ico > svg.pca-bico { width: 1.2em; height: 1.2em; min-width: 14px; min-height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+</style>
+<style id="pca-uniform-buttons">
+/* One height for every text action button (was a mix of 38 / 40 / 42 / 44 / 52px) */
+html .btn:not(.pca-keep-size),
+html .pkg-card-save-btn,
+html .login-secondary-btn,
+html .pkg-import-add,
+html .game-toolbar .btn {
+    box-sizing: border-box;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 40px !important;
+    padding-top: 8px !important; padding-bottom: 8px !important;
+    line-height: 1.25;
+    border-radius: 12px !important;
+}
+html .btn:not(.pca-keep-size), html .pkg-card-save-btn, html .login-secondary-btn, html .pkg-import-add { font-size: 13.5px !important; }
+html .game-toolbar .btn { height: 40px !important; }
+html .game-toolbar .btn .ui-icon { width: 16px !important; height: 16px !important; }
+/* Rows made only of buttons: siblings stretch to the tallest one so they line up */
+html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn))) { align-items: stretch !important; }
+</style>
+<style id="pca-detail">
+/* ===== Order / Wallet top-up detail sheet redesign ===== */
+.oc-thumb { position: relative; }
+.oc-thumb:not(:has(svg))::before { content:''; position:absolute; inset:0; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2523888%22 stroke-width=%221.8%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cline x1=%226%22 y1=%2212%22 x2=%2210%22 y2=%2212%22/%3E%3Cline x1=%228%22 y1=%2210%22 x2=%228%22 y2=%2214%22/%3E%3Cline x1=%2215%22 y1=%2213%22 x2=%2215.01%22 y2=%2213%22/%3E%3Cline x1=%2218%22 y1=%2211%22 x2=%2218.01%22 y2=%2211%22/%3E%3Crect x=%222%22 y=%226%22 width=%2220%22 height=%2212%22 rx=%224%22/%3E%3C/svg%3E") center / 55% no-repeat; }
+.oc-thumb img { position: relative; z-index: 1; background: var(--bg-subtle); }
+.od-card-header { padding: 2px 0 14px !important; border-bottom: 0 !important; margin-bottom: 0 !important; align-items: flex-start; }
+.od-card-title { gap: 12px; align-items: center; }
+.od-card-title .oc-thumb { width: 52px !important; height: 52px !important; border-radius: 15px !important; }
+.od-card-title-text .oc-game-name { font-size: 17px !important; font-weight: 600; line-height: 1.25; display: block; }
+.od-card-title-text .oc-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 5px 0 0 !important; font-size: 13.5px !important; font-weight: 600; color: var(--text-primary); }
+.od-card-title-text .oc-meta .badge { font-weight: 600; }
+.od-card-close { width: 36px !important; height: 36px !important; border-radius: 50% !important; margin-top: 2px; }
+#topups-container .od-card .od-card-title-text .oc-game-name { font-size: 21px !important; color: var(--success-strong, #059669); }
+.od-card { gap: 12px !important; }
+.od-grid { border: 1px solid var(--border-glass) !important; border-radius: 16px !important; background: var(--fill-soft) !important; overflow: hidden; margin: 0 !important; }
+.od-grid > .od-cell, .od-grid > .od-cell.span-2 { display: flex !important; align-items: center !important; justify-content: space-between; gap: 16px; padding: 12px 14px !important; border: 0 !important; border-top: 1px solid var(--border-glass) !important; border-radius: 0 !important; background: transparent !important; }
+.od-grid > .od-cell:first-child { border-top: 0 !important; }
+.od-grid > .od-cell > .od-label { flex: 0 0 auto !important; max-width: 42% !important; padding: 0 !important; border: 0 !important; background: transparent !important; font-size: 12.5px !important; font-weight: 500; color: var(--text-muted) !important; text-transform: none; letter-spacing: 0; }
+.od-grid > .od-cell > .od-value { flex: 1 !important; min-width: 0; padding: 0 !important; text-align: right; font-size: 14px !important; font-weight: 500; word-break: break-word; align-self: center; }
+.od-card .od-value.mono { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13.5px !important; letter-spacing: .2px; color: var(--accent); word-break: break-all; cursor: pointer; }
+.od-card .od-value.mono::after { content: ''; display: inline-block; width: 13px; height: 13px; margin-left: 7px; vertical-align: -1px; opacity: .45; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%229%22 y=%229%22 width=%2213%22 height=%2213%22 rx=%222%22/%3E%3Cpath d=%22M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%229%22 y=%229%22 width=%2213%22 height=%2213%22 rx=%222%22/%3E%3Cpath d=%22M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1%22/%3E%3C/svg%3E") center / contain no-repeat; }
+.od-card .od-value a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.od-extra { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-glass); border-radius: 16px; background: var(--fill-soft); }
+.od-extra-label { font-size: 12.5px; font-weight: 500; color: var(--text-muted); }
+.od-extra-val { font-size: 13.5px; font-weight: 500; text-align: right; min-width: 0; word-break: break-word; }
+.od-chip { padding: 4px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 600; }
+.od-link-btn { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent) !important; font-size: 12.5px; font-weight: 600; text-decoration: none !important; }
+.od-receipt { border: 1px solid var(--border-glass); border-radius: 16px; background: var(--fill-soft); overflow: hidden; }
+.od-receipt-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; }
+.od-receipt-img { display: block; padding: 0 14px 14px; }
+.od-receipt-img img { display: block; width: 100%; max-height: 280px; object-fit: contain; border-radius: 10px; background: var(--bg-subtle); }
+.od-card-footer { gap: 8px !important; }
+.od-done-label { flex: 1 0 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; border-radius: 12px; font-size: 13.5px; font-weight: 600; }
+.od-done-label::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.od-done-label.ok { background: rgba(52,211,153,.16); color: #047857; }
+.od-done-label.bad { background: rgba(251,113,133,.16); color: #BE123C; }
+.od-card-footer .btn { flex: 1 1 calc(50% - 8px); }
+[data-theme="dark"] .od-done-label.ok, :root[data-mode="dark"] .od-done-label.ok { color: #6EE7B7; }
+[data-theme="dark"] .od-done-label.bad, :root[data-mode="dark"] .od-done-label.bad { color: #FDA4AF; }
+</style>
+<style id="pca-navfix">
+/* Bottom tab bar: keep it on its own compositor layer and never animate it while scrolling, so it stays put */
+@media (max-width: 899.98px) {
+    html .top-nav {
+        transform: translateZ(0); -webkit-transform: translateZ(0);
+        will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+        contain: layout style; touch-action: manipulation;
+    }
+    body.pca-hdr-hidden .top-nav { transform: translateZ(0) !important; }
+    body.pca-kb-open .top-nav { transform: translate3d(0, 180%, 0) !important; }
+    html .header { transition: transform .25s cubic-bezier(.4, 0, .2, 1) !important; }
+    html, body { overscroll-behavior-y: none; }
+}
+</style>
 </head>
 <body>
 
@@ -2283,7 +2392,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 <!-- Step 1: username + password -->
                 <!-- Shown while Firebase restores a saved session, so the username/password
                      form never flashes for an already-signed-in admin. -->
-                <div id="step-auth-checking" style="text-align:center;padding:36px 0;color:var(--text-muted);font-size:14px;">Loading…</div>
+                <div id="step-auth-checking" style="text-align:center;padding:36px 0;color:var(--text-muted);font-size:14px;"><span class="pca-spin pca-spin-orbit"></span></div>
                 <div id="step-login" style="display:none;">
                     <p id="login-error" class="login-msg-error"></p>
                     <form id="login-form" onsubmit="handleAdminLogin(); return false;">
@@ -2417,6 +2526,13 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         <symbol id="icon-moon" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.7 6.7 0 0 0 10.7 10.7z"></path><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.7 6.7 0 0 0 10.7 10.7z"></path></symbol>
         <symbol id="icon-palette" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M12 2.5a9.5 9.5 0 1 0 0 19c1 0 1.9-.8 1.9-1.9 0-.5-.2-.9-.5-1.2-.3-.4-.5-.7-.5-1.2 0-1 .8-1.9 1.9-1.9h2.2c2.4 0 4.5-2 4.5-4.5C21.5 6.3 17.2 2.5 12 2.5z"></path><path d="M12 2.5a9.5 9.5 0 1 0 0 19c1 0 1.9-.8 1.9-1.9 0-.5-.2-.9-.5-1.2-.3-.4-.5-.7-.5-1.2 0-1 .8-1.9 1.9-1.9h2.2c2.4 0 4.5-2 4.5-4.5C21.5 6.3 17.2 2.5 12 2.5z"></path><circle cx="7.2" cy="11" r="1.2" style="fill:currentColor;stroke:none"></circle><circle cx="10.2" cy="7.2" r="1.2" style="fill:currentColor;stroke:none"></circle><circle cx="15" cy="7.8" r="1.2" style="fill:currentColor;stroke:none"></circle></symbol>
         <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3l1.7-1.8M20 20v-4.5h-4.5"></path></symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v5h7V4M8 20v-6h8v6"></path></symbol>
+        <symbol id="icon-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></symbol>
+        <symbol id="icon-unlink" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path><path d="M4 4l16 16"></path></symbol>
+        <symbol id="icon-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M5.6 5.6l12.8 12.8"></path></symbol>
+        <symbol id="icon-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"></path></symbol>
+        <symbol id="icon-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"></path></symbol>
+        <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></symbol>
         <symbol id="icon-sort" viewBox="0 0 24 24"><path d="M7 4v16M3.5 7.5L7 4l3.5 3.5M17 20V4M13.5 16.5L17 20l3.5-3.5"></path></symbol>
         <symbol id="icon-lock" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" x="4.5" y="10.5" width="15" height="10" rx="2.8"></rect><rect x="4.5" y="10.5" width="15" height="10" rx="2.8"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path><circle cx="12" cy="15.5" r="1.3" style="fill:currentColor;stroke:none"></circle></symbol>
         <symbol id="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path style="fill:var(--ico-fill,currentColor);fill-opacity:.17;stroke:none" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
@@ -2577,6 +2693,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
     <nav class="top-nav" id="admin-top-nav">
         <div class="nav-item active" id="group-dashboard" onclick="openNavGroupSheet('dashboard')">
             <svg class="ui-icon"><use href="#icon-trending-up"></use></svg> <span class="nav-label" data-short="Home">Dashboard</span>
+            <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
         <div class="nav-item" id="group-orders" onclick="showPage('order-list')">
             <svg class="ui-icon"><use href="#icon-cart"></use></svg> <span class="nav-label">Orders</span>
@@ -2591,12 +2708,8 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         <div class="nav-item" id="group-userlist" onclick="showPage('user-list')">
             <svg class="ui-icon"><use href="#icon-users"></use></svg> <span class="nav-label">Users</span>
         </div>
-        <div class="nav-item" id="group-jcplays" onclick="showPage('jcplays')">
-            <svg class="ui-icon"><use href="#icon-key"></use></svg> <span class="nav-label">JCPlays</span>
-        </div>
         <div class="nav-item" id="group-setting" onclick="openNavGroupSheet('setting')">
             <svg class="ui-icon"><use href="#icon-gear"></use></svg> <span class="nav-label">Setting</span>
-            <span class="nav-item-low-balance-dot" id="api-nav-low-dot" title="Low balance"></span>
         </div>
     </nav>
 
@@ -2679,7 +2792,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                     </div>
                     <div class="donut-wrap">
                         <div class="donut" id="category-donut" style="background:var(--fill-soft);"></div>
-                        <div class="donut-legend" id="category-donut-legend"><span class="stat-card-sub-text">Loading…</span></div>
+                        <div class="donut-legend" id="category-donut-legend"><span class="pca-spin pca-spin-wave"></span></div>
                     </div>
                 </div>
             </div>
@@ -2726,7 +2839,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
              for the Orders/Users pages, so it needs no extra Firestore reads. -->
         <div id="analytics" class="page-section">
             <h2 class="title-header">
-                <span>API Balance</span>
+                <span>Wallet Balance</span>
                 <button class="btn btn-outline" style="flex:unset; padding: 4px 10px; font-size:12px;" onclick="refreshAllApiBalances()">Refresh</button>
             </h2>
 
@@ -2747,9 +2860,20 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 </div>
             </div>
 
+            <div class="admin-card" style="margin-top:14px;margin-bottom:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleG2BulkTransactions()">
+                    <span style="font-size:15px;font-weight: 600;">G2Bulk Transactions</span>
+                    <svg class="ui-icon" id="g2bulk-tx-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
+                </div>
+                <div id="g2bulk-tx-body" style="display:none;margin-top:12px;">
+                    <button class="btn btn-outline" id="g2bulk-tx-refresh-btn" onclick="loadG2BulkTransactions()" style="margin-bottom:10px;">Load / Refresh</button>
+                    <div id="g2bulk-tx-list"></div>
+                </div>
+            </div>
+
             <div class="dash-section-label">Top Spenders</div>
             <div id="an-top-spenders-container" class="admin-card" style="margin-top:0;">
-                <p class="empty-msg">Loading...</p>
+                <div class="pca-load-box"><span class="pca-spin pca-spin-bars"></span></div>
             </div>
         </div>
 
@@ -2898,7 +3022,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 </div>
                 <div id="admin-accounts-body" style="display:block;margin-top:12px;">
                     <div id="admin-accounts-list">
-                        <p class="empty-msg">Loading admins...</p>
+                        <div class="pca-load-box"><span class="pca-spin pca-spin-bars"></span></div>
                     </div>
                 </div>
             </div>
@@ -3006,16 +3130,6 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 <button class="btn btn-outline" style="flex:unset;padding:8px 14px;" id="g2bulk-balance-refresh-btn" onclick="refreshG2BulkBalance()">Refresh</button>
             </div>
 
-            <div class="admin-card" style="margin-top:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleG2BulkTransactions()">
-                    <span style="font-size:15px;font-weight: 600;">G2Bulk Transactions</span>
-                    <svg class="ui-icon" id="g2bulk-tx-chevron" style="width:18px;height:18px;color:var(--text-secondary);transition:transform 0.2s;"><use href="#icon-chevron-down"></use></svg>
-                </div>
-                <div id="g2bulk-tx-body" style="display:none;margin-top:12px;">
-                    <button class="btn btn-outline" id="g2bulk-tx-refresh-btn" onclick="loadG2BulkTransactions()" style="margin-bottom:10px;">Load / Refresh</button>
-                    <div id="g2bulk-tx-list"></div>
-                </div>
-            </div>
         </div>
 
         <!-- API TAB: every third-party key/credential the app uses, in one place -->
@@ -3064,6 +3178,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             </div>
             <div class="game-toolbar" id="game-toolbar">
                 <button class="btn gt-update" onclick="window.refreshGames && window.refreshGames()"><svg class="ui-icon"><use href="#icon-refresh"></use></svg><span>Update</span></button>
+                <button type="button" class="btn gt-neutral gt-edit-only" onclick="window.syncStoreCatalogue && window.syncStoreCatalogue()"><svg class="ui-icon"><use href="#icon-refresh"></use></svg><span>Sync Store</span></button>
                 <button type="button" class="btn gt-edit" id="game-edit-mode-btn" onclick="toggleGameListEditMode()"><svg class="ui-icon"><use href="#icon-edit"></use></svg><span>Edit: Off</span></button>
                 <button class="btn gt-add" onclick="openGameEditor()"><svg class="ui-icon"><use href="#icon-plus"></use></svg><span>Add</span></button>
                 <button class="btn gt-neutral gt-edit-only" onclick="openGameReorder()"><svg class="ui-icon"><use href="#icon-sort"></use></svg><span>Reorder</span></button>
@@ -3081,7 +3196,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             </div>
             <p id="games-debug-line" style="font-size:11px;color:var(--text-muted);margin:0 0 8px;word-break:break-all;"></p>
             <div id="admin-games-container">
-                <p class="empty-msg">Loading games...</p>
+                <div class="pca-load-box"><span class="pca-spin pca-spin-tile"></span></div>
             </div>
         </div>
 
@@ -3241,6 +3356,10 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="topup-search" autocomplete="off" oninput="renderTopupsList()">
             </div>
+            <div class="pca-range-chips" id="topup-range-chips">
+                <button type="button" data-r="today" onclick="setTopupRange('today')">Today</button>
+                <button type="button" data-r="all" class="active" onclick="setTopupRange('all')">All days</button>
+            </div>
             <div class="date-filter-wrap">
                 <button type="button" class="date-filter-trigger" id="topup-date-trigger" onclick="openDateRangeModal('topup')" aria-label="Filter by date">
                     <svg class="ui-icon"><use href="#icon-calendar"></use></svg>
@@ -3292,6 +3411,11 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
 
         <!-- NOTIFICATIONS PAGE (Firebase Connected) -->
         <div id="notify-list" class="page-section">
+            <div class="nt-tabs" id="nt-tabs">
+                <button type="button" class="nt-tab active" data-nt="notify" onclick="showNotifyTab('notify')"><svg class="ui-icon"><use href="#icon-bell"></use></svg>Notify</button>
+                <button type="button" class="nt-tab" data-nt="ticker" onclick="showNotifyTab('ticker')"><svg class="ui-icon"><use href="#icon-megaphone"></use></svg>Ticker</button>
+            </div>
+            <div id="nt-pane-notify">
             <h2 class="title-header">Send Notification</h2>
             <div class="admin-card">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Send to</label>
@@ -3315,11 +3439,11 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             <div id="notif-history-container">
                 <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
-        </div>
+            </div>
 
         <!-- STORE TICKER PAGE (Firebase Connected) — short messages that scroll
              across the Store app's ticker bar, alongside real order activity. -->
-        <div id="ticker-list" class="page-section">
+        <div id="nt-pane-ticker" style="display:none;">
             <h2 class="title-header">Store Ticker</h2>
             <div class="admin-card">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">New message</label>
@@ -3331,6 +3455,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
             </div>
         </div>
+        </div><!-- /notify-list (Notify + Ticker merged) -->
 
         <!-- PAYMENT METHODS PAGE (Firebase Connected) -->
         <div id="payment-list" class="page-section">
@@ -3571,7 +3696,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                      hidden otherwise. -->
                 <div class="switch-row" id="requires-charname-row" style="display:none;">
                     <div>
-                        <span class="switch-label">Requires Character Name</span>
+                        <span class="switch-label">Requires Character Name (taken from the checked player name)</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="edit-game-charname">
@@ -3801,6 +3926,8 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 <input type="text" id="edit-payment-availability">
                 <p style="font-size:12px;color:var(--text-secondary);margin-top:-6px;">Shown under this method at checkout so customers know when a receipt will be reviewed. Leave blank to hide.</p>
 
+                <div class="pay-img-grid">
+                <div class="pay-img-col">
                 <label>Logo Image (optional)</label>
                 <label class="img-update-box logo-square" id="payment-img-update-box" for="edit-payment-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
@@ -3812,6 +3939,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 </label>
                 <input type="file" id="edit-payment-file" class="img-update-input" accept="image/*" onchange="previewPaymentImage(event)">
                 <p id="payment-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+                </div>
 
                 <!-- Separate from the small round Logo above: this is the
                      scannable QR code shown to the customer next to the
@@ -3819,7 +3947,8 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                      checkout, so they can scan-to-pay instead of typing the
                      number into their banking app. Optional - stored as its
                      own qrImage field so it never overwrites the logo. -->
-                <label style="margin-top:14px;">QR Code Image (optional)</label>
+                <div class="pay-img-col">
+                <label>QR Code Image (optional)</label>
                 <label class="img-update-box logo-square" id="payment-qr-update-box" for="edit-payment-qr-file">
                     <div class="img-update-icon"><svg class="ui-icon"><use href="#icon-camera"></use></svg></div>
                     <span class="img-update-label">QR Update</span>
@@ -3830,6 +3959,8 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 </label>
                 <input type="file" id="edit-payment-qr-file" class="img-update-input" accept="image/*" onchange="previewPaymentQrImage(event)">
                 <p id="payment-qr-upload-status" style="font-size:12px;color:var(--text-secondary);display:none;"></p>
+                </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger" id="delete-payment-btn" style="display:none;" onclick="deleteCurrentPaymentMethod()">Delete</button>
@@ -4093,13 +4224,14 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         const PAGE_TO_NAV_GROUP = {
             'dashboard': 'group-dashboard', 'analytics': 'group-dashboard',
             'order-list': 'group-orders',
-            'g2bulk': 'group-setting', 'jcplays': 'group-jcplays', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
+            'g2bulk': 'group-setting', 'jcplays': 'group-setting', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
             'payment-list': 'group-wallet', 'topup-list': 'group-wallet',
             'user-list': 'group-userlist',
-            'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
+            'settings': 'group-setting', 'notify-list': 'group-setting'
         };
         function showPage(pageId) {
             if (window.exitPkgSelectMode) window.exitPkgSelectMode();
+            window.pcaLeavePage && window.pcaLeavePage(pageId);
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -4109,6 +4241,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             window.scrollTo(0,0);
             if ((pageId === 'dashboard' || pageId === 'order-list') && window.loadDashboardStats) window.loadDashboardStats();
             if (pageId === 'analytics' && window.renderAnalytics) window.renderAnalytics();
+            if (pageId === 'analytics' && window.refreshAllApiBalances) window.refreshAllApiBalances();
             // Cloudflare/Firestore usage no longer auto-loads (saves Worker requests); use the Refresh buttons.
             if (pageId === 'g2bulk' && window.refreshG2BulkBalance) window.refreshG2BulkBalance();
             if (['analytics', 'user-list'].includes(pageId) && window.ensureOrdersLoaded) window.ensureOrdersLoaded();
@@ -4128,10 +4261,9 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         // is a harmless no-op), so this just moves the FIRST call from
         // startAdminApp() to here, keyed off the page actually being opened.
         function subscribeTabListeners(pageId) {
-            if (pageId === 'topup-list') fetchWalletTopups();
+            if (pageId === 'topup-list' && window.fetchWalletTopups) window.fetchWalletTopups();
             if (pageId === 'user-list') ensureUsersLoaded();
-            if (pageId === 'notify-list') listenNotifications();
-            if (pageId === 'ticker-list') listenAnnouncementsAdmin();
+            if (pageId === 'notify-list') { listenNotifications(); listenAnnouncementsAdmin(); }
             if (pageId === 'payment-list') listenPaymentMethods();
             // Settings page: single-doc onSnapshot listener that only ever
             // fills in fields living inside #settings (Social Links). Safe to
@@ -4150,8 +4282,8 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         const PAGES_NEED_PROVIDERS = ['dashboard', 'order-list', 'game-list', 'game-editor-page', 'g2bulk', 'jcplays', 'api-docs', 'analytics', 'settings', 'topup-list'];
         function ensurePageData(pageId) {
             try {
-                if (PAGES_NEED_GAMES.includes(pageId) && !gamesLoadedAt && !gamesLoadPromise) loadGames(true);
-                if (PAGES_NEED_PROVIDERS.includes(pageId)) { listenG2Bulk(); listenJCPlays(); }
+                if (PAGES_NEED_GAMES.includes(pageId) && !window.gamesLoadedAt && !window.gamesLoadPromise && window.loadGames) window.loadGames(true);
+                if (PAGES_NEED_PROVIDERS.includes(pageId)) { if (window.listenG2Bulk) window.listenG2Bulk(); if (window.listenJCPlays) window.listenJCPlays(); }
             } catch (e) { console.error('ensurePageData', e); }
         }
         window.ensurePageData = ensurePageData;
@@ -4164,7 +4296,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         const NAV_GROUPS = {
             dashboard: { title: 'Dashboard', items: [
                 { label: 'Dashboard', icon: '#icon-trending-up', run: () => showPage('dashboard') },
-                { label: 'API Balance', icon: '#icon-bar-chart', run: () => showPage('analytics') }
+                { label: 'Wallet Balance', icon: '#icon-wallet', run: () => showPage('analytics') }
             ]},
             game: { title: 'Game', items: [
                 { label: 'Direct', icon: '#icon-gamepad', run: () => showGameListTab('direct') },
@@ -4177,13 +4309,17 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             setting: { title: 'Setting', items: [
                 { label: 'General', icon: '#icon-gear', run: () => showPage('settings') },
                 { label: 'Admin', icon: '#icon-users', run: () => showPage('admin-accounts') },
-                { label: 'G2Bulk', icon: '#icon-g2bulk', run: () => showPage('g2bulk'), dotId: 'g2bulk-nav-low-dot' },
-                { label: 'JCPlays', icon: '#icon-key', run: () => showPage('jcplays'), dotId: 'jcplays-nav-low-dot' },
                 { label: 'API Keys', icon: '#icon-plug', run: () => showPage('api-docs') },
-                { label: 'Notify', icon: '#icon-bell', run: () => showPage('notify-list') },
-                { label: 'Ticker', icon: '#icon-megaphone', run: () => showPage('ticker-list') }
+                { label: 'Notify & Ticker', icon: '#icon-bell', run: () => showPage('notify-list') }
             ]}
         };
+        function showNotifyTab(which) {
+            const t = which === 'ticker' ? 'ticker' : 'notify';
+            document.getElementById('nt-pane-notify').style.display = t === 'notify' ? '' : 'none';
+            document.getElementById('nt-pane-ticker').style.display = t === 'ticker' ? '' : 'none';
+            document.querySelectorAll('#nt-tabs .nt-tab').forEach(b => b.classList.toggle('active', b.dataset.nt === t));
+        }
+        window.showNotifyTab = showNotifyTab;
         function renderNavGroupSheet(groupKey) {
             const group = NAV_GROUPS[groupKey];
             if (!group) return;
@@ -4617,12 +4753,63 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             }
             GAMES[gameId] = cur;
         }
+
+        // ---- Public catalogue mirror -------------------------------------------------
+        // The store reads gamesPublic (no Cost / margins / admin switches), NOT games.
+        // Every games write below queues its id here; ~2.5 s later ONE request tells the
+        // Worker (/admin-sync-games) to rebuild those mirror docs. The Worker also keeps the
+        // mirror in step when its own Cost cron changes a price.
+        const _gpSync = { ids: new Set(), all: false, timer: null, busy: false };
+        function queueGamesPublicSync(ids, all) {
+            try {
+                if (all) _gpSync.all = true;
+                else (ids || []).forEach(i => { if (i) _gpSync.ids.add(String(i)); });
+                if (_gpSync.ids.size > 150) _gpSync.all = true;
+                clearTimeout(_gpSync.timer);
+                _gpSync.timer = setTimeout(() => flushGamesPublicSync(false), 2500);
+            } catch (e) { /* never break a write */ }
+        }
+        async function flushGamesPublicSync(retry) {
+            if (_gpSync.busy) { _gpSync.timer = setTimeout(() => flushGamesPublicSync(retry), 1500); return null; }
+            const all = _gpSync.all, ids = [..._gpSync.ids];
+            if (!all && !ids.length) return null;
+            _gpSync.all = false; _gpSync.ids.clear(); _gpSync.busy = true;
+            try {
+                if (!auth.currentUser) throw new Error('not signed in');
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${ADMIN_SYNC_WORKER_URL}/admin-sync-games`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(all ? { all: true } : { ids })
+                });
+                const data = await res.json().catch(() => null);
+                if (!res.ok || !data || !data.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+                return data;
+            } catch (e) {
+                console.error('store catalogue sync failed:', e);
+                if (!retry) {
+                    if (all) _gpSync.all = true;
+                    ids.forEach(i => _gpSync.ids.add(i));
+                    setTimeout(() => flushGamesPublicSync(true), 5000);
+                } else if (window.showToast) {
+                    window.showToast('Store catalogue sync failed - tap "Sync Store" on the Games tab', 'fail');
+                }
+                return null;
+            } finally { _gpSync.busy = false; }
+        }
+        // Manual full rebuild (first-time setup, or after anything odd). Also removes mirror docs of deleted games.
+        window.syncStoreCatalogue = async function () {
+            clearTimeout(_gpSync.timer); _gpSync.all = true; _gpSync.ids.clear();
+            const r = await flushGamesPublicSync(true);
+            if (window.showToast) window.showToast(r ? ('Store catalogue synced (' + r.written + ' games)') : 'Sync failed - try again', r ? 'success' : 'fail');
+        };
         async function addDoc(colRef, data) {
             const res = await _fsAddDoc(colRef, data);
             _usage.fsWrite(1, _fsLabel(colRef));
             if (colRef && typeof colRef.path === 'string' && colRef.path === 'games' && res && res.id) {
                 _mergeGameData(res.id, data);
                 scheduleGamesRefetch();
+                queueGamesPublicSync([res.id]);
             }
             return res;
         }
@@ -4678,6 +4865,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 const gameId = ref.path.slice(6);
                 delete GAMES[gameId];
                 scheduleGamesRefetch();
+                queueGamesPublicSync([gameId]);
             }
             return res;
         }
@@ -4764,6 +4952,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                             else _mergeGameData(gw.id, gw.data);
                         });
                         scheduleGamesRefetch();
+                        queueGamesPublicSync(gameWrites.map((gw) => gw.id));
                     }
                     return res;
                 })
@@ -6695,7 +6884,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             updateDateTriggerLabel(calRangeContext);
             closeDateRangeModal();
             if (calRangeContext === 'order') { orderRangeKey = 'custom'; syncOrderRangeChips(); applyOrderWindow(); }
-            else if (calRangeContext === 'topup') renderTopupsList();
+            else if (calRangeContext === 'topup') { topupRangeKey = 'custom'; syncTopupRangeChips(); renderTopupsList(); }
         }
         function calClear() {
             calRangeStart = null;
@@ -6840,7 +7029,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                     const cleanBtn = data.adminCleared
                         ? `<button class="btn btn-outline" onclick="restoreOrder('${orderId}')" title="Bring this back into the active list">↺ Restore</button>`
                         : `<button class="btn btn-outline" onclick="cleanOrder('${orderId}')" title="Hide from this list — stays in the customer's Order History">🧹 Clean</button>`;
-                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight: 500;color:var(--text-secondary);">${doneLabel}</span>${recheckBtn}${cleanBtn}`;
+                    actionButtons = `<span class="od-done-label ${data.status === 'Success' ? 'ok' : 'bad'}">${doneLabel}</span>${recheckBtn}${cleanBtn}`;
                 }
 
                 const durationLine = (data.status === 'Success' && data.confirmedAt && data.timestamp)
@@ -6932,9 +7121,9 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                                         <div class="od-value">${dateStr}</div>
                                     </div>
                                 </div>
-                                ${data.serverRegion ? `<p><b>Server:</b> <span class="highlight-id">${esc(data.serverRegion)}</span></p>` : ''}
-                                ${data.location ? `<p><b>Order Location:</b> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" style="color:var(--accent);" rel="noopener noreferrer">View on Map</a></p>` : ''}
-                                ${data.receiptUrl ? `<p><b>Receipt:</b> <a href="${esc(data.receiptUrl)}" target="_blank" style="color:var(--accent);" rel="noopener noreferrer">View Screenshot</a></p><img src="${esc(data.receiptUrl)}" loading="lazy" decoding="async" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:var(--bg-subtle);margin-top:6px;">` : ''}
+                                ${data.serverRegion ? `<div class="od-extra"><span class="od-extra-label">Server</span><span class="od-chip">${esc(data.serverRegion)}</span></div>` : ''}
+                                ${data.location ? `<div class="od-extra"><span class="od-extra-label">Order location</span><a class="od-link-btn" href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" rel="noopener noreferrer">View on map</a></div>` : ''}
+                                ${data.receiptUrl ? `<div class="od-receipt"><div class="od-receipt-head"><span class="od-extra-label">Receipt</span><a class="od-link-btn" href="${esc(data.receiptUrl)}" target="_blank" rel="noopener noreferrer">Open full</a></div><a class="od-receipt-img" href="${esc(data.receiptUrl)}" target="_blank" rel="noopener noreferrer"><img src="${esc(data.receiptUrl)}" alt="Receipt" loading="lazy" decoding="async"></a></div>` : ''}
                                 ${Array.isArray(data.deliveredCodes) && data.deliveredCodes.length ? `<div style="margin-top:8px;padding:10px;background:var(--fill-soft);border-radius:8px;">
                                     <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px;">Delivered Voucher Code${data.deliveredCodes.length > 1 ? 's' : ''} — copy &amp; send to customer</div>
                                     ${data.deliveredCodes.map(c => `<div class="mono" style="font-size:13px;padding:4px 0;word-break:break-all;">${escapeHtml(String(c))}</div>`).join('')}
@@ -7853,7 +8042,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                                       <button class="btn btn-danger" onclick="rejectTopup('${t.id}', this)">Reject</button>`;
                 } else {
                     const doneLabel = t.status === 'Completed' ? 'Wallet Credited' : 'Rejected';
-                    actionButtons = `<span style="flex:1;text-align:center;font-size:13px;font-weight: 500;color:var(--text-secondary);">${doneLabel}</span>`;
+                    actionButtons = `<span class="od-done-label ${t.status === 'Completed' ? 'ok' : 'bad'}">${doneLabel}</span>`;
                 }
 
                 const isOpen = expandedTopups.has(t.id);
@@ -7885,18 +8074,14 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                                         <svg class="ui-icon" style="width:16px;height:16px;"><use href="#icon-close"></use></svg>
                                     </div>
                                 </div>
-                                <div style="display:flex;gap:10px;align-items:stretch;">
-                                    <div class="od-grid" style="flex:1;grid-template-columns:1fr;">
-                                        <div class="od-cell"><div class="od-label">UID</div><div class="od-value highlight-id">${esc(t.userId || 'N/A')}</div></div>
+                                <div class="od-grid">
+                                        <div class="od-cell"><div class="od-label">UID</div><div class="od-value mono">${esc(t.userId || 'N/A')}</div></div>
                                         ${t.userPhone ? `<div class="od-cell"><div class="od-label">Phone</div><div class="od-value"><a href="tel:${esc(t.userPhone)}">${esc(t.userPhone)}</a></div></div>` : ''}
                                         <div class="od-cell"><div class="od-label">Payment</div><div class="od-value">${esc(t.paymentMethod || 'N/A')}</div></div>
+                                        <div class="od-cell"><div class="od-label">Requested</div><div class="od-value">${dateStr}</div></div>
                                     </div>
-                                    ${t.receiptUrl ? `<a href="${esc(t.receiptUrl)}" target="_blank" title="View full screenshot" style="flex-shrink:0;width:90px;height:90px;border-radius:12px;overflow:hidden;display:block;background:var(--bg-subtle);border:1px solid var(--border-glass);" rel="noopener noreferrer">
-                                        <img src="${esc(t.receiptUrl)}" alt="Receipt" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">
-                                    </a>` : ''}
-                                </div>
-                                <p style="color:var(--text-secondary); font-size:12px;">Requested: ${dateStr}</p>
-                                ${t.statusNote ? `<p style="color:var(--text-secondary); font-size:12px;">Note: ${esc(t.statusNote)}</p>` : ''}
+                                    ${t.receiptUrl ? `<div class="od-receipt"><div class="od-receipt-head"><span class="od-extra-label">Receipt</span><a class="od-link-btn" href="${esc(t.receiptUrl)}" target="_blank" rel="noopener noreferrer">Open full</a></div><a class="od-receipt-img" href="${esc(t.receiptUrl)}" target="_blank" rel="noopener noreferrer"><img src="${esc(t.receiptUrl)}" alt="Receipt" loading="lazy" decoding="async"></a></div>` : ''}
+                                                                ${t.statusNote ? `<div class="od-extra"><span class="od-extra-label">Note</span><span class="od-extra-val">${esc(t.statusNote)}</span></div>` : ''}
                                 <div class="od-card-footer" id="topup-footer-${t.id}">
                                     ${actionButtons}
                                 </div>
@@ -7915,9 +8100,28 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             if (from) from.value = '';
             if (to) to.value = '';
             updateDateTriggerLabel('topup');
+            topupRangeKey = 'all'; syncTopupRangeChips();
             renderTopupsList();
         }
         window.clearTopupDateRange = clearTopupDateRange;
+
+        // Today / All days quick filter for the Wallet Top Ups list (data is already live-loaded, so this is purely a client-side filter).
+        let topupRangeKey = 'all';
+        function syncTopupRangeChips() {
+            document.querySelectorAll('#topup-range-chips button').forEach(b => b.classList.toggle('active', b.dataset.r === topupRangeKey));
+        }
+        function setTopupRange(key) {
+            topupRangeKey = key;
+            const from = document.getElementById('topup-date-from'), to = document.getElementById('topup-date-to');
+            let v = '';
+            if (key === 'today') { const t = new Date(); t.setHours(0, 0, 0, 0); v = ymdLocal(t); }
+            if (from) from.value = v;
+            if (to) to.value = v;
+            updateDateTriggerLabel('topup');
+            syncTopupRangeChips();
+            renderTopupsList();
+        }
+        window.setTopupRange = setTopupRange;
 
         async function setTopupProcessing(id, btnElement) {
             btnElement.innerText = "Updating...";
@@ -8728,7 +8932,10 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         window.toggleGameListEditMode = toggleGameListEditMode;
 
         function showGameListTab(tab) {
+            const _wasGameList = document.querySelector('.page-section.active')?.id === 'game-list';
+            if (_wasGameList && tab !== gameListTab && window.pcaTabFade) window.pcaTabFade(document.getElementById('admin-games-container'), 80);
             gameListTab = tab;
+            window.pcaLeavePage && window.pcaLeavePage('game-list');
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
             document.getElementById('game-list').classList.add('active');
@@ -9138,6 +9345,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 if (!ref || typeof ref.path !== 'string' || !ref.path.startsWith('games/')) return;
                 _mergeGameData(ref.path.slice(6), data);
                 scheduleGamesRefetch();
+                queueGamesPublicSync([ref.path.slice(6)]);
             } catch (e) { /* never break a write */ }
         }
         window.refreshGames = () => loadGames(false, true); // explicit tap on ↻ Refresh always forces a real fetch, bypassing the cache
@@ -9259,6 +9467,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         }
 
         function switchPackageTab(tabId) {
+            if (tabId !== currentPkgTab && window.pcaTabFade) window.pcaTabFade(document.getElementById('edit-packages-list'), 0);
             currentPkgTab = tabId;
             renderPkgTabBar();
             applyPackageTabFilter();
@@ -9414,16 +9623,15 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             return p.items.length;
         }
 
-        // Package cards with no image of their own fall back to the game's image.
-        function pkgFallbackImage() {
-            try {
-                const gid = (document.getElementById('edit-game-id') || {}).value;
-                if (gid && typeof GAMES !== 'undefined' && GAMES[gid] && GAMES[gid].image) return GAMES[gid].image;
-                const pv = document.getElementById('edit-game-preview');
-                if (pv && pv.style.display !== 'none' && pv.getAttribute('src')) return pv.getAttribute('src');
-            } catch (e) {}
-            return '';
-        }
+        // Package cards with no image of their own get the transparent "Ticket pass" design
+        // (notches are real cut-outs, so there is no background colour behind it).
+        const PKG_TICKET_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            + '<path d="M12 28H88Q94 28 94 34V43A7 7 0 0 0 94 57V66Q94 72 88 72H12Q6 72 6 66V57A7 7 0 0 0 6 43V34Q6 28 12 28Z" fill="#ef4444"/>'
+            + '<line x1="64" y1="34" x2="64" y2="66" stroke="#fecaca" stroke-width="2" stroke-dasharray="4 3"/>'
+            + '<circle cx="35" cy="50" r="10" fill="none" stroke="#fecaca" stroke-width="3"/></svg>';
+        const PKG_TICKET_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(PKG_TICKET_SVG);
+        window.PKG_TICKET_IMG = PKG_TICKET_IMG;
+        function pkgFallbackImage() { return PKG_TICKET_IMG; }
         function addPackageRow(amount = '', cost = '', price = '', g2bulkName = '', jcplaysProductId = '', image = '', type = 'currency', tab = null, autoDetectType = false, voucherProductId = '', _unusedA = '', _unusedB = '', provider = null, badge = '') {
             const list = document.getElementById('edit-packages-list');
             // Catalogue imports (autoDetectType=true) classify purely from the
@@ -9519,8 +9727,8 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                             </div>
                             <div class="pkg-row-media">
                                 <div class="pkg-img-preview" data-url="${image}" onclick="this.nextElementSibling.click()">
-                                    <img class="pkg-img-tag" src="${image}" loading="lazy" decoding="async" style="${image ? '' : 'display:none;'}">
-                                    <span class="pkg-img-placeholder" style="${image ? 'display:none;' : ''}">+ Image</span>
+                                    <img class="pkg-img-tag" src="${image || pkgFallbackImage()}" loading="lazy" decoding="async" style="${(image || pkgFallbackImage()) ? '' : 'display:none;'}">
+                                    <span class="pkg-img-placeholder" style="${(image || pkgFallbackImage()) ? 'display:none;' : ''}">+ Image</span>
                                 </div>
                                 <input type="file" accept="image/*" class="pkg-img-file" style="display:none;" onchange="handlePackageImageSelect(this)">
                                 <div class="pkg-media-right">
@@ -9667,9 +9875,12 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             const row = linkEl.closest('.package-row');
             const wrap = row.querySelector('.pkg-img-preview');
             wrap.dataset.url = '';
-            wrap.querySelector('.pkg-img-tag').style.display = 'none';
-            wrap.querySelector('.pkg-img-placeholder').style.display = 'block';
+            const fb = pkgFallbackImage();
+            const tag = wrap.querySelector('.pkg-img-tag');
+            if (fb) { tag.src = fb; tag.style.display = 'block'; wrap.querySelector('.pkg-img-placeholder').style.display = 'none'; }
+            else { tag.style.display = 'none'; wrap.querySelector('.pkg-img-placeholder').style.display = 'block'; }
             linkEl.style.display = 'none';
+            if (typeof syncPkgSummary === 'function') syncPkgSummary(row);
         }
         window.removePackageImage = removePackageImage;
 
@@ -10498,6 +10709,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             // just the raw code/id.
             fetchG2BulkGamesList().then(() => refreshPickerButton('g2bulk')).catch(() => {});
             fetchG2BulkCategoriesList().then(() => refreshPickerButton('voucher')).catch(() => {});
+            window.pcaLeavePage && window.pcaLeavePage('game-editor-page');
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.getElementById('game-editor-page').classList.add('active');
             window.scrollTo(0, 0);
@@ -11132,6 +11344,15 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         // bare name, but they are declared inside this module — expose them so the lazy tab
         // listeners (Notify, Ticker, Payment, Settings) always resolve.
         Object.assign(window, { listenNotifications, listenAnnouncementsAdmin, listenPaymentMethods, listenSocialLinks });
+        // The lazy page-data loaders in the classic script also call these by bare name
+        // (Top Up tab, Games, G2Bulk/JCPlays settings) - they were never exposed, so opening
+        // those tabs threw ReferenceError (swallowed by ensurePageData's try/catch, so the
+        // data silently never loaded).
+        Object.assign(window, { fetchWalletTopups, loadGames, listenG2Bulk, listenJCPlays });
+        try {
+            Object.defineProperty(window, 'gamesLoadedAt', { configurable: true, get: () => gamesLoadedAt });
+            Object.defineProperty(window, 'gamesLoadPromise', { configurable: true, get: () => gamesLoadPromise });
+        } catch (e) { console.error(e); }
 
         // ---------- One-time cleanup of removed features' Firestore data ----------
         // Deletes: coupons + tickets collections, and the settings docs for
@@ -11834,6 +12055,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             renderUserLoginList(userId);
 
             switchUserDetailTab('info');
+            window.pcaLeavePage && window.pcaLeavePage('user-detail-page');
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.getElementById('user-detail-page').classList.add('active');
             window.scrollTo(0, 0);
@@ -11912,6 +12134,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         window.saveUserAdminNote = saveUserAdminNote;
 
         function closeUserDetails() {
+            window.pcaLeavePage && window.pcaLeavePage('user-list');
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.getElementById('user-list').classList.add('active');
             currentUserDetailsId = null;
@@ -12421,6 +12644,45 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             });
         }
 
+        // When the USD rate changes, every provider-linked package Cost (G2Bulk / voucher / JCPlays:
+        // Cost = provider USD price x rate) is rescaled right away - in Firestore for every game, and in
+        // the open game editor's rows - so Cost always follows the rate without any manual editing.
+        function _scaleCostForRate(cost, oldRate, newRate) {
+            const c = Number(cost) || 0;
+            return c > 0 ? Math.round(c * newRate / oldRate) : c;
+        }
+        async function applyUsdRateToCosts(oldRate, newRate) {
+            if (!oldRate || !newRate || oldRate === newRate) return 0;
+            const isLinked = p => p && (p.g2bulk || p.voucherId || p.jcplays);
+            let gamesChanged = 0;
+            const snap = await _fsGetDocsFromServer(collection(db, "games"));
+            for (const d of snap.docs) {
+                const packages = d.data().packages;
+                if (!Array.isArray(packages)) continue;
+                let changed = false;
+                const updated = packages.map(p => {
+                    if (!isLinked(p)) return p;
+                    const nc = _scaleCostForRate(p.cost, oldRate, newRate);
+                    if (nc === (Number(p.cost) || 0)) return p;
+                    changed = true;
+                    return { ...p, cost: nc };
+                });
+                if (!changed) continue;
+                await updateDoc(doc(db, "games", d.id), { packages: updated });
+                gamesChanged++;
+            }
+            // Keep an open game editor in sync so saving it later can't write the old costs back.
+            document.querySelectorAll('#edit-packages-list .package-row').forEach(row => {
+                const linked = ['.pkg-g2bulk', '.pkg-jcplays', '.pkg-voucher-id'].some(sel => { const el = row.querySelector(sel); return el && el.value.trim(); });
+                const costEl = row.querySelector('.pkg-cost');
+                if (!linked || !costEl) return;
+                costEl.value = _scaleCostForRate(costEl.value, oldRate, newRate);
+                updatePackageProfit(costEl);
+            });
+            if (window.refreshGames) { try { window.refreshGames(); } catch (e) {} }
+            return gamesChanged;
+        }
+
         async function saveG2BulkKey() {
             const apiKey = document.getElementById('g2bulk-api-key').value.trim();
             const usdRate = Number(document.getElementById('g2bulk-usd-rate').value) || 4500;
@@ -12444,6 +12706,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
 
             btn.disabled = true;
             btn.innerText = 'Saving...';
+            const oldUsdRate = Number(G2BULK_SETTINGS.usdRate) || 4500;
 
             try {
                 await setDoc(doc(db, "settings", "g2bulk"), { apiKey, usdRate, webhookUrl, webhookSecret, lowBalanceAlert, enabled }, { merge: true });
@@ -12457,8 +12720,18 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 // Refresh the public settings/providerFlags mirror so the
                 // Storefront sees the new enabled/disabled state right away.
                 callAdminSyncClaims();
-                window.showToast('G2Bulk key saved!', 'success');
-                closeG2BulkModal();
+                closeG2BulkModal();   // close right away; the Cost rescale below can take a few seconds
+                if (usdRate !== oldUsdRate) {
+                    try {
+                        const n = await applyUsdRateToCosts(oldUsdRate, usdRate);
+                        window.showToast(`USD rate ${oldUsdRate} → ${usdRate}: ${n} game(s) Cost updated`, 'success');
+                    } catch (e) {
+                        console.error('applyUsdRateToCosts failed:', e);
+                        window.showToast('Rate saved, but Cost update failed: ' + ((e && e.code) || e.message || 'error'), 'fail');
+                    }
+                } else {
+                    window.showToast('G2Bulk key saved!', 'success');
+                }
             } catch (error) {
                 console.error("Save G2Bulk key error:", error);
                 window.showToast('Failed to save G2Bulk key: ' + ((error && error.code) || (error && error.message) || 'unknown'), 'fail');
@@ -12790,6 +13063,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             try {
                 await setDoc(doc(db, "settings", "telegramBot"), { botToken, chatId, webhookUrl, webhookSecret, botUsername, enabled }, { merge: true });
                 window.showToast('Telegram Bot settings saved!', 'success');
+                closeTelegramBotModal();
                 if (enabled && botToken) startTelegramPollingOnce();
             } catch (error) {
                 console.error('Save Telegram settings error:', error);
@@ -12889,9 +13163,9 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             const btn = document.getElementById('g2bulk-balance-refresh-btn');
             if (displayEls.length === 0 && !anEl) return;
             if (!forceRefresh && (Date.now() - g2bulkBalanceLastFetchedAt) < BALANCE_REFRESH_THROTTLE_MS) return;
-            const anSet = (t, c) => { if (anEl) { anEl.innerText = t; anEl.style.color = c; } };
+            const anSet = (t, c) => { if (anEl) { if (t === 'Loading...') anEl.innerHTML = '<span class="pca-spin pca-spin-wave"></span>'; else anEl.innerText = t; anEl.style.color = c; } };
             if (!G2BULK_SETTINGS.apiKey && !g2bulkSettingsPulled) {
-                displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+                displayEls.forEach(el => { el.innerHTML = '<span class="pca-spin pca-spin-wave"></span>'; el.style.color = 'var(--text-muted)'; });
                 const pullErr = await pullG2BulkSettings();
                 if (pullErr) {
                     displayEls.forEach(el => { el.innerText = 'Settings load error: ' + pullErr; el.style.color = 'var(--danger-strong)'; });
@@ -12907,7 +13181,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             }
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
-            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+            displayEls.forEach(el => { el.innerHTML = '<span class="pca-spin pca-spin-wave"></span>'; el.style.color = 'var(--text-muted)'; });
             anSet('Loading...', 'var(--text-muted)');
             g2bulkBalanceLastFetchedAt = Date.now();
 
@@ -12991,8 +13265,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         // Tapping the header bell jumps straight to whichever provider is
         // low (G2Bulk first if both are) so the admin can top up right away.
         function openLowBalanceAlert() {
-            if (g2bulkWasLow) { showPage('g2bulk'); return; }
-            if (jcplaysWasLow) { showPage('jcplays'); }
+            if (g2bulkWasLow || jcplaysWasLow) showPage('analytics');
         }
         window.openLowBalanceAlert = openLowBalanceAlert;
 
@@ -13019,7 +13292,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Loading...';
-            listEl.innerHTML = '<p class="empty-msg">Loading...</p>';
+            listEl.innerHTML = '<div class="pca-load-box"><span class="pca-spin pca-spin-bars"></span></div>';
 
             try {
                 const res = await fetch('https://api.g2bulk.com/v1/transactions?page=1&limit=20', {
@@ -13247,7 +13520,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         function statusBadgeIcon(badgeClass) {
             switch (badgeClass) {
                 case 'badge-pending': return '<svg class="ui-icon"><use href="#icon-clock"></use></svg>';
-                case 'badge-processing': return '<span class="pca-spin pca-spin-sm"></span>';
+                case 'badge-processing': return '<span class="pca-spin pca-spin-ring"></span>';
                 case 'badge-success': return '<svg class="ui-icon"><use href="#icon-verified-blue"></use></svg>';
                 case 'badge-danger': return '<svg class="ui-icon"><use href="#icon-x-circle"></use></svg>';
                 default: return '';
@@ -13492,7 +13765,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             const kind = gamePickerKind();
             document.getElementById('game-picker-title').innerText = gamePickerTitleFor(kind);
             document.getElementById('game-picker-search').value = '';
-            document.getElementById('game-picker-grid').innerHTML = '<p class="game-picker-loading">Loading…</p>';
+            document.getElementById('game-picker-grid').innerHTML = '<div class="pca-load-box"><span class="pca-spin pca-spin-tile"></span></div>';
             document.getElementById('game-picker-modal-overlay').classList.add('show');
             document.getElementById('game-picker-update-btn').style.display = 'block';
 
@@ -14778,9 +15051,9 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             const btn = document.getElementById('jcplays-balance-refresh-btn');
             if (displayEls.length === 0 && !anEl) return;
             if (!forceRefresh && (Date.now() - jcplaysBalanceLastFetchedAt) < BALANCE_REFRESH_THROTTLE_MS) return;
-            const anSet = (t, c) => { if (anEl) { anEl.innerText = t; anEl.style.color = c; } };
+            const anSet = (t, c) => { if (anEl) { if (t === 'Loading...') anEl.innerHTML = '<span class="pca-spin pca-spin-wave"></span>'; else anEl.innerText = t; anEl.style.color = c; } };
             if ((!JCPLAYS_SETTINGS.uid || !JCPLAYS_SETTINGS.email || !JCPLAYS_SETTINGS.mKey) && !jcplaysSettingsPulled) {
-                displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+                displayEls.forEach(el => { el.innerHTML = '<span class="pca-spin pca-spin-wave"></span>'; el.style.color = 'var(--text-muted)'; });
                 const pullErr = await pullJCPlaysSettings();
                 if (pullErr) {
                     displayEls.forEach(el => { el.innerText = 'Settings load error: ' + pullErr; el.style.color = 'var(--danger-strong)'; });
@@ -14796,7 +15069,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             }
             const originalText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
-            displayEls.forEach(el => { el.innerText = 'Loading...'; el.style.color = 'var(--text-muted)'; });
+            displayEls.forEach(el => { el.innerHTML = '<span class="pca-spin pca-spin-wave"></span>'; el.style.color = 'var(--text-muted)'; });
             anSet('Loading...', 'var(--text-muted)');
             jcplaysBalanceLastFetchedAt = Date.now();
 
@@ -15726,6 +15999,72 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
             autoPollG2BulkOrders();
         });
     </script>
+<style id="pca-page-fade-css">
+/* ---- Tab/page fade-out: a ghost copy of the page we are leaving fades away while the new one fades in ---- */
+.page-section.pca-page-ghost { position: fixed; z-index: 60; margin: 0; pointer-events: none; overflow: hidden; display: block; animation: pcaGhostOut .18s ease both; }
+@keyframes pcaGhostOut { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .page-section.pca-page-ghost { display: none; } }
+
+/* ---- Inner tab fade (Direct/Voucher, package tabs) ---- */
+.pca-tab-ghost { position: fixed; z-index: 60; margin: 0; pointer-events: none; overflow: hidden; animation: pcaGhostOut .18s ease both; }
+.pca-tab-in { animation: pcaFadeIn .25s ease both; }
+@media (prefers-reduced-motion: reduce) { .pca-tab-ghost { display: none; } .pca-tab-in { animation: none; } }
+</style>
+<script id="pca-page-fade">
+/* Fade-out for page/tab switches. The old page is hidden instantly by showPage(), so we
+   fade a non-interactive copy of it. Opening already fades in via .page-section animation. */
+window.pcaLeavePage = function (targetId) {
+    try {
+        var cur = document.querySelector('.page-section.active');
+        if (!cur || cur.id === targetId || !cur.parentNode) return;
+        if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var old = document.querySelectorAll('.pca-page-ghost');
+        for (var i = 0; i < old.length; i++) old[i].remove();
+        if (cur.getElementsByTagName('*').length > 1500) return;   // keep huge lists snappy
+        var r = cur.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        var g = cur.cloneNode(true);
+        g.removeAttribute('id');
+        var ids = g.querySelectorAll('[id]');
+        for (var j = 0; j < ids.length; j++) ids[j].removeAttribute('id');
+        g.classList.add('pca-page-ghost');
+        g.setAttribute('aria-hidden', 'true');
+        g.inert = true;
+        g.style.top = r.top + 'px'; g.style.left = r.left + 'px';
+        g.style.width = r.width + 'px'; g.style.height = Math.min(r.height, window.innerHeight) + 'px';
+        cur.parentNode.appendChild(g);
+        setTimeout(function () { if (g.parentNode) g.remove(); }, 220);
+    } catch (e) { /* never block navigation */ }
+};
+
+/* Inner-tab fade: call BEFORE swapping the content. Old content fades out as a ghost copy,
+   the live container fades in (optionally after delayMs, for renders that run on a timer). */
+window.pcaTabFade = function (el, delayMs) {
+    try {
+        if (!el || !el.parentNode) return;
+        if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var olds = document.querySelectorAll('.pca-tab-ghost');
+        for (var i = 0; i < olds.length; i++) olds[i].remove();
+        el.classList.remove('pca-tab-in'); el.style.animationDelay = '';
+        void el.offsetWidth;
+        el.style.animationDelay = (delayMs || 0) + 'ms';
+        el.classList.add('pca-tab-in');
+        setTimeout(function () { el.classList.remove('pca-tab-in'); el.style.animationDelay = ''; }, 500 + (delayMs || 0));
+        var r = el.getBoundingClientRect();
+        if (!r.width || !r.height || r.bottom < 0 || r.top > window.innerHeight) return;
+        if (el.getElementsByTagName('*').length > 800) return;
+        var g = el.cloneNode(true);
+        var ids = g.querySelectorAll('[id]');
+        for (var j = 0; j < ids.length; j++) ids[j].removeAttribute('id');
+        g.classList.remove('pca-tab-in'); g.style.animationDelay = '';
+        g.classList.add('pca-tab-ghost'); g.setAttribute('aria-hidden', 'true'); g.inert = true;
+        g.style.top = r.top + 'px'; g.style.left = r.left + 'px';
+        g.style.width = r.width + 'px'; g.style.height = Math.min(r.height, window.innerHeight - Math.max(r.top, 0)) + 'px';
+        el.parentNode.appendChild(g);
+        setTimeout(function () { if (g.parentNode) g.remove(); }, 220);
+    } catch (e) { /* never block tab switching */ }
+};
+</script>
 <script id="pca-mobile-v2-js">
 /* PCA Admin - Mobile v2 behaviour layer.
    UI-only: it never reads or writes Firestore, never calls a Worker, and does not
@@ -15749,9 +16088,9 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
         'order-list': 'group-orders',
         'game-list': 'group-game', 'game-editor-page': 'group-game',
         'topup-list': 'group-wallet', 'payment-list': 'group-wallet',
-        'g2bulk': 'group-setting', 'jcplays': 'group-jcplays', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
+        'g2bulk': 'group-setting', 'jcplays': 'group-setting', 'api-docs': 'group-setting', 'admin-accounts': 'group-setting',
         'user-list': 'group-userlist', 'user-detail-page': 'group-userlist',
-        'settings': 'group-setting', 'notify-list': 'group-setting', 'ticker-list': 'group-setting'
+        'settings': 'group-setting', 'notify-list': 'group-setting'
     };
     var syncing = false;
     function syncNav() {
@@ -15784,17 +16123,14 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
                 { label: 'Direct', icon: 'icon-gamepad', page: 'game-list', run: function () { W.showGameListTab('direct'); } },
                 { label: 'Voucher', icon: 'icon-gift', page: 'game-list', run: function () { W.showGameListTab('voucher'); } }
             ]},
-            { title: 'API providers', items: [
-                { label: 'G2Bulk', icon: 'icon-g2bulk', page: 'g2bulk', key: 'g2bulk', run: function () { W.showPage('g2bulk'); } },
-                { label: 'JCPlays', icon: 'icon-key', page: 'jcplays', key: 'jcplays', run: function () { W.showPage('jcplays'); } },
+            { title: 'API', items: [
                 { label: 'API Keys', icon: 'icon-plug', page: 'api-docs', run: function () { W.showPage('api-docs'); } },
-                { label: 'API Balance', icon: 'icon-bar-chart', page: 'analytics', run: function () { W.showPage('analytics'); } }
+                { label: 'Wallet Balance', icon: 'icon-wallet', page: 'analytics', run: function () { W.showPage('analytics'); } }
             ]},
             { title: 'Settings', items: [
                 { label: 'General', icon: 'icon-gear', page: 'settings', run: function () { W.showPage('settings'); } },
                 { label: 'Admin', icon: 'icon-users', page: 'admin-accounts', run: function () { W.showPage('admin-accounts'); } },
-                { label: 'Notify', icon: 'icon-bell', page: 'notify-list', run: function () { W.showPage('notify-list'); } },
-                { label: 'Ticker', icon: 'icon-megaphone', page: 'ticker-list', run: function () { W.showPage('ticker-list'); } }
+                { label: 'Notify & Ticker', icon: 'icon-bell', page: 'notify-list', run: function () { W.showPage('notify-list'); } }
             ]},
             { title: 'Account', items: [
                 { label: 'My Account', icon: 'icon-users', run: function () { W.openMyAccountModal && W.openMyAccountModal(); } },
@@ -15859,7 +16195,7 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
     window.pcaOpenMore = openMore; window.pcaCloseMore = closeMore;
     // Tapping a direct tab (Orders / Users) closes any open nav popup
     document.addEventListener('click', function (e) {
-        var t = e.target.closest && e.target.closest('#group-orders, #group-userlist, #group-jcplays');
+        var t = e.target.closest && e.target.closest('#group-orders, #group-userlist');
         if (t) { if (window.closeNavGroupSheet) window.closeNavGroupSheet(); closeMore(); }
     }, true);
 
@@ -15884,33 +16220,47 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
     syncMoreDot();
 
     /* ---- 4. Header tucks away while scrolling down, returns on scroll up ---- */
-    var lastY = window.scrollY || 0, ticking = false;
+    var lastY = window.scrollY || 0, ticking = false, accY = 0, lastH = window.innerHeight;
     window.addEventListener('scroll', function () {
         if (ticking) return; ticking = true;
         requestAnimationFrame(function () {
-            var y = window.scrollY || 0, d = y - lastY;
+            var y = window.scrollY || 0, d = y - lastY, h = window.innerHeight;
+            var resized = Math.abs(h - lastH) > 2;      // browser URL bar collapsing/expanding: not a real scroll
+            lastH = h; lastY = y; ticking = false;
+            syncKb();
             if (!isMobile() || y < 48 || document.documentElement.classList.contains('pca-modal-open')) {
-                document.body.classList.remove('pca-hdr-hidden');
-            } else if (d > 8) { document.body.classList.add('pca-hdr-hidden'); }
-            else if (d < -8) { document.body.classList.remove('pca-hdr-hidden'); }
-            lastY = y; ticking = false;
+                document.body.classList.remove('pca-hdr-hidden'); accY = 0; return;
+            }
+            if (resized) { accY = 0; return; }
+            // need ~40px of sustained movement in one direction before toggling (stops flicker/stutter)
+            if ((accY > 0 && d < 0) || (accY < 0 && d > 0)) accY = 0;
+            accY += d;
+            if (accY > 40 && y > 120) { document.body.classList.add('pca-hdr-hidden'); accY = 0; }
+            else if (accY < -40) { document.body.classList.remove('pca-hdr-hidden'); accY = 0; }
         });
     }, { passive: true });
 
     /* ---- 5. Hide the tab bar while the keyboard is up ----------------------- */
     var TEXTY = 'input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=range]):not([type=hidden]),textarea,select';
-    document.addEventListener('focusin', function (e) {
-        if (e.target.matches && e.target.matches(TEXTY)) document.body.classList.add('pca-kb-open');
-    });
-    document.addEventListener('focusout', function () {
-        setTimeout(function () {
-            var a = document.activeElement;
-            if (!(a && a.matches && a.matches(TEXTY))) document.body.classList.remove('pca-kb-open');
-        }, 60);
-    });
+    // The tab bar must only hide while a text field is REALLY being typed in. It used to get stuck hidden when
+    // focus stayed on a field inside a closed sheet (sheets fade out, they are not removed), or on a read-only field.
+    function syncKb() {
+        var a = document.activeElement, on = !!(a && a.matches && a.matches(TEXTY) && !a.readOnly && !a.disabled);
+        if (on) {
+            var ov = a.closest && a.closest('.modal-overlay, .dialog-overlay');
+            if ((ov && !ov.classList.contains('show')) || a.getClientRects().length === 0) { try { a.blur(); } catch (e) {} on = false; }
+        }
+        document.body.classList.toggle('pca-kb-open', on);
+    }
+    window.pcaSyncKb = syncKb;
+    document.addEventListener('focusin', function () { setTimeout(syncKb, 0); });
+    document.addEventListener('focusout', function () { setTimeout(syncKb, 60); });
+    document.addEventListener('pointerdown', function () { setTimeout(syncKb, 120); }, { passive: true });
+    document.addEventListener('visibilitychange', syncKb);
 
     /* ---- 6. Lock the page behind any open sheet / dialog -------------------- */
     function lockCheck() {
+        syncKb();
         var open = document.querySelector('.modal-overlay.show, .dialog-overlay.show, .admin-card.oc-open');
         document.documentElement.classList.toggle('pca-modal-open', !!open);
     }
@@ -15991,5 +16341,159 @@ html #game-editor-page:not(.pkg-select-active) { padding-bottom: calc(var(--pca-
     setTimeout(measure, 800); setTimeout(measure, 2500);
 })();
 </script>
+<script id="pca-btn-icons">
+/* Adds an SVG icon (from the existing sprite) in front of every text-only .btn,
+   chosen by its label. Also strips leading glyphs like ✓ ✕ ↻ ↺ + so the SVG replaces them.
+   Runs for buttons created later too (order cards, editors, dialogs). */
+(function () {
+  var MAP = [
+    [/^(save|save order|save logo|save game|save note|save social links)$/, 'save'],
+    [/^(refresh|load \/ refresh|update|resync|recheck g2bulk status|check g2bulk status( \(voucher\))?)$/, 'refresh'],
+    [/^restore$/, 'undo'],
+    [/^(delete|delete user)$/, 'trash'],
+    [/^(reject|mark fail)$/, 'x-circle'],
+    [/^(confirm|mark success|done|apply|start review|verify)$/, 'check'],
+    [/^verify key$/, 'key'],
+    [/^(cancel|clear)$/, 'close'],
+    [/^skip$/, 'chevron-right'],
+    [/^(add|add admin|add package|add to ticker|create admin)$/, 'plus'],
+    [/^all$/, 'check'],
+    [/^edit$/, 'edit'],
+    [/^(copy|copy key|copy raw response)$/, 'copy'],
+    [/^settings$/, 'gear'],
+    [/^(import|import products|import from g2bulk)$/, 'download'],
+    [/^log out$/, 'log-out'],
+    [/^(send to all users|send test message|send today.s summary now)$/, 'send'],
+    [/^top up$/, 'wallet'],
+    [/^deduct$/, 'dollar'],
+    [/^ban user$/, 'ban'],
+    [/^link( telegram)?$/, 'link'],
+    [/^unlink$/, 'unlink'],
+    [/^(clean|clean completed)$/, 'trash'],
+    [/^show cleaned$/, 'eye'],
+    [/^set image$/, 'camera'],
+    [/^no image$/, 'eye-off'],
+    [/^fulfill manually$/, 'zap'],
+    [/^check why costs aren.t updating$/, 'info']
+  ];
+  var GLYPH = { '\u2191': 'arrow-up', '\u2193': 'arrow-down' };
+  var LEAD = /^\s*(?:[\u2713\u2715\u21BB\u21BA+]|\uD83E\uDDF9)\s*/;
+  var SEL = 'button.btn, button.login-secondary-btn';
+
+  function pick(label) {
+    var l = label.toLowerCase().replace(/\s+/g, ' ').trim();
+    for (var i = 0; i < MAP.length; i++) if (MAP[i][0].test(l)) return MAP[i][1];
+    return null;
+  }
+  function enhance(btn) {
+    if (btn.querySelector('svg, img') || btn.classList.contains('pca-has-ico')) return;
+    var kids = btn.childNodes, tn = null, i;
+    for (i = 0; i < kids.length; i++) {
+      if (kids[i].nodeType === 1) return;            // has element children -> leave alone
+      if (kids[i].nodeType === 3 && kids[i].nodeValue.trim()) { if (tn) return; tn = kids[i]; }
+    }
+    if (!tn) return;
+    var raw = tn.nodeValue, trimmed = raw.trim(), id = GLYPH[trimmed] || null, clean = raw.replace(LEAD, '');
+    if (!id) id = pick(clean);
+    if (!id) return;
+    if (GLYPH[trimmed]) { if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', btn.title || (trimmed === '\u2191' ? 'Move up' : 'Move down')); tn.nodeValue = ''; }
+    else tn.nodeValue = clean.replace(/^\s+/, '');
+    var NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), use = document.createElementNS(NS, 'use');
+    svg.setAttribute('class', 'ui-icon pca-bico'); svg.setAttribute('aria-hidden', 'true');
+    use.setAttribute('href', '#icon-' + id); svg.appendChild(use);
+    btn.insertBefore(svg, btn.firstChild); btn.classList.add('pca-has-ico');
+  }
+  function scan(root) {
+    if (!root || root.nodeType !== 1) return;
+    if (root.matches && root.matches(SEL)) enhance(root);
+    var list = root.querySelectorAll ? root.querySelectorAll(SEL) : [];
+    for (var i = 0; i < list.length; i++) enhance(list[i]);
+  }
+  var queued = false, pending = [];
+  function flush() { queued = false; var p = pending; pending = []; for (var i = 0; i < p.length; i++) scan(p[i]); }
+  function queue(n) { pending.push(n); if (!queued) { queued = true; requestAnimationFrame(flush); } }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        var m = muts[i];
+        if (m.type === 'childList') {
+          for (var j = 0; j < m.addedNodes.length; j++) if (m.addedNodes[j].nodeType === 1) queue(m.addedNodes[j]);
+          if (m.target && m.target.nodeType === 1 && m.target.matches && m.target.matches(SEL) && !m.target.querySelector('svg')) { m.target.classList.remove('pca-has-ico'); queue(m.target); }
+        } else if (m.type === 'characterData' && m.target.parentNode && m.target.parentNode.matches && m.target.parentNode.matches(SEL)) {
+          var b = m.target.parentNode; if (!b.querySelector('svg')) queue(b);
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+<script id="pca-detail-js">
+document.addEventListener('click', function (e) {
+    var v = e.target.closest && e.target.closest('.od-card .od-value.mono');
+    if (!v || e.target.closest('a, button')) return;
+    var t = (v.textContent || '').trim();
+    if (!t || t === 'N/A') return;
+    try {
+        navigator.clipboard.writeText(t).then(function () { if (window.showToast) window.showToast('Copied ✓', 'success'); });
+    } catch (err) {}
+});
+</script>
+<style id="pca-pkg-actions-size">
+/* One size for every button in the package action row (Add/Select/Copy/stepper/Resync/Import/Debug) */
+html .pkg-actions-row { align-items: center; gap: 8px; }
+html .pkg-actions-row .btn {
+    height: 36px !important; min-height: 36px !important; box-sizing: border-box; padding: 0 12px !important;
+    font-size: 12.5px !important; line-height: 1; align-self: center;
+}
+html .pkg-actions-row .resync-group { gap: 8px; align-self: center; }
+html .pkg-actions-row .resync-stepper { height: 36px; box-sizing: border-box; padding: 2px; align-items: center; }
+html .pkg-actions-row .resync-stepper .rs-btn { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; font-size: 15px; }
+html .pkg-actions-row .resync-stepper .resync-margin-input { width: 40px; height: 32px; font-size: 13px; }
+</style>
+<style id="pca-cost-lock-css">
+.pkg-cost[readonly] { background: var(--fill-soft) !important; color: var(--text-secondary); opacity: .8; cursor: not-allowed; -webkit-user-select: none; user-select: none; }
+</style>
+<script id="pca-cost-lock">
+/* Provider-linked packages (G2Bulk / voucher / JCPlays): Cost is read-only - it comes from the
+   provider price x the USD rate and follows the rate automatically. Manual rows stay editable. */
+(function () {
+    function lockRow(row) {
+        var c = row && row.querySelector('.pkg-cost'); if (!c) return;
+        var linked = ['.pkg-g2bulk', '.pkg-jcplays', '.pkg-voucher-id'].some(function (sel) {
+            var el = row.querySelector(sel); return el && el.value.trim();
+        });
+        c.readOnly = linked;
+        c.title = linked ? 'Cost သည် API price × USD rate ဖြစ်လို့ ပြင်၍မရပါ' : '';
+    }
+    function lockAll() { document.querySelectorAll('#edit-packages-list .package-row').forEach(lockRow); }
+    function start() {
+        var list = document.getElementById('edit-packages-list');
+        if (list) new MutationObserver(lockAll).observe(list, { childList: true, subtree: true });
+        ['pointerdown', 'focusin'].forEach(function (ev) {
+            document.addEventListener(ev, function (e) {
+                if (e.target && e.target.closest && e.target.matches && e.target.matches('.pkg-cost')) lockRow(e.target.closest('.package-row'));
+            }, true);
+        });
+        document.addEventListener('input', function (e) {
+            if (e.target.matches && e.target.matches('.pkg-g2bulk, .pkg-jcplays, .pkg-voucher-id')) lockRow(e.target.closest('.package-row'));
+        });
+        lockAll();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
+<style id="pca-pay-img-grid">
+/* Logo + QR image pickers side by side */
+.pay-img-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.pay-img-col { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pay-img-col > label:first-child { margin: 0; font-size: 12.5px; line-height: 1.3; }
+.pay-img-grid .img-update-box { width: 100%; max-width: none !important; margin: 0 !important; aspect-ratio: 1 / 1; }
+.pay-img-grid .img-update-change { font-size: 11px; padding: 4px 9px; bottom: 6px; right: 6px; }
+.pay-img-grid .img-update-change svg { width: 11px !important; height: 11px !important; }
+.pay-img-grid .img-update-label { font-size: 12px; }
+.pay-img-grid p { margin: 0; }
+</style>
 </body>
 </html>
