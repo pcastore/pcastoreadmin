@@ -7421,7 +7421,9 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                     });
                     const data = await res.json();
                     const unitStatus = (data.order?.status || data.status || '').toUpperCase();
-                    if (unitStatus === 'COMPLETED') sub.result = 'COMPLETED';
+                    const unitRefunded = data.order?.is_refunded === true || data.is_refunded === true; // docs: game order status has is_refunded
+                    if (unitRefunded) sub.result = 'FAILED';
+                    else if (unitStatus === 'COMPLETED') sub.result = 'COMPLETED';
                     else if (unitStatus === 'FAILED' || unitStatus === 'REFUNDED') sub.result = 'FAILED';
                     if (total > 1) await new Promise(r => setTimeout(r, 300)); // stagger multi-unit calls a touch
                 }
