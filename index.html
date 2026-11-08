@@ -26,6 +26,10 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#2563EB">
+    <link rel="manifest" href="admin-manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="admin-192.png">
+    <link rel="apple-touch-icon" href="admin-apple-touch.png">
+    <meta name="apple-mobile-web-app-title" content="PCA Admin">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -3417,6 +3421,14 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                 <button type="button" class="nt-tab" data-nt="ticker" onclick="showNotifyTab('ticker')"><svg class="ui-icon"><use href="#icon-megaphone"></use></svg>Ticker</button>
             </div>
             <div id="nt-pane-notify">
+            <div class="admin-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+                <div style="min-width:0;"><div style="font-size:14px;font-weight:600;">Admin alerts on this phone</div><div id="admin-push-state" style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Off</div></div>
+                <button type="button" class="btn btn-primary" id="admin-push-btn" onclick="toggleAdminPush()" style="width:auto;padding:8px 16px;flex:none;">Turn on</button>
+            </div>
+            <div class="admin-card" id="admin-install-card" style="display:none;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+                <div style="min-width:0;"><div style="font-size:14px;font-weight:600;">Install Admin app</div><div id="admin-install-note" style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Add the panel to your home screen</div></div>
+                <button type="button" class="btn btn-primary" id="admin-install-btn" onclick="installAdminApp()" style="width:auto;padding:8px 16px;flex:none;">Install</button>
+            </div>
             <h2 class="title-header">Send Notification</h2>
             <div class="admin-card">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Send to</label>
@@ -3434,8 +3446,19 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                 <input type="text" id="notif-intro" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Details</label>
                 <textarea id="notif-details" rows="5" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;font-family:inherit;resize:vertical;"></textarea>
+                <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Image link (optional, https)</label>
+                <input type="text" id="notif-image" placeholder="https://..." style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Only customers who bought this game (optional, exact name)</label>
+                <input type="text" id="notif-game" placeholder="e.g. Mobile Legends - push only, not shown in the inbox" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
+                <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">English title / intro (optional, for customers using English)</label>
+                <input type="text" id="notif-title-en" placeholder="Title (English)" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 6px;">
+                <input type="text" id="notif-intro-en" placeholder="Intro (English)" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:0 0 12px;">
+                <label style="font-size:13px;font-weight: 500;color:var(--text-secondary);">Send later (optional)</label>
+                <input type="datetime-local" id="notif-schedule" style="width:100%;padding:10px;border:1px solid var(--fill-soft);border-radius:8px;font-size:14px;margin:6px 0 12px;">
                 <button class="btn btn-primary" id="send-notif-btn" onclick="sendNotification()">Send to All Users</button>
             </div>
+            <h2 class="title-header" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">Push History <button type="button" class="btn btn-primary" onclick="loadPushHistory()" style="width:auto;padding:6px 12px;font-size:12px;">Refresh</button></h2>
+            <div id="push-history-list"><p class="empty-msg">Tap Refresh to load.</p></div>
             <h2 class="title-header" style="margin-top:20px;">Sent History</h2>
             <div id="notif-history-container">
                 <div class="pca-skel-wrap"><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div><div class="pca-skel-row"></div></div>
@@ -4264,7 +4287,7 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
         function subscribeTabListeners(pageId) {
             if (pageId === 'topup-list' && window.fetchWalletTopups) window.fetchWalletTopups();
             if (pageId === 'user-list') ensureUsersLoaded();
-            if (pageId === 'notify-list') { listenNotifications(); listenAnnouncementsAdmin(); }
+            if (pageId === 'notify-list') { listenNotifications(); listenAnnouncementsAdmin(); if (window.renderAdminPushUI) window.renderAdminPushUI(); }
             if (pageId === 'payment-list') listenPaymentMethods();
             // Settings page: single-doc onSnapshot listener that only ever
             // fills in fields living inside #settings (Social Links). Safe to
@@ -5069,6 +5092,7 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
         async function notifyOrderStatusChange(orderId, order, status, note) {
             try {
                 if (!order || !order.userId || !status) return;
+                if (status === 'Success' || status === 'Fail') adminPushCall({ kind: 'order', orderId, status });
                 if (!ADMIN_BROADCAST_SECRET) return; // secret not loaded/set yet - nothing to authorize with
                 const userSnap = await getDoc(doc(db, "users", order.userId));
                 const telegramId = userSnap.exists() ? userSnap.data().telegramId : null;
@@ -8196,6 +8220,7 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
             if (btnElement) { btnElement.innerText = "Crediting..."; btnElement.disabled = true; }
             try {
                 const { creditedAmount } = await creditWalletTopup(id, note);
+                adminPushCall({ kind: 'topup', topupId: id, status: 'Completed' });
                 window.showToast(`Wallet credited ${creditedAmount.toLocaleString()} MMK ✓`, 'success');
                 editTelegramWalletTopupMessage(id, 'Completed');
             } catch (error) {
@@ -8227,6 +8252,7 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                     ...(note ? { statusNote: note } : {})
                 });
                 window.showToast("Top up rejected.", 'fail');
+                adminPushCall({ kind: 'topup', topupId: id, status: 'Rejected' });
                 editTelegramWalletTopupMessage(id, 'Rejected');
             } catch (error) {
                 console.error("doRejectTopup error:", error);
@@ -8424,6 +8450,7 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                         confirmedAt: serverTimestamp()
                     });
                 });
+                adminPushCall({ kind: 'topup', userId: uid, amount });
                 window.showToast(`Credited ${amount.toLocaleString()} MMK to ${uid} ✓`, 'success');
                 document.getElementById('manual-topup-uid').value = '';
                 document.getElementById('manual-topup-amount').value = '';
@@ -11158,6 +11185,135 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
             });
         }
 
+        // ---------- Admin phone alerts (new order / new top-up) + customer push helper ----------
+        // Needs /firebase-messaging-sw.js (+ badge-96.png) served from THIS page's own site root.
+        const ADMIN_VAPID_KEY = 'BPEfKUCGbR5lny1p59iD3QnSA-EoPoPTbztAN1mmPtDhYexYvam7JLMd_7J8o1D_xCOtI0YBhWkCNYt7SlIzJlg';
+        const ADMIN_FCM_SDK_URL = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js';
+        function adminPushSupported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+        function adminPushOn() { try { return localStorage.getItem('adm_push_on') === '1'; } catch (e) { return false; } }
+        function renderAdminPushUI() {
+            const b = document.getElementById('admin-push-btn'), st = document.getElementById('admin-push-state');
+            if (!b || !st) return;
+            const sup = adminPushSupported();
+            const blocked = sup && Notification.permission === 'denied';
+            const on = sup && !blocked && Notification.permission === 'granted' && adminPushOn();
+            b.textContent = on ? 'Turn off' : 'Turn on';
+            b.disabled = !sup || blocked;
+            st.textContent = !sup ? 'Not supported in this browser' : blocked ? 'Blocked in browser settings' : on ? 'On - new orders and top-ups alert this phone' : 'Off';
+        }
+        window.renderAdminPushUI = renderAdminPushUI;
+        async function adminPushGetToken() {
+            const { getMessaging, getToken } = await import(ADMIN_FCM_SDK_URL);
+            const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            await navigator.serviceWorker.ready;
+            return getToken(getMessaging(app), { vapidKey: ADMIN_VAPID_KEY, serviceWorkerRegistration: reg });
+        }
+        async function adminPushRegister(token) {
+            const idTok = await auth.currentUser.getIdToken();
+            const r = await fetch(`${ADMIN_SYNC_WORKER_URL}/admin-register-push`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${idTok}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ token })
+            });
+            const d = await r.json().catch(() => null);
+            if (!d || !d.ok) throw new Error('register failed');
+        }
+        async function toggleAdminPush() {
+            if (!adminPushSupported() || !auth.currentUser) return;
+            try {
+                if (adminPushOn() && Notification.permission === 'granted') {
+                    try { const { getMessaging, deleteToken } = await import(ADMIN_FCM_SDK_URL); await deleteToken(getMessaging(app)); } catch (e) {}
+                    await adminPushRegister('');
+                    try { localStorage.removeItem('adm_push_on'); } catch (e) {}
+                    window.showToast('Admin alerts off', 'cancel');
+                } else {
+                    const perm = await Notification.requestPermission();
+                    if (perm !== 'granted') { renderAdminPushUI(); return; }
+                    const token = await adminPushGetToken();
+                    if (!token) throw new Error('no token');
+                    await adminPushRegister(token);
+                    try { localStorage.setItem('adm_push_on', '1'); } catch (e) {}
+                    window.showToast('Admin alerts on', 'success');
+                }
+            } catch (e) {
+                console.error('admin push toggle failed', e);
+                window.showToast('Could not change admin alerts.', 'fail');
+            }
+            renderAdminPushUI();
+        }
+        window.toggleAdminPush = toggleAdminPush;
+        // tokens rotate: quietly refresh after sign-in when this phone already opted in
+        onAuthStateChanged(auth, (u) => {
+            if (!u || !adminPushSupported() || !adminPushOn() || Notification.permission !== 'granted') return;
+            setTimeout(() => { adminPushGetToken().then(adminPushRegister).catch(() => {}); }, 6000);
+        });
+        // Customer phone push for changes made inside this panel (worker de-duplicates and builds the text)
+        function adminPushCall(body) {
+            try {
+                if (!auth.currentUser) return;
+                auth.currentUser.getIdToken().then(t => fetch(`${ADMIN_SYNC_WORKER_URL}/admin-push`, {
+                    method: 'POST', headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                })).catch(() => {});
+            } catch (e) { /* push is optional */ }
+        }
+
+        // Tapping a push opens the matching admin page: ?open=orders | topups
+        function adminDeepLink(raw) {
+            try {
+                const t = new URL(raw, location.origin).searchParams.get('open');
+                if (t === 'orders') window.showPage('order-list');
+                else if (t === 'topups') window.showPage('topup-list');
+            } catch (e) {}
+        }
+        if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'pca-notif-click' && auth.currentUser) adminDeepLink(e.data.url);
+        });
+        (function () {
+            let done = false;
+            onAuthStateChanged(auth, (u) => {
+                if (!u || done || !new URLSearchParams(location.search).get('open')) return;
+                done = true;
+                setTimeout(() => { adminDeepLink(location.href); try { history.replaceState(null, '', location.pathname); } catch (e) {} }, 1500);
+            });
+        })();
+        // Opening the panel clears the icon badge and the alerts already seen
+        function adminClearBadge() {
+            try { if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (e) {}
+            try { if ('serviceWorker' in navigator) navigator.serviceWorker.ready.then(r => r.getNotifications().then(l => l.forEach(n => n.close()))).catch(() => {}); } catch (e) {}
+        }
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') adminClearBadge(); });
+        adminClearBadge();
+
+        // ---------- Install the admin panel as an app (PWA) ----------
+        // Needs admin-manifest.json + admin-*.png + /firebase-messaging-sw.js on this site, served over HTTPS.
+        let adminInstallEvt = null;
+        function adminIsInstalled() {
+            try {
+                if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+                if (window.navigator.standalone === true) return true;
+            } catch (e) {}
+            return false;
+        }
+        function renderAdminInstallUI() {
+            const card = document.getElementById('admin-install-card');
+            if (!card) return;
+            const note = document.getElementById('admin-install-note');
+            const btn = document.getElementById('admin-install-btn');
+            const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            if (adminIsInstalled()) { card.style.display = 'none'; return; }
+            if (adminInstallEvt) { card.style.display = 'flex'; btn.style.display = ''; note.textContent = 'Add the panel to your home screen'; }
+            else if (ios) { card.style.display = 'flex'; btn.style.display = 'none'; note.textContent = 'Safari: tap Share, then "Add to Home Screen"'; }
+            else card.style.display = 'none';
+        }
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); adminInstallEvt = e; renderAdminInstallUI(); });
+        window.addEventListener('appinstalled', () => { adminInstallEvt = null; renderAdminInstallUI(); });
+        window.installAdminApp = async function () {
+            if (!adminInstallEvt) return;
+            try { adminInstallEvt.prompt(); await adminInstallEvt.userChoice; } catch (e) {}
+            adminInstallEvt = null; renderAdminInstallUI();
+        };
+        // A registered service worker is part of what makes Chrome treat the site as installable.
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {});
+        renderAdminInstallUI();
+
         // ---------- Notifications (broadcast to all users, or one specific user by ID) ----------
         let notifListenerAttached = false;
 
@@ -11169,6 +11325,31 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
             btn.innerText = audience === 'user' ? 'Send to User' : 'Send to All Users';
         }
         window.onNotifAudienceChange = onNotifAudienceChange;
+
+        function pushExtras() {
+            const v = id => ((document.getElementById(id) || {}).value || '').trim();
+            return { game: v('notif-game'), titleEn: v('notif-title-en'), bodyEn: v('notif-intro-en') };
+        }
+
+        // ---------- Push history (sent + scheduled) ----------
+        async function loadPushHistory() {
+            const box = document.getElementById('push-history-list');
+            if (!box || !auth.currentUser) return;
+            box.innerHTML = '<p class="empty-msg">Loading...</p>';
+            try {
+                const t = await auth.currentUser.getIdToken();
+                const r = await fetch(`${ADMIN_SYNC_WORKER_URL}/admin-push-history`, { method: 'POST', headers: { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' }, body: '{}' });
+                const d = await r.json();
+                if (!d || !d.ok) throw new Error('bad');
+                const esc = x => String(x == null ? '' : x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+                const rows = [];
+                (d.scheduled || []).filter(x => x.status === 'Pending').forEach(x => rows.push({ ts: x.sendAt, html: `<b>${esc(x.title)}</b> <span class="badge badge-warning">Scheduled</span><br><small>${esc(new Date(x.sendAt).toLocaleString())} · ${esc(x.audience)}</small>` }));
+                (d.sent || []).forEach(x => rows.push({ ts: Date.parse(x.at) || 0, html: `<b>${esc(x.title)}</b> <span class="badge badge-success">${esc(x.sent)} delivered</span>${x.failed ? ` <span class="badge badge-warning">${esc(x.failed)} not reached</span>` : ''}<br><small>${esc(x.at ? new Date(x.at).toLocaleString() : '')} · ${esc(x.audience)}</small>` }));
+                rows.sort((a, b) => b.ts - a.ts);
+                box.innerHTML = rows.length ? rows.map(r => `<div class="admin-card" style="margin-bottom:8px;">${r.html}</div>`).join('') : '<p class="empty-msg">No pushes yet.</p>';
+            } catch (e) { box.innerHTML = '<p class="empty-msg">Could not load history.</p>'; }
+        }
+        window.loadPushHistory = loadPushHistory;
 
         async function sendNotification() {
             const titleEl = document.getElementById('notif-title');
@@ -11190,6 +11371,26 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
             btn.innerText = 'Sending...';
 
             try {
+                // Scheduled: the Worker stores it and sends push + inbox entry at that time
+                const schedVal = ((document.getElementById('notif-schedule') || {}).value || '').trim();
+                if (schedVal) {
+                    const at = new Date(schedVal).getTime();
+                    if (!Number.isFinite(at) || at < Date.now() + 60000) { window.showToast('Pick a time at least 1 minute from now', 'fail'); return; }
+                    if (audience === 'user') {
+                        const us = await getDoc(doc(db, "users", targetUserId));
+                        if (!us.exists()) { window.showToast('No user found with that ID', 'fail'); return; }
+                    }
+                    const idT = await auth.currentUser.getIdToken();
+                    const rs = await fetch(`${ADMIN_SYNC_WORKER_URL}/admin-push`, {
+                        method: 'POST', headers: { 'Authorization': `Bearer ${idT}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, body: intro, details, sendAt: at, userId: audience === 'user' ? targetUserId : '', image: ((document.getElementById('notif-image') || {}).value || '').trim(), ...pushExtras() })
+                    });
+                    const rd = await rs.json().catch(() => null);
+                    if (!rd || !rd.ok) { window.showToast('Could not schedule it.', 'fail'); return; }
+                    ['notif-title','notif-intro','notif-details','notif-image','notif-schedule','notif-target-user','notif-game','notif-title-en','notif-intro-en'].forEach(i => { const e = document.getElementById(i); if (e) e.value = ''; });
+                    window.showToast('Scheduled for ' + new Date(at).toLocaleString(), 'success');
+                    return;
+                }
                 const payload = { title, intro, details, timestamp: serverTimestamp() };
                 if (audience === 'user') {
                     // Confirm the ID actually belongs to a user before writing anything,
@@ -11201,9 +11402,20 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                     }
                 }
                 // One customer -> private inbox (users/{id}/inbox); everyone -> public broadcast list.
+                // A game-segment promo is push-only: the public inbox would show it to every customer.
                 if (audience === 'user') await addDoc(collection(db, "users", targetUserId, "inbox"), payload);
-                else await addDoc(collection(db, "notifications"), payload);
+                else if (!pushExtras().game) await addDoc(collection(db, "notifications"), payload);
+                // Also send a real phone push (customers who turned notifications on). Fire-and-forget.
+                try {
+                    const idTok = await auth.currentUser.getIdToken();
+                    fetch(`${ADMIN_SYNC_WORKER_URL}/admin-push`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${idTok}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, body: intro, details, userId: audience === 'user' ? targetUserId : '', image: ((document.getElementById('notif-image') || {}).value || '').trim(), ...pushExtras() })
+                    }).catch(() => {});
+                } catch (e) { /* push is optional */ }
                 titleEl.value = '';
+                ['notif-image','notif-game','notif-title-en','notif-intro-en','notif-schedule'].forEach(i => { const e = document.getElementById(i); if (e) e.value = ''; });
                 introEl.value = '';
                 detailsEl.value = '';
                 targetUserEl.value = '';

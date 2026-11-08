@@ -1,0 +1,17 @@
+{
+  "id": "pca-admin",
+  "name": "PCA Store Admin",
+  "short_name": "PCA Admin",
+  "description": "PCA Game Store admin panel",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1E3A8A",
+  "theme_color": "#2563EB",
+  "icons": [
+    { "src": "admin-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "admin-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "admin-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
