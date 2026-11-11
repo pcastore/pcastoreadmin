@@ -5141,9 +5141,11 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                     body: JSON.stringify({ username })
                 });
                 const data = await res.json().catch(() => null);
+                window.__loginDiag = 'lookup HTTP ' + res.status + ' ' + JSON.stringify(data);
                 return (data && data.ok && data.email) ? data.email : null;
             } catch (e) {
                 console.error('admin-login-lookup failed:', e);
+                window.__loginDiag = 'lookup fetch error: ' + (e && e.message);
                 return null;
             }
         }
@@ -6020,7 +6022,7 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                     // enumeration via response differences or timing).
                     registerFailedAttempt('login');
                     if (!applyLockoutUI('login', 'login-btn', 'login-error', 'Sign In')) {
-                        errEl.textContent = 'Wrong username or password.';
+                        errEl.textContent = 'Wrong username or password. [DIAG ' + (window.__loginDiag || '') + ']';
                         errEl.style.display = 'block';
                         btn.disabled = false;
                         btn.innerText = 'Sign In';
@@ -6040,7 +6042,7 @@ html :is(div, span):has(> :is(button, a, .btn)):not(:has(> :not(button, a, .btn)
                 console.error('Admin login error:', error);
                 registerFailedAttempt('login');
                 if (!applyLockoutUI('login', 'login-btn', 'login-error', 'Sign In')) {
-                    errEl.textContent = 'Wrong username or password.';
+                    errEl.textContent = 'Wrong username or password. [DIAG auth: ' + ((error && (error.code || error.message)) || '') + ']';
                     errEl.style.display = 'block';
                     btn.disabled = false;
                     btn.innerText = 'Sign In';
